@@ -95,8 +95,9 @@ export function WorkOSTable({
   })));
 
   const gridCols = simplified
-    ? 'grid-cols-[60px_1fr_100px_100px_110px]'
-    : 'grid-cols-[60px_1fr_100px_80px_100px_90px]';
+    ? 'grid-cols-[60px_1fr_110px_110px_140px]'
+    // Prazo com 140: "16h em atraso" e "Prazo pausado" cabiam cortados em 90 (2026-10-29).
+    : 'grid-cols-[60px_1fr_110px_90px_110px_140px]';
 
   if (isLoading) {
     return (

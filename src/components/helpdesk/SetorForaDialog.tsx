@@ -2,7 +2,7 @@
 // Viagens, para quem registra viagem: os dias em que o setor inteiro está fora. Vale também para dias que já passaram.
 import { useState } from 'react';
 import { format, parseISO } from 'date-fns';
-import { CalendarOff, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,8 +11,9 @@ import { useSetorFora } from '@/hooks/useSetorFora';
 
 const dia = (iso: string) => format(parseISO(iso), 'dd/MM/yyyy');
 
-export function SetorForaDialog({ module, setorNome }: { module: string; setorNome: string }) {
-  const [aberta, setAberta] = useState(false);
+// Abre pelo "⋯" do topo da fila (dono, 2026-10-28, proposta do celular): por isso o estado vem de fora.
+export function SetorForaDialog({ module, setorNome, aberta, setAberta }:
+  { module: string; setorNome: string; aberta: boolean; setAberta: (v: boolean) => void }) {
   const { periodos, registrar, tirar } = useSetorFora(aberta ? module : null);
   const [de, setDe] = useState('');
   const [ate, setAte] = useState('');
@@ -26,9 +27,6 @@ export function SetorForaDialog({ module, setorNome }: { module: string; setorNo
 
   return (
     <>
-      <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-xs" onClick={() => setAberta(true)}>
-        <CalendarOff className="h-3.5 w-3.5" aria-hidden="true" /> Setor fora
-      </Button>
       <Dialog open={aberta} onOpenChange={setAberta}>
         <DialogContent className="max-w-lg">
           <DialogHeader>

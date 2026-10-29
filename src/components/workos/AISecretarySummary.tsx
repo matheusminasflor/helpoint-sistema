@@ -78,7 +78,7 @@ export function AISecretarySummary({
   if (!iaLigada) return null;
 
   return (
-    <div className="flex flex-wrap sm:flex-nowrap items-start gap-3 sm:gap-4 mx-4 mt-4 p-4 rounded-lg border border-border bg-surface-1">
+    <div className="flex flex-wrap sm:flex-nowrap items-start gap-3 sm:gap-4 mx-4 lg:mx-8 mt-1 p-4 rounded-lg border border-border bg-surface-1">
       <LyraAvatar size="lg" animated={isLoading} className="flex-shrink-0" />
 
       <div className="flex-1 min-w-[200px]">

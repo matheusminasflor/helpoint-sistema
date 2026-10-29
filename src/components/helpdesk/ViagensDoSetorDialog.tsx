@@ -3,7 +3,7 @@
 // aberto mantém o prazo (precisa ser resolvido antes de ir).
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { Plane, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,10 +12,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useMembrosDoSetor } from '@/hooks/useMembrosDoSetor';
 import { useViagens } from '@/hooks/useViagens';
 
-interface Props { setor: string; setorNome: string }
+// Abre pelo "⋯" do topo da fila (dono, 2026-10-28): o estado vem de fora.
+interface Props { setor: string; setorNome: string; aberta: boolean; setAberta: (v: boolean) => void }
 
-export function ViagensDoSetorDialog({ setor, setorNome }: Props) {
-  const [aberta, setAberta] = useState(false);
+export function ViagensDoSetorDialog({ setor, setorNome, aberta, setAberta }: Props) {
   const { data: membros = [] } = useMembrosDoSetor(aberta ? setor : undefined);
   const { viagens, registrar, tirar } = useViagens(membros.map((m) => m.id));
   const [pessoa, setPessoa] = useState('');
@@ -32,9 +32,6 @@ export function ViagensDoSetorDialog({ setor, setorNome }: Props) {
 
   return (
     <>
-      <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-xs" onClick={() => setAberta(true)}>
-        <Plane className="h-3.5 w-3.5" /> Viagens
-      </Button>
       <Dialog open={aberta} onOpenChange={setAberta}>
         <DialogContent className="max-w-lg">
           <DialogHeader>

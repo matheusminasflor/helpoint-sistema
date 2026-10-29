@@ -17,7 +17,10 @@ import { usePodeNoChamado } from '@/hooks/useAccessProfiles';
 import { setorDoModulo } from '@/lib/permissoes';
 import { DEPARTMENT_SCHEMAS } from '@/config/access-profile-schemas';
 import { getSLATimeRemaining } from '@/types/helpdesk';
-import { History, Calendar, AlertTriangle, User, Inbox, UserX, Flame } from 'lucide-react';
+import { History, Calendar, AlertTriangle, User, Inbox, UserX, Flame, MoreHorizontal, Plane, CalendarOff, Ticket, type LucideIcon } from 'lucide-react';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 import { KPICard } from '@/components/glpi/KPICard';
 import { KPIGrid } from '@/components/dashboard/KPIGrid';
@@ -27,11 +30,15 @@ type DateFilter = 'all' | '7d' | '30d' | '90d';
 
 interface TechnicianViewProps {
   module?: string;
+  /** O título da página (DashStack: toda tela tem o seu); o Financeiro chama de "Solicitações". */
+  titulo?: string;
+  descricao?: string;
+  icone?: LucideIcon;
 }
 
 // Kanban view removed — table-only helpdesk
 
-export function TechnicianView({ module }: TechnicianViewProps) {
+export function TechnicianView({ module, titulo = 'Fila de chamados', descricao, icone = Ticket }: TechnicianViewProps) {
   const { user, profile } = useAuth();
   // No Financeiro a fila é "Solicitações" (dono, 2026-10-28): os textos dizem solicitação, não chamado.
   const solicitacao = module === 'financeiro';
@@ -72,6 +79,8 @@ export function TechnicianView({ module }: TechnicianViewProps) {
   const registraViagem = noChamado.pode('registrar_viagem');
   const setor = setorDoModulo(module ?? 'tickets');
   const setorNome = setor ? DEPARTMENT_SCHEMAS[setor].label : 'setor';
+  const [viagensAberta, setViagensAberta] = useState(false);
+  const [setorForaAberta, setSetorForaAberta] = useState(false);
 
   // Quem vê o quê é do BANCO (2026-10-06): sem a caixinha "Ver os chamados do setor", a policy de
   // `tickets` devolve só os próprios e os sem atendente do setor. A opção geral da empresa
@@ -159,6 +168,25 @@ export function TechnicianView({ module }: TechnicianViewProps) {
     // chamados, a lista ficou pequena"). Com a altura presa à janela, o resumo e os cartões de cima — que cresceram em
     // 2026-10-15 — deixavam uns 200px para a lista numa tela de notebook.
     <div className="flex flex-col">
+      {/* Viagens e Setor fora saíram do lado das abas para o "⋯" do topo (dono, 2026-10-28, proposta do celular). */}
+      <PageHeader
+        title={titulo}
+        description={descricao ?? `Os chamados que chegam ao ${setorNome}, do mais urgente para o menos urgente.`}
+        icon={icone}
+        actions={registraViagem && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-1.5"><MoreHorizontal className="w-4 h-4" aria-hidden="true" />Mais</Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {setor && <DropdownMenuItem onSelect={() => setViagensAberta(true)}><Plane className="w-4 h-4 mr-2" aria-hidden="true" />Viagens do setor</DropdownMenuItem>}
+              <DropdownMenuItem onSelect={() => setSetorForaAberta(true)}><CalendarOff className="w-4 h-4 mr-2" aria-hidden="true" />Setor fora</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      />
+      {registraViagem && setor && <ViagensDoSetorDialog setor={setor} setorNome={setorNome} aberta={viagensAberta} setAberta={setViagensAberta} />}
+      {registraViagem && <SetorForaDialog module={module ?? 'tickets'} setorNome={setorNome} aberta={setorForaAberta} setAberta={setSetorForaAberta} />}
       {/* A fila visível do setor, sem o recorte da aba ("Meus", "Não atribuídos"): o resumo do
           gestor fala do setor inteiro (revisão de 2026-10-05). */}
       <AISecretarySummary
@@ -173,7 +201,7 @@ export function TechnicianView({ module }: TechnicianViewProps) {
       />
 
       {/* KPI Cards — Qualidade-style pastel */}
-      <div className="px-4 pt-3 pb-1 flex-shrink-0">
+      <div className="px-4 lg:px-8 pt-3 pb-1 flex-shrink-0">
         <KPIGrid lgCols={5} className="mb-2">
           {/* Passar o mouse mostra quais; clicar filtra a fila (dono, 2026-10-15). */}
           <KPICard value={allCount} label="Na Fila" icon={Inbox} color="blue" chamados={noHover(visibleTickets)} onClick={() => setFilter('all')} />
@@ -185,7 +213,7 @@ export function TechnicianView({ module }: TechnicianViewProps) {
       </div>
       
       {/* Filter Tabs + View Toggle */}
-      <div className="min-h-10 py-3 flex flex-wrap items-center justify-between gap-2 px-4 lg:px-6 flex-shrink-0">
+      <div className="min-h-10 py-3 flex flex-wrap items-center justify-between gap-2 px-4 lg:px-8 flex-shrink-0">
         <div className="inline-flex h-9 rounded-md border border-input bg-card overflow-x-auto max-w-full min-w-0">
           {(['all', 'unassigned', 'mine', 'history'] as const).map(f => (
             <button
@@ -221,24 +249,24 @@ export function TechnicianView({ module }: TechnicianViewProps) {
         </div>
 
         <div className="flex items-center gap-1">
-          {registraViagem && setor && <ViagensDoSetorDialog setor={setor} setorNome={setorNome} />}
-          {registraViagem && <SetorForaDialog module={module ?? 'tickets'} setorNome={setorNome} />}
+          {/* Período do histórico nas mesmas abas da DashStack ("Day / Week / Month"). */}
           {showHistory && (
-            <div className="flex items-center gap-1.5 ml-2">
-              <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
-              <div className="flex gap-0.5">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
+              <div className="inline-flex h-9 rounded-md border border-input bg-card overflow-hidden" role="group" aria-label="Período do histórico">
                 {(['all', '7d', '30d', '90d'] as const).map(d => (
                   <button
                     key={d}
                     onClick={() => setDateFilter(d)}
+                    aria-pressed={dateFilter === d}
                     className={cn(
-                      "px-2 py-0.5 text-xs rounded-sm transition-colors",
+                      "px-3 h-full text-[13px] border-r border-input last:border-r-0 transition-colors whitespace-nowrap",
                       dateFilter === d
-                        ? "bg-primary/15 text-primary font-medium"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                        ? "bg-primary text-primary-foreground font-bold"
+                        : "font-semibold text-foreground hover:bg-muted"
                     )}
                   >
-                    {d === 'all' ? 'Todos' : d === '7d' ? '7d' : d === '30d' ? '30d' : '90d'}
+                    {d === 'all' ? 'Tudo' : d === '7d' ? '7 dias' : d === '30d' ? '30 dias' : '90 dias'}
                   </button>
                 ))}
               </div>
@@ -248,12 +276,13 @@ export function TechnicianView({ module }: TechnicianViewProps) {
       </div>
 
       {((showHistory && historyCortou) || (!showHistory && cortou)) && (
-        <div className="px-4 pt-3 flex-shrink-0">
+        <div className="px-4 lg:px-8 pb-3 flex-shrink-0">
           <ListaCortada />
         </div>
       )}
 
-      {/* Content */}
+      {/* A lista e o rodapé num cartão, como o Order Lists da DashStack (2026-10-29). */}
+      <div className="panel overflow-hidden mx-4 lg:mx-8 mb-6">
       <div>
         <WorkOSTable
           tickets={showHistory ? filteredHistoryTickets : ordenarPorUrgencia(filteredTickets)}
@@ -270,7 +299,7 @@ export function TechnicianView({ module }: TechnicianViewProps) {
 
       {/* Footer Stats */}
       {/* Rodada 3 (correção 13): a faixa azul-marinho fixa dava 1,2 : 1 com a letra no tema claro. */}
-      <div className="h-8 border-t border-border flex items-center px-4 text-[12px] text-muted-foreground gap-3 font-mono flex-shrink-0 bg-card">
+      <div className="h-10 border-t border-border flex items-center px-4 text-[13px] font-semibold text-muted-foreground gap-3 flex-shrink-0 bg-card">
         {showHistory ? (
           <span>{stats.resolved} {solicitacao ? "solicitações encerradas" : "chamados encerrados"}</span>
         ) : (
@@ -286,6 +315,7 @@ export function TechnicianView({ module }: TechnicianViewProps) {
             </span>
           </>
         )}
+      </div>
       </div>
 
       <TicketDetailSheet
