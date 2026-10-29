@@ -45,7 +45,7 @@ export function PageHeader({
     <header
       className={cn(
         // DashStack: o título grande direto sobre o fundo, sem faixa nem linha.
-        'flex flex-col gap-3 px-4 lg:px-8 pt-6 pb-4 bg-background',
+        'cabecalho-da-pagina flex flex-col gap-3 px-4 lg:px-8 pt-6 pb-4 bg-background',
         sticky && 'sticky top-0 z-10',
         className,
       )}

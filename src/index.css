@@ -838,6 +838,16 @@
    detalhe do chamado, Identidade visual e outras ~30 telas desalinhadas do título; a largura fica, encostada à
    esquerda. As colunas estreitas (aviso vazio, texto curto) seguem centralizadas. */
 .area-do-app :is(.max-w-3xl, .max-w-4xl, .max-w-5xl, .max-w-6xl, .max-w-7xl).mx-auto { margin-left: 0; }
+/* E na mesma linha do título (2026-10-29): o título (`.cabecalho-da-pagina`) tem 16px de margem, 32px no computador, e
+   ~30 telas punham o conteúdo logo abaixo com `p-6`/`lg:p-6` (24px) — 8px fora da linha. A varredura das telas achou o
+   mesmo erro em TI, Marketing, Financeiro, Comercial e Avisos; aqui ele se corrige num lugar só, para o bloco que vem
+   depois do título. Tela nova já nasce com `px-4 lg:px-8`, que esta regra não toca. */
+.area-do-app .cabecalho-da-pagina ~ :is(.p-6, .px-6, .sm\:p-6, .lg\:p-6) { padding-left: 1rem; padding-right: 1rem; }
+.area-do-app .cabecalho-da-pagina ~ .sm\:m-6 { margin-left: 1rem; margin-right: 1rem; }
+@media (min-width: 1024px) {
+  .area-do-app .cabecalho-da-pagina ~ :is(.p-6, .px-6, .sm\:p-6, .lg\:p-6) { padding-left: 2rem; padding-right: 2rem; }
+  .area-do-app .cabecalho-da-pagina ~ .sm\:m-6 { margin-left: 2rem; margin-right: 2rem; }
+}
 
 /* A caixinha que aparece ao passar o mouse no gráfico, em todos os gráficos: o cartão flutuante da DashStack. */
 .recharts-default-tooltip {

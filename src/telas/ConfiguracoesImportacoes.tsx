@@ -89,7 +89,8 @@ export default function ConfiguracoesImportacoes() {
   const falhou = [qInbras, qMf, qClientes, qAnos, qHistorico].some((q) => q.isError);
 
   return (
-    <div className="p-4 sm:p-6 space-y-6">
+    // O título já tem a margem dele; o resto entra na mesma linha (2026-10-29: estava 32px fora).
+    <div className="pb-6 space-y-6 [&>*:not(.cabecalho-da-pagina)]:mx-4 lg:[&>*:not(.cabecalho-da-pagina)]:mx-8">
       <PageHeader
         icon={Upload}
         title="Importações"
