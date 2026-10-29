@@ -422,7 +422,7 @@ export default function SimuladorMetas({ ano }: { ano: number }) {
             <Tooltip formatter={(v: number) => formatBRL(v)} />
             <Bar dataKey="realizado" name="Realizado" radius={[3, 3, 0, 0]}>
               {dadosGrafico.map((d) => (
-                <Cell key={d.mes} fill={d.bate === null ? 'hsl(var(--muted-foreground))' : d.bate ? 'hsl(var(--status-success))' : 'hsl(var(--status-danger))'} />
+                <Cell key={d.mes} fill={d.bate === null ? 'hsl(var(--primary))' : d.bate ? 'hsl(var(--status-success))' : 'hsl(var(--status-danger))'} />
               ))}
             </Bar>
             <Line dataKey="meta" name="Meta simulada" stroke="hsl(var(--foreground))" strokeDasharray="5 5" dot={false} connectNulls />

@@ -156,10 +156,10 @@ export default function Jornal() {
           onSuccess: () => { toast.success('Notícia excluída.'); setApagando(null); }, onError: falhou,
         })} />
 
-      <div className="flex gap-1 border-b" role="tablist">
+      <div className="inline-flex h-9 max-w-full overflow-x-auto rounded-md border border-input bg-card" role="tablist">
         {([['noticias', 'Notícias'], ['atualizacoes', `Atualizações do sistema${atualizacoes.length ? ` (${atualizacoes.length})` : ''}`]] as const).map(([v, r]) => (
           <button key={v} type="button" role="tab" aria-selected={aba === v} onClick={() => setAba(v)}
-            className={`px-3 py-2 text-sm font-medium border-b-2 -mb-px ${aba === v ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'}`}>
+            className={`px-4 text-[14px] whitespace-nowrap border-r border-input last:border-r-0 ${aba === v ? 'bg-primary text-primary-foreground font-bold' : 'font-semibold text-foreground hover:bg-muted'}`}>
             {r}
             {v === 'atualizacoes' && naoLidas.size > 0 && (
               <span className="ml-1.5 inline-flex min-w-[18px] h-[18px] px-1 items-center justify-center rounded-full bg-primary text-primary-foreground text-[12px] font-bold"

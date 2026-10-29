@@ -135,7 +135,7 @@ export default function DiretoriaResumo() {
                   <Tooltip formatter={(v: number | null) => (v == null ? 'sem dado' : formatBRL(v))} />
                   <Bar dataKey="realizado" name="Realizado" radius={[3, 3, 0, 0]}>
                     {dadosGrafico.map((d) => (
-                      <Cell key={d.mes} fill={d.bate == null ? 'hsl(var(--muted-foreground))' : d.bate ? 'hsl(var(--status-success))' : 'hsl(var(--status-danger))'} />
+                      <Cell key={d.mes} fill={d.bate == null ? 'hsl(var(--primary))' : d.bate ? 'hsl(var(--status-success))' : 'hsl(var(--status-danger))'} />
                     ))}
                   </Bar>
                   <Line dataKey="meta" name="Meta" stroke="hsl(var(--foreground))" strokeDasharray="5 5" dot={false} connectNulls={false} />

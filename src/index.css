@@ -798,6 +798,30 @@
   border-color: transparent;
   box-shadow: 6px 6px 54px rgba(0, 0, 0, 0.05);
 }
+/* A caixa com borda e SEM fundo direto sobre a página (a tabela num `rounded-lg border`, a seção numa caixa contornada)
+   também vira cartão. Dentro de outro cartão ela fica como está: ali a borda é o que separa as linhas. */
+.area-do-app :is(.rounded-lg, .rounded-xl).border:not([class*="bg-"]):not([class*="badge-"]):not(.border-dashed):not([class*="border-status"]):not([class*="border-primary"]):not(:is(.panel, .bg-card, [role="dialog"]) *) {
+  background-color: hsl(var(--card));
+  border-color: transparent;
+  box-shadow: 6px 6px 54px rgba(0, 0, 0, 0.05);
+}
+
+/* A tabela solta na página (65 telas escrevem `<table>` direto) ganha o cartão branco da DashStack em volta: quem leva o
+   cartão é o bloco que a contém. Dentro de um cartão ela fica como está. */
+.area-do-app div:has(> table):not(.panel, .bg-card, [class*="rounded"].border):not(:is(.panel, .bg-card, [class*="rounded"].border, [role="dialog"]) *) {
+  background-color: hsl(var(--card));
+  border-radius: 14px;
+  box-shadow: 6px 6px 54px rgba(0, 0, 0, 0.05);
+  padding: 4px 8px;
+}
+
+/* O cabeçalho de toda tabela é a faixa da DashStack: fundo #F1F4F9, negrito 14 na cor do texto, pontas arredondadas. */
+@media (min-width: 641px) {
+  .area-do-app thead tr { border-bottom: 0; }
+  .area-do-app thead th { background-color: hsl(var(--muted)); color: hsl(var(--foreground)); font-weight: 700; font-size: 14px; }
+  .area-do-app thead tr th:first-child { border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
+  .area-do-app thead tr th:last-child { border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
+}
 
 /* A caixinha que aparece ao passar o mouse no gráfico, em todos os gráficos: o cartão flutuante da DashStack. */
 .recharts-default-tooltip {
