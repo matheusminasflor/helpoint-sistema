@@ -3,7 +3,7 @@ import { useQueryState } from '@/hooks/useQueryState';
 import { PageHeader } from '@/components/layout/PageHeader';
 import {
   Plus, Calendar as CalendarIcon, Instagram, Youtube, Twitter, Linkedin, Facebook,
-  MessageSquare, Megaphone, MoreHorizontal, Pencil, Trash2, CheckCircle, Upload, X, Link as LinkIcon,
+  MessageSquare, Megaphone, MoreHorizontal, Pencil, Trash2, CheckCircle, Upload, X, Link as LinkIcon, Share2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -213,7 +213,7 @@ export default function MKTSocialCalendar() {
   return (
     <div className="flex flex-col min-h-full">
       <PageHeader
-        identifier="MKT"
+        icon={Share2}
         title="Cronograma social"
         description="Planeje stories, feed, tráfego pago e listas de transmissão."
         actions={(
@@ -370,7 +370,7 @@ export default function MKTSocialCalendar() {
         )}
       />
 
-      <div className="p-4 sm:p-6 w-full max-w-7xl mx-auto space-y-6">
+      <div className="px-4 lg:px-8 pb-6 w-full space-y-6">
       {/* Filtros */}
       <div className="flex flex-wrap gap-3">
         <Select value={platformFilter} onValueChange={setPlatformFilter}>

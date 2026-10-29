@@ -20,7 +20,8 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { ArrowLeft, Send, Lock, Sparkles, FileSearch, CheckCircle2, Loader2, Paperclip, X, Star, Download } from 'lucide-react';
+import { ArrowLeft, Send, Lock, Sparkles, FileSearch, CheckCircle2, Loader2, Paperclip, X, Star, Download, MessageSquare } from 'lucide-react';
+import { AbasSegmentadas } from '@/components/ui/abas-segmentadas';
 import { format , parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { AttachmentsList } from '@/components/sac/AttachmentsList';
@@ -66,37 +67,34 @@ export function QualidadeSACList() {
   return (
     <div className="flex flex-col min-h-full">
       <PageHeader
-        title="SAC — Atendimento ao Cliente"
-        description="Gerencie todos os chamados abertos pelos clientes."
+        title="SAC de clientes"
+        description="Os chamados que os clientes abrem: quem atende, em que pé está e há quanto tempo."
+        icon={MessageSquare}
       />
 
-      <div className="p-4 sm:p-6 w-full max-w-7xl mx-auto">
-      <div className="flex gap-2 mb-3 flex-wrap items-center">
+      <div className="px-4 lg:px-8 pb-6 w-full">
+      <div className="flex gap-2 mb-4 flex-wrap items-center">
+        <AbasSegmentadas rotulo="Filtrar por situação" valor={filter} onValor={setFilter}
+          opcoes={[{ valor: 'all', rotulo: `Todos (${tickets.length})` },
+            ...STATUSES.map((s) => ({ valor: s, rotulo: `${STATUS_LABEL[s].label} (${tickets.filter((t) => t.status === s).length})` }))]} />
         <Input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar protocolo, cliente, produto ou lote"
           aria-label="Buscar SAC" className="max-w-xs h-9" />
         <Button size="sm" variant="outline" className="gap-1 ml-auto max-[860px]:hidden" onClick={() => void exportar()} disabled={filtered.length === 0}>
           <Download className="w-3.5 h-3.5" aria-hidden="true" /> Exportar
         </Button>
       </div>
-      <div className="flex gap-2 mb-4 flex-wrap">
-        <Button size="sm" variant={filter === 'all' ? 'default' : 'outline'} onClick={() => setFilter('all')}>Todos ({tickets.length})</Button>
-        {STATUSES.map(s => {
-          const count = tickets.filter(t => t.status === s).length;
-          return <Button key={s} size="sm" variant={filter === s ? 'default' : 'outline'} onClick={() => setFilter(s)}>{STATUS_LABEL[s].label} ({count})</Button>;
-        })}
-      </div>
 
-      <Card>
+      <div className="panel overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-surface-2 border-b">
+          <table className="w-full text-[14px]">
+            <thead className="bg-muted text-[13px] font-bold text-foreground">
               <tr>
-                <th className="text-left p-3">Protocolo</th>
-                <th className="text-left p-3">Cliente</th>
-                <th className="text-left p-3">Produto</th>
-                <th className="text-left p-3">Status</th>
-                <th className="text-left p-3">Quem atende</th>
-                <th className="text-left p-3">Aberto há</th>
+                <th className="text-left px-4 py-3">Protocolo</th>
+                <th className="text-left px-4 py-3">Cliente</th>
+                <th className="text-left px-4 py-3">Produto</th>
+                <th className="text-left px-4 py-3">Status</th>
+                <th className="text-left px-4 py-3">Quem atende</th>
+                <th className="text-left px-4 py-3">Aberto há</th>
               </tr>
             </thead>
             <tbody>
@@ -108,10 +106,10 @@ export function QualidadeSACList() {
                 const extra = parseInt(((t.subject || '').match(/\+\s*(\d+)\s*produto/i) || [])[1] || '0', 10);
                 const totalProducts = extra > 0 ? extra + 1 : 1;
                 return (
-                  <tr key={t.id} onClick={() => navigate(tenantPath(`/qualidade/sacs/${t.id}`))} className="border-b hover:bg-surface-2 cursor-pointer">
-                    <td className="p-3 font-mono text-xs">SAC-{String(t.ticket_number).padStart(5, '0')}</td>
-                    <td className="p-3">{t.customer_name}<br /><span className="text-xs text-muted-foreground">{t.customer_email}</span></td>
-                    <td className="p-3">
+                  <tr key={t.id} onClick={() => navigate(tenantPath(`/qualidade/sacs/${t.id}`))} className="border-t border-border hover:bg-primary/5 cursor-pointer">
+                    <td className="px-4 py-3 font-semibold tabular-nums">SAC-{String(t.ticket_number).padStart(5, '0')}</td>
+                    <td className="px-4 py-3">{t.customer_name}<br /><span className="text-xs text-muted-foreground">{t.customer_email}</span></td>
+                    <td className="px-4 py-3">
                       {t.product_name || '—'}
                       {t.product_batch && <span className="text-xs text-muted-foreground"> · Lote {t.product_batch}</span>}
                       {totalProducts > 1 && (
@@ -120,12 +118,12 @@ export function QualidadeSACList() {
                         </Badge>
                       )}
                     </td>
-                    <td className="p-3">
+                    <td className="px-4 py-3">
                       <Badge className={s.color}>{s.label}</Badge>
                       {vez(t.status) && <span className="block text-[12px] text-muted-foreground mt-0.5">{vez(t.status)}</span>}
                     </td>
-                    <td className="p-3 text-[13px]">{t.atendente?.full_name ?? <span className="text-muted-foreground">ninguém</span>}</td>
-                    <td className="p-3 text-xs text-muted-foreground tabular-nums" title={fmt(t.created_at)}>{haQuantoTempo(t.created_at)}</td>
+                    <td className="px-4 py-3 text-[13px]">{t.atendente?.full_name ?? <span className="text-muted-foreground">ninguém</span>}</td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground tabular-nums" title={fmt(t.created_at)}>{haQuantoTempo(t.created_at)}</td>
                   </tr>
                 );
               })}
@@ -133,7 +131,7 @@ export function QualidadeSACList() {
             </tbody>
           </table>
         </div>
-      </Card>
+      </div>
       </div>
     </div>
   );
