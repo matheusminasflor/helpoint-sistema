@@ -7,7 +7,7 @@ import { useQueryState } from '@/hooks/useQueryState';
 import { useRelatorioNosDoisPeriodos, type ConsumoDoEstoque as Linha } from '@/hooks/useRelatorios';
 import { soma } from '@/lib/relatorio-contas';
 import { formatDateBR } from '@/types/financeiro';
-import { cn } from '@/lib/utils';
+import { AbasSegmentadas } from '@/components/ui/abas-segmentadas';
 
 type Por = 'produto' | 'pessoa';
 interface Agrupada { chave: string; grupo: string; detalhe: string; quantidade: number; retiradas: number; ultima: string }
@@ -46,14 +46,8 @@ export default function ConsumoDoEstoque() {
       periodo={periodo} linhas={linhas} colunas={colunas} chave={(l) => l.chave} carregando={r.carregando} erro={r.erro}
       vazio="Nenhuma retirada do estoque no período."
       controles={(
-        <div className="inline-flex rounded-md border border-border p-0.5" role="group" aria-label="Agrupar por">
-          {(['produto', 'pessoa'] as Por[]).map((p) => (
-            <button key={p} type="button" onClick={() => setPor(p)} aria-pressed={por === p}
-              className={cn('px-3 min-h-9 rounded text-[13px]', por === p ? 'bg-primary text-primary-foreground' : 'text-muted-foreground')}>
-              {p === 'produto' ? 'Por produto' : 'Por pessoa'}
-            </button>
-          ))}
-        </div>
+        <AbasSegmentadas rotulo="Agrupar por" valor={por} onValor={setPor}
+          opcoes={[{ valor: 'produto', rotulo: 'Por produto' }, { valor: 'pessoa', rotulo: 'Por pessoa' }]} />
       )}
       resumo={[
         { rotulo: 'Retiradas no período', valor: soma(r.linhas.map((l) => l.retiradas)), anterior: soma(r.antes.map((l) => l.retiradas)), formatar: String, melhorQuando: 'menos' },

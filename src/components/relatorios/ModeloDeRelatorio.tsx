@@ -69,7 +69,7 @@ export function ModeloDeRelatorio<T>({
         actions={<Button variant="outline" size="sm" className="max-[860px]:hidden" disabled={ordenadas.length === 0} onClick={exportar}>
           <FileDown className="w-4 h-4 mr-1.5" aria-hidden="true" />Exportar
         </Button>} />
-      <div className="p-4 lg:p-6 space-y-4">
+      <div className="px-4 lg:px-8 pb-6 space-y-4">
         {(periodo || controles) && (
           <div className="flex flex-wrap items-center gap-3">
             {periodo && <FiltroDePeriodo tipo={periodo.tipo} onTipo={periodo.setTipo}
@@ -101,13 +101,13 @@ export function ModeloDeRelatorio<T>({
             {carregando ? <Skeleton className="h-40 w-full" /> : ordenadas.length === 0 ? (
               <p className="text-[14px] text-muted-foreground py-6">{busca ? 'Nada com essa busca.' : vazio}</p>
             ) : (
-              <div className="rounded-lg border border-border bg-card overflow-x-auto">
+              <div className="panel overflow-x-auto">
                 <table className="w-full text-[14px]">
                   <thead>
-                    <tr className="border-b border-border text-left text-muted-foreground">
+                    <tr className="bg-muted text-left text-[13px] font-bold text-foreground">
                       {colunas.map((c) => (
-                        <th key={c.chave} className={cn('px-3 py-2 font-medium whitespace-nowrap', c.direita && 'text-right')}>
-                          <button type="button" className="inline-flex items-center gap-1 hover:text-foreground"
+                        <th key={c.chave} className={cn('px-4 py-3 whitespace-nowrap', c.direita && 'text-right')}>
+                          <button type="button" className="inline-flex items-center gap-1 hover:text-primary"
                             onClick={() => setOrdem((o) => proximaOrdem(o, c.chave))}>
                             {c.rotulo}
                             {ordem?.coluna === c.chave && (ordem.direcao === 'asc'
@@ -119,9 +119,9 @@ export function ModeloDeRelatorio<T>({
                   </thead>
                   <tbody>
                     {ordenadas.map((l, i) => (
-                      <tr key={chave(l, i)} className="border-b border-border last:border-0">
+                      <tr key={chave(l, i)} className="border-t border-border hover:bg-primary/5">
                         {colunas.map((c) => (
-                          <td key={c.chave} className={cn('px-3 py-2', c.direita && 'text-right tabular-nums whitespace-nowrap')}>
+                          <td key={c.chave} className={cn('px-4 py-3', c.direita && 'text-right tabular-nums whitespace-nowrap')}>
                             {c.mostrar ? c.mostrar(l) : (c.valor(l) ?? '—')}
                           </td>
                         ))}

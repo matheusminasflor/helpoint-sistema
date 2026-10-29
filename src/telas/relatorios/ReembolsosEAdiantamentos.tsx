@@ -11,7 +11,7 @@ import { useRelatorioNosDoisPeriodos, type ReembolsoOuAdiantamento as Linha } fr
 import { ROTULO_DA_ETAPA } from '@/config/solicitacoes';
 import { soma } from '@/lib/relatorio-contas';
 import { formatBRL, formatDateBR } from '@/types/financeiro';
-import { cn } from '@/lib/utils';
+import { AbasSegmentadas } from '@/components/ui/abas-segmentadas';
 
 type Tipo = 'todos' | 'reembolso' | 'adiantamento';
 const ROTULO: Record<Tipo, string> = { todos: 'Todos', reembolso: 'Reembolsos', adiantamento: 'Adiantamentos' };
@@ -44,14 +44,8 @@ export default function ReembolsosEAdiantamentos() {
       periodo={periodo} linhas={linhas} colunas={colunas} chave={(l) => l.id} carregando={r.carregando} erro={r.erro}
       vazio="Nenhum reembolso ou adiantamento pedido no período."
       controles={(
-        <div className="inline-flex rounded-md border border-border p-0.5" role="group" aria-label="Tipo de pedido">
-          {(Object.keys(ROTULO) as Tipo[]).map((t) => (
-            <button key={t} type="button" onClick={() => setTipo(t)} aria-pressed={tipo === t}
-              className={cn('px-3 min-h-9 rounded text-[13px]', tipo === t ? 'bg-primary text-primary-foreground' : 'text-muted-foreground')}>
-              {ROTULO[t]}
-            </button>
-          ))}
-        </div>
+        <AbasSegmentadas rotulo="Tipo de pedido" valor={tipo} onValor={setTipo}
+          opcoes={(Object.keys(ROTULO) as Tipo[]).map((t) => ({ valor: t, rotulo: ROTULO[t] }))} />
       )}
       resumo={[
         { rotulo: 'Pedido no período', valor: soma(linhas.map((l) => l.valor ?? 0)), anterior: soma(antes.map((l) => l.valor ?? 0)), formatar: formatBRL, melhorQuando: 'menos' },

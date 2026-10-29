@@ -9,7 +9,7 @@ import { usePeriodoDoRelatorio } from '@/hooks/usePeriodoDoRelatorio';
 import { useQueryState } from '@/hooks/useQueryState';
 import { instantesDoIntervalo, type Intervalo } from '@/lib/periodo-do-relatorio';
 import { unwrap } from '@/lib/supabase-result';
-import { cn } from '@/lib/utils';
+import { AbasSegmentadas } from '@/components/ui/abas-segmentadas';
 
 interface Produto { product_name: string | null; product_batch: string | null; quantity: number | null; ticket: { id: string; created_at: string } }
 interface Agrupada { grupo: string; sacs: number; unidades: number; anterior: number }
@@ -64,14 +64,8 @@ export default function ReclamacoesPorProduto() {
       periodo={periodo} linhas={linhas} colunas={colunas} chave={(l) => l.grupo} carregando={agora.isLoading} erro={agora.error}
       vazio="Nenhum SAC com produto no período."
       controles={(
-        <div className="inline-flex rounded-md border border-border p-0.5" role="group" aria-label="Agrupar por">
-          {(['produto', 'lote'] as Por[]).map((p) => (
-            <button key={p} type="button" onClick={() => setPor(p)} aria-pressed={por === p}
-              className={cn('px-3 min-h-9 rounded text-[13px]', por === p ? 'bg-primary text-primary-foreground' : 'text-muted-foreground')}>
-              {p === 'produto' ? 'Por produto' : 'Por lote'}
-            </button>
-          ))}
-        </div>
+        <AbasSegmentadas rotulo="Agrupar por" valor={por} onValor={setPor}
+          opcoes={[{ valor: 'produto', rotulo: 'Por produto' }, { valor: 'lote', rotulo: 'Por lote' }]} />
       )}
       resumo={[
         { rotulo: 'SACs com produto', valor: sacs(agora.data), anterior: sacs(antes.data), formatar: String, melhorQuando: 'menos' },

@@ -12,11 +12,11 @@ import {
   CheckCircle2,
   Inbox,
   Clock,
-  AlertCircle,
   RefreshCw
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { AbasSegmentadas } from '@/components/ui/abas-segmentadas';
 import type { TicketWithDetails } from '@/types/helpdesk';
 import { isAwaitingEvaluation } from '@/components/helpdesk/TicketEvaluationPanel';
 import { rotuloDoSetor } from '@/lib/setores';
@@ -169,41 +169,18 @@ export function CollaboratorView() {
       {/* Filter Tabs */}
       <div className="flex-shrink-0">
         <div className="px-6 lg:px-8">
-          <div className="flex gap-1 py-2 overflow-x-auto">
-            {([
-              { key: 'all', label: 'Todos', icon: Inbox, count: tickets.length },
-              { key: 'open', label: 'Em aberto', icon: Clock, count: openTickets.length },
-              { key: 'waiting', label: 'Aguardando você', icon: AlertCircle, count: waitingUserTickets.length },
-              { key: 'evaluate', label: 'Para avaliar', icon: Star, count: toEvaluateTickets.length },
-              { key: 'resolved', label: 'Resolvidos', icon: CheckCircle2, count: resolvedTickets.length },
-            ] as const).map(tab => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={cn(
-                  "flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full transition-colors whitespace-nowrap",
-                  activeTab === tab.key 
-                    ? "bg-primary text-primary-foreground" 
-                    : "text-muted-foreground hover:bg-muted"
-                )}
-              >
-                <tab.icon className="w-4 h-4" />
-                {tab.label}
-                {tab.count > 0 && (
-                  <span className={cn(
-                    "text-xs px-1.5 py-0.5 rounded-full font-mono",
-                    activeTab === tab.key 
-                      ? "bg-primary-foreground/20" 
-                      : "bg-muted-foreground/20"
-                  )}>
-                    {tab.count}
-                  </span>
-                )}
-              </button>
-            ))}
+          <div className="flex flex-wrap items-center gap-2 py-2">
+            <AbasSegmentadas rotulo="Filtrar por situação" valor={activeTab} onValor={setActiveTab}
+              opcoes={[
+                { valor: 'all', rotulo: `Todos (${tickets.length})` },
+                { valor: 'open', rotulo: `Em aberto (${openTickets.length})` },
+                { valor: 'waiting', rotulo: `Aguardando você (${waitingUserTickets.length})` },
+                { valor: 'evaluate', rotulo: `Para avaliar (${toEvaluateTickets.length})` },
+                { valor: 'resolved', rotulo: `Resolvidos (${resolvedTickets.length})` },
+              ]} />
             {setores.length > 1 && (
               <select aria-label="Filtrar por setor" value={setor} onChange={(e) => setSetor(e.target.value)}
-                className="ml-auto h-9 rounded-full border border-border bg-background px-3 text-sm">
+                className="ml-auto h-9 rounded-md border border-input bg-card px-3 text-[14px]">
                 <option value="">Todos os setores</option>
                 {setores.map((s) => (
                   <option key={s} value={s}>{s} ({tickets.filter((t) => setorDoChamado(t) === s).length})</option>

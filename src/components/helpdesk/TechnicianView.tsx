@@ -12,6 +12,7 @@ import { TicketDetailSheet } from './TicketDetailSheet';
 import { ViagensDoSetorDialog } from './ViagensDoSetorDialog';
 import { SetorForaDialog } from './SetorForaDialog';
 import { cn } from '@/lib/utils';
+import { AbasSegmentadas } from '@/components/ui/abas-segmentadas';
 import { ordenarPorUrgencia } from '@/lib/fila-de-chamados';
 import { usePodeNoChamado } from '@/hooks/useAccessProfiles';
 import { setorDoModulo } from '@/lib/permissoes';
@@ -253,23 +254,8 @@ export function TechnicianView({ module, titulo = 'Fila de chamados', descricao,
           {showHistory && (
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
-              <div className="inline-flex h-9 rounded-md border border-input bg-card overflow-hidden" role="group" aria-label="Período do histórico">
-                {(['all', '7d', '30d', '90d'] as const).map(d => (
-                  <button
-                    key={d}
-                    onClick={() => setDateFilter(d)}
-                    aria-pressed={dateFilter === d}
-                    className={cn(
-                      "px-3 h-full text-[13px] border-r border-input last:border-r-0 transition-colors whitespace-nowrap",
-                      dateFilter === d
-                        ? "bg-primary text-primary-foreground font-bold"
-                        : "font-semibold text-foreground hover:bg-muted"
-                    )}
-                  >
-                    {d === 'all' ? 'Tudo' : d === '7d' ? '7 dias' : d === '30d' ? '30 dias' : '90 dias'}
-                  </button>
-                ))}
-              </div>
+              <AbasSegmentadas rotulo="Período do histórico" valor={dateFilter} onValor={setDateFilter}
+                opcoes={[{ valor: 'all', rotulo: 'Tudo' }, { valor: '7d', rotulo: '7 dias' }, { valor: '30d', rotulo: '30 dias' }, { valor: '90d', rotulo: '90 dias' }]} />
             </div>
           )}
         </div>

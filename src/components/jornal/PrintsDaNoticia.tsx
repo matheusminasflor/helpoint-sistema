@@ -27,7 +27,8 @@ export function PrintsDaNoticia({ noticiaId, origem }: { noticiaId: string; orig
                 ? (
                   <button type="button" className="block w-full cursor-zoom-in" title="Ver no tamanho real"
                     onClick={() => setAberta({ url, nome: legenda(a.nome) })}>
-                    <img src={url} alt={legenda(a.nome)} className="block w-full h-auto bg-background" />
+                    {/* Nunca maior que o próprio tamanho: esticar o recorte é o que borra. */}
+                    <img src={url} alt={legenda(a.nome)} className="block mx-auto max-w-full h-auto bg-background" />
                   </button>
                 )
                 : <div className="h-60 animate-pulse bg-muted" />}

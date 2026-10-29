@@ -9,7 +9,7 @@ import { agrupar } from '@/lib/relatorios-novos';
 import { soma } from '@/lib/relatorio-contas';
 import { rotuloDoSetor } from '@/lib/setores';
 import { formatBRL } from '@/types/financeiro';
-import { cn } from '@/lib/utils';
+import { AbasSegmentadas } from '@/components/ui/abas-segmentadas';
 
 type Por = 'fornecedor' | 'setor' | 'categoria';
 const ROTULO: Record<Por, string> = { fornecedor: 'Fornecedor', setor: 'Setor', categoria: 'Categoria' };
@@ -43,14 +43,8 @@ export default function GastoPorFornecedor() {
       periodo={periodo} linhas={agrupadas} colunas={colunas} chave={(l) => l.chave} carregando={carregando} erro={erro}
       vazio="Nenhuma conta a pagar no período."
       controles={(
-        <div className="inline-flex rounded-md border border-border p-0.5" role="group" aria-label="Agrupar por">
-          {(Object.keys(ROTULO) as Por[]).map((p) => (
-            <button key={p} type="button" onClick={() => setPor(p)} aria-pressed={por === p}
-              className={cn('px-3 min-h-9 rounded text-[13px]', por === p ? 'bg-primary text-primary-foreground' : 'text-muted-foreground')}>
-              Por {ROTULO[p].toLowerCase()}
-            </button>
-          ))}
-        </div>
+        <AbasSegmentadas rotulo="Agrupar por" valor={por} onValor={setPor}
+          opcoes={(Object.keys(ROTULO) as Por[]).map((p) => ({ valor: p, rotulo: `Por ${ROTULO[p].toLowerCase()}` }))} />
       )}
       resumo={[
         { rotulo: 'Gasto no período', valor: total, anterior: soma(antes.map((l) => l.valor)), formatar: formatBRL, melhorQuando: 'menos' },

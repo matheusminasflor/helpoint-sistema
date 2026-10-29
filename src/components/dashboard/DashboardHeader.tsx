@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { PeriodoPersonalizado } from '@/components/ui/PeriodoPersonalizado';
+import { AbasSegmentadas } from '@/components/ui/abas-segmentadas';
 import { PERIODS, PERSONALIZADO, type IntervaloDeDias, type Period } from '@/lib/period';
 
 interface DashboardHeaderProps<P extends string> {
@@ -52,23 +53,10 @@ export function DashboardHeader<P extends string = Period>({
         <>
           {actions}
           {period !== undefined && onPeriodChange && (
-            // As abas da DashStack (caixa contornada, a escolhida azul); no celular rolam de lado em vez de quebrar.
-            <div className="inline-flex h-9 min-w-0 max-w-full overflow-x-auto rounded-md border border-input bg-card [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-              role="group" aria-label="Período">
-              {opts.map(o => (
-                <button
-                  key={o.value}
-                  type="button"
-                  aria-pressed={period === o.value}
-                  onClick={() => onPeriodChange(o.value as P)}
-                  className={period === o.value
-                    ? 'px-3.5 text-[14px] font-bold whitespace-nowrap shrink-0 border-r border-input last:border-r-0 bg-primary text-primary-foreground'
-                    : 'px-3.5 text-[14px] font-semibold whitespace-nowrap shrink-0 border-r border-input last:border-r-0 text-foreground hover:bg-muted'}
-                >
-                  {SHORT_LABELS[o.value] ?? o.label}
-                </button>
-              ))}
-            </div>
+            // No celular as abas rolam de lado em vez de quebrar.
+            <AbasSegmentadas rotulo="Período" valor={period} onValor={onPeriodChange}
+              className="min-w-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              opcoes={opts.map((o) => ({ valor: o.value as P, rotulo: SHORT_LABELS[o.value] ?? o.label }))} />
           )}
           {period === PERSONALIZADO && intervalo && onIntervaloChange && (
             <PeriodoPersonalizado de={intervalo.de} ate={intervalo.ate} onChange={onIntervaloChange} />

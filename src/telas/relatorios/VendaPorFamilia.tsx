@@ -9,7 +9,7 @@ import { useRelatorioNosDoisPeriodos, type VendaPorFamilia as Linha } from '@/ho
 import { agrupar } from '@/lib/relatorios-novos';
 import { soma } from '@/lib/relatorio-contas';
 import { formatBRL } from '@/types/financeiro';
-import { cn } from '@/lib/utils';
+import { AbasSegmentadas } from '@/components/ui/abas-segmentadas';
 
 type Por = 'familia' | 'estado' | 'cidade';
 const ROTULO: Record<Por, string> = { familia: 'Família', estado: 'Estado', cidade: 'Cidade' };
@@ -43,22 +43,16 @@ export default function VendaPorFamilia() {
       mostrar: (l) => (total ? `${((l.liquido / total) * 100).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%` : '—'), direita: true },
     { chave: 'devolucao', rotulo: 'Devolução', valor: (l) => l.devolucao, mostrar: (l) => formatBRL(l.devolucao), direita: true },
   ];
-  const botoes = (opcoes: { valor: string; rotulo: string }[], atual: string, mudar: (v: string) => void, nome: string) => (
-    <div className="inline-flex rounded-md border border-border p-0.5" role="group" aria-label={nome}>
-      {opcoes.map((o) => (
-        <button key={o.valor} type="button" onClick={() => mudar(o.valor)} aria-pressed={atual === o.valor}
-          className={cn('px-3 min-h-9 rounded text-[13px]', atual === o.valor ? 'bg-primary text-primary-foreground' : 'text-muted-foreground')}>{o.rotulo}</button>
-      ))}
-    </div>
-  );
   return (
     <ModeloDeRelatorio titulo="Venda por família e por região" icone={MapPinned} arquivo={`venda-por-${por}`}
       descricao="Que linha cresce, que cidade compra, onde há espaço. Do faturado (Forteplus), venda menos devolução."
       periodo={periodo} linhas={agrupadas} colunas={colunas} chave={(l) => l.grupo} carregando={carregando} erro={erro}
       vazio="Nenhuma venda importada no período."
       controles={<>
-        {botoes((Object.keys(ROTULO) as Por[]).map((p) => ({ valor: p, rotulo: `Por ${ROTULO[p].toLowerCase()}` })), por, (v) => setPor(v as Por), 'Agrupar por')}
-        {botoes([{ valor: '', rotulo: 'INBRAS e MF' }, { valor: 'INBRAS', rotulo: 'INBRAS' }, { valor: 'MF', rotulo: 'MF' }], filial, setFilial, 'Filial')}
+        <AbasSegmentadas rotulo="Agrupar por" valor={por} onValor={setPor}
+          opcoes={(Object.keys(ROTULO) as Por[]).map((p) => ({ valor: p, rotulo: `Por ${ROTULO[p].toLowerCase()}` }))} />
+        <AbasSegmentadas rotulo="Filial" valor={filial} onValor={setFilial}
+          opcoes={[{ valor: '', rotulo: 'INBRAS e MF' }, { valor: 'INBRAS', rotulo: 'INBRAS' }, { valor: 'MF', rotulo: 'MF' }]} />
       </>}
       resumo={[
         { rotulo: 'Venda líquida', valor: total, anterior: liquidoDe(antes), formatar: formatBRL, melhorQuando: 'mais' },

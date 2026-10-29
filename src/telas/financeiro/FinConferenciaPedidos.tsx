@@ -20,6 +20,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AbasSegmentadas } from '@/components/ui/abas-segmentadas';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
@@ -84,15 +85,8 @@ export default function FinConferenciaPedidos() {
         {visao === 'indicadores' ? <IndicadoresDaConferencia /> : (<>
         <div className="flex flex-wrap items-center justify-between gap-3">
           {/* As abas da DashStack (caixa contornada, a ativa azul cheia), como na fila de chamados e no Inventário. */}
-          <div className="inline-flex h-9 rounded-md border border-input bg-card overflow-x-auto max-w-full" role="group" aria-label="Filtrar por situação">
-            {FILAS.map((f) => (
-              <button key={f.valor} type="button" aria-pressed={fila === f.valor} onClick={() => setFila(f.valor)}
-                className={`px-4 h-full text-[14px] whitespace-nowrap shrink-0 border-r border-input last:border-r-0 transition-colors ${
-                  fila === f.valor ? 'bg-primary text-primary-foreground font-bold' : 'font-semibold text-foreground hover:bg-muted'}`}>
-                {f.rotulo} ({contagem[f.valor] ?? 0})
-              </button>
-            ))}
-          </div>
+          <AbasSegmentadas<Fila> rotulo="Filtrar por situação" valor={fila} onValor={setFila}
+            opcoes={FILAS.map((f) => ({ valor: f.valor, rotulo: `${f.rotulo} (${contagem[f.valor] ?? 0})` }))} />
           <Input className="max-w-xs" placeholder="Protocolo, cliente ou vendedora" value={busca}
             onChange={(e) => setBusca(e.target.value)} aria-label="Buscar checklist" />
         </div>

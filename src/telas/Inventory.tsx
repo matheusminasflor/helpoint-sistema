@@ -26,6 +26,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import type { AssetWithOwner } from '@/types/inventory';
+import { AbasSegmentadas } from '@/components/ui/abas-segmentadas';
 
 type ViewMode = 'list' | 'detail' | 'form';
 
@@ -166,25 +167,8 @@ export default function Inventory() {
 
             {/* Filtros de status */}
             {/* As abas da DashStack (caixa contornada, a ativa azul cheia), como na fila de chamados. */}
-            <div className="inline-flex h-9 rounded-md border border-input bg-card overflow-x-auto max-w-full self-start" role="group" aria-label="Filtrar por situação">
-              {STATUS_FILTERS.map(s => {
-                const count = statusCounts[s.value] || 0;
-                const active = statusFilter === s.value;
-                return (
-                  <button
-                    key={s.value}
-                    type="button"
-                    aria-pressed={active}
-                    onClick={() => setStatusFilter(s.value)}
-                    className={`px-4 h-full text-[14px] whitespace-nowrap shrink-0 border-r border-input last:border-r-0 transition-colors ${
-                      active ? 'bg-primary text-primary-foreground font-bold' : 'font-semibold text-foreground hover:bg-muted'
-                    }`}
-                  >
-                    {s.label} ({count})
-                  </button>
-                );
-              })}
-            </div>
+            <AbasSegmentadas rotulo="Filtrar por situação" valor={statusFilter} onValor={setStatusFilter}
+              opcoes={STATUS_FILTERS.map((s) => ({ valor: s.value, rotulo: `${s.label} (${statusCounts[s.value] || 0})` }))} />
 
             <div className="panel overflow-hidden">
               <AssetTable
