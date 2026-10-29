@@ -57,7 +57,9 @@ export default function ComercialLancamentos() {
   // o lançamento está Concluído — a mesma regra que a tabela abaixo mostra ("Não soma"). Até 2026-10-25 o cartão somava
   // também a venda em andamento.
   const vendido = lancamentos
-    .filter((l) => (l.valor_venda ?? 0) > 0 && l.cliente_codigo && l.status === 'concluido')
+    // Pedido cancelado pelo Financeiro não soma (dono, 2026-10-29: "não sobe para os indicadores dela").
+    .filter((l) => (l.valor_venda ?? 0) > 0 && l.cliente_codigo && l.status === 'concluido'
+      && checklistPorLancamento.get(l.id)?.situacao !== 'Cancelado')
     .reduce((s, l) => s + (l.valor_venda ?? 0), 0);
 
   const abrirNovo = () => { setEditando(null); setAberto(true); };
@@ -136,7 +138,7 @@ export default function ComercialLancamentos() {
               <tbody>
                 {lancamentos.map((l) => {
                   const vencido = !!l.prazo && l.prazo < hoje && l.status !== 'concluido';
-                  const somou = l.status === 'concluido' && (l.valor_venda ?? 0) > 0;
+                  const somou = l.status === 'concluido' && (l.valor_venda ?? 0) > 0 && checklistPorLancamento.get(l.id)?.situacao !== 'Cancelado';
                   const ck = checklistPorLancamento.get(l.id);
                   return (
                     <tr key={l.id} className="border-t border-border align-top">
@@ -146,8 +148,8 @@ export default function ComercialLancamentos() {
                             <span className="font-medium">{l.cliente.razao_social}</span>
                             {l.fora_da_carteira && <Badge className="ml-1.5 text-[12px] badge-warning">fora da carteira</Badge>}
                             {ck && (
-                              <Badge className={`ml-1.5 text-[12px] ${ck.situacao === 'Recusado' ? 'badge-danger' : 'badge-info'}`}
-                                title={ck.situacao === 'Recusado' ? `Devolvido: ${(ck.retorno_motivos ?? []).join(', ')}` : undefined}>
+                              <Badge className={`ml-1.5 text-[12px] ${ck.situacao === 'Recusado' || ck.situacao === 'Cancelado' ? 'badge-danger' : 'badge-info'}`}
+                                title={ck.situacao === 'Recusado' ? `Devolvido: ${(ck.retorno_motivos ?? []).join(', ')}` : ck.situacao === 'Cancelado' ? `Cancelado: ${ck.cancelamento_motivo ?? ''}` : undefined}>
                                 {ck.protocolo} · {ck.situacao}{ck.pagamento_status ? ` · ${ck.pagamento_status}` : ''}
                               </Badge>
                             )}

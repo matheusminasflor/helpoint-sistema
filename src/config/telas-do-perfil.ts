@@ -98,6 +98,8 @@ export const TELAS_DO_PERFIL: TelaDoPerfil[] = [
   // Cada tela com a sua caixinha (dono, 2026-10-14: "eu posso querer liberar 1 relatório para X usuário ou
   // perfil"). `/comercial/insights` só redireciona para a rota da análise, que tem a regra dela.
   { prefixo: '/comercial/lancamentos', setor: 'comercial', secoes: ['lancamentos'] },
+  // Pedidos enviados (2026-10-29): os checklists dos lançamentos — a mesma caixinha.
+  { prefixo: '/comercial/pedidos', setor: 'comercial', secoes: ['lancamentos'] },
   { prefixo: '/comercial/carteiras', setor: 'comercial', secoes: ['carteiras'] },
   { prefixo: '/comercial/indicadores', setor: 'comercial', secoes: ['reports'] },
   { prefixo: '/comercial/clientes-parados', setor: 'comercial', secoes: ['clientes'] },

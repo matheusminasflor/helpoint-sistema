@@ -85,7 +85,7 @@ select tests.clear_authentication();
 select is(
   (select j - 'faturado' - 'por_cliente' - 'por_vendedora' from r),
   '{"registrado": {"qtd": 2, "valor": 400}, "conciliado": {"qtd": 1, "valor": 100},
-    "pendente": {"qtd": 1, "valor": 300}, "divergente": {"qtd": 1, "valor": 100}, "reajustado": {"qtd": 0, "valor": 0},
+    "pendente": {"qtd": 1, "valor": 300}, "divergente": {"qtd": 1, "valor": 100}, "reajustado": {"qtd": 0, "valor": 0}, "cancelado": {"qtd": 0, "valor": 0},
     "recebido": {"qtd": 1, "valor": 100}, "percentual_conciliacao": 25.0,
     "motivos": [{"motivo": "Transportadora", "vezes": 1}]}'::jsonb,
   'registrado, conciliado, pendente, divergente, recebido, % e motivos — so pedidos tipo Venda somam');

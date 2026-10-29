@@ -415,7 +415,7 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
                 </p>
               )}
               {gravado && (
-                <div className={`rounded-md px-2 py-1.5 text-[13px] ${situacao === 'Recusado' ? 'badge-danger' : 'badge-info'}`}>
+                <div className={`rounded-md px-2 py-1.5 text-[13px] ${situacao === 'Recusado' || situacao === 'Cancelado' ? 'badge-danger' : 'badge-info'}`}>
                   <p>
                     <strong>{gravado.resumo.protocolo}</strong> · {situacao}
                     {gravado.resumo.pagamento_status && <> · pagamento: {gravado.resumo.pagamento_status}</>}
@@ -429,6 +429,12 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
                     </p>
                   )}
                   {situacao === 'Em análise' && <p className="pt-1">Enviado ao Financeiro: só pode ser alterado se for devolvido.</p>}
+                  {situacao === 'Cancelado' && (
+                    <p className="pt-1">
+                      O Financeiro cancelou este pedido{gravado.resumo.cancelado_por ? ` (${gravado.resumo.cancelado_por})` : ''}: <strong>{gravado.resumo.cancelamento_motivo}</strong>.
+                      É definitivo, e o lançamento sai dos indicadores. Pedido novo é um lançamento novo.
+                    </p>
+                  )}
                   {(situacao === 'Aprovado' || situacao === 'Finalizado') && <p className="pt-1">Checklist aprovado não se altera — só a nota de cada pedido, abaixo. Para corrigir, peça reajuste ao Financeiro.</p>}
                 </div>
               )}

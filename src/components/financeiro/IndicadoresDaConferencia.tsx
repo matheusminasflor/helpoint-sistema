@@ -117,7 +117,7 @@ export function IndicadoresDaConferencia() {
       ) : (
         <>
           <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
-            <Numero titulo="Vendas registradas (Comercial)" dado={data.registrado} ajuda="Todo checklist enviado no período." />
+            <Numero titulo="Vendas registradas (Comercial)" dado={data.registrado} ajuda="Todo checklist enviado no período, menos os cancelados." />
             <Numero titulo="Vendas conciliadas" dado={data.conciliado} ajuda="O Financeiro conferiu e aprovou." />
             <Numero titulo="Recebimentos confirmados" dado={data.recebido} ajuda="O Financeiro registrou como Pago." />
             <Card className="p-3">
@@ -134,6 +134,9 @@ export function IndicadoresDaConferencia() {
             </Card>
             <CartaoDaVendedora v={maisFalhas} ativa={!!maisFalhas && vendedora === maisFalhas.vendedor_id}
               aoClicar={!maisFalhas ? undefined : () => abrir(maisFalhas.vendedor_id)} />
+            {data.cancelado && data.cancelado.qtd > 0 && (
+              <Numero titulo="Cancelados" dado={data.cancelado} ajuda="Cancelados pelo Financeiro no período: ficam fora de todas as somas acima." />
+            )}
           </div>
 
           {(

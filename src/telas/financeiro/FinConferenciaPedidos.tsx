@@ -31,6 +31,7 @@ import {
 import { IndicadoresDaConferencia } from '@/components/financeiro/IndicadoresDaConferencia';
 import { ChecklistPreenchido, ResumoDaConferencia } from '@/components/financeiro/ResumoDaConferencia';
 import { HistoricoDeReajustes } from '@/components/financeiro/HistoricoDeReajustes';
+import { AvisoDeCancelado, CancelarChecklist } from '@/components/financeiro/CancelarChecklist';
 import { NotasDosPedidos } from '@/components/financeiro/NotasDosPedidos';
 import { imprimirChecklist } from '@/lib/checklist-pdf';
 import { todayISO } from '@/lib/dates';
@@ -40,7 +41,7 @@ import { formatBRL, formatDateBR } from '@/types/financeiro';
 const rotuloDoPagamento = (s: StatusDoPagamento) =>
   s === 'Recusado' ? 'Não pago' : s === 'Em negociação' ? 'Em negociação (aguardando o cliente)' : 'Pago';
 
-type Fila = 'analise' | 'reajustes' | 'recusados' | 'negociacao' | 'pagos' | 'finalizados';
+type Fila = 'analise' | 'reajustes' | 'recusados' | 'negociacao' | 'pagos' | 'finalizados' | 'cancelados';
 
 const FILAS: { valor: Fila; rotulo: string; cabe: (c: ChecklistResumo) => boolean }[] = [
   { valor: 'analise', rotulo: 'Em análise', cabe: (c) => c.situacao === 'Em análise' },
@@ -50,6 +51,8 @@ const FILAS: { valor: Fila; rotulo: string; cabe: (c: ChecklistResumo) => boolea
   { valor: 'negociacao', rotulo: 'Em negociação', cabe: (c) => c.situacao === 'Aprovado' && c.pagamento_status !== 'Pago' },
   { valor: 'pagos', rotulo: 'Pagos, falta finalizar', cabe: (c) => c.situacao === 'Aprovado' && c.pagamento_status === 'Pago' },
   { valor: 'finalizados', rotulo: 'Finalizados', cabe: (c) => c.situacao === 'Finalizado' },
+  // Cancelado (dono, 2026-10-29): definitivo; fica à parte, no fim.
+  { valor: 'cancelados', rotulo: 'Cancelados', cabe: (c) => c.situacao === 'Cancelado' },
 ];
 
 export default function FinConferenciaPedidos() {
@@ -162,6 +165,7 @@ function ConferenciaDialog({ checklist, onClose }: { checklist: ChecklistResumo 
   const c = data?.resumo ?? checklist;
   const podeDecidir = canComoOBanco('conferencia', 'decidir');
   const podePagar = canComoOBanco('conferencia', 'pagamento');
+  const podeCancelar = canComoOBanco('conferencia', 'cancelar');
   const rotuloDoItem = new Map(itens.map((i) => [i.id, i.rotulo]));
 
   const fechar = () => { setRecusando(false); setEscolhidos([]); setObs(''); onClose(); };
@@ -182,6 +186,7 @@ function ConferenciaDialog({ checklist, onClose }: { checklist: ChecklistResumo 
         </DialogHeader>
 
         <div className="space-y-4 text-[14px]">
+          <AvisoDeCancelado c={c} />
           {c.reajuste_pendente && (
             // O Comercial pediu para reabrir (dono, 2026-10-29): aceitar é a devolução; recusar mantém, com o porquê.
             <div className="rounded-lg border border-primary/40 bg-primary/5 p-3 space-y-2">
@@ -310,6 +315,8 @@ function ConferenciaDialog({ checklist, onClose }: { checklist: ChecklistResumo 
         </div>
 
         <DialogFooter className="flex-wrap gap-2">
+          {/* Longe das ações do dia a dia, à esquerda (Fitts): o que não volta não fica ao lado do Aprovar. */}
+          {c.situacao !== 'Cancelado' && podeCancelar && !recusando && <CancelarChecklist checklist={c} />}
           <Button variant="outline" onClick={() => data && imprimirChecklist(c, data.pedidos, rotuloDoItem)} disabled={!data}>
             <Printer className="w-4 h-4 mr-1.5" aria-hidden="true" /> PDF do checklist
           </Button>

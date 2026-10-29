@@ -191,6 +191,7 @@ const comercialMenuItems: MenuItem[] = [
   // A planilha de Gestão Comercial dentro do sistema (LEVA O, 2026-09-28): a aba de cada
   // vendedora vira Lançamentos, e o Painel do Gestor vira Indicadores.
   { to: '/comercial/lancamentos', icon: ClipboardList, label: 'Lançamentos', title: 'Registrar contatos, vendas e ações do dia', secao: MEU_DIA },
+  { to: '/comercial/pedidos', icon: PackageCheck, label: 'Pedidos enviados', title: 'Os checklists enviados ao Financeiro e em que pé cada um está', secao: MEU_DIA },
   { to: '/comercial/carteiras', icon: Briefcase, label: 'Carteira', title: 'Cada cliente da carteira, e a carteira contra a meta da Diretoria', secao: MEU_DIA },
   { to: '/comercial/indicadores', icon: Gauge, label: 'Indicadores', title: 'Meta e realizado de cada indicador (os seus, ou da equipe para o gestor)', secao: MEU_DIA },
   { to: '/comercial/chamados', icon: Ticket, label: 'Fila de chamados', title: 'Fila de chamados do Comercial', secao: MEU_DIA },

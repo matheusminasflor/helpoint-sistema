@@ -14,7 +14,7 @@ import type {
 } from '@/lib/checklist-de-pedidos';
 import type { CategoriaDeColorimetria } from '@/lib/espelho-do-pedido';
 
-export type SituacaoDoChecklist = 'Em análise' | 'Aprovado' | 'Recusado' | 'Finalizado';
+export type SituacaoDoChecklist = 'Em análise' | 'Aprovado' | 'Recusado' | 'Finalizado' | 'Cancelado';
 export type StatusDoPagamento = 'Em negociação' | 'Pago' | 'Recusado';
 
 export interface Recusa {
@@ -72,6 +72,10 @@ export interface ChecklistResumo {
   /** O pedido de reajuste esperando o Financeiro (no máximo um por checklist). */
   reajuste_pendente: { id: string; motivo: string; em: string; por: string | null } | null;
   historico_reajustes: Reajuste[];
+  /** Cancelado pelo Financeiro (migration 20270212100000): definitivo, com o motivo. */
+  cancelado_em: string | null;
+  cancelado_por: string | null;
+  cancelamento_motivo: string | null;
 }
 
 export interface Reajuste {
@@ -290,6 +294,8 @@ export interface IndicadoresDaConferencia {
   conciliado: QtdEValor;
   pendente: QtdEValor;
   divergente: QtdEValor;
+  /** Cancelados no período: fora das somas acima, contados à parte (dono, 2026-10-29). */
+  cancelado?: QtdEValor;
   recebido: QtdEValor;
   percentual_conciliacao: number | null;
   faturado: number;
@@ -391,6 +397,25 @@ export function useRegistrarPagamento() {
       if (r.finalizou) toast.success('Pago e finalizado.');
       else if (input.status === 'Pago') toast.warning('Pagamento registrado, mas não finalizou.', { description: r.motivo ?? undefined });
       else toast.success('Pagamento registrado.');
+    },
+    onError: (e: unknown) => toast.error(mensagemDeErro(e)),
+  });
+}
+
+/**
+ * Cancelar (dono, 2026-10-29): definitivo — `ped_cancelamentos` é só-inserção e o banco trava tudo depois. Só quem tem
+ * "Cancelar checklist" passa (policy); o motivo tem ao menos 10 letras (CHECK); a vendedora é avisada (trigger).
+ */
+export function useCancelarChecklist() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { checklistId: string; motivo: string }) =>
+      unwrap(await supabase.from('ped_cancelamentos' as never).insert({
+        checklist_id: input.checklistId, motivo: input.motivo.trim(),
+      } as never).select('checklist_id').single()),
+    onSuccess: () => {
+      invalidar(qc);
+      toast.success('Checklist cancelado — o Comercial foi avisado.');
     },
     onError: (e: unknown) => toast.error(mensagemDeErro(e)),
   });

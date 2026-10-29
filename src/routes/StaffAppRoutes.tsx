@@ -125,6 +125,7 @@ const ComercialCashback = lazy(() => import('@/telas/comercial/ComercialCashback
 const ComercialDiretrizes = lazy(() => import('@/telas/comercial/ComercialDiretrizes'));
 const ComercialChamadosRelatorios = lazy(() => import('@/telas/comercial/ComercialChamadosRelatorios'));
 const ComercialLancamentos = lazy(() => import('@/telas/comercial/ComercialLancamentos'));
+const ComercialPedidosEnviados = lazy(() => import('@/telas/comercial/ComercialPedidosEnviados'));
 const ComercialIndicadores = lazy(() => import('@/telas/comercial/ComercialIndicadores'));
 const ComercialCarteiras = lazy(() => import('@/telas/comercial/ComercialCarteiras'));
 const ComercialFunil = lazy(() => import('@/telas/crm/ComercialFunil'));
@@ -354,6 +355,7 @@ export function StaffAppRoutes() {
           esperaria para "indicadores do comercial" passou a ser os indicadores do comercial. */}
       <Route path="comercial/indicadores" element={S(<RequireComercial><ComercialIndicadores /></RequireComercial>)} />
       <Route path="comercial/lancamentos" element={S(<RequireComercial><ComercialLancamentos /></RequireComercial>)} />
+      <Route path="comercial/pedidos" element={S(<RequireComercial><ComercialPedidosEnviados /></RequireComercial>)} />
       <Route path="comercial/carteiras" element={S(<RequireComercial><ComercialCarteiras /></RequireComercial>)} />
       <Route path="comercial/chamados" element={S(<TechnicianView module="comercial" />)} />
       <Route path="comercial/chamados/:id" element={S(<TicketDetail />)} />

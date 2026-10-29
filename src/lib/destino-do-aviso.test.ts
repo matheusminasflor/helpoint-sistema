@@ -13,7 +13,8 @@ describe('destinoDoAviso — para onde cada aviso leva (era o sino; desde 2026-1
     [{ reference_type: 'fin_entry', reference_id: 'abc' }, '/financeiro/contas-a-pagar'],
     // Reajuste do checklist (2026-10-29): o Financeiro abre a aba dos pedidos; a vendedora, os lançamentos.
     [{ reference_type: 'ped_reajuste', reference_id: 'abc' }, '/financeiro/conferencia-de-pedidos?fila=reajustes'],
-    [{ reference_type: 'ped_reajuste_resposta', reference_id: 'abc' }, '/comercial/lancamentos'],
+    [{ reference_type: 'ped_reajuste_resposta', reference_id: 'abc' }, '/comercial/pedidos'],
+    [{ reference_type: 'ped_cancelado', reference_id: 'abc' }, '/comercial/pedidos?aba=cancelados'],
     [{ reference_type: 'inventado', reference_id: 'abc' }, null],
   ])('%o → %s', (aviso, destino) => {
     expect(destinoDoAviso(aviso, true)).toBe(destino);

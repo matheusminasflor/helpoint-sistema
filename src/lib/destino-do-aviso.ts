@@ -49,7 +49,9 @@ const TELA_DO_REGISTRO: Record<string, (id: string) => string> = {
   distribuidor: () => '/ti/distribuidores',
   // Reajuste do checklist (20270212090000): o Financeiro vai à aba dos pedidos; a vendedora, aos lançamentos dela.
   ped_reajuste: () => '/financeiro/conferencia-de-pedidos?fila=reajustes',
-  ped_reajuste_resposta: () => '/comercial/lancamentos',
+  ped_reajuste_resposta: () => '/comercial/pedidos',
+  // Cancelamento (20270212100000): a vendedora vê o motivo nos Pedidos enviados.
+  ped_cancelado: () => '/comercial/pedidos?aba=cancelados',
 };
 
 export interface AvisoComReferencia {

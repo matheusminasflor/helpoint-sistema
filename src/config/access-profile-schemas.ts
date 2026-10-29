@@ -258,6 +258,8 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
         { key: 'view', label: 'Ver todos os checklists' },
         { key: 'decidir', label: 'Aprovar e recusar', sensitive: true },
         { key: 'pagamento', label: 'Registrar pagamento e finalizar', sensitive: true },
+        // Sem volta (dono, 2026-10-29): ligada só no Gestor; o banco confere em `ped_pode_cancelar`.
+        { key: 'cancelar', label: 'Cancelar checklist (sem volta)', sensitive: true },
       ]},
       // Caixinha do dia a dia (dono, 2026-10-14): as portas de `pode_na_caixinha` no banco. Não há "Editar":
       // lançamento salvo não muda; errou, apaga e lança de novo.
