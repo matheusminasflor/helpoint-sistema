@@ -79,7 +79,7 @@ function MealTab({ month }: { month: string }) {
           <CardTitle className="text-base">Vale-Alimentação</CardTitle>
           <p className="text-xs text-muted-foreground mt-1">Total do mês: <strong>{fmtBRL(total)}</strong></p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button size="sm" variant="outline" onClick={() => replicatePrevious.mutate()}><Copy className="w-3.5 h-3.5 mr-1" />Replicar mês anterior</Button>
           <Button size="sm" onClick={() => { setEditing(null); setOpen(true); }}><Plus className="w-3.5 h-3.5 mr-1" />Lançar</Button>
         </div>
@@ -172,7 +172,7 @@ function TransportTab({ month }: { month: string }) {
           <CardTitle className="text-base">Vale-Transporte</CardTitle>
           <p className="text-xs text-muted-foreground mt-1">Total a depositar no mês: <strong>{fmtBRL(total)}</strong></p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button size="sm" variant="outline" onClick={() => replicatePrevious.mutate()}><Copy className="w-3.5 h-3.5 mr-1" />Replicar mês anterior</Button>
           <Button size="sm" onClick={() => { setEditing(null); setOpen(true); }}><Plus className="w-3.5 h-3.5 mr-1" />Lançar</Button>
         </div>
@@ -283,7 +283,7 @@ function FuelTab({ month }: { month: string }) {
           <CardTitle className="text-base">Combustível</CardTitle>
           <p className="text-xs text-muted-foreground mt-1">Total a pagar no mês: <strong>{fmtBRL(total)}</strong></p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button size="sm" variant="outline" onClick={() => replicatePrevious.mutate()}><Copy className="w-3.5 h-3.5 mr-1" />Replicar mês anterior</Button>
           <Button size="sm" onClick={() => { setEditing(null); setOpen(true); }}><Plus className="w-3.5 h-3.5 mr-1" />Lançar</Button>
         </div>
@@ -394,7 +394,7 @@ function DeductionsTab({ month }: { month: string }) {
             Mobilidade: <strong>{fmtBRL(totals.mobility)}</strong> · Plano de saúde: <strong>{fmtBRL(totals.health)}</strong> · Empréstimo: <strong>{fmtBRL(totals.loan)}</strong>
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button size="sm" variant="outline" onClick={() => replicatePrevious.mutate()}><Copy className="w-3.5 h-3.5 mr-1" />Replicar mês anterior</Button>
           <Button size="sm" onClick={() => { setEditing(null); setOpen(true); }}><Plus className="w-3.5 h-3.5 mr-1" />Lançar</Button>
         </div>

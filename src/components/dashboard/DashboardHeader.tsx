@@ -53,7 +53,7 @@ export function DashboardHeader<P extends string = Period>({
           {actions}
           {period !== undefined && onPeriodChange && (
             // As abas da DashStack (caixa contornada, a escolhida azul); no celular rolam de lado em vez de quebrar.
-            <div className="inline-flex h-9 max-w-full overflow-x-auto rounded-md border border-input bg-card [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            <div className="inline-flex h-9 min-w-0 max-w-full overflow-x-auto rounded-md border border-input bg-card [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
               role="group" aria-label="Período">
               {opts.map(o => (
                 <button

@@ -830,6 +830,10 @@
 /* O mesmo para o texto que corta com reticências (`truncate`) dentro de uma linha flexível: sem largura mínima zero ele
    não corta, empurra a linha (os cinco maiores compradores do Comercial passavam da tela no celular). */
 .area-do-app .truncate { min-width: 0; }
+/* A página centralizada (`max-w-7xl mx-auto`) ocupa a largura toda até o limite dela. Dentro de uma coluna flexível, as
+   margens automáticas a deixavam do tamanho do conteúdo: as abas de período (que rolam) empurravam Comercial ›
+   Atendimento para 783 px num celular de 390. */
+.area-do-app [class*="max-w-"].mx-auto { width: 100%; }
 
 /* A caixinha que aparece ao passar o mouse no gráfico, em todos os gráficos: o cartão flutuante da DashStack. */
 .recharts-default-tooltip {

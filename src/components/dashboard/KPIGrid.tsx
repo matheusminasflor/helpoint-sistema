@@ -17,8 +17,8 @@ const lgMap: Record<number, string> = {
 
 export function KPIGrid({ children, className, lgCols = 6 }: KPIGridProps) {
   return (
-    // A faixa dividida da proposta (etapa 2, 2ª parte): os números numa faixa só, separados por linha fina
-    // (`.faixa-de-numeros` em index.css), em vez de cartões soltos.
+    // Os números da DashStack (2026-10-28): cartões soltos lado a lado, cada um com a sombra dele
+    // (`.faixa-de-numeros` em index.css).
     <div className={cn('faixa-de-numeros grid grid-cols-2 md:grid-cols-3 mb-6', lgMap[lgCols], className)}>
       {children}
     </div>
