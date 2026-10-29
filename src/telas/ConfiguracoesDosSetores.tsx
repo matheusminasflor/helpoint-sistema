@@ -23,13 +23,13 @@ export default function ConfiguracoesDosSetores() {
         title="Configurações dos setores"
         description="Escolha o setor. Fica ativo o que você configura; quem define isso é o perfil de acesso de cada pessoa."
       />
-      <div className="p-4 sm:p-6 w-full max-w-5xl mx-auto space-y-4">
+      <div className="px-4 lg:px-8 pb-6 w-full space-y-4">
       {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {Array.from({ length: 9 }).map((_, i) => <Skeleton key={i} className="h-36 rounded-xl" />)}
         </div>
       ) : (
-        <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {setores.map((s) => {
             const Icone = s.icone;
             const corpo = (

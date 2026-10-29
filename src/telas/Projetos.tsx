@@ -44,7 +44,7 @@ export default function Projetos() {
         )}
       />
 
-      <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-6">
+      <div className="flex-1 overflow-y-auto px-4 lg:px-8 pb-6 space-y-8">
         {isLoading ? (
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             <Skeleton className="h-40 w-full" />
@@ -74,7 +74,7 @@ function Secao({ titulo, projetos, onAbrir }: { titulo: string; projetos: Projet
   if (projetos.length === 0) return null;
   return (
     <section className="space-y-3">
-      <h2 className="text-[12px] font-semibold uppercase tracking-wider text-muted-foreground">{titulo}</h2>
+      <h2 className="text-[18px] font-bold">{titulo}</h2>
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {projetos.map((p) => <ProjetoCard key={p.id} projeto={p} onAbrir={() => onAbrir(p)} />)}
       </div>

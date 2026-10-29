@@ -37,7 +37,7 @@ export default function MinhasAtividades() {
     <div className="flex flex-col h-full">
       <PageHeader icon={ListChecks} title="Minhas tarefas de projeto" description="O que está com você em todos os projetos, do prazo mais curto ao mais longo."
         onBack={() => navigate(tenantPath('/projetos'))} />
-      <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-6">
+      <div className="flex-1 overflow-y-auto px-4 lg:px-8 pb-6 space-y-8">
         {isLoading ? <Skeleton className="h-40 w-full" /> : minhas.length + semDono.length === 0 ? (
           <EmptyState icon={ListChecks} title="Nada pendente" description="Nenhuma atividade de projeto em aberto com você." />
         ) : (
@@ -54,23 +54,24 @@ export default function MinhasAtividades() {
 function Lista({ titulo, linhas, hoje, onAbrir }: { titulo: string; linhas: MinhaAtividade[]; hoje: string; onAbrir: (a: MinhaAtividade) => void }) {
   if (linhas.length === 0) return null;
   return (
-    <section className="space-y-2">
-      <h2 className="text-[12px] font-semibold uppercase tracking-wider text-muted-foreground">{titulo} · {linhas.length}</h2>
+    <section className="space-y-3">
+      <h2 className="text-[18px] font-bold">{titulo} <span className="text-muted-foreground font-semibold">· {linhas.length}</span></h2>
       {/* A linha do desenho aprovado (tela 7): a atividade, o projeto e o fator externo embaixo; à direita o
-          prazo ("venceu 05/10" em vermelho, "24/11 → 28/11", "sem data") e o farol. */}
-      <div className="rounded-xl border border-border bg-card divide-y divide-border">
+          prazo ("venceu 05/10" em vermelho, "24/11 → 28/11", "sem data") e o farol. Cada tarefa num cartão
+          próprio, como o To-Do da DashStack (2026-10-29). */}
+      <div className="space-y-3.5">
         {linhas.map((a) => {
           const farol = farolDaAtividade(a, hoje);
           return (
             <button key={a.id} type="button" onClick={() => onAbrir(a)}
-              className="grid w-full gap-2 px-4 py-3 text-left text-[14px] hover:bg-primary/5 md:grid-cols-[minmax(0,1fr)_auto_auto] md:items-center md:gap-4">
+              className="panel grid w-full gap-2 px-6 py-4 text-left text-[14px] hover:ring-2 hover:ring-primary/30 transition-shadow md:grid-cols-[minmax(0,1fr)_auto_auto] md:items-center md:gap-4">
               <span className="min-w-0">
                 <b className="block truncate">{a.title}</b>
                 <span className="block truncate text-[13px] text-muted-foreground">
                   {a.projeto} · {rotuloDoSetor(a.setor)}{a.fator_externo && a.status !== 'completed' ? ` · esperando: ${a.fator_externo}` : ''}
                 </span>
               </span>
-              <span className={`font-mono text-[13px] tabular-nums ${farol === 'atrasado' ? 'text-destructive' : ''}`}>
+              <span className={`font-semibold text-[13px] tabular-nums ${farol === 'atrasado' ? 'text-destructive' : 'text-muted-foreground'}`}>
                 {farol === 'atrasado' && a.termino ? `venceu ${diaCurto(a.termino)}`
                   : a.inicio && a.termino ? `${diaCurto(a.inicio)} → ${diaCurto(a.termino)}`
                   : a.termino ? `até ${diaCurto(a.termino)}` : 'sem data'}

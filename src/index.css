@@ -834,6 +834,10 @@
    margens automáticas a deixavam do tamanho do conteúdo: as abas de período (que rolam) empurravam Comercial ›
    Atendimento para 783 px num celular de 390. */
 .area-do-app [class*="max-w-"].mx-auto { width: 100%; }
+/* DashStack: o conteúdo começa onde o título começa (2026-10-29). A coluna larga e centralizada (3xl a 7xl) deixava o
+   detalhe do chamado, Identidade visual e outras ~30 telas desalinhadas do título; a largura fica, encostada à
+   esquerda. As colunas estreitas (aviso vazio, texto curto) seguem centralizadas. */
+.area-do-app :is(.max-w-3xl, .max-w-4xl, .max-w-5xl, .max-w-6xl, .max-w-7xl).mx-auto { margin-left: 0; }
 
 /* A caixinha que aparece ao passar o mouse no gráfico, em todos os gráficos: o cartão flutuante da DashStack. */
 .recharts-default-tooltip {

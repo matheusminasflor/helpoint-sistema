@@ -186,20 +186,20 @@ export function CategoryManager({ module, allowForms = false, readOnly = false, 
     const isExpanded = expanded.has(category.id);
     return (
       <Collapsible key={category.id} open={isExpanded} onOpenChange={() => toggleExpanded(category.id)}>
-        <div className="border rounded-lg mb-2 overflow-hidden">
-          <div className="flex flex-wrap items-center gap-2 p-3 bg-muted/30 hover:bg-muted/50 transition-colors">
+        <div className="rounded-lg mb-2 overflow-hidden bg-muted">
+          <div className="flex flex-wrap items-center gap-2 px-3 py-2.5 hover:bg-primary/5 transition-colors">
             <CollapsibleTrigger asChild>
               <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" aria-label={isExpanded ? 'Recolher' : 'Expandir'}>
                 {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
               </Button>
             </CollapsibleTrigger>
 
-            <span className={`flex-1 min-w-[120px] font-medium ${!category.is_active ? 'text-muted-foreground line-through' : ''}`}>
+            <span className={`flex-1 min-w-[120px] text-[14px] font-semibold ${!category.is_active ? 'text-muted-foreground line-through' : ''}`}>
               {category.name}
             </span>
             {category.is_purchase && <Badge variant="secondary" className="text-xs">compra</Badge>}
             {comResponsaveis && nomesDe(category.id) && (
-              <Badge variant="outline" className="text-xs" title="Quem sempre atende esta categoria">→ {nomesDe(category.id)}</Badge>
+              <Badge className="text-xs" title="Quem sempre atende esta categoria">→ {nomesDe(category.id)}</Badge>
             )}
             <span className="text-xs text-muted-foreground">{category.children.length} sub</span>
 

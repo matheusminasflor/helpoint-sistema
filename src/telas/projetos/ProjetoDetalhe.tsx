@@ -85,8 +85,8 @@ export default function ProjetoDetalhe() {
         )}
       />
 
-      <div className="flex-1 overflow-y-auto p-4 lg:p-6">
-        <div className="grid gap-3 grid-cols-2 lg:grid-cols-4 mb-4">
+      <div className="flex-1 overflow-y-auto px-4 lg:px-8 pb-6">
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4 mb-5">
           <Kpi rotulo="Concluído" valor={`${percentualMedio(atividades)}%`} id="projetos.concluido" />
           <Kpi rotulo="Atrasadas" valor={String(atrasadas)} id="projetos.atrasadas" tom={atrasadas ? 'text-destructive' : ''} />
           <Kpi rotulo="Esperando algo de fora" valor={String(comFator)} id="projetos.fator_externo" tom={comFator ? 'text-status-warning' : ''} />
@@ -114,9 +114,9 @@ export default function ProjetoDetalhe() {
                 Nenhuma tarefa ainda. Cada setor do projeto cria as suas com "+ Nova tarefa".
               </p>
             ) : (
-              <div className="rounded-lg border border-border bg-card overflow-x-auto">
+              <div className="panel overflow-x-auto">
                 <div className="min-w-[980px]">
-                  <div className="grid grid-cols-[56px_minmax(220px,1fr)_120px_120px_92px_92px_120px_64px_180px] gap-2 px-3 py-2 bg-muted/50 text-[12px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  <div className="grid grid-cols-[56px_minmax(220px,1fr)_120px_120px_92px_92px_120px_64px_180px] gap-2 px-3 py-3 bg-muted text-[13px] font-bold text-foreground">
                     <span>Nº</span><span>Etapa / tarefa</span><span>Setor</span><span>Quem faz</span><span>Começa</span><span>Prazo</span><span>Situação</span><span>%</span>
                     <span className="relative h-4">
                       {janela ? meses.map((m) => (
@@ -220,9 +220,9 @@ export default function ProjetoDetalhe() {
 
 function Kpi({ rotulo, valor, id, tom = '' }: { rotulo: string; valor: string; id: Parameters<typeof ExplicacaoDoIndicador>[0]['id']; tom?: string }) {
   return (
-    <div className="rounded-lg bg-muted/50 p-3">
-      <p className="text-[12px] text-muted-foreground flex items-center gap-1">{rotulo} <ExplicacaoDoIndicador id={id} /></p>
-      <p className={`text-[20px] font-bold tabular-nums ${tom}`}>{valor}</p>
+    <div className="panel p-4">
+      <p className="text-[14px] font-semibold text-muted-foreground flex items-center gap-1">{rotulo} <ExplicacaoDoIndicador id={id} /></p>
+      <p className={`text-[28px] font-bold tabular-nums leading-tight mt-1 ${tom}`}>{valor}</p>
     </div>
   );
 }
@@ -382,9 +382,9 @@ function AcoesDaFase({ projectId, faseId, nome, fases }: { projectId: string; fa
 
 function NumeroDoSetor({ rotulo, valor, tom = '' }: { rotulo: string; valor: number; tom?: string }) {
   return (
-    <div className="rounded-lg bg-muted/50 p-3">
-      <p className="text-[12px] text-muted-foreground">{rotulo}</p>
-      <p className={`text-[22px] font-bold font-mono tabular-nums ${tom}`}>{valor}</p>
+    <div className="panel p-4">
+      <p className="text-[14px] font-semibold text-muted-foreground">{rotulo}</p>
+      <p className={`text-[28px] font-bold tabular-nums leading-tight mt-1 ${tom}`}>{valor}</p>
     </div>
   );
 }
@@ -416,7 +416,7 @@ function SetoresDoProjeto({ projectId, editaProjeto, estrutura }: {
         <NumeroDoSetor rotulo="Pessoas na equipe" valor={estrutura.equipe.length} />
       </div>
       <div className="rounded-lg border border-border bg-card divide-y divide-border">
-        <div className={`hidden md:grid gap-3 px-3 py-2 bg-muted/50 text-[12px] font-semibold uppercase tracking-wide text-muted-foreground ${colunas}`}>
+        <div className={`hidden md:grid gap-3 px-3 py-3 bg-muted text-[13px] font-bold text-foreground ${colunas}`}>
           <span /><span>Setor</span><span>Planejamento</span><span>Pessoas do setor no projeto</span><span>Tarefas</span>{editaProjeto && <span>Pessoa do setor</span>}
         </div>
         {estrutura.setores.map((s) => {
