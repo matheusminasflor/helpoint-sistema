@@ -205,7 +205,8 @@ export function ReplyComposer({
           </div>
         )}
 
-        <div className="flex items-end gap-3">
+        {/* No celular a caixa de texto não espreme: "Público/Interno" sobe para a linha de cima (dono, 2026-10-28). */}
+        <div className="flex flex-wrap items-end gap-3">
           {showInternalOption && (
             <Select value={isInternal ? 'internal' : 'public'} onValueChange={(v) => setIsInternal(v === 'internal')}>
               <SelectTrigger className="w-[140px] h-10">
@@ -222,7 +223,7 @@ export function ReplyComposer({
             </Select>
           )}
           
-          <div className="flex-1 relative">
+          <div className="flex-1 min-w-[200px] relative">
             <Textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
