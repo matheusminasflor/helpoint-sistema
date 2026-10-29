@@ -827,6 +827,9 @@
    lg:grid-cols-…` no celular), o texto mais longo empurrava a coluna para 450 px numa tela de 390 e o resto saía
    cortado à direita. Com largura mínima zero, o item cabe na tela e o texto quebra. */
 .area-do-app .grid > * { min-width: 0; }
+/* O mesmo para o texto que corta com reticências (`truncate`) dentro de uma linha flexível: sem largura mínima zero ele
+   não corta, empurra a linha (os cinco maiores compradores do Comercial passavam da tela no celular). */
+.area-do-app .truncate { min-width: 0; }
 
 /* A caixinha que aparece ao passar o mouse no gráfico, em todos os gráficos: o cartão flutuante da DashStack. */
 .recharts-default-tooltip {

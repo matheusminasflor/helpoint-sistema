@@ -46,14 +46,14 @@ export function FeriadosDaEmpresa({ podeEditar, aviso }: Props) {
       <div className="grid gap-x-6 gap-y-1 sm:grid-cols-2 text-xs">
         {nacionais.map((f) => (
           <div key={f.data + f.nome} className="flex justify-between gap-2">
-            <span className="text-muted-foreground font-mono">{dataBR(f.data)}</span>
-            <span className="truncate">{f.nome}</span>
+            <span className="text-muted-foreground font-mono shrink-0">{dataBR(f.data)}</span>
+            <span className="truncate min-w-0">{f.nome}</span>
           </div>
         ))}
         {daEmpresa.map((f) => (
           <div key={f.id} className="flex justify-between items-center gap-2">
-            <span className="text-muted-foreground font-mono">{dataBR(f.data)}</span>
-            <span className="truncate flex items-center gap-1">
+            <span className="text-muted-foreground font-mono shrink-0">{dataBR(f.data)}</span>
+            <span className="truncate min-w-0 flex items-center gap-1">
               {f.nome} <Badge variant="secondary" className="text-[12px]">da empresa</Badge>
               {podeEditar && (
                 <Button size="icon" variant="ghost" className="h-6 w-6" aria-label={`Remover ${f.nome}`}

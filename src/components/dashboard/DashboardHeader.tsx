@@ -1,5 +1,4 @@
 import { ReactNode } from 'react';
-import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { PeriodoPersonalizado } from '@/components/ui/PeriodoPersonalizado';
 import { PERIODS, PERSONALIZADO, type IntervaloDeDias, type Period } from '@/lib/period';
@@ -53,16 +52,21 @@ export function DashboardHeader<P extends string = Period>({
         <>
           {actions}
           {period !== undefined && onPeriodChange && (
-            <div className="flex gap-1 flex-wrap ml-2">
+            // As abas da DashStack (caixa contornada, a escolhida azul); no celular rolam de lado em vez de quebrar.
+            <div className="inline-flex h-9 max-w-full overflow-x-auto rounded-md border border-input bg-card [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              role="group" aria-label="Período">
               {opts.map(o => (
-                <Button
+                <button
                   key={o.value}
-                  size="sm"
-                  variant={period === o.value ? 'default' : 'outline'}
+                  type="button"
+                  aria-pressed={period === o.value}
                   onClick={() => onPeriodChange(o.value as P)}
+                  className={period === o.value
+                    ? 'px-3.5 text-[14px] font-bold whitespace-nowrap shrink-0 border-r border-input last:border-r-0 bg-primary text-primary-foreground'
+                    : 'px-3.5 text-[14px] font-semibold whitespace-nowrap shrink-0 border-r border-input last:border-r-0 text-foreground hover:bg-muted'}
                 >
                   {SHORT_LABELS[o.value] ?? o.label}
-                </Button>
+                </button>
               ))}
             </div>
           )}
