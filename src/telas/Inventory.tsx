@@ -165,7 +165,8 @@ export default function Inventory() {
             <InventoryKPIs />
 
             {/* Filtros de status */}
-            <div className="flex flex-wrap gap-2">
+            {/* As abas da DashStack (caixa contornada, a ativa azul cheia), como na fila de chamados. */}
+            <div className="inline-flex h-9 rounded-md border border-input bg-card overflow-x-auto max-w-full self-start" role="group" aria-label="Filtrar por situação">
               {STATUS_FILTERS.map(s => {
                 const count = statusCounts[s.value] || 0;
                 const active = statusFilter === s.value;
@@ -173,18 +174,19 @@ export default function Inventory() {
                   <button
                     key={s.value}
                     type="button"
+                    aria-pressed={active}
                     onClick={() => setStatusFilter(s.value)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                      active ? 'bg-primary text-primary-foreground border-primary' : 'bg-background text-muted-foreground border-border hover:border-primary/50'
+                    className={`px-4 h-full text-[14px] whitespace-nowrap shrink-0 border-r border-input last:border-r-0 transition-colors ${
+                      active ? 'bg-primary text-primary-foreground font-bold' : 'font-semibold text-foreground hover:bg-muted'
                     }`}
                   >
-                    {s.label} · {count}
+                    {s.label} ({count})
                   </button>
                 );
               })}
             </div>
 
-            <div className="bg-card border border-border rounded-lg overflow-hidden shadow-sm">
+            <div className="panel overflow-hidden">
               <AssetTable
                 assets={filteredAssets}
                 isLoading={isLoading}

@@ -245,11 +245,12 @@ export function WorkOSTableRow({
           
           {/* SLA — sinal sempre explícito, nunca só pela cor */}
           <div className={cn(
-            "flex items-center justify-center gap-1 font-mono text-[12px] text-muted-foreground",
+            "flex items-center justify-center gap-1 tabular-nums text-[12px] font-semibold text-muted-foreground",
             slaAlert && "text-monday-red font-bold"
           )}>
-            {slaAlert && <AlertTriangle className="w-3.5 h-3.5" aria-hidden="true" />}
-            <span className="truncate">
+            {slaAlert && <AlertTriangle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />}
+            {/* Duas linhas, não "Prazo pausado: aguarda…" cortado (2026-10-29). */}
+            <span className="line-clamp-2 text-center leading-tight" title={sla.hasSLA ? sla.label : undefined}>
               {sla.hasSLA ? sla.label : 'Sem SLA'}
             </span>
           </div>

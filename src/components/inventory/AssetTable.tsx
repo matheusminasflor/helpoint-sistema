@@ -22,7 +22,6 @@ import { ptBR } from 'date-fns/locale';
 import type { AssetWithOwner } from '@/types/inventory';
 import type { AssetCategory, AssetStatus } from '@/types/helpdesk';
 import { getAssetCategoryLabel, getAssetStatusLabel } from '@/types/helpdesk';
-import { ativoEmUso } from '@/lib/asset-status';
 
 interface AssetTableProps {
   assets: AssetWithOwner[];
@@ -102,45 +101,22 @@ export function AssetTable({ assets, isLoading, selectedAssetId, onSelect }: Ass
     return matchesSearch && matchesCategory && matchesStatus;
   });
 
-  const stats = {
-    total: assets.length,
-    // `ativoEmUso` e não `status === 'active'`: `in_use` é o mesmo estado com o
-    // outro nome, e é o que a tela de cadastro grava. Ver `@/lib/asset-status`.
-    active: assets.filter(a => ativoEmUso(a.status)).length,
-    maintenance: assets.filter(a => a.status === 'maintenance').length,
-    warrantyExpiring: assets.filter(a => isWarrantyExpiring(a.warranty_expiry)).length,
-  };
+  // Total, em uso e manutenção saíram daqui (2026-10-29): os cartões de número logo acima já mostram. Fica a garantia,
+  // que não aparece em outro lugar.
+  const garantiaVencendo = assets.filter(a => isWarrantyExpiring(a.warranty_expiry)).length;
 
   return (
     <div className="flex flex-col h-full">
-      {/* Stats Bar */}
-      <div className="px-5 py-3 bg-muted/30 border-b border-border flex items-center gap-6 text-sm">
-        <div className="flex items-center gap-2">
-          <span className="text-muted-foreground">Total:</span>
-          <span className="font-semibold">{stats.total}</span>
+      {garantiaVencendo > 0 && (
+        <div className="px-5 pt-4 flex items-center gap-2 text-[14px] font-semibold text-status-danger">
+          <AlertCircle className="w-4 h-4" aria-hidden="true" />
+          {garantiaVencendo === 1 ? '1 ativo com a garantia vencendo' : `${garantiaVencendo} ativos com a garantia vencendo`}
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-status-success" />
-          <span className="text-muted-foreground">Ativos:</span>
-          <span className="font-semibold text-status-success">{stats.active}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-status-warning" />
-          <span className="text-muted-foreground">Manutenção:</span>
-          <span className="font-semibold text-status-warning">{stats.maintenance}</span>
-        </div>
-        {stats.warrantyExpiring > 0 && (
-          <div className="flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 text-status-danger" />
-            <span className="text-muted-foreground">Garantia Expirando:</span>
-            <span className="font-semibold text-status-danger">{stats.warrantyExpiring}</span>
-          </div>
-        )}
-      </div>
+      )}
 
       {/* Search & Filters */}
-      <div className="p-4 border-b border-border flex gap-3">
-        <div className="relative flex-1">
+      <div className="p-4 flex flex-wrap gap-3">
+        <div className="relative flex-1 min-w-[220px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             value={search}
@@ -152,7 +128,7 @@ export function AssetTable({ assets, isLoading, selectedAssetId, onSelect }: Ass
         <select
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value as AssetCategory | 'all')}
-          className="px-3 py-2 bg-background border border-border text-sm rounded-md focus:ring-2 focus:ring-ring"
+          className="h-9 px-3 bg-background dark:bg-muted border border-input text-[14px] font-semibold rounded-sm focus:ring-2 focus:ring-ring"
         >
           <option value="all">Todas Categorias</option>
           <option value="hardware">Hardware</option>
@@ -165,7 +141,7 @@ export function AssetTable({ assets, isLoading, selectedAssetId, onSelect }: Ass
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as AssetStatus | 'all')}
-          className="px-3 py-2 bg-background border border-border text-sm rounded-md focus:ring-2 focus:ring-ring"
+          className="h-9 px-3 bg-background dark:bg-muted border border-input text-[14px] font-semibold rounded-sm focus:ring-2 focus:ring-ring"
         >
           <option value="all">Todos Status</option>
           <option value="active">Ativo</option>
@@ -177,7 +153,7 @@ export function AssetTable({ assets, isLoading, selectedAssetId, onSelect }: Ass
 
       {/* Table Header */}
       {/* No celular o cabeçalho some e a linha vira duas (revisão do celular, 2026-10-25). */}
-      <div className="hidden sm:grid grid-cols-[60px_1fr_120px_150px_150px_100px_40px] gap-2 px-5 py-3 border-b border-border bg-muted/30 text-xs font-medium text-muted-foreground">
+      <div className="hidden sm:grid grid-cols-[60px_1fr_120px_150px_150px_100px_40px] gap-2 mx-4 workos-table-header">
         <div>Tipo</div>
         <div>Ativo</div>
         <div>Patrimônio</div>
@@ -225,8 +201,8 @@ export function AssetTable({ assets, isLoading, selectedAssetId, onSelect }: Ass
                 key={asset.id}
                 onClick={() => onSelect(asset)}
                 className={cn(
-                  "w-full grid grid-cols-[44px_1fr_24px] sm:grid-cols-[60px_1fr_120px_150px_150px_100px_40px] gap-2 px-4 sm:px-5 py-4 text-left border-b border-border transition-colors hover:bg-muted/50",
-                  isSelected && "bg-primary/5 border-l-2 border-l-primary"
+                  "w-full grid grid-cols-[44px_1fr_24px] sm:grid-cols-[60px_1fr_120px_150px_150px_100px_40px] gap-2 px-4 sm:px-8 py-4 text-left border-b border-border transition-colors hover:bg-muted/50",
+                  isSelected && "bg-primary/10"
                 )}
               >
                 {/* Type Icon */}

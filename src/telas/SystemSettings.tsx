@@ -66,7 +66,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/contexts/AuthContext';
-import { SETORES, normalizarSetor } from '@/lib/setores';
+import { SETORES, normalizarSetor, rotuloDoSetor } from '@/lib/setores';
 import { InviteUserDialog } from '@/components/settings/InviteUserDialog';
 import { InvitesPanel } from '@/components/settings/InvitesPanel';
 import { UserModulesEditor } from '@/components/settings/UserModulesEditor';
@@ -265,7 +265,7 @@ export default function SystemSettings() {
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-col">
-                            <span>{user.department || '-'}</span>
+                            <span className="font-semibold">{user.department ? rotuloDoSetor(user.department) : '-'}</span>
                             {user.job_title && (
                               <span className="text-xs text-muted-foreground">{user.job_title}</span>
                             )}
@@ -279,17 +279,16 @@ export default function SystemSettings() {
                         <TableCell>
                           {/* Só o selo. Tornar admin é na janela de acessos (o ícone de caixas),
                               junto com os setores — era a mesma chave em dois lugares. */}
-                          <Badge
-                            variant={isOwner ? 'default' : isAdmin ? 'secondary' : 'outline'}
-                            className="text-xs"
-                          >
+                          {/* Etiqueta suave, não contorno: o contorno parecia campo de digitar (2026-10-29). */}
+                          <Badge variant={isOwner || isAdmin ? 'default' : 'secondary'}>
                             {isOwner ? 'Dono' : isAdmin ? 'Admin' : 'Usuário'}
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={user.is_active ? "default" : "secondary"}>
+                          {/* Ativo é o verde "Completed" da DashStack; inativo, cinza. */}
+                          <span className={user.is_active ? 'estado estado-concluido' : 'estado estado-recebido'}>
                             {user.is_active ? 'Ativo' : 'Inativo'}
-                          </Badge>
+                          </span>
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">

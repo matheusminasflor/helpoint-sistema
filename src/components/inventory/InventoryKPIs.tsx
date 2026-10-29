@@ -78,7 +78,7 @@ export function InventoryKPIs() {
       </KPIGrid>
 
       <Card className="p-5">
-        <h3 className="text-sm font-semibold text-foreground mb-3">Por subcategoria</h3>
+        <h3 className="text-[18px] font-bold text-foreground mb-4">Por subcategoria</h3>
         {metrics.subRows.length === 0 ? (
           <p className="text-sm text-muted-foreground py-6 text-center">Nenhum ativo cadastrado.</p>
         ) : (
@@ -86,12 +86,12 @@ export function InventoryKPIs() {
             {metrics.subRows.map(([name, v]) => {
               const Icon = SUBCATEGORY_ICONS[name] || Package;
               return (
-                <div key={name} className="flex items-center gap-3 p-3 rounded-md border border-border bg-card">
-                  <div className="p-2 rounded bg-primary/10 text-primary shrink-0">
+                <div key={name} className="flex items-center gap-3 p-3 rounded-lg bg-muted">
+                  <div className="w-10 h-10 rounded-[14px] bg-primary/20 text-primary shrink-0 flex items-center justify-center">
                     <Icon className="w-4 h-4" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium truncate">{name}</p>
+                    <p className="text-[14px] font-bold truncate">{name}</p>
                     <p className="text-xs text-muted-foreground">
                       <span className="font-mono font-semibold text-foreground">{v.total}</span> total
                       {' · '}
@@ -108,12 +108,12 @@ export function InventoryKPIs() {
       </Card>
 
       <Card className="p-5">
-        <h3 className="text-sm font-semibold text-foreground mb-3">Por categoria</h3>
+        <h3 className="text-[18px] font-bold text-foreground mb-4">Por categoria</h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           {Object.entries(metrics.byCategory).map(([cat, count]) => (
-            <div key={cat} className="p-3 rounded-md border border-border bg-card">
-              <p className="text-xs text-muted-foreground">{CATEGORY_LABEL[cat as AssetCategory] || cat}</p>
-              <p className="text-xl font-bold text-foreground">{count}</p>
+            <div key={cat} className="p-3 rounded-lg bg-muted">
+              <p className="text-[13px] font-semibold text-muted-foreground">{CATEGORY_LABEL[cat as AssetCategory] || cat}</p>
+              <p className="text-[24px] font-bold text-foreground">{count}</p>
             </div>
           ))}
         </div>

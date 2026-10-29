@@ -148,7 +148,7 @@ export default function Jornal() {
         actions={pode.editar ? <Button onClick={() => setEditando('nova')}><Plus className="w-4 h-4 mr-1" />Nova notícia</Button> : undefined}
       />
 
-      <div className="p-4 sm:p-6 w-full max-w-5xl mx-auto space-y-5">
+      <div className="px-4 lg:px-8 pb-6 w-full space-y-5">
       <ConfirmarExclusao aberto={!!apagando} titulo="Excluir esta notícia?" acao="Excluir"
         descricao={apagando ? `“${apagando.titulo}” sai do Jornal para todo mundo, com as imagens e os anexos, e não volta. Para só tirar do ar, use Despublicar.` : ''}
         enviando={apagar.isPending} onCancelar={() => setApagando(null)}
@@ -174,7 +174,7 @@ export default function Jornal() {
       ) : isLoading ? (
         <p className="text-sm text-muted-foreground">Carregando…</p>
       ) : aba === 'atualizacoes' ? (
-        <section className="space-y-3">
+        <section className="space-y-3 max-w-4xl">
           <p className="text-sm text-muted-foreground">
             O que mudou no Helpoint, em linguagem simples: o que foi corrigido, o que é novo e o que foi ajustado.
           </p>
@@ -183,7 +183,7 @@ export default function Jornal() {
           ) : atualizacoes.map((n, i) => (
             // Não lida (2026-10-14): em azul, já aberta, com o selo "Nova"; abrir ou "Marcar como lida" tira o azul.
             <details key={n.id} open={i === 0 || naoLidas.has(n.id)}
-              className={`rounded-lg border bg-card px-5 py-4 ${naoLidas.has(n.id) ? 'ring-2 ring-primary/40' : ''}`}>
+              className={`panel px-5 py-4 ${naoLidas.has(n.id) ? 'ring-2 ring-primary/40' : ''}`}>
               <summary className="cursor-pointer list-none" onClick={() => ler(n.id)}>
                 <span className="flex flex-wrap items-center gap-2 font-semibold text-foreground">
                   {n.titulo}
@@ -240,7 +240,7 @@ export default function Jornal() {
           ) : null}
 
           <section className="space-y-2">
-            <h2 className="text-sm font-semibold">Histórico</h2>
+            <h2 className="text-[18px] font-bold">Histórico</h2>
             <div className="flex flex-wrap items-center gap-3">
               <div className="relative flex-1 min-w-[200px]">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" aria-hidden="true" />
@@ -256,15 +256,22 @@ export default function Jornal() {
               <EmptyState icon={Newspaper} title={busca || tipo ? 'Nenhuma notícia encontrada' : 'Nenhuma notícia publicada'}
                 description={busca || tipo ? 'Tente outra busca.' : 'Quando o Marketing publicar uma notícia, ela aparece aqui.'} />
             ) : (
-              <ul className="divide-y rounded-lg border bg-card">
+              // Cartões com a imagem em cima, como o Products da DashStack (2026-10-29); sem capa, o ícone no lugar.
+              <ul className="grid gap-5 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
                 {historico.map((n) => (
-                  <li key={n.id} className="flex flex-wrap items-center gap-3 px-4 py-2">
-                    {capaDe(n) && <img src={capaDe(n)} alt="" className="w-16 aspect-video object-cover rounded" />}
-                    <button type="button" onClick={() => setAberta(n)} className="flex-1 min-w-[200px] text-left">
-                      <span className="block font-medium text-sm text-foreground">{n.titulo} {pode.editar && seRepete(n)}</span>
-                      <span className="block text-[13px] text-muted-foreground">{ROTULO_DO_TIPO[n.tipo] ?? n.tipo} · {dia(n.data_noticia)}{n.autor?.full_name ? ` · ${n.autor.full_name}` : ''}</span>
+                  <li key={n.id} className="panel overflow-hidden flex flex-col">
+                    <button type="button" onClick={() => setAberta(n)} className="text-left">
+                      {capaDe(n)
+                        ? <img src={capaDe(n)} alt="" className="w-full aspect-video object-cover" />
+                        : <span className="w-full aspect-video bg-primary/10 flex items-center justify-center"><Newspaper className="w-10 h-10 text-primary" aria-hidden="true" /></span>}
+                      <span className="block px-5 pt-4 space-y-1.5">
+                        <Badge>{ROTULO_DO_TIPO[n.tipo] ?? n.tipo}</Badge>
+                        <span className="block text-[16px] font-bold text-foreground line-clamp-2">{n.titulo} {pode.editar && seRepete(n)}</span>
+                        <span className="block text-[13px] font-semibold text-muted-foreground">{dia(n.data_noticia)}{n.autor?.full_name ? ` · ${n.autor.full_name}` : ''}</span>
+                      </span>
                     </button>
-                    {(pode.editar || pode.publicar || pode.excluir) && acoes(n)}
+                    {(pode.editar || pode.publicar || pode.excluir) && <div className="px-5 pb-4 pt-2 mt-auto">{acoes(n)}</div>}
+                    {!(pode.editar || pode.publicar || pode.excluir) && <div className="pb-4" />}
                   </li>
                 ))}
               </ul>
