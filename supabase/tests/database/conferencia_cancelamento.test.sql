@@ -90,7 +90,7 @@ select is((select ped_indicadores -> 'registrado' ->> 'qtd' from (select public.
   '0', 'e sai das somas de registrado');
 select tests.clear_authentication();
 
-select is((select status || '|' || left(resposta, 36) from public.ped_reajustes where checklist_id = (select checklist from ck)),
+select is((select status || '|' || left(resposta, 35) from public.ped_reajustes where checklist_id = (select checklist from ck)),
   'recusado|Checklist cancelado pelo Financeiro', 'o reajuste aberto e fechado pelo cancelamento');
 select is((select count(*)::int from public.notifications where user_id = (select vendedora from u) and reference_type = 'ped_cancelado'), 1,
   'a vendedora e avisada do cancelamento, com o motivo');
