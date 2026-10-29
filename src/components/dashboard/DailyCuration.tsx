@@ -415,7 +415,8 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
       const prio = normalizePriority(t.priority || 3);
       // Clique = painel da tarefa; modo foco só pelo botão "Focar" (o dono concluiu uma tarefa achando que era o chamado, 2026-09-12).
       // Atividade de projeto abre o projeto: o % e o farol moram lá (o painel genérico não sabe deles).
-      const abrir = t.project_id ? () => navigate(tenantPath(`/projetos/${t.project_id}`)) : () => onOpenTask(t);
+      // Abre já a própria tarefa no projeto (`?tarefa=`, 2026-10-29).
+      const abrir = t.project_id ? () => navigate(tenantPath(`/projetos/${t.project_id}?tarefa=${t.id}`)) : () => onOpenTask(t);
       items.push({ id: t.id, type: 'task', typeLabel: t.project_id ? 'Projeto' : 'Tarefa', title: t.title, subtitle: taskOrigin(t), priority: prio, dueDate: due, urgencyGroup: getUrgencyGroup(due), status: t.status || 'pending', ticketId: t.ticket_id, onClick: abrir, onFocus: () => onEnterFocusMode(t) });
     });
     tickets.forEach(t => {

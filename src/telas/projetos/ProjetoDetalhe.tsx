@@ -21,6 +21,7 @@ import { AtividadePainel } from '@/components/projetos/AtividadePainel';
 import { AnexosDoProjeto } from '@/components/projetos/AnexosDoProjeto';
 import { SeloDoFarol } from '@/components/projetos/SeloDoFarol';
 import { useTenantPath } from '@/hooks/useTenantPath';
+import { useQueryState } from '@/hooks/useQueryState';
 import { SETORES, rotuloDoSetor } from '@/lib/setores';
 import { diaCurto, todayISO } from '@/lib/dates';
 import {
@@ -42,7 +43,11 @@ export default function ProjetoDetalhe() {
   const { data: pode } = usePodeNoProjeto(id, setores);
   const [editando, setEditando] = useState<AtividadeRow | null>(null);
   const [nova, setNova] = useState(false);
-  const [aberta, setAberta] = useState<string | null>(null);
+  // A tarefa aberta mora no endereço (`?tarefa=`): "Minhas tarefas" e o Início abrem a própria tarefa, não só o
+  // projeto (dono, 2026-10-29).
+  const [tarefaNoLink, setTarefaNoLink] = useQueryState<string>('tarefa', '');
+  const aberta = tarefaNoLink || null;
+  const setAberta = (tarefa: string | null) => setTarefaNoLink(tarefa ?? '');
   const [modelo, setModelo] = useState(false);
   // A etapa de onde se clicou em "+ Nova tarefa" (nula: sem etapa).
   const [faseDaNova, setFaseDaNova] = useState<string | null>(null);

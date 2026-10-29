@@ -344,6 +344,25 @@ export function useAtividades(projectId: string) {
   return { salvar, andamento, apagar };
 }
 
+/**
+ * A caixinha de "Minhas tarefas" (dono, 2026-10-29, comparativo https://claude.ai/artifact/322tww6maeaiCx1tLVbT7M): o
+ * mesmo "Pronto" do painel (`andamentoDaSituacao`), sem abrir o projeto. Não recarrega "Minhas tarefas" de propósito:
+ * a linha marcada fica azul e riscada até a próxima visita, como no To-Do da DashStack, e o "Desfazer" acha ela ali.
+ */
+export function useProntoNaLista() {
+  const { tenantId } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...campos }: { id: string; percentual: number; status?: 'pending' | 'in_progress' }) =>
+      expectRows(await supabase.from('tasks').update(campos).eq('id', id).select('id'), 'o andamento'),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['projetos', tenantId] });
+      qc.invalidateQueries({ queryKey: ['projeto-estrutura', tenantId] });
+      qc.invalidateQueries({ queryKey: ['atividade-comentarios', tenantId] });
+    },
+  });
+}
+
 export function useComentarios(taskId: string | undefined) {
   const { tenantId } = useAuth();
   const qc = useQueryClient();
