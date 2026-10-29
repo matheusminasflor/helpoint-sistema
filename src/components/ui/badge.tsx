@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 
 const badgeVariants = cva(
   // A etiqueta da DashStack (2026-10-28): fundo da cor a 20%, a palavra em negrito 12px, cantos de 4,5px.
-  "inline-flex items-center justify-center gap-1 whitespace-nowrap rounded-sm px-3 py-1 text-[12px] font-bold leading-[1.3] focus:outline-none focus:ring-1 focus:ring-ring",
+  "inline-flex items-center justify-center gap-1 rounded-sm px-3 py-1 text-[12px] font-bold leading-[1.3] text-center focus:outline-none focus:ring-1 focus:ring-ring",
   {
     variants: {
       variant: {

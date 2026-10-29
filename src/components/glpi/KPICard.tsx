@@ -48,8 +48,6 @@ interface KPICardProps {
   /** Uma linha de apoio embaixo do número (a meta, por exemplo); vermelha com `notaRuim`. */
   nota?: string;
   notaRuim?: boolean;
-  /** `false` esconde o quadrado do ícone no celular (três cartões lado a lado não cabem com ele). */
-  iconeNoCelular?: boolean;
 }
 
 export function KPICard({ explicacao, chamados, modulo, ...props }: KPICardProps) {
@@ -70,7 +68,7 @@ export function KPICard({ explicacao, chamados, modulo, ...props }: KPICardProps
 
 function KPICardSemExplicacao({
   value, label, color = 'blue', icon: Icon, onClick, className, anterior, melhorQuando = 'mais', numero, formatarDiferenca = String,
-  nota, notaRuim, iconeNoCelular = true,
+  nota, notaRuim,
 }: Omit<KPICardProps, 'explicacao'>) {
   const atual = typeof value === 'number' ? value : numero;
   const c = colorMap[color];
@@ -101,8 +99,7 @@ function KPICardSemExplicacao({
         })()}
       </div>
       {Icon && (
-        <span className={cn('w-[60px] h-[60px] rounded-[23px] shrink-0 flex items-center justify-center max-sm:w-11 max-sm:h-11 max-sm:rounded-[16px]',
-          !iconeNoCelular && 'max-sm:hidden', c.iconBg)}>
+        <span className={cn('kpi-icone w-[60px] h-[60px] rounded-[23px] shrink-0 flex items-center justify-center', c.iconBg)}>
           <Icon className="w-7 h-7 max-sm:w-5 max-sm:h-5" strokeWidth={2} aria-hidden="true" />
         </span>
       )}

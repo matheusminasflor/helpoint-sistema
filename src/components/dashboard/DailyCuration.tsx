@@ -561,12 +561,12 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
         {/* Passar o mouse mostra QUAIS demandas estão no número, cada uma clicável (dono, 2026-10-15). */}
         <DemandasNoHover titulo="Atrasados" demandas={unifiedDemands.filter(d => d.urgencyGroup === 'overdue')}>
           <KPICard value={overdueCount} label={overdueCount === 1 ? 'Atrasado' : 'Atrasados'} color="red" icon={AlertTriangle}
-            iconeNoCelular={false} className="h-full max-sm:px-3" />
+            className="h-full max-sm:px-3" />
         </DemandasNoHover>
         <DemandasNoHover titulo="Para hoje" demandas={unifiedDemands.filter(d => d.urgencyGroup === 'today')}>
-          <KPICard value={todayCount} label="Para hoje" color="yellow" icon={Clock} iconeNoCelular={false} className="h-full max-sm:px-3" />
+          <KPICard value={todayCount} label="Para hoje" color="yellow" icon={Clock} className="h-full max-sm:px-3" />
         </DemandasNoHover>
-        <KPICard value={perf.resolvedToday} label="Feitos hoje" color="green" icon={CheckCircle2} iconeNoCelular={false} className="h-full max-sm:px-3" />
+        <KPICard value={perf.resolvedToday} label="Feitos hoje" color="green" icon={CheckCircle2} className="h-full max-sm:px-3" />
       </div>
 
       {/* A régua das horas, num cartão, só no computador (proposta aprovada, 2026-10-28: no celular ocupava sem dizer nada). */}

@@ -91,29 +91,33 @@ export default function ComprasSolicitacoes() {
             ATENDE compra — só entra quem tem o módulo. Quem pede vai por "Novo › Pedido ›
             Compras", como pede a qualquer setor. O dono, 2026-09-28: "o módulo de compras,
             quem tem acesso, é onde vai receber a demanda". */}
-        <div className="flex flex-wrap items-center gap-1.5">
-          {PERIOD_TABS.map(t => (
-            <button
-              key={t.key}
-              type="button"
-              onClick={() => setPeriod(t.key)}
-              className={cn(
-                'px-3 py-1 text-xs font-medium rounded-full transition-colors',
-                period === t.key ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted',
-              )}
-            >
-              {t.label}
-            </button>
-          ))}
+        {/* As abas da DashStack (caixa contornada, a escolhida azul); no celular rolam de lado em vez de quebrar a linha
+            (dono, 2026-10-28: "no celular Compras está quebrando linhas"). */}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="inline-flex h-9 max-w-full overflow-x-auto rounded-md border border-input bg-card [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label="Período">
+            {PERIOD_TABS.map(t => (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => setPeriod(t.key)}
+                aria-pressed={period === t.key}
+                className={cn(
+                  'px-4 text-[14px] whitespace-nowrap shrink-0 border-r border-input last:border-r-0 transition-colors',
+                  period === t.key ? 'bg-primary text-primary-foreground font-bold' : 'font-semibold text-foreground hover:bg-muted',
+                )}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
           {departments.length > 0 && (
             <>
-              <span className="mx-1 h-4 w-px bg-border" aria-hidden="true" />
               <label className="sr-only" htmlFor="setor-filtro">Filtrar por setor</label>
               <select
                 id="setor-filtro"
                 value={department}
                 onChange={(e) => setDepartment(e.target.value)}
-                className="h-7 rounded-md border border-border bg-background px-2 text-xs"
+                className="h-9 rounded-md border border-input bg-card px-3 text-[14px] font-semibold"
               >
                 <option value="">Todos os setores</option>
                 {departments.map(d => <option key={d} value={d}>{rotuloDoSetor(d)}</option>)}

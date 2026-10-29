@@ -36,7 +36,7 @@ export function WorkOSStatsCard({ icon: Icon, label, value, change, color = 'def
           </span>
         )}
       </div>
-      <span className={cn('w-[60px] h-[60px] rounded-[23px] shrink-0 flex items-center justify-center max-sm:w-11 max-sm:h-11 max-sm:rounded-[16px]', ICONE[color])}>
+      <span className={cn('kpi-icone w-[60px] h-[60px] rounded-[23px] shrink-0 flex items-center justify-center', ICONE[color])}>
         <Icon className="w-7 h-7 max-sm:w-5 max-sm:h-5" aria-hidden="true" />
       </span>
     </div>

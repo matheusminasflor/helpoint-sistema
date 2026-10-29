@@ -823,6 +823,11 @@
   .area-do-app thead tr th:last-child { border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
 }
 
+/* Item de grade não estica a página (dono, 2026-10-28, Compras no celular): numa grade de uma coluna só (`grid
+   lg:grid-cols-…` no celular), o texto mais longo empurrava a coluna para 450 px numa tela de 390 e o resto saía
+   cortado à direita. Com largura mínima zero, o item cabe na tela e o texto quebra. */
+.area-do-app .grid > * { min-width: 0; }
+
 /* A caixinha que aparece ao passar o mouse no gráfico, em todos os gráficos: o cartão flutuante da DashStack. */
 .recharts-default-tooltip {
   background: hsl(var(--popover)) !important; color: hsl(var(--popover-foreground)) !important;
@@ -897,10 +902,14 @@ button.kpi-tile:hover { box-shadow: 6px 6px 54px rgba(0, 0, 0, 0.1); }
   .area-do-app :is(.text-sm, .text-\[14px\]) { font-size: 16px; line-height: 1.5; }
   .area-do-app :is(.text-\[13px\], .text-\[13\.5px\]) { font-size: 15px; line-height: 1.45; }
 }
-/* O número da faixa de indicadores em duas colunas de 170 px: com 30 px, "R$ 1.096,80" era cortado (Aprovar compras,
-   R3). No celular, 22 px e quebra se ainda não couber. */
+/* O cartão de número no celular (dono, 2026-10-28: "Compras quebrando linhas"): em duas colunas de ~170 px o quadrado
+   do ícone espremia o rótulo e o valor partia no meio ("R$ 1.0 | 96,80"). No celular o ícone sai, o rótulo fica em
+   14 e o número em 20, sem partir dentro dele; o que não couber encolhe a letra, não quebra o número. */
 @media (max-width: 640px) {
-  .kpi-tile-number { font-size: 22px; overflow-wrap: anywhere; }
+  .kpi-tile { padding: 12px 14px; min-height: 0; }
+  .kpi-tile .kpi-icone { display: none; }
+  .kpi-tile-label { font-size: 14px; line-height: 1.3; }
+  .kpi-tile-number { font-size: clamp(16px, 5vw, 20px); white-space: nowrap; overflow-wrap: normal; letter-spacing: 0; }
 }
 
 @media print {

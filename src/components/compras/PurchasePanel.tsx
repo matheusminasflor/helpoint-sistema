@@ -233,12 +233,12 @@ export function PurchasePanel({ pedidoId, onUpdate }: Props) {
 
   return (
     <Card className="p-4 space-y-5">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <Package className="w-4 h-4 text-primary" aria-hidden="true" />
-          <h3 className="text-sm font-semibold">Pedido de compra</h3>
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+        <div className="flex items-center gap-2 shrink-0">
+          <Package className="w-5 h-5 text-primary" aria-hidden="true" />
+          <h3 className="text-[18px] font-bold whitespace-nowrap">Pedido de compra</h3>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <ComoFuncionaCompras para={canApprove ? 'quem-aprova' : 'quem-pede'} />
           <Badge className={PURCHASE_STATUS_BADGE[request.status]}>{PURCHASE_STATUS_LABEL[request.status]}</Badge>
         </div>
@@ -346,14 +346,14 @@ export function PurchasePanel({ pedidoId, onUpdate }: Props) {
               aria-disabled={!selectable}
               onClick={() => { if (selectable) setSelectedQuote(isSelected ? null : q); }}
               className={cn(
-                'w-full flex items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left text-sm transition-colors',
+                'w-full flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 rounded-lg border px-3 py-2.5 text-left text-sm transition-colors',
                 isApproved && 'border-primary bg-primary/5',
                 isSelected && !isApproved && 'border-primary ring-1 ring-primary/20',
                 !isApproved && !isSelected && 'border-border',
                 selectable ? 'hover:bg-secondary/60' : 'cursor-default',
               )}
             >
-              <span className="flex items-center gap-2 min-w-0">
+              <span className="flex items-center gap-2 min-w-0 basis-full sm:basis-auto sm:flex-1">
                 {isApproved && <CheckCircle2 className="w-4 h-4 text-primary shrink-0" aria-hidden="true" />}
                 <span className="min-w-0">
                   <span className="flex items-center gap-1.5">
@@ -384,7 +384,7 @@ export function PurchasePanel({ pedidoId, onUpdate }: Props) {
                   {q.notes && <span className="block text-[12px] text-muted-foreground truncate" title={q.notes}>{q.notes}</span>}
                 </span>
               </span>
-              <span className="flex items-center gap-3 shrink-0">
+              <span className="flex items-center gap-3 shrink-0 ml-auto">
                 {/* O link de compra de cada orçamento (dono, 2026-10-09). `span` e não `a`: o cartão inteiro já é um botão. */}
                 {q.link && (
                   <span
@@ -410,7 +410,7 @@ export function PurchasePanel({ pedidoId, onUpdate }: Props) {
                     <Paperclip className="w-3.5 h-3.5" aria-hidden="true" />
                   </span>
                 )}
-                <span className="font-mono">{formatBRLAmount(Number(q.amount))}</span>
+                <span className="font-bold tabular-nums">{formatBRLAmount(Number(q.amount))}</span>
               </span>
             </button>
           );
