@@ -46,7 +46,7 @@ export default function Chat() {
 
   // Quem falou por último fica em cima, como no WhatsApp (dono, 2026-10-28); sem mensagem, pelo nome.
   const recentes = (a: ChatCanalRow, b: ChatCanalRow) =>
-    (ultimas?.get(b.id)?.created_at ?? '').localeCompare(ultimas?.get(a.id)?.created_at ?? '') || a.nome.localeCompare(b.nome);
+    (ultimas?.get(b.id)?.created_at ?? '').localeCompare(ultimas?.get(a.id)?.created_at ?? '') || (a.nome ?? '').localeCompare(b.nome ?? ''); // conversa direta não tem nome
   const canaisDeSetor = canais.filter((c) => c.tipo !== 'direta').sort(recentes);
   const conversasDiretas = canais.filter((c) => c.tipo === 'direta').sort(recentes);
 
