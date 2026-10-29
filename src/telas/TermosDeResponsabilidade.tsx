@@ -23,7 +23,7 @@ import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePessoasDaEmpresa } from '@/hooks/useProjetos';
 import {
-  urlDoTermoAssinado, useAnexarTermoAssinado, useDadosParaTermo, useDevolverTermo, useEquipamentosDaPessoa,
+  urlDoTermoAssinado, useAnexarTermoAssinado, useDadosParaTermo, useDevolverTermo, useEquipamentosDaPessoa, useMudarQuemAssina,
   useEquipamentosLivres, useExcluirTermo, useGerarTermo, useTermos, type ItemDoTermo, type Termo,
 } from '@/hooks/useTermos';
 import { EMPRESA_PADRAO, gerarTermoPdf, nomeDoArquivoDoTermo } from '@/lib/termo-equipamento-pdf';
@@ -44,6 +44,9 @@ export default function TermosDeResponsabilidade() {
   const { can } = useDepartmentPermissions('ti');
   const { data: termos = [], isLoading } = useTermos();
   const anexar = useAnexarTermoAssinado();
+  const mudarQuemAssina = useMudarQuemAssina();
+  const { data: pessoas = [] } = usePessoasDaEmpresa();
+  const daTI = useMemo(() => pessoas.filter((p) => p.setores.includes('ti')).map((p) => p.nome).sort((a, b) => a.localeCompare(b)), [pessoas]);
   const [gerando, setGerando] = useState(false);
   const [devolvendo, setDevolvendo] = useState<Termo | null>(null);
   const [excluindo, setExcluindo] = useState<Termo | null>(null);
@@ -93,6 +96,21 @@ export default function TermosDeResponsabilidade() {
                       <td className="px-3 py-2">
                         <span className="font-medium">{t.colaborador_nome}</span>
                         {t.setor && <span className="block text-[12px] text-muted-foreground">{t.setor}</span>}
+                        {/* Quem assina pela empresa: troca-se até o termo ser assinado (dono, 2026-10-29). */}
+                        {can('termos', 'edit') && t.status === 'aguardando_assinatura' && daTI.length > 0 ? (
+                          <label className="mt-1 flex items-center gap-1.5 text-[12px] text-muted-foreground">
+                            Assina pela empresa:
+                            <select value={t.responsavel_nome ?? ''} disabled={mudarQuemAssina.isPending}
+                              onChange={(e) => mudarQuemAssina.mutate({ termoId: t.id, responsavel: e.target.value })}
+                              aria-label={`Quem assina o termo de ${t.colaborador_nome}`}
+                              className="h-7 rounded-md border border-input bg-background px-1.5 text-[12px] text-foreground">
+                              {!daTI.includes(t.responsavel_nome ?? '') && <option value={t.responsavel_nome ?? ''}>{t.responsavel_nome || '—'}</option>}
+                              {daTI.map((nome) => <option key={nome} value={nome}>{nome}</option>)}
+                            </select>
+                          </label>
+                        ) : t.responsavel_nome && (
+                          <span className="block text-[12px] text-muted-foreground">Assina pela empresa: {t.responsavel_nome}</span>
+                        )}
                       </td>
                       <td className="px-3 py-2">
                         {t.itens.map((i) => (
@@ -228,10 +246,18 @@ function GerarTermo({ onFechar, equipamentoInicial }: { onFechar: () => void; eq
   }, [inicial?.id, pessoa]);
 
   const escolhidos = linhas.filter((l) => l.marcado && l.descricao.trim());
-  const dadosOk = !!pessoa && form.nome.trim() !== '' && form.empresa.trim() !== '';
-  const valido = dadosOk && escolhidos.length > 0;
   const muda = (chave: string, campo: Partial<Linha>) => setLinhas((ls) => ls.map((l) => (l.chave === chave ? { ...l, ...campo } : l)));
   const ordenadas = useMemo(() => [...pessoas].sort((a, b) => a.nome.localeCompare(b.nome)), [pessoas]);
+  // Quem assina pela empresa é sempre alguém da TI (dono, 2026-10-29: o termo do Fenício saiu com o nome de alguém
+  // do Financeiro — o campo era texto livre). Vem marcado quem está gerando, se for da TI.
+  const daTI = useMemo(() => ordenadas.filter((p) => p.setores.includes('ti')).map((p) => p.nome), [ordenadas]);
+  useEffect(() => {
+    if (daTI.length === 0 || daTI.includes(form.responsavel)) return;
+    const eu = profile?.full_name ?? '';
+    setForm((f) => ({ ...f, responsavel: daTI.includes(eu) ? eu : daTI[0] }));
+  }, [daTI, form.responsavel, profile?.full_name]);
+  const dadosOk = !!pessoa && form.nome.trim() !== '' && form.empresa.trim() !== '' && daTI.includes(form.responsavel);
+  const valido = dadosOk && escolhidos.length > 0;
 
   const salvar = () => {
     const itens = escolhidos.map(({ asset_id, descricao, marca_modelo, marca, modelo, categoria, patrimonio, estado }) => ({
@@ -270,12 +296,19 @@ function GerarTermo({ onFechar, equipamentoInicial }: { onFechar: () => void; eq
           {pessoa && passo === 1 && (
               <div className="grid gap-3 sm:grid-cols-2">
                 {([['nome', 'Nome completo *'], ['cpf', 'CPF'], ['matricula', 'Matrícula'], ['setor', 'Setor'],
-                  ['empresa', 'Empresa *'], ['responsavel', 'Quem assina pela empresa']] as const).map(([k, r]) => (
+                  ['empresa', 'Empresa *']] as const).map(([k, r]) => (
                   <div key={k} className="space-y-1">
                     <Label htmlFor={`termo-${k}`}>{r}</Label>
                     <Input id={`termo-${k}`} value={form[k]} onChange={(e) => setForm({ ...form, [k]: e.target.value })} />
                   </div>
                 ))}
+                <div className="space-y-1">
+                  <Label htmlFor="termo-responsavel">Quem assina pela empresa (TI) *</Label>
+                  <select id="termo-responsavel" value={form.responsavel} onChange={(e) => setForm({ ...form, responsavel: e.target.value })}
+                    className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
+                    {daTI.map((nome) => <option key={nome} value={nome}>{nome}</option>)}
+                  </select>
+                </div>
               </div>
           )}
           {pessoa && passo === 1 && (

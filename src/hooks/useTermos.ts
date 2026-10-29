@@ -149,6 +149,24 @@ export function useGerarTermo() {
   });
 }
 
+/** Trocar quem assina pela empresa (dono, 2026-10-29) — só antes de o termo ser assinado. */
+export function useMudarQuemAssina() {
+  const { tenantId } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ termoId, responsavel }: { termoId: string; responsavel: string }) =>
+      expectRows(
+        await supabase.from('ti_termos' as never)
+          .update({ responsavel_nome: responsavel } as never)
+          .eq('id', termoId).eq('status', 'aguardando_assinatura')
+          .select('id'),
+        'o termo',
+      ),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['ti-termos', tenantId] }); toast.success('Quem assina foi trocado. Baixe o PDF de novo.'); },
+    onError: (e: Error) => toast.error(`Não trocou: ${e.message}`),
+  });
+}
+
 export function useAnexarTermoAssinado() {
   const { tenantId } = useAuth();
   const qc = useQueryClient();
