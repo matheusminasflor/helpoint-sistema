@@ -79,7 +79,7 @@ export function PageHeader({
                 numa) e a explicação também 2 — o resto aparece no computador. */}
             <h1 className="text-[24px] sm:text-[32px] font-bold leading-tight tracking-[-0.11px] text-foreground line-clamp-2 break-words sm:line-clamp-1">{title}</h1>
             {description && (
-              <p className="text-[14px] font-semibold text-muted-foreground mt-1 line-clamp-2 sm:line-clamp-none" title={description}>{description}</p>
+              <p className="text-[14px] font-semibold text-muted-foreground mt-1 max-[860px]:hidden" title={description}>{description}</p>
             )}
           </div>
         </div>

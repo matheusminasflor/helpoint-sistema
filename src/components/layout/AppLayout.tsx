@@ -118,7 +118,8 @@ function AppLayoutInner({ children }: AppLayoutProps) {
           {/* Claro × escuro × sistema (leva J) e a pessoa. O sino que ficava ao lado saiu em 2026-10-02 (decisão do
               dono): os avisos estão no "Lyra avisa" da tela inicial e no e-mail. */}
           <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-            <SeletorDeTema />
+            {/* No celular o claro/escuro fica no menu da foto (dono, 2026-10-28). */}
+            <div className="max-[860px]:hidden"><SeletorDeTema /></div>
             <ContaNoTopo />
           </div>
         </header>

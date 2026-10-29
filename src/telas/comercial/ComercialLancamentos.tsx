@@ -72,10 +72,13 @@ export default function ComercialLancamentos() {
         status={<FonteDoNumero fonte="lancado" />}
       />
 
-      <div className="p-4 sm:p-6 space-y-4">
+      <div className="p-4 sm:p-6 space-y-4 max-[860px]:pb-24">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <SeletorCompetencia competencia={competencia} onChange={setCompetencia} />
-          <Button onClick={abrirNovo}>
+          {/* No celular fica preso embaixo, no alcance do polegar (dono, 2026-10-28, Lei de Fitts): é o que a vendedora faz o
+              dia todo. */}
+          <Button onClick={abrirNovo} size="lg"
+            className="max-[860px]:fixed max-[860px]:inset-x-4 max-[860px]:bottom-[calc(68px+env(safe-area-inset-bottom))] max-[860px]:z-30 max-[860px]:shadow-elevated">
             <Plus className="w-4 h-4 mr-1.5" aria-hidden="true" /> Novo lançamento
           </Button>
         </div>

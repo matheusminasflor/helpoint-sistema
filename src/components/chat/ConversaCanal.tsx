@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { MoreVertical, Send, Trash2, Hash, Lock, Paperclip, Mic, Smile, X, Bot, Newspaper, Search } from 'lucide-react';
+import { ArrowLeft, MoreVertical, Send, Trash2, Hash, Lock, Paperclip, Mic, Smile, X, Bot, Newspaper, Search } from 'lucide-react';
 import { ConfirmarExclusao } from '@/components/ui/ConfirmarExclusao';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -13,6 +13,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/contexts/AuthContext';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { useTenantPath } from '@/hooks/useTenantPath';
 import {
   useMensagens, useEnviarMensagem, useApagarMensagem, useEntrarNoCanal, useParticipantesDoCanal,
   useRotuloDoCanal, type ChatCanalRow, type AnexoDaMensagem,
@@ -173,6 +175,7 @@ export function ConversaCanal({ canal, souAdmin }: {
     return (
       <div className="flex flex-col h-full">
         <div className="border-b border-border px-4 py-3 flex items-center gap-2 shrink-0">
+          <VoltarParaAsConversas />
           <Lock className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
           <h2 className="text-sm font-semibold text-foreground truncate">{rotulo}</h2>
         </div>
@@ -189,6 +192,7 @@ export function ConversaCanal({ canal, souAdmin }: {
   return (
     <div className="flex flex-col h-full">
       <div className="border-b border-border px-4 py-3 flex items-center gap-2 shrink-0">
+        <VoltarParaAsConversas />
         {canal.privado ? <Lock className="w-4 h-4 text-muted-foreground" aria-hidden="true" /> : <Hash className="w-4 h-4 text-muted-foreground" aria-hidden="true" />}
         <div className="min-w-0">
           <h2 className="text-sm font-semibold text-foreground truncate">{rotulo}</h2>
@@ -399,5 +403,17 @@ export function ConversaCanal({ canal, souAdmin }: {
         )}
       </div>
     </div>
+  );
+}
+
+/** No celular a conversa ocupa a tela toda: a seta volta para a lista, como no WhatsApp (dono, 2026-10-28). */
+function VoltarParaAsConversas() {
+  const isMobile = useIsMobile();
+  const tenantPath = useTenantPath();
+  if (!isMobile) return null;
+  return (
+    <Link to={tenantPath('/chat')} aria-label="Voltar para as conversas" className="-ml-1 p-1.5 rounded-md hover:bg-muted shrink-0">
+      <ArrowLeft className="w-5 h-5" aria-hidden="true" />
+    </Link>
   );
 }

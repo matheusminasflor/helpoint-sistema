@@ -1,4 +1,7 @@
 import { useState } from 'react';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 import { useNavigate, useParams } from 'react-router-dom';
 import { MessageSquare, Plus, Hash, Lock, MoreVertical, Trash2, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -10,7 +13,7 @@ import { NovoCanalDialog } from '@/components/chat/NovoCanalDialog';
 import { ConversarComDialog } from '@/components/chat/ConversarComDialog';
 import { ConversaCanal } from '@/components/chat/ConversaCanal';
 import {
-  useCanais, useApagarCanal, useNaoLidas, useRotuloDoCanal, type ChatCanalRow,
+  useCanais, useApagarCanal, useNaoLidas, useRotuloDoCanal, useUltimasMensagens, type ChatCanalRow, type UltimaMensagem,
 } from '@/hooks/useChat';
 import { useAuth } from '@/contexts/AuthContext';
 import { useVisibleModules } from '@/hooks/useVisibleModules';
@@ -31,6 +34,7 @@ export default function Chat() {
   const { isOwnerOrAdmin } = useVisibleModules();
   const { data: canais = [], isLoading } = useCanais();
   const { data: naoLidas = [] } = useNaoLidas();
+  const { data: ultimas } = useUltimasMensagens();
   const apagarCanal = useApagarCanal();
   const [novoCanal, setNovoCanal] = useState(false);
   const [conversarCom, setConversarCom] = useState(false);
@@ -40,8 +44,11 @@ export default function Chat() {
   const mostrarConversa = !isMobile || !!id;
   const naoLidasPorCanal = new Map(naoLidas.map((n) => [n.channel_id, n.qtd]));
 
-  const canaisDeSetor = canais.filter((c) => c.tipo !== 'direta');
-  const conversasDiretas = canais.filter((c) => c.tipo === 'direta');
+  // Quem falou por último fica em cima, como no WhatsApp (dono, 2026-10-28); sem mensagem, pelo nome.
+  const recentes = (a: ChatCanalRow, b: ChatCanalRow) =>
+    (ultimas?.get(b.id)?.created_at ?? '').localeCompare(ultimas?.get(a.id)?.created_at ?? '') || a.nome.localeCompare(b.nome);
+  const canaisDeSetor = canais.filter((c) => c.tipo !== 'direta').sort(recentes);
+  const conversasDiretas = canais.filter((c) => c.tipo === 'direta').sort(recentes);
 
   const irPara = (channelId: string) => navigate(tenantPath(`/chat/${channelId}`));
 
@@ -96,6 +103,8 @@ export default function Chat() {
                           canal={c}
                           ativo={c.id === id}
                           naoLidas={naoLidasPorCanal.get(c.id) ?? 0}
+                          ultima={ultimas?.get(c.id)}
+                          souEu={ultimas?.get(c.id)?.author_id === user?.id}
                           podeApagar={c.created_by === user?.id || isOwnerOrAdmin}
                           onAbrir={() => irPara(c.id)}
                           onApagar={() => apagarCanal.mutate(c.id, { onSuccess: () => { if (c.id === id) navigate(tenantPath('/chat')); } })}
@@ -114,6 +123,8 @@ export default function Chat() {
                           canal={c}
                           ativo={c.id === id}
                           naoLidas={naoLidasPorCanal.get(c.id) ?? 0}
+                          ultima={ultimas?.get(c.id)}
+                          souEu={ultimas?.get(c.id)?.author_id === user?.id}
                           podeApagar={isOwnerOrAdmin}
                           onAbrir={() => irPara(c.id)}
                           onApagar={() => apagarCanal.mutate(c.id, { onSuccess: () => { if (c.id === id) navigate(tenantPath('/chat')); } })}
@@ -152,46 +163,78 @@ export default function Chat() {
   );
 }
 
+/** "14:32" hoje, "ontem", "seg" na semana, "26/10" antes — como a lista do WhatsApp. */
+function quandoFoi(iso: string): string {
+  const d = new Date(iso);
+  const hoje = new Date();
+  const dias = Math.floor((new Date(hoje.toDateString()).getTime() - new Date(d.toDateString()).getTime()) / 86_400_000);
+  if (dias <= 0) return format(d, 'HH:mm');
+  if (dias === 1) return 'ontem';
+  if (dias < 7) return format(d, 'EEE', { locale: ptBR });
+  return format(d, 'dd/MM');
+}
+
+const iniciais = (nome: string) => nome.split(/\s+/).filter(Boolean).map((p) => p[0]).slice(0, 2).join('').toUpperCase();
+
 /**
  * Uma linha da lista — canal de setor ou conversa direta. Separado em
  * componente próprio porque o rótulo de uma conversa direta depende de
  * quem está do outro lado (`useRotuloDoCanal`), e isso é uma consulta por
  * linha — nada que se calcule uma vez só para a lista inteira.
+ * Desde 2026-10-28 é a linha do WhatsApp: as iniciais (ou # do canal), o nome e a hora, e embaixo a última mensagem e
+ * quantas faltam ler.
  */
-function ItemDaLista({ canal, ativo, naoLidas, podeApagar, onAbrir, onApagar }: {
+function ItemDaLista({ canal, ativo, naoLidas, ultima, souEu, podeApagar, onAbrir, onApagar }: {
   canal: ChatCanalRow;
   ativo: boolean;
   naoLidas: number;
+  ultima?: UltimaMensagem;
+  souEu: boolean;
   podeApagar: boolean;
   onAbrir: () => void;
   onApagar: () => void;
 }) {
   const rotulo = useRotuloDoCanal(canal);
+  const previa = !ultima ? 'Sem mensagens ainda'
+    : ultima.deleted_at ? 'Mensagem apagada'
+    : `${souEu ? 'Você: ' : ''}${ultima.conteudo?.trim() || 'Anexo'}`;
   return (
     <li>
       <button
         type="button"
         onClick={onAbrir}
-        className={`w-[calc(100%-1.5rem)] mx-3 flex items-center gap-3 px-3 py-2.5 rounded-sm text-left text-[14px] font-semibold hover:bg-muted/60 ${
-          ativo ? 'bg-primary/10 text-primary font-bold' : 'text-foreground'
-        }`}
+        className={cn('w-[calc(100%-1rem)] mx-2 flex items-center gap-3 px-3 py-2.5 rounded-md text-left hover:bg-muted/60',
+          ativo && 'bg-primary/10')}
       >
-        {canal.privado
-          ? <Lock className="w-3.5 h-3.5 text-muted-foreground shrink-0" aria-hidden="true" />
-          : <Hash className="w-3.5 h-3.5 text-muted-foreground shrink-0" aria-hidden="true" />}
-        <span className="truncate flex-1">{rotulo}</span>
-        {naoLidas > 0 && (
-          <span className="shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[12px] font-bold flex items-center justify-center">
-            {naoLidas > 9 ? '9+' : naoLidas}
+        <span className={cn('w-10 h-10 rounded-full shrink-0 flex items-center justify-center text-[13px] font-extrabold',
+          canal.tipo === 'direta' ? 'kpi-icone-azul' : 'kpi-icone-lilas')} aria-hidden="true">
+          {canal.tipo === 'direta' ? iniciais(rotulo) : canal.privado ? <Lock className="w-4 h-4" /> : <Hash className="w-4 h-4" />}
+        </span>
+        <span className="flex-1 min-w-0">
+          <span className="flex items-baseline gap-2">
+            <span className={cn('truncate flex-1 text-[14px]', ativo ? 'text-primary font-extrabold' : 'font-bold text-foreground')}>{rotulo}</span>
+            {ultima && (
+              <span className={cn('shrink-0 text-[12px]', naoLidas > 0 ? 'text-primary font-bold' : 'text-muted-foreground font-semibold')}>
+                {quandoFoi(ultima.created_at)}
+              </span>
+            )}
           </span>
-        )}
+          <span className="flex items-center gap-2 mt-0.5">
+            <span className={cn('truncate flex-1 text-[13px]', naoLidas > 0 ? 'text-foreground font-semibold' : 'text-muted-foreground')}>{previa}</span>
+            {naoLidas > 0 && (
+              <span className="shrink-0 min-w-[20px] h-5 px-1.5 rounded-full bg-primary text-primary-foreground text-[12px] font-bold flex items-center justify-center">
+                {naoLidas > 99 ? '99+' : naoLidas}
+              </span>
+            )}
+          </span>
+        </span>
         {podeApagar && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <span
                 role="button"
                 aria-label={`Opções de ${rotulo}`}
-                className="p-1 rounded hover:bg-muted-foreground/10"
+                className="p-1 rounded hover:bg-muted-foreground/10 shrink-0"
                 onClick={(e) => e.stopPropagation()}
               >
                 <MoreVertical className="w-3.5 h-3.5" aria-hidden="true" />

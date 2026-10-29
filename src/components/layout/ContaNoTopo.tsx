@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
+import { useTheme } from 'next-themes';
 import { ChevronDown, LogOut, UserCog } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { TEMAS } from '@/lib/tema';
+import { cn } from '@/lib/utils';
 import { getRoleLabel } from '@/types/database';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -14,6 +17,7 @@ import { InstalarAplicativo } from './InstalarAplicativo';
  */
 export function ContaNoTopo() {
   const { profile, role, signOut } = useAuth();
+  const { theme, setTheme } = useTheme();
   const [profileOpen, setProfileOpen] = useState(false);
   const [aberto, setAberto] = useState(false);
   const [foto, setFoto] = useState<string | null>(null);
@@ -64,6 +68,19 @@ export function ContaNoTopo() {
             <span>Meu perfil</span>
           </button>
           <InstalarAplicativo aoClicar={() => setAberto(false)} />
+          {/* No celular o claro/escuro sai do topo e mora aqui (dono, 2026-10-28). */}
+          <div className="min-[861px]:hidden px-2.5 py-2">
+            <p className="text-[12px] font-bold text-muted-foreground mb-1.5">Aparência</p>
+            <div className="flex h-9 rounded-md border border-input overflow-hidden" role="group" aria-label="Aparência">
+              {TEMAS.map((t) => (
+                <button key={t.valor} type="button" onClick={() => setTheme(t.valor)} aria-pressed={theme === t.valor}
+                  className={cn('flex-1 text-[13px] border-r border-input last:border-r-0',
+                    theme === t.valor ? 'bg-primary text-primary-foreground font-bold' : 'font-semibold hover:bg-muted')}>
+                  {t.rotulo}
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="my-1 border-t border-border" />
           <button type="button" onClick={() => { setAberto(false); signOut(); }}
             className="w-full flex items-center gap-2 px-2.5 py-2 min-h-[40px] rounded-md text-[14px] font-semibold text-destructive hover:bg-destructive/10 transition-colors text-left">

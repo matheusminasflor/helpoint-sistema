@@ -56,6 +56,7 @@ export function useMensagens(channelId: string | undefined, limite = 200, busca 
           // Mensagem nova muda o contador tambem — sem isto a bolinha so se
           // movia quando a janela perdia e recuperava o foco.
           qc.invalidateQueries({ queryKey: ['chat-nao-lidas', tenantId] });
+          qc.invalidateQueries({ queryKey: ['chat-ultimas', tenantId] });
         },
       )
       .subscribe();
@@ -153,6 +154,7 @@ export function useEnviarMensagem(channelId: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['chat-mensagens', tenantId, channelId] });
       qc.invalidateQueries({ queryKey: ['chat-nao-lidas', tenantId] });
+      qc.invalidateQueries({ queryKey: ['chat-ultimas', tenantId] });
     },
     onError: (e) => toast.error(traduzir(e)),
   });
@@ -175,6 +177,37 @@ export function useNaoLidas() {
     enabled: !!tenantId,
     queryFn: async (): Promise<{ channel_id: string; qtd: number }[]> =>
       unwrap(await supabase.rpc('chat_nao_lidas')),
+  });
+}
+
+export interface UltimaMensagem {
+  channel_id: string;
+  author_id: string;
+  conteudo: string;
+  created_at: string;
+  deleted_at: string | null;
+}
+
+/**
+ * A última mensagem de cada canal, para a lista do Chat como a do WhatsApp (dono, 2026-10-28): prévia, hora e a ordem
+ * de quem falou por último. Uma consulta só: as 300 mensagens mais novas que a pessoa enxerga, e a primeira de cada
+ * canal. ponytail: canal sem mensagem entre as 300 mais novas aparece sem prévia; se incomodar, uma função no banco
+ * com `distinct on (channel_id)` resolve.
+ */
+export function useUltimasMensagens() {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['chat-ultimas', tenantId],
+    enabled: !!tenantId,
+    queryFn: async (): Promise<Map<string, UltimaMensagem>> => {
+      const linhas: UltimaMensagem[] = unwrap(await supabase.from('chat_messages')
+        .select('channel_id, author_id, conteudo, created_at, deleted_at')
+        .order('created_at', { ascending: false })
+        .limit(300)) ?? [];
+      const mapa = new Map<string, UltimaMensagem>();
+      for (const m of linhas) if (!mapa.has(m.channel_id)) mapa.set(m.channel_id, m);
+      return mapa;
+    },
   });
 }
 
@@ -223,6 +256,7 @@ export function useApagarMensagem(channelId: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['chat-mensagens', tenantId, channelId] });
       qc.invalidateQueries({ queryKey: ['chat-nao-lidas', tenantId] });
+      qc.invalidateQueries({ queryKey: ['chat-ultimas', tenantId] });
     },
     onError: (e) => toast.error(traduzir(e)),
   });

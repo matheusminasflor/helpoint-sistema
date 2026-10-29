@@ -846,6 +846,16 @@
 .faixa-de-numeros { gap: 1rem; }
 @media (min-width: 1024px) { .faixa-de-numeros { gap: 1.5rem; } }
 .faixa-de-numeros .kpi-tile { height: 100%; }
+/* No celular, a faixa com 5 números ou mais vira uma linha só que rola de lado (dono, 2026-10-28, Lei da posição
+   serial): antes eram três linhas de cartões e a fila de chamados só começava no meio da tela. */
+@media (max-width: 640px) {
+  .faixa-de-numeros:has(> :nth-child(5)) {
+    display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 12px;
+    margin-inline: -16px; padding-inline: 16px; padding-block: 2px 10px; scrollbar-width: none;
+  }
+  .faixa-de-numeros:has(> :nth-child(5))::-webkit-scrollbar { display: none; }
+  .faixa-de-numeros:has(> :nth-child(5)) > * { flex: 0 0 42%; scroll-snap-align: start; }
+}
 button.kpi-tile:hover { box-shadow: 6px 6px 54px rgba(0, 0, 0, 0.1); }
 
 /* Sem rótulo pequeno em caixa alta (proposta, "a cara"): 188 usos de `uppercase` em 52 arquivos viram o texto como
