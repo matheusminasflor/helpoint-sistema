@@ -50,6 +50,7 @@ import { useSetorFora } from '@/hooks/useSetorFora';
 import { periodosDoChamado } from '@/lib/setor-fora';
 import { getMaintenanceTypeLabel, getMaintenanceStatusLabel, getMaintenanceStatusColor } from '@/types/it-management';
 import { cn } from '@/lib/utils';
+import { useIsBelow } from '@/hooks/use-mobile';
 
 export default function TicketDetail() {
   const { id } = useParams<{ id: string }>();
@@ -69,6 +70,9 @@ export default function TicketDetail() {
   const podeMarcarEquipamento = useDepartmentPermissions('ti').can('inventory', 'conferir');
   // Setor fora (2026-10-27): os dias em que o prazo deste chamado parou porque o setor inteiro estava fora.
   const { periodos: setorFora } = useSetorFora(ticket?.module);
+  // No celular e no tablet o chamado vira três abas (dono, 2026-10-28).
+  const compacto = useIsBelow(1024);
+  const [aba, setAba] = useState<'conversa' | 'detalhes' | 'historico'>('conversa');
 
   useSetBreadcrumbLeaf(
     ticket
@@ -217,6 +221,198 @@ export default function TicketDetail() {
     );
   }
 
+  // O que fica na coluna da direita (no celular, na aba "Detalhes"), na ordem da proposta de 2026-10-28: quem atende
+  // e os detalhes primeiro, depois quem abriu e o que é de cada tipo de chamado. A linha do tempo vai para o fim (no
+  // celular, a aba "Histórico").
+  const detalhes = (
+    <>
+      {/* Quem atende o setor também abre chamado (para o próprio setor, ou é gestor/dono): na
+          visão de quem atende o painel de avaliação não existia, e o solicitante nunca
+          conseguia avaliar (dono, 2026-10-06). */}
+      {ticket.status === 'resolved' && ticket.requester_id === user?.id && (
+        <TicketEvaluationPanel
+          ticketId={ticket.id}
+          resolvedAt={ticket.resolved_at}
+          resolutionNotes={ticket.resolution_notes}
+          avaliadoEm={ticket.avaliado_em}
+          onUpdate={refetch}
+        />
+      )}
+
+      <div className="bg-card border border-border rounded-xl shadow-sm p-4">
+        <h3 className="text-[16px] font-bold mb-3 flex items-center gap-2">
+          <Tag className="w-4 h-4 text-primary" aria-hidden="true" />
+          Detalhes
+        </h3>
+        <dl className="space-y-3 text-sm">
+          {ticket.assignee && (
+            <div className="flex justify-between items-center gap-3">
+              <dt className="text-muted-foreground flex items-center gap-1.5 shrink-0">
+                <UserCheck className="w-3.5 h-3.5" />
+                Com
+              </dt>
+              <dd className="font-semibold text-right">{ticket.assignee.full_name}</dd>
+            </div>
+          )}
+          {ticket.category && (
+            <div className="flex justify-between gap-3">
+              <dt className="text-muted-foreground shrink-0">Categoria</dt>
+              <dd className="font-medium text-right">{categoriaDoChamado(ticket)}</dd>
+            </div>
+          )}
+          <div className="flex justify-between items-center gap-3">
+            <dt className="text-muted-foreground flex items-center gap-1.5 shrink-0">
+              <Calendar className="w-3.5 h-3.5" />
+              Criado em
+            </dt>
+            <dd className="text-right">{format(new Date(ticket.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</dd>
+          </div>
+          {((ticket.minutos_pausados ?? 0) > 0 || (ticket.minutos_agendados ?? 0) > 0) && (
+            <div className="flex justify-between items-center text-[13px] gap-3">
+              <dt className="text-muted-foreground">Prazo parado</dt>
+              <dd className="tabular-nums text-right">
+                {[
+                  (ticket.minutos_pausados ?? 0) > 0 && `${Math.round((ticket.minutos_pausados ?? 0) / 60)} h pendente`,
+                  (ticket.minutos_agendados ?? 0) > 0 && `${Math.round((ticket.minutos_agendados ?? 0) / 60)} h agendado`,
+                ].filter(Boolean).join(' · ')}
+              </dd>
+            </div>
+          )}
+          {periodosDoChamado(setorFora, ticket).map((p) => (
+            <div key={p.id} className="text-[13px] rounded-md border border-border px-2.5 py-2">
+              <span className="font-medium">
+                Prazo parado de {format(parseISO(p.de), 'dd/MM')}{p.ate !== p.de && ` a ${format(parseISO(p.ate), 'dd/MM')}`}
+              </span>
+              <span className="text-muted-foreground"> · setor fora: {p.motivo}</span>
+            </div>
+          ))}
+          {/* Atender junto (dono, 2026-10-13): a demanda é de mais de uma pessoa e conta para todos. */}
+          {ticket.assigned_to && (
+            <div className="pt-2 border-t border-border">
+              <AtendemJunto ticketId={ticket.id} atendenteId={ticket.assigned_to} solicitanteId={ticket.requester_id}
+                encerrado={['resolved', 'closed', 'cancelled', 'rejected'].includes(ticket.status)} />
+            </div>
+          )}
+        </dl>
+      </div>
+
+      <div className="bg-card border border-border rounded-xl shadow-sm p-4">
+        <h3 className="text-[16px] font-bold mb-3 flex items-center gap-2">
+          <User className="w-4 h-4 text-primary" aria-hidden="true" />
+          Quem abriu
+        </h3>
+        <div className="space-y-1">
+          <p className="font-semibold">{ticket.requester?.full_name || 'Usuário'}</p>
+          <p className="text-sm text-muted-foreground break-all">{ticket.requester?.email}</p>
+          {ticket.requester?.department && (
+            <p className="text-sm text-muted-foreground">{ticket.requester.department}</p>
+          )}
+        </div>
+      </div>
+
+      <ChecagemDeEquipamentos ticketId={ticket.id} podeMarcar={podeMarcarEquipamento} />
+      <TicketFormAnswers ticketId={ticket.id} />
+      <TicketComplianceChecklist ticketId={ticket.id} canEdit={canManageChecklist} />
+      <OffboardingAccessPanel ticketId={ticket.id} canEdit={canManageChecklist} />
+
+      {linkedMaintenances && linkedMaintenances.length > 0 && (
+        <div className="bg-card border border-border rounded-xl shadow-sm p-4">
+          <h3 className="text-[16px] font-bold mb-3 flex items-center gap-2">
+            <Wrench className="w-4 h-4 text-primary" aria-hidden="true" />
+            Manutenções vinculadas
+          </h3>
+          <div className="space-y-3">
+            {linkedMaintenances.map(m => (
+              <div key={m.id} className="space-y-1.5">
+                <p className="font-medium text-sm">{m.title}</p>
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="outline" className={getMaintenanceStatusColor(m.status)}>
+                    {getMaintenanceStatusLabel(m.status)}
+                  </Badge>
+                  <Badge variant="outline">
+                    {getMaintenanceTypeLabel(m.maintenance_type)}
+                  </Badge>
+                </div>
+                {m.scheduled_date && (
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Calendar className="w-3 h-3" />
+                    {format(parseISO(m.scheduled_date), 'dd/MM/yyyy', { locale: ptBR })}
+                  </p>
+                )}
+                {m.status !== 'completed' && m.status !== 'cancelled' && (
+                  <p className="text-xs text-status-warning dark:text-status-warning flex items-center gap-1 mt-1">
+                    <AlertTriangle className="w-3 h-3" />
+                    Chamado bloqueado até conclusão
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {ticket.asset && (
+        <div className="bg-card border border-border rounded-xl shadow-sm p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-[16px] font-bold flex items-center gap-2">
+              <Monitor className="w-4 h-4 text-primary" aria-hidden="true" />
+              Ativo relacionado
+            </h3>
+            {atende && !['resolved', 'closed', 'cancelled'].includes(ticket.status) && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs gap-1.5"
+                onClick={() => setShowSwapDialog(true)}
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                Trocar
+              </Button>
+            )}
+          </div>
+          <dl className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <dt className="text-muted-foreground">Nome</dt>
+              <dd className="font-medium">{ticket.asset.name}</dd>
+            </div>
+            <div className="flex justify-between">
+              <dt className="text-muted-foreground">Patrimônio</dt>
+              <dd className="font-mono text-xs bg-muted px-2 py-0.5 rounded">{ticket.asset.asset_tag}</dd>
+            </div>
+            {ticket.asset.serial_number && (
+              <div className="flex justify-between">
+                <dt className="text-muted-foreground">Nº Série</dt>
+                <dd className="font-mono text-xs">{ticket.asset.serial_number}</dd>
+              </div>
+            )}
+            {ticket.asset.manufacturer && (
+              <div className="flex justify-between">
+                <dt className="text-muted-foreground">Fabricante</dt>
+                <dd>{ticket.asset.manufacturer}</dd>
+              </div>
+            )}
+            {ticket.asset.model && (
+              <div className="flex justify-between">
+                <dt className="text-muted-foreground">Modelo</dt>
+                <dd>{ticket.asset.model}</dd>
+              </div>
+            )}
+          </dl>
+        </div>
+      )}
+    </>
+  );
+
+  const conversa = (
+    <div className="bg-card border border-border rounded-2xl shadow-md h-[calc(100dvh-200px)] max-[860px]:h-[calc(100dvh-230px)] min-h-[420px] flex flex-col overflow-hidden">
+      <TicketConversation
+        ticketId={ticket.id}
+        showInternalOption={pode('internal_notes')}
+        onUpdate={refetch}
+      />
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-background">
       <PageHeader
@@ -244,260 +440,92 @@ export default function TicketDetail() {
             <TicketActionsBar ticket={ticket} onUpdate={refetch} onPatch={patch} compact />
           </div>
         }
-      />
+      >
+        {/* O prazo no topo (dono, 2026-10-28, Leis de Von Restorff e da posição serial): era o último item da coluna da
+            direita e, no celular, só aparecia depois de rolar a conversa inteira. */}
+        <PrazoDoChamado ticket={ticket} sla={sla} primeiraResposta={primeiraResposta} />
+      </PageHeader>
 
       <div className="max-w-6xl mx-auto p-4">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <div className="bg-card border border-border rounded-2xl shadow-md h-[calc(100dvh-200px)] max-[860px]:h-[calc(100dvh-150px)] min-h-[420px] flex flex-col overflow-hidden">
-              <TicketConversation 
-                ticketId={ticket.id} 
-                showInternalOption={pode('internal_notes')}
-                onUpdate={refetch}
-              />
+        {compacto ? (
+          // No celular e no tablet, um assunto por vez (Lei de Miller): a conversa, os detalhes ou o histórico.
+          <div className="space-y-4">
+            <div className="flex h-9 rounded-md border border-input bg-card overflow-hidden" role="tablist" aria-label="Partes do chamado">
+              {([['conversa', 'Conversa'], ['detalhes', 'Detalhes'], ['historico', 'Histórico']] as const).map(([v, r]) => (
+                <button key={v} type="button" role="tab" aria-selected={aba === v} onClick={() => setAba(v)}
+                  className={cn('flex-1 text-[14px] border-r border-input last:border-r-0',
+                    aba === v ? 'bg-primary text-primary-foreground font-bold' : 'font-semibold text-foreground hover:bg-muted')}>
+                  {r}
+                </button>
+              ))}
             </div>
+            {aba === 'conversa' && conversa}
+            {aba === 'detalhes' && <div className="space-y-4">{detalhes}</div>}
+            {aba === 'historico' && <LinhaDoTempo ticketId={ticket.id} />}
           </div>
-          
-          {/* Coluna direita fixa: metadados e ações */}
-          <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto">
-            {/* Quem atende o setor também abre chamado (para o próprio setor, ou é gestor/dono): na
-                visão de quem atende o painel de avaliação não existia, e o solicitante nunca
-                conseguia avaliar (dono, 2026-10-06). */}
-            {ticket.status === 'resolved' && ticket.requester_id === user?.id && (
-              <TicketEvaluationPanel
-                ticketId={ticket.id}
-                resolvedAt={ticket.resolved_at}
-                resolutionNotes={ticket.resolution_notes}
-                avaliadoEm={ticket.avaliado_em}
-                onUpdate={refetch}
-              />
-            )}
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">{conversa}</div>
+            {/* Coluna direita fixa: metadados e ações */}
+            <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto">
+              {detalhes}
+              <LinhaDoTempo ticketId={ticket.id} />
+            </aside>
+          </div>
+        )}
 
-            <ChecagemDeEquipamentos ticketId={ticket.id} podeMarcar={podeMarcarEquipamento} />
-            <LinhaDoTempo ticketId={ticket.id} />
-
-            <TicketFormAnswers ticketId={ticket.id} />
-
-            <TicketComplianceChecklist ticketId={ticket.id} canEdit={canManageChecklist} />
-
-
-            <OffboardingAccessPanel ticketId={ticket.id} canEdit={canManageChecklist} />
-
-            {linkedMaintenances && linkedMaintenances.length > 0 && (
-              <div className="bg-card border border-border rounded-xl shadow-sm p-4">
-                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
-                  <Wrench className="w-3.5 h-3.5" />
-                  Manutenções Vinculadas
-                </h3>
-                <div className="space-y-3">
-                  {linkedMaintenances.map(m => (
-                    <div key={m.id} className="space-y-1.5">
-                      <p className="font-medium text-sm">{m.title}</p>
-                      <div className="flex flex-wrap gap-2">
-                        <Badge variant="outline" className={getMaintenanceStatusColor(m.status)}>
-                          {getMaintenanceStatusLabel(m.status)}
-                        </Badge>
-                        <Badge variant="outline">
-                          {getMaintenanceTypeLabel(m.maintenance_type)}
-                        </Badge>
-                      </div>
-                      {m.scheduled_date && (
-                        <p className="text-xs text-muted-foreground flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          {format(parseISO(m.scheduled_date), 'dd/MM/yyyy', { locale: ptBR })}
-                        </p>
-                      )}
-                      {m.status !== 'completed' && m.status !== 'cancelled' && (
-                        <p className="text-xs text-status-warning dark:text-status-warning flex items-center gap-1 mt-1">
-                          <AlertTriangle className="w-3 h-3" />
-                          Chamado bloqueado até conclusão
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="bg-card border border-border rounded-xl shadow-sm p-4">
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
-                <User className="w-3.5 h-3.5" />
-                Quem abriu
-              </h3>
-              <div className="space-y-2">
-                <p className="font-medium">{ticket.requester?.full_name || 'Usuário'}</p>
-                <p className="text-sm text-muted-foreground">{ticket.requester?.email}</p>
-                {ticket.requester?.department && (
-                  <p className="text-sm text-muted-foreground">{ticket.requester.department}</p>
-                )}
-              </div>
-            </div>
-            
-            <div className="bg-card border border-border rounded-xl shadow-sm p-4">
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
-                <Tag className="w-3.5 h-3.5" />
-                Detalhes
-              </h3>
-              <dl className="space-y-3 text-sm">
-                {ticket.category && (
-                  <div className="flex justify-between">
-                    <dt className="text-muted-foreground">Categoria</dt>
-                    <dd className="font-medium text-right">{categoriaDoChamado(ticket)}</dd>
-                  </div>
-                )}
-                <div className="flex justify-between items-center">
-                  <dt className="text-muted-foreground flex items-center gap-1.5">
-                    <Calendar className="w-3.5 h-3.5" />
-                    Criado em
-                  </dt>
-                  <dd>{format(new Date(ticket.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</dd>
-                </div>
-                {ticket.assignee && (
-                  <div className="flex justify-between items-center">
-                    <dt className="text-muted-foreground flex items-center gap-1.5">
-                      <UserCheck className="w-3.5 h-3.5" />
-                      Atribuído a
-                    </dt>
-                    <dd className="font-medium">{ticket.assignee.full_name}</dd>
-                  </div>
-                )}
-                {/* Atender junto (dono, 2026-10-13): a demanda é de mais de uma pessoa e conta para todos. */}
-                {ticket.assigned_to && (
-                  <div className="pt-2 border-t border-border">
-                    <AtendemJunto ticketId={ticket.id} atendenteId={ticket.assigned_to} solicitanteId={ticket.requester_id}
-                      encerrado={['resolved', 'closed', 'cancelled', 'rejected'].includes(ticket.status)} />
-                  </div>
-                )}
-                {/* Dois relógios (dono, 2026-10-06): 1ª resposta e resolução. */}
-                {primeiraResposta && (
-                  <div className="flex justify-between items-center gap-3">
-                    <dt className="text-muted-foreground flex items-center gap-1.5 shrink-0">
-                      <Clock className="w-3.5 h-3.5" />
-                      1ª resposta
-                    </dt>
-                    <dd className={cn('font-medium text-right', primeiraResposta.atrasada ? 'text-destructive' : 'text-status-success')}>
-                      {primeiraResposta.texto}
-                    </dd>
-                  </div>
-                )}
-                {ticket.sla_due_at && (
-                  <div className="flex justify-between items-center">
-                    <dt className="text-muted-foreground flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5" />
-                      Resolução
-                    </dt>
-                    <dd className={cn(
-                      'font-medium',
-                      sla.isOverdue ? 'text-destructive' : 'text-status-success'
-                    )}>
-                      {sla.label}
-                    </dd>
-                  </div>
-                )}
-                {/* O que pausou o prazo, que o banco já guardava (etapa 4 · Chamados, 2026-10-24). */}
-                {ticket.status === 'scheduled' && ticket.agendado_para && (
-                  <div className="text-[13px] rounded-md border border-border px-2.5 py-2">
-                    <span className="font-medium">Agendado para {dataHora(ticket.agendado_para)}</span>
-                    {ticket.agendado_motivo && <span className="text-muted-foreground"> · {ticket.agendado_motivo}</span>}
-                  </div>
-                )}
-                {((ticket.minutos_pausados ?? 0) > 0 || (ticket.minutos_agendados ?? 0) > 0) && (
-                  <div className="flex justify-between items-center text-[13px]">
-                    <dt className="text-muted-foreground">Prazo parado</dt>
-                    <dd className="tabular-nums">
-                      {[
-                        (ticket.minutos_pausados ?? 0) > 0 && `${Math.round((ticket.minutos_pausados ?? 0) / 60)} h pendente`,
-                        (ticket.minutos_agendados ?? 0) > 0 && `${Math.round((ticket.minutos_agendados ?? 0) / 60)} h agendado`,
-                      ].filter(Boolean).join(' · ')}
-                    </dd>
-                  </div>
-                )}
-                {periodosDoChamado(setorFora, ticket).map((p) => (
-                  <div key={p.id} className="text-[13px] rounded-md border border-border px-2.5 py-2">
-                    <span className="font-medium">
-                      Prazo parado de {format(parseISO(p.de), 'dd/MM')}{p.ate !== p.de && ` a ${format(parseISO(p.ate), 'dd/MM')}`}
-                    </span>
-                    <span className="text-muted-foreground"> · setor fora: {p.motivo}</span>
-                  </div>
-                ))}
-              </dl>
-            </div>
-            
-            {ticket.asset && (
-              <div className="bg-card border border-border rounded-xl shadow-sm p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-                    <Monitor className="w-3.5 h-3.5" />
-                    Ativo Relacionado
-                  </h3>
-                  {atende && !['resolved', 'closed', 'cancelled'].includes(ticket.status) && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-7 text-xs gap-1.5"
-                      onClick={() => setShowSwapDialog(true)}
-                    >
-                      <RefreshCw className="w-3.5 h-3.5" />
-                      Trocar
-                    </Button>
-                  )}
-                </div>
-                <dl className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <dt className="text-muted-foreground">Nome</dt>
-                    <dd className="font-medium">{ticket.asset.name}</dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt className="text-muted-foreground">Patrimônio</dt>
-                    <dd className="font-mono text-xs bg-muted px-2 py-0.5 rounded">{ticket.asset.asset_tag}</dd>
-                  </div>
-                  {ticket.asset.serial_number && (
-                    <div className="flex justify-between">
-                      <dt className="text-muted-foreground">Nº Série</dt>
-                      <dd className="font-mono text-xs">{ticket.asset.serial_number}</dd>
-                    </div>
-                  )}
-                  {ticket.asset.manufacturer && (
-                    <div className="flex justify-between">
-                      <dt className="text-muted-foreground">Fabricante</dt>
-                      <dd>{ticket.asset.manufacturer}</dd>
-                    </div>
-                  )}
-                  {ticket.asset.model && (
-                    <div className="flex justify-between">
-                      <dt className="text-muted-foreground">Modelo</dt>
-                      <dd>{ticket.asset.model}</dd>
-                    </div>
-                  )}
-                </dl>
-              </div>
-            )}
-
-            {ticket.asset && (
-              <AssetSwapDialog
-                open={showSwapDialog}
-                onOpenChange={setShowSwapDialog}
-                currentAsset={{
-                  id: ticket.asset.id,
-                  name: ticket.asset.name,
-                  asset_tag: ticket.asset.asset_tag,
-                  category: ticket.asset.category,
-                  manufacturer: ticket.asset.manufacturer || null,
-                  model: ticket.asset.model || null,
-                  serial_number: ticket.asset.serial_number || null,
-                }}
-                ticketId={ticket.id}
-                requesterId={ticket.requester_id}
-                onSwapComplete={refetch}
-                onSwap={swapAsset}
-                isSwapping={isSwapping}
-              />
-            )}
-          </aside>
-
-        </div>
+        {ticket.asset && (
+          <AssetSwapDialog
+            open={showSwapDialog}
+            onOpenChange={setShowSwapDialog}
+            currentAsset={{
+              id: ticket.asset.id,
+              name: ticket.asset.name,
+              asset_tag: ticket.asset.asset_tag,
+              category: ticket.asset.category,
+              manufacturer: ticket.asset.manufacturer || null,
+              model: ticket.asset.model || null,
+              serial_number: ticket.asset.serial_number || null,
+            }}
+            ticketId={ticket.id}
+            requesterId={ticket.requester_id}
+            onSwapComplete={refetch}
+            onSwap={swapAsset}
+            isSwapping={isSwapping}
+          />
+        )}
       </div>
     </div>
   );
 }
 
+/**
+ * O prazo do chamado em etiquetas, logo abaixo do título (dono, 2026-10-28): resolução, 1ª resposta, com quem está e o
+ * agendamento. Vermelho atrasado, laranja pausado, verde no prazo — as cores do estado.
+ */
+function PrazoDoChamado({ ticket, sla, primeiraResposta }: {
+  ticket: NonNullable<ReturnType<typeof useTicketDetail>['ticket']>;
+  sla: ReturnType<typeof getSLATimeRemaining>;
+  primeiraResposta: ReturnType<typeof rotuloDaPrimeiraResposta>;
+}) {
+  const corDaResolucao = sla.isOverdue ? 'estado-atraso' : sla.isFrozen ? 'estado-espera' : 'estado-concluido';
+  return (
+    <div className="flex flex-wrap items-center gap-2" aria-label="Prazo do chamado">
+      {ticket.sla_due_at && (
+        <span className={cn('estado whitespace-normal text-left', corDaResolucao)}><Clock className="w-3.5 h-3.5" aria-hidden="true" />Resolução: {sla.label}</span>
+      )}
+      {primeiraResposta && (
+        <span className={cn('estado whitespace-normal text-left', primeiraResposta.atrasada ? 'estado-atraso' : 'estado-concluido')}>1ª resposta: {primeiraResposta.texto}</span>
+      )}
+      <span className="estado estado-recebido">
+        <UserCheck className="w-3.5 h-3.5" aria-hidden="true" />
+        {ticket.assignee ? `Com ${ticket.assignee.full_name}` : 'Sem atendente'}
+      </span>
+      {ticket.status === 'scheduled' && ticket.agendado_para && (
+        <span className="estado estado-espera" title={ticket.agendado_motivo ?? undefined}>
+          <Calendar className="w-3.5 h-3.5" aria-hidden="true" />Agendado para {dataHora(ticket.agendado_para)}
+        </span>
+      )}
+    </div>
+  );
+}

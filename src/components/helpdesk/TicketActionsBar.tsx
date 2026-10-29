@@ -40,7 +40,7 @@ import {
   ArrowRightLeft, 
   Settings2, 
   CheckCircle2, 
-  ChevronDown,
+  MoreHorizontal,
   Loader2,
   RotateCcw,
   Wrench,
@@ -142,141 +142,92 @@ export function TicketActionsBar({
 
   const buttonSize = compact ? 'sm' : 'default';
 
+  const podeAssumir = (!ticket.assigned_to && pode('assume'))
+    || (!!ticket.assigned_to && ticket.assigned_to !== user?.id && pode('transfer') && !isFinalState);
+  // Sem atendente vira "Atribuir" (dono, 2026-10-20). No banco é o mesmo "transferir".
+  const podeTransferir = pode('transfer') && (!!ticket.assigned_to || !isFinalState);
+  const podeReabrir = pode('reopen') && isFinalState;
+  const podeResolver = pode('close') && !isResolved;
+  const principal: 'assumir' | 'reabrir' | 'resolver' | null =
+    podeAssumir ? 'assumir' : podeReabrir ? 'reabrir' : podeResolver ? 'resolver' : null;
+  const resolver = () => {
+    if (isChecklistBlocking) { toast.warning(CHECKLIST_BLOCK_MESSAGE); return; }
+    setResolveOpen(true);
+  };
+  const temMais = (podeResolver && principal !== 'resolver') || podeTransferir || pode('delete')
+    || (!isFinalState && (pode('change_status') || pode('schedule') || pode('change_category') || pode('close')));
+
   return (
     <TooltipProvider delayDuration={300}>
       <>
         <div className="flex flex-wrap gap-2">
-          {/* Assumir: o chamado sem atendente, para quem tem "Assumir"; o de OUTRA pessoa, para quem pode transferir — o
-              Gestor (dono, 2026-10-15: "o Gestor não consegue assumir o chamado quando necessário"). No banco é transferir
-              para si, e o prazo recomeça para quem assume, como em toda transferência. */}
-          {((!ticket.assigned_to && pode('assume')) || (!!ticket.assigned_to && ticket.assigned_to !== user?.id && pode('transfer') && !isFinalState)) && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size={buttonSize}
-                  onClick={handleAssign}
-                  disabled={isLoading}
-                  className="gap-2"
-                >
-                  {isLoading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Play className="w-4 h-4" aria-hidden="true" />
-                  )}
-                  Assumir
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Assumir responsabilidade pelo chamado</TooltipContent>
-            </Tooltip>
+          {/* UM botão principal, que muda com a situação (dono, 2026-10-28, Lei de Hick): "Assumir o chamado" quando está
+              sem dono (ou é de outra pessoa e você pode transferir — o Gestor, 2026-10-15), "Reabrir" quando já acabou,
+              "Resolver" quando é seu. Todo o resto mora no "Mais". As regras de quem pode cada coisa são as mesmas. */}
+          {principal === 'assumir' && (
+            <Button size={buttonSize} onClick={handleAssign} disabled={isLoading} className="gap-2">
+              {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" aria-hidden="true" />}
+              Assumir o chamado
+            </Button>
+          )}
+          {principal === 'reabrir' && (
+            <Button size={buttonSize} onClick={() => openStatusDialog('open')} className="gap-2">
+              <RotateCcw className="w-4 h-4" aria-hidden="true" /> Reabrir
+            </Button>
+          )}
+          {principal === 'resolver' && (
+            <Button size={buttonSize} onClick={resolver} className="gap-2" disabled={isChecklistBlocking}
+              title={isChecklistBlocking ? CHECKLIST_BLOCK_MESSAGE : 'Marcar o chamado como resolvido'}>
+              <CheckCircle2 className="w-4 h-4" aria-hidden="true" /> Resolver
+            </Button>
           )}
 
-          {/* Sem atendente vira "Atribuir" (dono, 2026-10-20: no #149, sem ninguém, não dava para pôr a Merilyn — só
-              "Assumir" aparecia, e o "Atribuir" da fila não existia aqui). No banco é o mesmo "transferir". */}
-          {pode('transfer') && (!!ticket.assigned_to || !isFinalState) && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size={buttonSize}
-                  onClick={() => setTransferOpen(true)}
-                  className="gap-2"
-                >
-                  <ArrowRightLeft className="w-4 h-4" aria-hidden="true" />
-                  {(ticket.assigned_to ? 'Transferir' : 'Atribuir')}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>{ticket.assigned_to ? 'Transferir chamado para outra pessoa' : 'Escolher quem vai atender'}</TooltipContent>
-            </Tooltip>
-          )}
-
-          {pode('reopen') && isFinalState && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size={buttonSize}
-                  onClick={() => openStatusDialog('open')}
-                  className="gap-2"
-                >
-                  <RotateCcw className="w-4 h-4" aria-hidden="true" />
-                  {'Reabrir'}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Reabrir chamado (motivo obrigatório)</TooltipContent>
-            </Tooltip>
-          )}
-
-          {pode('close') && !isResolved && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span>
-                  <Button
-                    variant="success"
-                    size={buttonSize}
-                    onClick={() => {
-                      if (isChecklistBlocking) {
-                        toast.warning(CHECKLIST_BLOCK_MESSAGE);
-                        return;
-                      }
-                      setResolveOpen(true);
-                    }}
-                    className="gap-2"
-                    disabled={isChecklistBlocking}
-                  >
-                    <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
-                    {'Resolver'}
-                  </Button>
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>
-                {isChecklistBlocking ? CHECKLIST_BLOCK_MESSAGE : 'Marcar chamado como resolvido'}
-              </TooltipContent>
-            </Tooltip>
-          )}
-
-          {/* O botão "Fechar" saiu (dono, 2026-10-04: "está resolvido, está resolvido"). Resolvido é
-              o fim do chamado; a avaliação do solicitante é opcional e não muda o status. */}
-
-          {/* "Mais" (etapa 4 · Chamados, 2026-10-24): o que não é o trabalho principal do chamado. Antes eram 9 botões
-              lado a lado; agora Assumir, Transferir e Resolver ficam à mostra, e Responder é a caixa da conversa. */}
-          {!isFinalState && (pode('change_status') || pode('schedule') || pode('change_category') || pode('close') || pode('delete')) && (
+          {temMais && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size={buttonSize} className="gap-2">
-                  Mais
-                  <ChevronDown className="w-3 h-3" aria-hidden="true" />
+                <Button variant="outline" size={buttonSize} className="gap-2" aria-label="Mais ações do chamado">
+                  <MoreHorizontal className="w-4 h-4" aria-hidden="true" /> Mais
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-56">
-                {pode('change_status') && ticket.status !== 'in_progress' && (
+              <DropdownMenuContent align="end" className="w-60">
+                {podeResolver && principal !== 'resolver' && (
+                  <DropdownMenuItem onClick={resolver} disabled={isChecklistBlocking} className="gap-2">
+                    <CheckCircle2 className="w-4 h-4" aria-hidden="true" /> Resolver
+                  </DropdownMenuItem>
+                )}
+                {podeTransferir && (
+                  <DropdownMenuItem onClick={() => setTransferOpen(true)} className="gap-2">
+                    <ArrowRightLeft className="w-4 h-4" aria-hidden="true" /> {ticket.assigned_to ? 'Transferir para outra pessoa' : 'Atribuir a alguém'}
+                  </DropdownMenuItem>
+                )}
+                {!isFinalState && pode('change_status') && ticket.status !== 'in_progress' && (
                   <DropdownMenuItem onClick={() => openStatusDialog('in_progress')} className="gap-2">
                     <Settings2 className="w-4 h-4" aria-hidden="true" /> Pôr em andamento
                   </DropdownMenuItem>
                 )}
                 {/* Um "Pendente" só (dono, 2026-10-04): é `waiting_user`, que avisa o solicitante. */}
-                {pode('change_status') && ticket.status !== 'waiting_user' && ticket.status !== 'waiting_parts' && (
+                {!isFinalState && pode('change_status') && ticket.status !== 'waiting_user' && ticket.status !== 'waiting_parts' && (
                   <DropdownMenuItem onClick={() => openStatusDialog('waiting_user')} className="gap-2">
                     <Settings2 className="w-4 h-4" aria-hidden="true" /> Marcar como pendente
                   </DropdownMenuItem>
                 )}
-                {/* Agendar: caixinha própria. */}
-                {pode('schedule') && (
+                {!isFinalState && pode('schedule') && (
                   <DropdownMenuItem onClick={() => setAgendarOpen(true)} className="gap-2">
                     <CalendarClock className="w-4 h-4" aria-hidden="true" /> {ticket.status === 'scheduled' ? 'Reagendar' : 'Agendar'}
                   </DropdownMenuItem>
                 )}
-                {pode('change_status') && isTIModule && (
+                {!isFinalState && pode('change_status') && isTIModule && (
                   <DropdownMenuItem onClick={() => setMaintenanceOpen(true)} className="gap-2">
                     <Wrench className="w-4 h-4" aria-hidden="true" /> Agendar manutenção
                   </DropdownMenuItem>
                 )}
-                {pode('change_category') && (
+                {!isFinalState && pode('change_category') && (
                   <DropdownMenuItem onClick={() => setCategoryOpen(true)} className="gap-2">
                     <Tags className="w-4 h-4" aria-hidden="true" /> Mudar categoria
                   </DropdownMenuItem>
                 )}
-                {(pode('close') || pode('delete')) && <DropdownMenuSeparator />}
-                {pode('close') && (
+                {((!isFinalState && pode('close')) || pode('delete')) && <DropdownMenuSeparator />}
+                {!isFinalState && pode('close') && (
                   <DropdownMenuItem onClick={() => openStatusDialog('cancelled')} className="gap-2">
                     <XCircle className="w-4 h-4" aria-hidden="true" /> Cancelar o chamado
                   </DropdownMenuItem>
@@ -288,13 +239,6 @@ export function TicketActionsBar({
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
-          )}
-          {/* Resolvido ainda pode ser excluído por quem tem a caixinha. */}
-          {isFinalState && pode('delete') && (
-            <Button variant="ghost" size={buttonSize} onClick={() => setDeleteOpen(true)}
-              className="gap-2 text-destructive hover:bg-destructive/10 hover:text-destructive">
-              <Trash2 className="w-4 h-4" aria-hidden="true" /> Excluir
-            </Button>
           )}
         </div>
 

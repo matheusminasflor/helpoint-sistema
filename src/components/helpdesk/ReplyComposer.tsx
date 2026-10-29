@@ -1,13 +1,7 @@
 import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Tooltip,
   TooltipContent,
@@ -32,9 +26,9 @@ interface ReplyComposerProps {
   isSending?: boolean;
   showInternalOption?: boolean;
   /**
-   * Quem atende: dois botões para a resposta pública (dono, 2026-10-07, no lugar da caixinha
-   * "Continuo trabalhando nele"): "Responder" (fica/volta Em andamento) e "Responder e aguardar
-   * retorno" (Pendente, prazo pausado, solicitante avisado). Quem decide o status é o banco
+   * Quem atende: na resposta para quem pediu, a caixinha "Aguardar retorno" (dono, 2026-10-28; antes, de 2026-10-07,
+   * eram dois botões): sem ela a resposta fica/volta Em andamento; com ela vai a Pendente, prazo pausado, solicitante
+   * avisado. Quem decide o status é o banco
    * (`chamado_status_pela_resposta`, 20261214020000), pelo `mantem_status` da resposta.
    */
   showKeepWorking?: boolean;
@@ -57,6 +51,7 @@ export function ReplyComposer({
 }: ReplyComposerProps) {
   const [content, setContent] = useState('');
   const [isInternal, setIsInternal] = useState(false);
+  const [aguardar, setAguardar] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -93,8 +88,8 @@ export function ReplyComposer({
     setFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  /** `aguardar`: "Responder e aguardar retorno". Para o solicitante e a nota interna, não se aplica. */
-  const handleSubmit = async (aguardar = false) => {
+  /** `aguardar` (a caixinha "Aguardar retorno"): não se aplica ao solicitante nem à mensagem só da equipe. */
+  const handleSubmit = async () => {
     if (!content.trim() && files.length === 0) return;
     try {
       // mantem_status = true é o "Responder" (Em andamento); false põe Pendente.
@@ -102,6 +97,7 @@ export function ReplyComposer({
       await onReply(content.trim(), isInternal, files, mantemStatus);
       setContent('');
       setFiles([]);
+      setAguardar(false);
     } catch (error) {
       console.error('Error sending reply:', error);
     }
@@ -205,25 +201,23 @@ export function ReplyComposer({
           </div>
         )}
 
-        {/* No celular a caixa de texto não espreme: "Público/Interno" sobe para a linha de cima (dono, 2026-10-28). */}
-        <div className="flex flex-wrap items-end gap-3">
-          {showInternalOption && (
-            <Select value={isInternal ? 'internal' : 'public'} onValueChange={(v) => setIsInternal(v === 'internal')}>
-              <SelectTrigger className="w-[140px] h-10">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="public">
-                  <div className="flex items-center gap-2"><Globe className="w-3.5 h-3.5" />Público</div>
-                </SelectItem>
-                <SelectItem value="internal">
-                  <div className="flex items-center gap-2"><Lock className="w-3.5 h-3.5" />Interno</div>
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          )}
-          
-          <div className="flex-1 min-w-[200px] relative">
+        {/* Para quem vai a mensagem, em palavras de quem usa (dono, 2026-10-28): era "Público / Interno" num seletor. */}
+        {showInternalOption && (
+          <div className="mb-2 flex h-9 w-full max-w-xs rounded-md border border-input bg-card overflow-hidden" role="group" aria-label="Para quem vai a mensagem">
+            {([[false, 'Para quem pediu', Globe], [true, 'Só a equipe', Lock]] as const).map(([interno, rotulo, Icone]) => (
+              <button key={rotulo} type="button" aria-pressed={isInternal === interno} onClick={() => setIsInternal(interno)}
+                className={cn('flex-1 flex items-center justify-center gap-1.5 text-[13px] border-r border-input last:border-r-0',
+                  isInternal === interno
+                    ? (interno ? 'bg-status-warning text-primary-foreground font-bold' : 'bg-primary text-primary-foreground font-bold')
+                    : 'font-semibold text-foreground hover:bg-muted')}>
+                <Icone className="w-3.5 h-3.5" aria-hidden="true" />{rotulo}
+              </button>
+            ))}
+          </div>
+        )}
+
+        <div className="flex items-end gap-2">
+          <div className="flex-1 min-w-0 relative">
             <Textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
@@ -266,8 +260,8 @@ export function ReplyComposer({
             </Tooltip>
           )}
           
-          {/* Send button — quem atende responde pelos dois botões abaixo */}
-          {!doisBotoes && (
+          {/* Um botão só para enviar (dono, 2026-10-28, Lei de Hick); quem atende escolhe "Aguardar retorno" na caixinha. */}
+          {(
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -288,28 +282,22 @@ export function ReplyComposer({
           )}
         </div>
 
+        {/* "Aguardar retorno" numa caixinha (dono, 2026-10-28): no lugar do segundo botão e do parágrafo que explicava a
+            diferença. Marcada, a resposta põe o chamado em Pendente, pausa o prazo e avisa quem abriu (o banco decide pelo
+            `mantem_status`, como antes). */}
         {doisBotoes && (
-          <div className="mt-2 flex flex-wrap items-center justify-end gap-2">
-            <Button type="button" variant="outline" size="sm" onClick={() => handleSubmit(false)} disabled={isDisabled} className="gap-1.5">
-              {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              Responder
-            </Button>
-            <Button type="button" size="sm" onClick={() => handleSubmit(true)} disabled={isDisabled} className="gap-1.5">
-              {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Hourglass className="w-4 h-4" />}
-              Responder e aguardar retorno
-            </Button>
-          </div>
+          <label className="mt-2 inline-flex items-center gap-2 text-[13px] font-semibold cursor-pointer select-none">
+            <Checkbox checked={aguardar} onCheckedChange={(v) => setAguardar(v === true)} aria-describedby="aguardar-explica" />
+            <Hourglass className="w-3.5 h-3.5 text-status-warning" aria-hidden="true" />
+            Aguardar retorno
+            <span id="aguardar-explica" className="font-normal text-muted-foreground">(o prazo pausa e quem abriu é avisado)</span>
+          </label>
         )}
-        
+
         {isInternal && (
           <p className="text-xs text-status-warning dark:text-status-warning mt-2 flex items-center gap-1">
             <Lock className="w-3 h-3" />
-            Esta mensagem será visível apenas para a equipe técnica
-          </p>
-        )}
-        {doisBotoes && (
-          <p className="mt-1.5 text-right text-xs text-muted-foreground">
-            "Responder e aguardar retorno" põe o chamado em Pendente, pausa o prazo e avisa quem abriu. Enter envia como "Responder".
+            Só a equipe vê esta mensagem
           </p>
         )}
       </div>
