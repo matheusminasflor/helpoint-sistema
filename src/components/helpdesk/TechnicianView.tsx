@@ -185,17 +185,17 @@ export function TechnicianView({ module }: TechnicianViewProps) {
       </div>
       
       {/* Filter Tabs + View Toggle */}
-      <div className="min-h-10 py-1 border-b border-border/50 flex flex-wrap items-center justify-between gap-2 px-4 flex-shrink-0">
-        <div className="flex gap-1 overflow-x-auto max-w-full min-w-0">
+      <div className="min-h-10 py-3 flex flex-wrap items-center justify-between gap-2 px-4 lg:px-6 flex-shrink-0">
+        <div className="inline-flex h-9 rounded-md border border-input bg-card overflow-x-auto max-w-full min-w-0">
           {(['all', 'unassigned', 'mine', 'history'] as const).map(f => (
             <button
               key={f}
               onClick={() => setFilter(f)}
               className={cn(
-                "px-3 min-h-9 text-[13px] font-medium rounded-sm transition-colors flex items-center gap-1.5 whitespace-nowrap shrink-0",
+                "px-4 h-full text-[14px] transition-colors flex items-center gap-1.5 whitespace-nowrap shrink-0 border-r border-input last:border-r-0",
                 filter === f 
-                  ? "bg-primary/15 text-primary" 
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  ? "bg-primary text-primary-foreground font-bold" 
+                  : "font-semibold text-foreground hover:bg-muted"
               )}
             >
               {f === 'all' && `Todos (${allCount})`}
@@ -213,7 +213,7 @@ export function TechnicianView({ module }: TechnicianViewProps) {
             <button
               onClick={() => setFilter('all')}
               title="Tirar o filtro"
-              className="px-3 py-1 text-xs font-medium rounded-sm bg-primary/15 text-primary flex items-center gap-1.5"
+              className="px-4 h-full text-[14px] font-bold bg-primary text-primary-foreground flex items-center gap-1.5 whitespace-nowrap shrink-0"
             >
               {filter === 'sla' ? `SLA violados (${violados.length})` : `Críticos (${criticalCount})`} ✕
             </button>
