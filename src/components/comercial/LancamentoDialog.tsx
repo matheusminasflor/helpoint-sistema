@@ -38,7 +38,8 @@ import {
 import { ChecklistDoLancamento } from '@/components/comercial/ChecklistDoLancamento';
 import { NotasDosPedidos } from '@/components/financeiro/NotasDosPedidos';
 import { useAuth } from '@/contexts/AuthContext';
-import { usePodeNoLancamento } from '@/hooks/useAccessProfiles';
+import { usePodeGerirCarteiras, usePodeNoLancamento } from '@/hooks/useAccessProfiles';
+import { PedidoDeReajuste } from '@/components/comercial/PedidoDeReajuste';
 
 interface Props {
   open: boolean;
@@ -113,6 +114,7 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
   const completandoNota = concluidoTravado && !editando?.nota_fiscal;
   // O checklist é de quem lançou (o banco só aceita ela ou o administrador).
   const deOutraPessoa = !!editando && editando.vendedor_id !== user?.id;
+  const podeGerirCarteiras = usePodeGerirCarteiras();
   // Enviado, o checklist fica com o Financeiro: só a recusa devolve (decisão do dono, 2026-10-02).
   const checklistTravado = (situacao !== null && situacao !== 'Recusado') || deOutraPessoa;
 
@@ -427,13 +429,14 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
                     </p>
                   )}
                   {situacao === 'Em análise' && <p className="pt-1">Enviado ao Financeiro: só pode ser alterado se for devolvido.</p>}
-                  {(situacao === 'Aprovado' || situacao === 'Finalizado') && <p className="pt-1">Checklist aprovado não se altera — só a nota de cada pedido, abaixo.</p>}
+                  {(situacao === 'Aprovado' || situacao === 'Finalizado') && <p className="pt-1">Checklist aprovado não se altera — só a nota de cada pedido, abaixo. Para corrigir, peça reajuste ao Financeiro.</p>}
                 </div>
               )}
               {gravado && (situacao === 'Aprovado' || situacao === 'Finalizado') && (
                 <NotasDosPedidos checklistId={gravado.resumo.id} pedidos={gravado.pedidos}
                   podeEditar={situacao === 'Aprovado' && !deOutraPessoa} />
               )}
+              {gravado && <PedidoDeReajuste resumo={gravado.resumo} podePedir={!deOutraPessoa || podeGerirCarteiras} />}
               {temPedido && (
                 <ChecklistDoLancamento valor={checklist} onChange={(v) => { setChecklist(v); setProblemas([]); }}
                   itens={itens} travado={checklistTravado} clienteCodigo={form.cliente?.codigo ?? null} />

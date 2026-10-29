@@ -47,6 +47,9 @@ const TELA_DO_REGISTRO: Record<string, (id: string) => string> = {
   solicitacao: (id) => `/solicitacoes/${id}`,
   // Distribuidor pediu acesso ao portal (etapa 6): a lista da TI.
   distribuidor: () => '/ti/distribuidores',
+  // Reajuste do checklist (20270212090000): o Financeiro vai à aba dos pedidos; a vendedora, aos lançamentos dela.
+  ped_reajuste: () => '/financeiro/conferencia-de-pedidos?fila=reajustes',
+  ped_reajuste_resposta: () => '/comercial/lancamentos',
 };
 
 export interface AvisoComReferencia {

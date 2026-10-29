@@ -26,11 +26,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import {
   useChecklistDoLancamento, useChecklists, useDecidirChecklist, useFinalizarChecklist, useItensDoChecklist,
-  useMotivosDeRecusa, useRegistrarPagamento,
+  useMotivosDeRecusa, useRegistrarPagamento, useResponderReajuste,
   type ChecklistResumo, type StatusDoPagamento,
 } from '@/hooks/usePedidosChecklist';
 import { IndicadoresDaConferencia } from '@/components/financeiro/IndicadoresDaConferencia';
 import { ChecklistPreenchido, ResumoDaConferencia } from '@/components/financeiro/ResumoDaConferencia';
+import { HistoricoDeReajustes } from '@/components/financeiro/HistoricoDeReajustes';
 import { NotasDosPedidos } from '@/components/financeiro/NotasDosPedidos';
 import { imprimirChecklist } from '@/lib/checklist-pdf';
 import { todayISO } from '@/lib/dates';
@@ -40,10 +41,12 @@ import { formatBRL, formatDateBR } from '@/types/financeiro';
 const rotuloDoPagamento = (s: StatusDoPagamento) =>
   s === 'Recusado' ? 'Não pago' : s === 'Em negociação' ? 'Em negociação (aguardando o cliente)' : 'Pago';
 
-type Fila = 'analise' | 'recusados' | 'negociacao' | 'pagos' | 'finalizados';
+type Fila = 'analise' | 'reajustes' | 'recusados' | 'negociacao' | 'pagos' | 'finalizados';
 
 const FILAS: { valor: Fila; rotulo: string; cabe: (c: ChecklistResumo) => boolean }[] = [
   { valor: 'analise', rotulo: 'Em análise', cabe: (c) => c.situacao === 'Em análise' },
+  // O Comercial pediu para reabrir (dono, 2026-10-29). O checklist continua também na fila da situação dele.
+  { valor: 'reajustes', rotulo: 'Reajuste pedido', cabe: (c) => !!c.reajuste_pendente },
   { valor: 'recusados', rotulo: 'Recusados', cabe: (c) => c.situacao === 'Recusado' },
   { valor: 'negociacao', rotulo: 'Em negociação', cabe: (c) => c.situacao === 'Aprovado' && c.pagamento_status !== 'Pago' },
   { valor: 'pagos', rotulo: 'Pagos, falta finalizar', cabe: (c) => c.situacao === 'Aprovado' && c.pagamento_status === 'Pago' },
@@ -52,7 +55,8 @@ const FILAS: { valor: Fila; rotulo: string; cabe: (c: ChecklistResumo) => boolea
 
 export default function FinConferenciaPedidos() {
   const { data: checklists = [], isLoading } = useChecklists();
-  const [fila, setFila] = useState<Fila>('analise');
+  // No endereço: o aviso de reajuste abre direto em `?fila=reajustes`.
+  const [fila, setFila] = useQueryState<Fila>('fila', 'analise');
   const [busca, setBusca] = useQueryState<string>('q', '');
   const [aberto, setAberto] = useState<ChecklistResumo | null>(null);
   const [visao, setVisao] = useState<'fila' | 'indicadores'>('fila');
@@ -62,7 +66,7 @@ export default function FinConferenciaPedidos() {
     [checklists]);
   const visiveis = useMemo(() => {
     const t = busca.trim().toLowerCase();
-    const cabe = FILAS.find((f) => f.valor === fila)!.cabe;
+    const cabe = (FILAS.find((f) => f.valor === fila) ?? FILAS[0]).cabe;
     return checklists.filter(cabe).filter((c) => !t
       || c.protocolo.toLowerCase().includes(t) || c.cliente_nome.toLowerCase().includes(t)
       || c.cliente_codigo.includes(t) || (c.vendedor_nome ?? '').toLowerCase().includes(t));
@@ -118,6 +122,7 @@ export default function FinConferenciaPedidos() {
                     <td className="px-4 py-3 font-semibold tabular-nums whitespace-nowrap">
                       {c.protocolo}
                       {c.recusas > 0 && <Badge className="ml-1.5 text-[12px] badge-warning">{c.recusas}× devolvido</Badge>}
+                      {c.reajuste_pendente && <Badge className="ml-1.5 text-[12px] badge-info">reajuste pedido</Badge>}
                     </td>
                     <td className="px-4 py-3 tabular-nums whitespace-nowrap">{formatDateBR(c.enviado_em)}</td>
                     <td className="px-4 py-3"><span className="font-semibold">{c.cliente_nome}</span> <span className="text-muted-foreground">· {c.cliente_codigo}</span></td>
@@ -153,6 +158,8 @@ function ConferenciaDialog({ checklist, onClose }: { checklist: ChecklistResumo 
   const [obs, setObs] = useState('');
   const [pagamento, setPagamento] = useState<StatusDoPagamento>('Pago');
   const [dataPagamento, setDataPagamento] = useState(todayISO());
+  const responder = useResponderReajuste();
+  const [respostaReajuste, setRespostaReajuste] = useState('');
 
   // A linha da lista pode estar velha (a situação mudou nesta tela): vale a que acabou de chegar.
   const c = data?.resumo ?? checklist;
@@ -178,6 +185,38 @@ function ConferenciaDialog({ checklist, onClose }: { checklist: ChecklistResumo 
         </DialogHeader>
 
         <div className="space-y-4 text-[14px]">
+          {c.reajuste_pendente && (
+            // O Comercial pediu para reabrir (dono, 2026-10-29): aceitar é a devolução; recusar mantém, com o porquê.
+            <div className="rounded-lg border border-primary/40 bg-primary/5 p-3 space-y-2">
+              <p className="font-semibold">Reajuste pedido pelo Comercial</p>
+              <p className="text-[13px]">
+                {c.reajuste_pendente.por ?? 'O Comercial'} em {formatDateBR(c.reajuste_pendente.em)}: <strong>{c.reajuste_pendente.motivo}</strong>
+              </p>
+              {podeDecidir ? (
+                <>
+                  <Textarea rows={2} value={respostaReajuste} onChange={(e) => setRespostaReajuste(e.target.value)}
+                    placeholder="Resposta ao Comercial (obrigatória para recusar)" aria-label="Resposta ao pedido de reajuste" />
+                  <p className="text-[12px] text-muted-foreground">
+                    Aceitar devolve o checklist: a vendedora corrige e reenvia, e aprovar, registrar o pagamento e finalizar recomeçam.
+                  </p>
+                  <div className="flex flex-wrap justify-end gap-2">
+                    <Button variant="outline" disabled={responder.isPending || !respostaReajuste.trim()}
+                      onClick={() => responder.mutate({ reajusteId: c.reajuste_pendente!.id, aceitar: false, resposta: respostaReajuste },
+                        { onSuccess: () => setRespostaReajuste('') })}>
+                      Recusar e manter como está
+                    </Button>
+                    <Button disabled={responder.isPending}
+                      onClick={() => responder.mutate({ reajusteId: c.reajuste_pendente!.id, aceitar: true, resposta: respostaReajuste },
+                        { onSuccess: () => setRespostaReajuste('') })}>
+                      <Undo2 className="w-4 h-4 mr-1.5" aria-hidden="true" /> Aceitar e devolver ao Comercial
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <p className="text-[13px] text-muted-foreground">Esperando quem aprova e recusa na Conferência.</p>
+              )}
+            </div>
+          )}
           {/* O resumo do sistema antigo e, depois, o checklist preenchido de cada pedido. */}
           <div className="space-y-1">
             <p className="font-semibold">Análise do Financeiro</p>
@@ -207,6 +246,7 @@ function ConferenciaDialog({ checklist, onClose }: { checklist: ChecklistResumo 
               </ul>
             </div>
           )}
+          <HistoricoDeReajustes reajustes={c.historico_reajustes ?? []} />
           {c.historico_pagamentos.length > 0 && (
             <div className="space-y-1">
               <p className="font-semibold">Pagamento</p>

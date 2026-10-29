@@ -152,6 +152,7 @@ export function IndicadoresDaConferencia() {
                           <th className="py-1 font-semibold text-right">Checklists</th>
                           <th className="py-1 font-semibold text-right">Com recusa</th>
                           <th className="py-1 font-semibold text-right">Recusas</th>
+                          <th className="py-1 font-semibold text-right" title="Pedidos de reajuste do Comercial aceitos pelo Financeiro: contam à parte das recusas">Reajustes</th>
                           <th className="py-1 font-semibold text-right">Taxa</th>
                         </tr>
                       </thead>
@@ -168,6 +169,7 @@ export function IndicadoresDaConferencia() {
                             <td className="py-1.5 text-right font-mono">{v.checklists}</td>
                             <td className="py-1.5 text-right font-mono">{v.com_recusa}</td>
                             <td className="py-1.5 text-right font-mono font-semibold">{v.recusas}</td>
+                            <td className="py-1.5 text-right font-mono">{v.reajustes ?? 0}</td>
                             <td className="py-1.5 text-right font-mono">{pct(v.taxa)}</td>
                           </tr>
                         ))}

@@ -67,6 +67,22 @@ export interface ChecklistResumo {
   finalizado_por: string | null;
   /** Quem enviou ("Enviado em 29/09/26, 15:34 por Jacqueline"). */
   criado_por_nome: string | null;
+  /** Reajustes pedidos pelo Comercial e aceitos (migration 20270212090000) — não entram em `recusas`. */
+  reajustes: number;
+  /** O pedido de reajuste esperando o Financeiro (no máximo um por checklist). */
+  reajuste_pendente: { id: string; motivo: string; em: string; por: string | null } | null;
+  historico_reajustes: Reajuste[];
+}
+
+export interface Reajuste {
+  tentativa: number;
+  motivo: string;
+  em: string;
+  por: string | null;
+  status: 'pendente' | 'aceito' | 'recusado';
+  resposta: string | null;
+  respondido_em: string | null;
+  respondido_por: string | null;
 }
 
 export interface PedidoGravado {
@@ -285,6 +301,8 @@ export interface IndicadoresDaConferencia {
     checklists: number;
     com_recusa: number;
     recusas: number;
+    /** Reajustes pedidos pelo Comercial e aceitos — contam à parte das recusas (dono, 2026-10-29). */
+    reajustes: number;
     valor: number;
     /** % dos checklists que tiveram ao menos uma recusa. */
     taxa: number | null;
@@ -388,6 +406,38 @@ export function useFinalizarChecklist() {
     onSuccess: () => {
       invalidar(qc);
       toast.success('Checklist finalizado.');
+    },
+    onError: (e: unknown) => toast.error(mensagemDeErro(e)),
+  });
+}
+
+// ─── O Comercial pede reajuste; o Financeiro aceita (devolve) ou recusa (migration 20270212090000) ──
+
+export function usePedirReajuste() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { checklistId: string; motivo: string }) => {
+      const id = unwrap(await supabase.rpc('ped_pedir_reajuste' as never, { p_checklist: input.checklistId, p_motivo: input.motivo } as never)) as unknown as string | null;
+      if (!id) throw new Error('O pedido de reajuste não foi gravado.');
+      return id;
+    },
+    onSuccess: () => {
+      invalidar(qc);
+      toast.success('Reajuste pedido — o Financeiro foi avisado.');
+    },
+    onError: (e: unknown) => toast.error(mensagemDeErro(e)),
+  });
+}
+
+export function useResponderReajuste() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { reajusteId: string; aceitar: boolean; resposta: string }) =>
+      unwrap(await supabase.rpc('ped_responder_reajuste' as never,
+        { p_reajuste: input.reajusteId, p_aceitar: input.aceitar, p_resposta: input.resposta } as never)),
+    onSuccess: (_r, input) => {
+      invalidar(qc);
+      toast.success(input.aceitar ? 'Reajuste aceito — o checklist voltou ao Comercial.' : 'Reajuste recusado — o checklist fica como está.');
     },
     onError: (e: unknown) => toast.error(mensagemDeErro(e)),
   });
