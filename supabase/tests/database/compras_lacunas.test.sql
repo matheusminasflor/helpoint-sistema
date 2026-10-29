@@ -187,12 +187,10 @@ select is(
   'fornecedor exclusivo',
   'reprovar nao apaga o motivo dos poucos orcamentos (e de quem pediu)'
 );
-select throws_ok(
+select lives_ok(
   format($$ update public.compras_solicitacoes set status = 'approved', forma_pagamento = 'boleto', forma_pagamento_2 = 'pix', filial = 'MF' where id = %L::uuid $$,
          (select id from req)),
-  '23514',
-  null,
-  'entao reaprovar exige escrever o motivo de novo — a regra nao vale so uma vez'
+  'e reaprovar vale com o porque de quem pediu, que continua no pedido'
 );
 
 -- Concluir de novo devolve a mesma conta à vida, e não uma segunda.

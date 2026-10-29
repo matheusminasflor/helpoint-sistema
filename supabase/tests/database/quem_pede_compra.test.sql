@@ -95,7 +95,7 @@ insert into pedido (solicitacao)
 select public.compras_abrir_pedido(
   '{"title":"Cadeira","description":"x"}'::jsonb,
   '{"few_quotes_reason":"pgtap: fornecedor unico","product_name":"Cadeira"}'::jsonb,
-  '[]'::jsonb
+  '[{"supplier":"Loja A","valor_unitario":"500","link":"https://a"}]'::jsonb
 );
 select tests.clear_authentication();
 update pedido set request = (select r.id from public.compras_solicitacoes r where r.solicitacao_id = pedido.solicitacao)
