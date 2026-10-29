@@ -85,7 +85,7 @@ select tests.clear_authentication();
 select is(
   (select j - 'faturado' - 'por_cliente' - 'por_vendedora' from r),
   '{"registrado": {"qtd": 2, "valor": 400}, "conciliado": {"qtd": 1, "valor": 100},
-    "pendente": {"qtd": 1, "valor": 300}, "divergente": {"qtd": 1, "valor": 100},
+    "pendente": {"qtd": 1, "valor": 300}, "divergente": {"qtd": 1, "valor": 100}, "reajustado": {"qtd": 0, "valor": 0},
     "recebido": {"qtd": 1, "valor": 100}, "percentual_conciliacao": 25.0,
     "motivos": [{"motivo": "Transportadora", "vezes": 1}]}'::jsonb,
   'registrado, conciliado, pendente, divergente, recebido, % e motivos — so pedidos tipo Venda somam');
@@ -101,7 +101,7 @@ select is(
 -- O KPI do dono (2026-09-30): quem mais erra, e em quê — para saber quem precisa de treinamento.
 select is(
   (select jsonb_agg(v - 'nome' - 'vendedor_id') from r, jsonb_array_elements(j -> 'por_vendedora') v),
-  '[{"checklists": 2, "com_recusa": 1, "recusas": 1, "valor": 400, "taxa": 50.0,
+  '[{"checklists": 2, "com_recusa": 1, "recusas": 1, "reajustes": 0, "valor": 400, "taxa": 50.0,
      "motivos": [{"motivo": "Transportadora", "vezes": 1}]}]'::jsonb,
   'por vendedora: checklists, quantos tiveram recusa, a taxa e o ranking de motivos dela');
 
