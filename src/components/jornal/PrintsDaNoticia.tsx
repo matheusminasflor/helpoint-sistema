@@ -25,10 +25,11 @@ export function PrintsDaNoticia({ noticiaId, origem }: { noticiaId: string; orig
             <figure key={a.id} className="rounded-md border bg-muted/30 overflow-hidden">
               {url
                 ? (
-                  <button type="button" className="block w-full cursor-zoom-in" title="Ver no tamanho real"
+                  <button type="button" className="flex w-full justify-center cursor-zoom-in" title="Ver no tamanho real"
                     onClick={() => setAberta({ url, nome: legenda(a.nome) })}>
-                    {/* Nunca maior que o próprio tamanho: esticar o recorte é o que borra. */}
-                    <img src={url} alt={legenda(a.nome)} className="block mx-auto max-w-full h-auto bg-background" />
+                    {/* Nunca maior que o próprio tamanho: esticar o recorte é o que borra. Sem `max-w-*` + `mx-auto`, que a
+                        regra geral de largura (index.css, `.area-do-app [class*="max-w-"].mx-auto`) estica a 100%. */}
+                    <img src={url} alt={legenda(a.nome)} className="h-auto bg-background" />
                   </button>
                 )
                 : <div className="h-60 animate-pulse bg-muted" />}
