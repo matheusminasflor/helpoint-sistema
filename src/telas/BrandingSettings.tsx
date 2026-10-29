@@ -81,7 +81,7 @@ function withAlpha(hex: string, alpha: number): string {
 
 const FONTS = ['Nunito Sans', 'Inter', 'Geist', 'Figtree', 'Roboto', 'Manrope', 'Poppins', 'Plus Jakarta Sans'];
 const PRESETS: Array<{ name: string; b: Partial<Branding> }> = [
-  { name: 'DashStack (padrão)', b: { primaryColor: '#4880FF', accentColor: '#4880FF', sidebarBg: '#FFFFFF', sidebarFg: '#202224' } },
+  { name: 'Novo Visual (padrão)', b: { primaryColor: '#4880FF', accentColor: '#4880FF', sidebarBg: '#FFFFFF', sidebarFg: '#202224' } },
   { name: 'Petróleo', b: { primaryColor: '#0F5E73', accentColor: '#0F5E73', sidebarBg: '#FFFFFF', sidebarFg: '#141414' } },
   { name: 'Uva', b: { primaryColor: '#6B1D52', accentColor: '#6B1D52', sidebarBg: '#FFFFFF', sidebarFg: '#141414' } },
   { name: 'Azul Corporativo', b: { primaryColor: '#1E40AF', accentColor: '#3B82F6', sidebarBg: '#0F172A', sidebarFg: '#FFFFFF' } },

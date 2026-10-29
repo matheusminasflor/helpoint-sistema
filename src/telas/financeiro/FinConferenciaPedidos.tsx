@@ -9,9 +9,8 @@
 // sistema antigo saiu). A situação vem pronta da view; esta tela não recalcula nada.
 import { useQueryState } from '@/hooks/useQueryState';
 import { useMemo, useState } from 'react';
-import { CheckCircle2, ClipboardCheck, Printer, XCircle } from 'lucide-react';
+import { CheckCircle2, ClipboardCheck, Printer, Undo2, XCircle } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -75,7 +74,7 @@ export default function FinConferenciaPedidos() {
         description="O checklist que a vendedora envia ao fechar o pedido. Confira, aprove ou devolva com o motivo, e acompanhe o pagamento."
         icon={ClipboardCheck}
       />
-      <div className="p-4 sm:p-6 space-y-4">
+      <div className="px-4 lg:px-8 pb-6 space-y-4">
         <Tabs value={visao} onValueChange={(v) => setVisao(v as 'fila' | 'indicadores')}>
           <TabsList>
             <TabsTrigger value="fila">Conferência</TabsTrigger>
@@ -84,13 +83,16 @@ export default function FinConferenciaPedidos() {
         </Tabs>
         {visao === 'indicadores' ? <IndicadoresDaConferencia /> : (<>
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <Tabs value={fila} onValueChange={(v) => setFila(v as Fila)}>
-            <TabsList className="flex-wrap h-auto">
-              {FILAS.map((f) => (
-                <TabsTrigger key={f.valor} value={f.valor}>{f.rotulo} ({contagem[f.valor] ?? 0})</TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
+          {/* As abas da DashStack (caixa contornada, a ativa azul cheia), como na fila de chamados e no Inventário. */}
+          <div className="inline-flex h-9 rounded-md border border-input bg-card overflow-x-auto max-w-full" role="group" aria-label="Filtrar por situação">
+            {FILAS.map((f) => (
+              <button key={f.valor} type="button" aria-pressed={fila === f.valor} onClick={() => setFila(f.valor)}
+                className={`px-4 h-full text-[14px] whitespace-nowrap shrink-0 border-r border-input last:border-r-0 transition-colors ${
+                  fila === f.valor ? 'bg-primary text-primary-foreground font-bold' : 'font-semibold text-foreground hover:bg-muted'}`}>
+                {f.rotulo} ({contagem[f.valor] ?? 0})
+              </button>
+            ))}
+          </div>
           <Input className="max-w-xs" placeholder="Protocolo, cliente ou vendedora" value={busca}
             onChange={(e) => setBusca(e.target.value)} aria-label="Buscar checklist" />
         </div>
@@ -98,43 +100,43 @@ export default function FinConferenciaPedidos() {
         {isLoading ? (
           <Skeleton className="h-64 w-full" />
         ) : visiveis.length === 0 ? (
-          <Card className="p-6">
+          <div className="panel p-6">
             <EmptyState icon={ClipboardCheck} title="Nada nesta fila" description="Quando uma vendedora enviar um checklist, ele aparece em Em análise." />
-          </Card>
+          </div>
         ) : (
-          <Card className="overflow-x-auto">
-            <table className="w-full text-[13px]">
+          <div className="panel overflow-x-auto">
+            <table className="w-full text-[14px]">
               <thead>
-                <tr className="bg-secondary/60 text-left text-muted-foreground">
-                  <th className="px-3 py-2 font-semibold">Protocolo</th>
-                  <th className="px-3 py-2 font-semibold">Enviado</th>
-                  <th className="px-3 py-2 font-semibold">Cliente</th>
-                  <th className="px-3 py-2 font-semibold">Vendedora</th>
-                  <th className="px-3 py-2 font-semibold text-right">Pedidos</th>
-                  <th className="px-3 py-2 font-semibold text-right">Valor (Venda)</th>
-                  <th className="px-3 py-2 font-semibold">Pagamento</th>
-                  <th className="px-3 py-2" />
+                <tr className="bg-muted text-left text-[13px] font-bold text-foreground">
+                  <th className="px-4 py-3">Protocolo</th>
+                  <th className="px-4 py-3">Enviado</th>
+                  <th className="px-4 py-3">Cliente</th>
+                  <th className="px-4 py-3">Vendedora</th>
+                  <th className="px-4 py-3 text-right">Pedidos</th>
+                  <th className="px-4 py-3 text-right">Valor (Venda)</th>
+                  <th className="px-4 py-3">Pagamento</th>
+                  <th className="px-4 py-3" />
                 </tr>
               </thead>
               <tbody>
                 {visiveis.map((c) => (
-                  <tr key={c.id} className="border-t border-border align-top hover:bg-muted/40">
-                    <td className="px-3 py-2 font-mono whitespace-nowrap">
+                  <tr key={c.id} className="border-t border-border align-middle hover:bg-primary/5">
+                    <td className="px-4 py-3 font-semibold tabular-nums whitespace-nowrap">
                       {c.protocolo}
-                      {c.recusas > 0 && <Badge className="ml-1.5 text-[12px] badge-warning">{c.recusas}× recusado</Badge>}
+                      {c.recusas > 0 && <Badge className="ml-1.5 text-[12px] badge-warning">{c.recusas}× devolvido</Badge>}
                     </td>
-                    <td className="px-3 py-2 font-mono whitespace-nowrap">{formatDateBR(c.enviado_em)}</td>
-                    <td className="px-3 py-2"><span className="font-medium">{c.cliente_nome}</span> <span className="text-muted-foreground">· {c.cliente_codigo}</span></td>
-                    <td className="px-3 py-2">{c.vendedor_nome ?? '—'}</td>
-                    <td className="px-3 py-2 text-right">{c.qtd_pedidos}</td>
-                    <td className="px-3 py-2 text-right font-mono">{formatBRL(Number(c.valor_total))}</td>
-                    <td className="px-3 py-2 whitespace-nowrap">{c.pagamento_status ?? '—'}{c.pagamento_data ? ` · ${formatDateBR(c.pagamento_data)}` : ''}</td>
-                    <td className="px-3 py-2 text-right"><Button size="sm" variant="outline" onClick={() => setAberto(c)}>Abrir</Button></td>
+                    <td className="px-4 py-3 tabular-nums whitespace-nowrap">{formatDateBR(c.enviado_em)}</td>
+                    <td className="px-4 py-3"><span className="font-semibold">{c.cliente_nome}</span> <span className="text-muted-foreground">· {c.cliente_codigo}</span></td>
+                    <td className="px-4 py-3">{c.vendedor_nome ?? '—'}</td>
+                    <td className="px-4 py-3 text-right tabular-nums">{c.qtd_pedidos}</td>
+                    <td className="px-4 py-3 text-right font-semibold tabular-nums">{formatBRL(Number(c.valor_total))}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">{c.pagamento_status ?? '—'}{c.pagamento_data ? ` · ${formatDateBR(c.pagamento_data)}` : ''}</td>
+                    <td className="px-4 py-3 text-right"><Button size="sm" variant="outline" onClick={() => setAberto(c)}>Abrir</Button></td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          </Card>
+          </div>
         )}
         </>)}
       </div>
@@ -171,6 +173,8 @@ function ConferenciaDialog({ checklist, onClose }: { checklist: ChecklistResumo 
   const emAnalise = c.situacao === 'Em análise';
   const aprovadoSemPagar = c.situacao === 'Aprovado' && c.pagamento_status !== 'Pago';
   const pagoSemFinalizar = c.situacao === 'Aprovado' && c.pagamento_status === 'Pago';
+  // Aprovado, pago ou finalizado: ainda dá para devolver ao Comercial, com motivo (dono, 2026-10-29).
+  const jaAprovado = c.situacao === 'Aprovado' || c.situacao === 'Finalizado';
 
   return (
     <Dialog open={!!checklist} onOpenChange={(v) => { if (!v) fechar(); }}>
@@ -201,10 +205,10 @@ function ConferenciaDialog({ checklist, onClose }: { checklist: ChecklistResumo 
 
           {c.historico_recusas.length > 0 && (
             <div className="space-y-1">
-              <p className="font-semibold">Recusas anteriores</p>
+              <p className="font-semibold">Recusas e devoluções anteriores</p>
               <ul className="text-[13px] space-y-0.5">
                 {c.historico_recusas.map((r, i) => (
-                  <li key={i}>Tentativa {r.tentativa} · {formatDateBR(r.em)} · {r.por ?? '—'}: {r.motivos.join(', ')}{r.observacao ? ` — ${r.observacao}` : ''}</li>
+                  <li key={i}>{r.depois_de_aprovado ? 'Devolvido depois de aprovado' : `Tentativa ${r.tentativa}`} · {formatDateBR(r.em)} · {r.por ?? '—'}: {r.motivos.join(', ')}{r.observacao ? ` — ${r.observacao}` : ''}</li>
                 ))}
               </ul>
             </div>
@@ -222,7 +226,14 @@ function ConferenciaDialog({ checklist, onClose }: { checklist: ChecklistResumo 
 
           {recusando && (
             <div className="rounded-lg border border-destructive/40 p-3 space-y-2">
-              <p className="font-semibold">Motivos da recusa</p>
+              <p className="font-semibold">{jaAprovado ? 'Por que devolver?' : 'Motivos da recusa'}</p>
+              {jaAprovado && (
+                // Dono, 2026-10-29: "quando retornar é como se tivesse que fazer novamente a correção".
+                <p className="text-[13px] text-muted-foreground">
+                  Devolver desfaz a aprovação{c.pagamento_status === 'Pago' ? ', o pagamento' : ''}{c.situacao === 'Finalizado' ? ' e a finalização' : ''}.
+                  A vendedora corrige e reenvia, e a conferência começa de novo: aprovar, registrar o pagamento e finalizar.
+                </p>
+              )}
               <div className="grid gap-1 sm:grid-cols-2">
                 {motivos.map((m) => (
                   <label key={m.id} className="flex items-center gap-2 text-[13px] cursor-pointer">
@@ -235,7 +246,7 @@ function ConferenciaDialog({ checklist, onClose }: { checklist: ChecklistResumo 
             </div>
           )}
 
-          {aprovadoSemPagar && podePagar && (
+          {aprovadoSemPagar && podePagar && !recusando && (
             <div className="rounded-lg border border-border p-3 grid gap-2 sm:grid-cols-2">
               <div className="space-y-1">
                 {/* Quem informa se o cliente pagou é o Financeiro (o dono, 2026-09-30) — só quem tem
@@ -259,7 +270,7 @@ function ConferenciaDialog({ checklist, onClose }: { checklist: ChecklistResumo 
             </div>
           )}
 
-          {(emAnalise || aprovadoSemPagar || pagoSemFinalizar) && (
+          {(emAnalise || aprovadoSemPagar || pagoSemFinalizar || recusando) && (
             <div className="space-y-1">
               <Label htmlFor="conf-obs" className="text-[13px]">Observação</Label>
               <Textarea id="conf-obs" rows={2} value={obs} onChange={(e) => setObs(e.target.value)} />
@@ -291,13 +302,18 @@ function ConferenciaDialog({ checklist, onClose }: { checklist: ChecklistResumo 
               </Button>
             </>
           )}
-          {aprovadoSemPagar && podePagar && (
+          {jaAprovado && podeDecidir && !recusando && (
+            <Button variant="outline" className="text-destructive" onClick={() => setRecusando(true)}>
+              <Undo2 className="w-4 h-4 mr-1.5" aria-hidden="true" /> Devolver ao Comercial
+            </Button>
+          )}
+          {aprovadoSemPagar && podePagar && !recusando && (
             <Button disabled={pagar.isPending || (pagamento === 'Pago' && !dataPagamento)}
               onClick={() => pagar.mutate({ checklistId: c.id, status: pagamento, data: pagamento === 'Pago' ? dataPagamento : null, observacao: obs }, { onSuccess: aposGravar })}>
               {pagamento === 'Pago' ? 'Registrar pago e finalizar' : 'Registrar pagamento'}
             </Button>
           )}
-          {pagoSemFinalizar && podePagar && (
+          {pagoSemFinalizar && podePagar && !recusando && (
             <Button disabled={finalizar.isPending}
               onClick={() => finalizar.mutate({ checklistId: c.id, observacao: obs }, { onSuccess: aposGravar })}>
               Finalizar

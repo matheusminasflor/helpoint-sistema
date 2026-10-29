@@ -5,7 +5,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(29);
+select plan(38);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-ped-checklist', 'Checklist Pedidos', false) as a;
@@ -198,6 +198,50 @@ insert into cnt select count(*) from m;
 with m as (delete from public.ped_pagamentos where checklist_id = (select checklist from ck) returning 1)
 insert into cnt select count(*) from m;
 select is((select sum(n)::int from cnt), 0, 'decisao e pagamento nao se editam nem se apagam');
+select tests.clear_authentication();
+
+-- DEVOLVER DEPOIS DE APROVADO (20270212080000, dono 2026-10-29): mesmo finalizado, o Financeiro devolve com motivo e
+-- a conferência recomeça — a vendedora corrige; aprovar, registrar o pagamento e finalizar se fazem de novo.
+select tests.authenticate_as('vendedora@pedck.test');
+select throws_ok($$ insert into public.ped_decisoes (checklist_id, status, motivos) values ((select checklist from ck), 'Recusado', array['Série']) $$,
+  '42501', null, 'a vendedora nao devolve o proprio checklist');
+select tests.clear_authentication();
+
+select tests.authenticate_as('financeiro@pedck.test');
+select throws_ok($$ insert into public.ped_decisoes (checklist_id, status) values ((select checklist from ck), 'Recusado') $$,
+  '23514', null, 'devolver sem motivo e recusado');
+with x as (insert into public.ped_decisoes (checklist_id, status, motivos, observacao)
+           values ((select checklist from ck), 'Recusado', array['Tabela de preço'], 'tabela errada') returning id)
+insert into cnt select 1 from x;
+select is((select situacao || '|' || recusas || '|' || (historico_recusas -> -1 ->> 'depois_de_aprovado') || '|' || coalesce(pagamento_status, '-')
+             from public.ped_checklists_situacao where id = (select checklist from ck)),
+  'Recusado|2|true|-', 'finalizado, o Financeiro devolve com motivo: volta a Recusado, sem pagamento, conta como recusa e fica marcado');
+select throws_ok($$ insert into public.ped_decisoes (checklist_id, status, motivos) values ((select checklist from ck), 'Recusado', array['Série']) $$,
+  'P0001', null, 'o devolvido nao se devolve de novo');
+select tests.clear_authentication();
+
+select tests.authenticate_as('vendedora@pedck.test');
+select lives_ok($$ select public.ped_informar_nota((select pedido1 from ck), '9003') $$, 'devolvido, a nota volta a poder ser trocada');
+select public.ped_salvar_checklist((select interacao from ck), tests.ped_dados((select a from f)));
+select is((select versao || '|' || situacao || '|' || coalesce(pagamento_status, '-') from public.ped_checklists_situacao
+            where id = (select checklist from ck)),
+  '3|Em análise|-', 'a vendedora corrige: volta a Em analise, sem o pagamento nem a finalizacao de antes');
+select tests.clear_authentication();
+
+select tests.authenticate_as('financeiro@pedck.test');
+with x as (insert into public.ped_decisoes (checklist_id, status) values ((select checklist from ck), 'Aprovado') returning id)
+insert into cnt select 1 from x;
+select is((select situacao || '|' || pagamento_status from public.ped_checklists_situacao where id = (select checklist from ck)),
+  'Aprovado|Em negociação', 'aprovado de novo, o pagamento recomeca em Em negociacao');
+with x as (insert into public.ped_pagamentos (checklist_id, status, data_pagamento)
+           values ((select checklist from ck), 'Pago', current_date) returning id)
+insert into cnt select 1 from x;
+with x as (insert into public.ped_finalizacoes (checklist_id) values ((select checklist from ck)) returning checklist_id)
+insert into cnt select 1 from x;
+select is((select situacao from public.ped_checklists_situacao where id = (select checklist from ck)), 'Finalizado',
+  'pago e finalizado de novo');
+select is((select jsonb_array_length(historico_pagamentos) from public.ped_checklists_situacao where id = (select checklist from ck)), 2,
+  'o pagamento da vez anterior continua no historico');
 select tests.clear_authentication();
 
 select ok(not has_function_privilege('anon', 'public.ped_salvar_checklist(uuid, jsonb)', 'execute'),

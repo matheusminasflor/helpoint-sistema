@@ -23,6 +23,8 @@ export interface Recusa {
   por: string | null;
   motivos: string[];
   observacao: string | null;
+  /** Devolvido pelo Financeiro depois de aprovado (dono, 2026-10-29); ausente nas recusas de antes. */
+  depois_de_aprovado?: boolean;
 }
 
 export interface MovimentoDePagamento {
@@ -337,7 +339,7 @@ export function useDecidirChecklist() {
       }).select('id').single()),
     onSuccess: (_r, input) => {
       invalidar(qc);
-      toast.success(input.status === 'Aprovado' ? 'Checklist aprovado.' : 'Checklist recusado — volta para o Comercial.');
+      toast.success(input.status === 'Aprovado' ? 'Checklist aprovado.' : 'Checklist devolvido — volta para o Comercial corrigir.');
     },
     onError: (e: unknown) => toast.error(mensagemDeErro(e)),
   });

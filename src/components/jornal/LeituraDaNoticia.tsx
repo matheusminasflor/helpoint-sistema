@@ -14,7 +14,7 @@ export function LeituraDaNoticia({ noticia, capa, onClose }: { noticia: Noticia 
   if (!noticia) return null;
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         {capa && <img src={capa} alt="" className="w-full aspect-video object-cover rounded-md" />}
         <DialogHeader>
           <DialogTitle>{noticia.titulo}</DialogTitle>

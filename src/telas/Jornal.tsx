@@ -174,7 +174,7 @@ export default function Jornal() {
       ) : isLoading ? (
         <p className="text-sm text-muted-foreground">Carregando…</p>
       ) : aba === 'atualizacoes' ? (
-        <section className="space-y-3 max-w-4xl">
+        <section className="space-y-3 max-w-6xl">
           <p className="text-sm text-muted-foreground">
             O que mudou no Helpoint, em linguagem simples: o que foi corrigido, o que é novo e o que foi ajustado.
           </p>
@@ -191,7 +191,7 @@ export default function Jornal() {
                 </span>
                 <span className="block text-[13px] text-muted-foreground">{dia(n.data_noticia)}</span>
               </summary>
-              <div className="mt-3"><MarkdownRenderer content={n.texto} /></div>
+              <div className="mt-3 max-w-3xl"><MarkdownRenderer content={n.texto} /></div>
               <PrintsDaNoticia noticiaId={n.id} origem={n.repeticao_de} />
               {naoLidas.has(n.id) && (
                 <Button size="sm" variant="outline" className="mt-2" onClick={() => ler(n.id)}>Marcar como lida</Button>
