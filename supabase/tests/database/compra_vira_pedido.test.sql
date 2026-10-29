@@ -61,12 +61,12 @@ select tests.authenticate_as('ana@comprapedido.test');
 insert into p
 select 'projetor', public.compras_abrir_pedido(
   '{"title":"Compra: Projetor","description":"Para a reuniao com clientes","priority":"low"}'::jsonb,
-  '{"product_name":"Projetor","department":"comercial","quantidade":"1"}'::jsonb,
+  '{"few_quotes_reason":"pgtap: fornecedor unico","product_name":"Projetor","department":"comercial","quantidade":"1"}'::jsonb,
   '[{"supplier":"Loja A","valor_unitario":"2000","link":"https://a"}]'::jsonb);
 insert into p
 select 'cadeira', public.compras_abrir_pedido(
   '{"title":"Compra: Cadeira","priority":"low"}'::jsonb,
-  '{"product_name":"Cadeira","department":"comercial","quantidade":"1"}'::jsonb,
+  '{"few_quotes_reason":"pgtap: fornecedor unico","product_name":"Cadeira","department":"comercial","quantidade":"1"}'::jsonb,
   '[{"supplier":"Loja B","valor_unitario":"300","link":"https://b"}]'::jsonb);
 -- Lido por quem pediu: a policy de leitura do pedido deixa.
 select is((select tipo || '|' || setor || '|' || etapa from public.solicitacoes where id = pg_temp.pedido('projetor')),

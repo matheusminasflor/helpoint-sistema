@@ -216,10 +216,10 @@ export function PurchaseRequestFields({ value, onChange, orcamentoOpcional = fal
           <label className="text-sm font-medium">{orcamentoOpcional ? 'Um orçamento, se você souber' : 'Três orçamentos *'}</label>
           <p className="text-xs text-muted-foreground">
             {orcamentoOpcional
-              ? 'Opcional. Quem compra faz as outras cotações; se você já tem um preço, ajuda a decidir.'
+              ? 'Opcional. Se você já tem um preço, ajuda a decidir.'
               : <>Informe fornecedor, valor unitário, frete, prazo de entrega e o link de compra de cada orçamento.
-                Orçamento sem página na internet (PDF, foto) vale com o anexo no lugar do link. Se tiver um
-                preferido, marque "Recomendo este".</>}
+                Orçamento sem página na internet (PDF, foto) vale com o anexo no lugar do link. Não achou três? Preencha
+                os que tem e explique o porquê logo abaixo. Se tiver um preferido, marque "Recomendo este".</>}
           </p>
         </div>
         {value.quotes.map((q, i) => {

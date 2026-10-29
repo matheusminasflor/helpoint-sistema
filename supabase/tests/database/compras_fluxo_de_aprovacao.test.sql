@@ -44,7 +44,7 @@ select tests.authenticate_as('ana@comprasfluxo.test');
 insert into pedido
 select public.compras_abrir_pedido(
   '{"title":"Cadeira","description":"A minha quebrou","priority":"low"}'::jsonb,
-  '{"product_name":"Cadeira","department":"ti"}'::jsonb,
+  '{"few_quotes_reason":"pgtap: fornecedor unico","product_name":"Cadeira","department":"ti"}'::jsonb,
   '[{"supplier":"Loja A","amount":"500","link":"https://a"},{"supplier":"Loja B","amount":"450","link":"https://b"},{"supplier":"Loja C","amount":"600","link":"https://c"}]'::jsonb);
 select tests.clear_authentication();
 select is(pg_temp.etapa() || '|' || (select count(*) from public.tickets where tenant_id = (select a from f))::text, 'pedido|0',

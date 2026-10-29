@@ -62,7 +62,7 @@ select throws_ok($$ insert into public.suppliers (tenant_id, name) select a, 'Lo
 insert into pedido
 select public.compras_abrir_pedido(
   '{"title":"Cadeira","description":"A minha quebrou","priority":"low"}'::jsonb,
-  '{"product_name":"Cadeira","department":"ti"}'::jsonb,
+  '{"few_quotes_reason":"pgtap: fornecedor unico","product_name":"Cadeira","department":"ti"}'::jsonb,
   '[{"supplier":"Loja A","amount":"500"},{"supplier":"Loja B","amount":"450"},{"supplier":"Loja C","amount":"600"}]'::jsonb
 );
 -- ═══ 7. A brecha: quem pediu aprovava a própria compra pela API. ═══

@@ -65,7 +65,7 @@ grant select, insert on pedido to authenticated;
 
 select tests.authenticate_as('ana@finaval.test');
 insert into pedido select public.compras_abrir_pedido('{"title":"Mouse","priority":"low"}'::jsonb,
-  '{"product_name":"Mouse","department":"ti","quantidade":"1"}'::jsonb,
+  '{"few_quotes_reason":"pgtap: fornecedor unico","product_name":"Mouse","department":"ti","quantidade":"1"}'::jsonb,
   '[{"supplier":"Loja","valor_unitario":"50","link":"https://l"}]'::jsonb);
 select tests.clear_authentication();
 select tests.authenticate_as('apr@finaval.test');

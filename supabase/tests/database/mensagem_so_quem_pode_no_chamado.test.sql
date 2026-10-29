@@ -31,7 +31,7 @@ create temporary table pedido (solicitacao uuid) on commit drop;
 grant select, insert on pedido to authenticated;
 select tests.authenticate_as('ana@msgpode.test');
 insert into pedido select public.compras_abrir_pedido('{"title":"Cabo","priority":"low"}'::jsonb,
-  '{"product_name":"Cabo","department":"ti","quantidade":"1"}'::jsonb,
+  '{"few_quotes_reason":"pgtap: fornecedor unico","product_name":"Cabo","department":"ti","quantidade":"1"}'::jsonb,
   '[{"supplier":"Loja","valor_unitario":"10","link":"https://l"}]'::jsonb);
 select tests.clear_authentication();
 

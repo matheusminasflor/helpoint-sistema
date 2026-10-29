@@ -9,7 +9,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTICategories } from '@/hooks/useTICategories';
 import { useCaixinhas } from '@/hooks/useCaixinha';
 import { useAbrirPedidoDeCompra } from '@/hooks/usePurchases';
-import { pedidoSimplesVazio, validarPedidoSimples, type PurchaseFieldsValue } from '@/lib/pedido-de-compra';
+import {
+  emptyPurchaseValue, orcamentosPreenchidos, pedidoSimplesVazio, validarPedidoDeCompra, validarPedidoSimples, type PurchaseFieldsValue,
+} from '@/lib/pedido-de-compra';
 import { parseAmount } from '@/lib/planilha';
 import { mensagemDeErro } from '@/lib/supabase-result';
 import { normalizarSetor } from '@/lib/setores';
@@ -28,7 +30,9 @@ export function PedirCompraDialog({ onFechar, onEnviado }: { onFechar: () => voi
   const [tipo, setTipo] = useState('');
   const [caixinhaId, setCaixinhaId] = useState('');
   const [paraQue, setParaQue] = useState('');
-  const [pedido, setPedido] = useState<PurchaseFieldsValue>(() => pedidoSimplesVazio(profile?.department));
+  const [motivoPoucos, setMotivoPoucos] = useState('');
+  // Três orçamentos (dono, 2026-10-29); a Caixinha segue com um só, opcional.
+  const [pedido, setPedido] = useState<PurchaseFieldsValue>(() => emptyPurchaseValue(profile?.department));
   useEffect(() => {
     const sugerido = normalizarSetor(profile?.department);
     if (sugerido) setPedido((p) => (p.setor ? p : { ...p, setor: sugerido }));
@@ -36,9 +40,21 @@ export function PedirCompraDialog({ onFechar, onEnviado }: { onFechar: () => voi
 
   const categoria = tipos.find((c) => c.id === tipo);
   const caixinha = !!categoria?.caixinha;
+  // Trocar o tipo entre Caixinha e compra comum ajusta as vagas de orçamento (1 ↔ 3), sem perder o que já foi digitado.
+  useEffect(() => {
+    setPedido((p) => {
+      const vagas = caixinha ? 1 : 3;
+      if (p.quotes.length === vagas) return p;
+      const vazio = pedidoSimplesVazio().quotes[0];
+      const quotes = caixinha ? p.quotes.slice(0, 1) : [...p.quotes, ...Array.from({ length: vagas - p.quotes.length }, () => ({ ...vazio }))];
+      return { ...p, quotes, recomendado: caixinha ? null : p.recomendado };
+    });
+  }, [caixinha]);
+  const poucos = !caixinha && orcamentosPreenchidos(pedido).length < 3;
   const falta = !categoria ? 'Escolha o tipo de compra.'
     : caixinha && !caixinhaId ? 'Escolha de qual Caixinha sai.'
-    : validarPedidoSimples(pedido);
+    : caixinha ? validarPedidoSimples(pedido)
+    : validarPedidoDeCompra(pedido, motivoPoucos);
 
   const enviar = () => abrir.mutate({
     chamado: {
@@ -48,7 +64,8 @@ export function PedirCompraDialog({ onFechar, onEnviado }: { onFechar: () => voi
     input: {
       product_id: pedido.productId, product_name: pedido.productName, department: pedido.setor || null,
       quantidade: parseAmount(pedido.quantidade) ?? 1, unidade: pedido.unidade, caixinha_id: caixinha ? caixinhaId : null,
-      recomendado: null, motivoRecomendacao: '', quotes: pedido.quotes,
+      recomendado: caixinha ? null : pedido.recomendado, motivoRecomendacao: pedido.motivoRecomendacao,
+      motivoPoucosOrcamentos: poucos ? motivoPoucos : '', quotes: pedido.quotes,
     },
   }, {
     onSuccess: ({ id }) => { toast.success('Compra pedida. Acompanhe por aqui e em Pedidos.'); onEnviado(id); },
@@ -60,7 +77,10 @@ export function PedirCompraDialog({ onFechar, onEnviado }: { onFechar: () => voi
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Pedir compra</DialogTitle>
-          <DialogDescription>O quê, quanto e para quê. Quem compra faz as cotações; quem aprova decide.</DialogDescription>
+          <DialogDescription>
+            O quê, quanto, para quê e os orçamentos (no mínimo três). Depois de enviado, o pedido vai para Compras e espera
+            a aprovação; aprovado, Compras compra.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-1.5">
@@ -81,9 +101,17 @@ export function PedirCompraDialog({ onFechar, onEnviado }: { onFechar: () => voi
               </select>
             </div>
           )}
-          <PurchaseRequestFields value={pedido} onChange={setPedido} orcamentoOpcional />
+          <PurchaseRequestFields value={pedido} onChange={setPedido} orcamentoOpcional={caixinha} />
+          {poucos && (
+            <div className="space-y-1.5 rounded-lg border border-status-warning/40 badge-warning p-3">
+              <Label htmlFor="compra-poucos" className="text-[14px]">Por que menos de três orçamentos? *</Label>
+              <Textarea id="compra-poucos" rows={2} value={motivoPoucos} onChange={(e) => setMotivoPoucos(e.target.value)}
+                placeholder="Ex.: só esta gráfica tem a faca do nosso rótulo." />
+              <p className="text-[12px]">Quem aprova vê este motivo junto do pedido.</p>
+            </div>
+          )}
           <div className="space-y-1.5">
-            <Label htmlFor="compra-para-que">Para quê <span className="font-normal text-muted-foreground">(opcional)</span></Label>
+            <Label htmlFor="compra-para-que">Descrição: para quê <span className="font-normal text-muted-foreground">(opcional)</span></Label>
             <Textarea id="compra-para-que" rows={2} value={paraQue} onChange={(e) => setParaQue(e.target.value)}
               placeholder="Ex.: a cadeira da recepção quebrou" />
           </div>

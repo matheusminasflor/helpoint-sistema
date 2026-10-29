@@ -84,7 +84,7 @@ select tests.authenticate_as('ana@duascx.test');
 insert into pedido
 select public.compras_abrir_pedido(
   jsonb_build_object('title', 'Cafe', 'priority', 'low', 'category_id', (select id from cat)),
-  jsonb_build_object('product_name', 'Cafe 500g', 'quantidade', '2', 'caixinha_id', (select inbras from cx)),
+  jsonb_build_object('few_quotes_reason', 'pgtap: fornecedor unico', 'product_name', 'Cafe 500g', 'quantidade', '2', 'caixinha_id', (select inbras from cx)),
   '[{"supplier":"Mercado","valor_unitario":"20","link":"https://m"}]'::jsonb);
 select tests.clear_authentication();
 

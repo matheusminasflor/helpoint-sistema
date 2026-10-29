@@ -38,7 +38,7 @@ select tests.authenticate_as('ana@pede.test');
 insert into pedido (solicitacao)
 select public.compras_abrir_pedido(
   '{"title":"Mouse","description":"O meu quebrou","priority":"low"}'::jsonb,
-  '{"product_name":"Mouse sem fio","product_link":"https://loja.test/mouse","department":"ti"}'::jsonb,
+  '{"few_quotes_reason":"pgtap: fornecedor unico","product_name":"Mouse sem fio","product_link":"https://loja.test/mouse","department":"ti"}'::jsonb,
   '[{"supplier":"Loja A","amount":"50"},{"supplier":"Loja B","amount":"45.9"},{"supplier":"Loja C","amount":"60"}]'::jsonb
 );
 update pedido set request = (select r.id from public.compras_solicitacoes r where r.solicitacao_id = pedido.solicitacao);
@@ -65,7 +65,7 @@ select is(
 select throws_ok(
   $$ select public.compras_abrir_pedido(
        '{"title":"Teclado","description":"x"}'::jsonb,
-       '{"product_name":"Teclado"}'::jsonb,
+       '{"few_quotes_reason":"pgtap: fornecedor unico","product_name":"Teclado"}'::jsonb,
        '[{"supplier":"Loja A","amount":"80","supplier_id":"00000000-0000-0000-0000-00000000dead"}]'::jsonb) $$,
   '23503', null,
   'o ultimo passo falhando derruba o pedido inteiro'
@@ -94,7 +94,7 @@ select tests.authenticate_as('ana@pede.test');
 insert into pedido (solicitacao)
 select public.compras_abrir_pedido(
   '{"title":"Cadeira","description":"x"}'::jsonb,
-  '{"product_name":"Cadeira"}'::jsonb,
+  '{"few_quotes_reason":"pgtap: fornecedor unico","product_name":"Cadeira"}'::jsonb,
   '[]'::jsonb
 );
 select tests.clear_authentication();

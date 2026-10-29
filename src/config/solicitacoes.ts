@@ -56,7 +56,7 @@ export const TIPOS: Record<TipoDeSolicitacao, ConfigDoTipo> = {
   // A compra (rodada 2, decisão 2): o pedido nasce em `compras_abrir_pedido` (formulário próprio, `PedirCompraDialog`) e
   // a etapa segue a compra no banco — quem compra trabalha no quadro de Compras.
   compra: {
-    rotulo: 'Compra', descricao: 'Produto ou serviço — quem compra cota, quem aprova decide',
+    rotulo: 'Compra', descricao: 'Produto ou serviço — você traz os orçamentos, quem aprova decide, Compras compra',
     setor: 'compras',
     etapas: [['pedido', 'Pedido'], ['aprovada', 'Aprovada'], ['paga', 'Paga'], ['concluida', 'Comprada']],
     rotuloDoTitulo: 'O que comprar', dicaDoTitulo: 'Ex.: cabo HDMI',

@@ -355,6 +355,7 @@ export function useAbrirPedidoDeCompra() {
           unidade: input.unidade ?? null,
           caixinha_id: input.caixinha_id ?? null,
           motivo_recomendacao: input.recomendado != null ? input.motivoRecomendacao?.trim() || null : null,
+          few_quotes_reason: input.motivoPoucosOrcamentos?.trim() || null,
         } as never,
         p_orcamentos: orcamentos as never,
       }));
@@ -500,8 +501,10 @@ export function useResubmitPurchase() {
   const { tenantId } = useAuth();
   const invalidate = useInvalidatePurchase();
   return useMutation({
-    mutationFn: async ({ request, quantidade, quotes, removidos, response }: {
+    mutationFn: async ({ request, quantidade, quotes, removidos, response, motivoPoucos }: {
       request: PurchaseRequest; quantidade: number; quotes: OrcamentoEditado[]; removidos: string[]; response: string;
+      /** Com menos de três orçamentos, o porquê de quem pediu (o banco exige ao reenviar; 20270212110000). */
+      motivoPoucos?: string;
     }) => {
       if (!tenantId) throw new Error('Sem empresa');
       if (quantidade !== Number(request.quantidade)) {
@@ -528,7 +531,10 @@ export function useResubmitPurchase() {
           'gravar o orçamento');
       }
       expectRows(await supabase.from('compras_solicitacoes')
-        .update({ status: 'pending_approval', adjustment_response: response.trim() || null })
+        .update({
+          status: 'pending_approval', adjustment_response: response.trim() || null,
+          ...(motivoPoucos !== undefined ? { few_quotes_reason: motivoPoucos.trim() || null } : {}),
+        })
         .eq('id', request.id).select('id'), 'reenviar a compra');
     },
     onSuccess: () => { invalidate(); toast.success('Compra reenviada para aprovação.'); },

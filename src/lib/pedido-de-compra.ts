@@ -41,25 +41,31 @@ export const emptyPurchaseValue = (setorSugerido?: string | null): PurchaseField
   quotes: [0, 1, 2].map(() => ({ supplier: '', supplierId: null, amount: '', fretePago: false, frete: '', prazoDias: '', link: '', file: null })),
 });
 
-export function validatePurchaseFields(value: PurchaseFieldsValue): string | null {
-  if (!value.productName.trim()) return 'Informe o produto da compra.';
+/** Os orçamentos que a pessoa começou a preencher (fornecedor ou valor). */
+export const orcamentosPreenchidos = (value: PurchaseFieldsValue) =>
+  value.quotes.filter((q) => q.supplier.trim() !== '' || String(q.amount).trim() !== '');
+
+/**
+ * Pedir compra (dono, 2026-10-29): quem pede traz os orçamentos — no mínimo três; com menos, escreve o porquê
+ * (`motivoPoucos`). Cada um com fornecedor, valor e o link (ou o anexo, quando o orçamento não tem página). O banco
+ * confere o mesmo em `compras_abrir_pedido`. A Caixinha segue no pedido simples (`validarPedidoSimples`).
+ */
+export function validarPedidoDeCompra(value: PurchaseFieldsValue, motivoPoucos: string): string | null {
+  if (!value.productName.trim()) return 'Informe o produto.';
   if (!isSetor(value.setor)) return 'Escolha o setor que paga esta compra.';
   if (!(numero(value.quantidade) > 0)) return 'Informe a quantidade (maior que zero).';
-  const filled = value.quotes.filter(q => q.supplier.trim() && String(q.amount).trim());
-  if (filled.length < 3) return 'Informe os 3 orçamentos (fornecedor e valor unitário).';
-  // O link é de cada orçamento, não um só para a compra (dono, 2026-10-09). Orçamento que veio por PDF
-  // ou foto (sem página na internet) vale com o anexo no lugar do link.
-  if (filled.some(q => !q.link?.trim() && !q.file)) return 'Cada orçamento precisa do link de compra (ou do anexo, se o orçamento não tem página).';
-  if (filled.some(q => !(numero(q.amount) > 0))) return 'Os valores unitários precisam ser números maiores que zero.';
-  if (filled.some(q => q.fretePago && !(numero(q.frete) > 0))) return 'Informe o valor do frete pago (ou marque frete grátis).';
-  if (filled.some(q => !/^\d+$/.test(q.prazoDias?.trim() ?? ''))) return 'Informe o prazo de entrega de cada orçamento, em dias.';
+  const feitos = orcamentosPreenchidos(value);
+  if (feitos.length === 0) return 'Informe os orçamentos: no mínimo três.';
+  if (feitos.some((q) => !q.supplier.trim() || !(numero(q.amount) > 0))) return 'Em cada orçamento, informe o fornecedor e o valor.';
+  if (feitos.some((q) => !q.link?.trim() && !q.file)) return 'Cada orçamento precisa do link (ou do anexo, se não tem página na internet).';
+  if (feitos.some((q) => q.fretePago && !(numero(q.frete) > 0))) return 'Informe o valor do frete pago (ou marque frete grátis).';
+  if (feitos.length < 3 && !motivoPoucos.trim()) return 'Com menos de três orçamentos, escreva o porquê.';
   return null;
 }
 
 /**
- * "Pedir compra" (etapa 4b, 2026-10-25): quem pede diz o quê, quanto e para quê, e UM orçamento se souber — as outras
- * cotações são de quem compra. Os três orçamentos continuam valendo na aprovação (menos de três, quem aprova escreve
- * o porquê); só deixaram de ser exigidos de quem pede.
+ * Pedido simples — hoje só a Caixinha (compra pequena do dia a dia, sem os três orçamentos): o quê, quanto, para quê e
+ * UM orçamento se souber.
  */
 export const pedidoSimplesVazio = (setorSugerido?: string | null): PurchaseFieldsValue => ({
   ...emptyPurchaseValue(setorSugerido),

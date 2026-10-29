@@ -27,7 +27,7 @@ select tests.authenticate_as('ana@dircompras.test');
 insert into pedido
 select public.compras_abrir_pedido(
   '{"title":"Cadeira","description":"A minha quebrou","priority":"low"}'::jsonb,
-  '{"product_name":"Cadeira","department":"ti"}'::jsonb,
+  '{"few_quotes_reason":"pgtap: fornecedor unico","product_name":"Cadeira","department":"ti"}'::jsonb,
   '[{"supplier":"Loja A","amount":"500"},{"supplier":"Loja B","amount":"450"},{"supplier":"Loja C","amount":"600"}]'::jsonb);
 select tests.clear_authentication();
 

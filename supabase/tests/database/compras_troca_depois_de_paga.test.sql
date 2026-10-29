@@ -31,7 +31,7 @@ create or replace function pg_temp.compra(p text) returns uuid language sql as
 
 select tests.authenticate_as('ana@trocapaga.test');
 insert into pedido select n, public.compras_abrir_pedido(jsonb_build_object('title', n, 'priority', 'low'),
-  jsonb_build_object('product_name', n, 'department', 'ti', 'quantidade', '1'),
+  jsonb_build_object('few_quotes_reason', 'pgtap: fornecedor unico', 'product_name', n, 'department', 'ti', 'quantidade', '1'),
   jsonb_build_array(jsonb_build_object('supplier', 'Mercado Livre', 'valor_unitario', v, 'link', 'https://ml')))
 from (values ('Cabo', '20'), ('Mouse', '30'), ('Teclado', '80')) x(n, v);
 select tests.clear_authentication();

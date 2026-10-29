@@ -57,7 +57,7 @@ create or replace function pg_temp.contas(p text) returns setof public.fin_entri
 select tests.authenticate_as('ana@parcelas.test');
 insert into pedido
 select n, public.compras_abrir_pedido(jsonb_build_object('title', n, 'priority', 'low'),
-  jsonb_build_object('product_name', n, 'department', 'ti', 'quantidade', '1'),
+  jsonb_build_object('few_quotes_reason', 'pgtap: fornecedor unico', 'product_name', n, 'department', 'ti', 'quantidade', '1'),
   '[{"supplier":"Loja","valor_unitario":"100","link":"https://l"}]'::jsonb)
 from unnest(array['cartao', 'boleto', 'caixa']) n;
 select tests.clear_authentication();

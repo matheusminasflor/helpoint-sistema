@@ -180,12 +180,12 @@ select is(
   'cancelled',
   'compra que deixa de estar concluida tem a conta cancelada, nao apagada'
 );
--- Reprovar desfaz a aprovação, e o motivo dos poucos orçamentos vai junto: ele
--- explicava *aquela* decisão.
+-- Desde 20270212110000 o motivo dos poucos orçamentos é de quem PEDIU (dono, 2026-10-29): reprovar não o apaga — ele
+-- continua explicando o pedido no histórico.
 select is(
   (select few_quotes_reason from public.compras_solicitacoes where id = (select id from req)),
-  null,
-  'e o motivo dos poucos orcamentos e apagado com ela'
+  'fornecedor exclusivo',
+  'reprovar nao apaga o motivo dos poucos orcamentos (e de quem pediu)'
 );
 select throws_ok(
   format($$ update public.compras_solicitacoes set status = 'approved', forma_pagamento = 'boleto', forma_pagamento_2 = 'pix', filial = 'MF' where id = %L::uuid $$,

@@ -35,7 +35,7 @@ select tests.authenticate_as('ana@compraspag.test');
 insert into pedido
 select public.compras_abrir_pedido(
   '{"title":"Cadeira","priority":"low"}'::jsonb,
-  '{"product_name":"Cadeira","department":"ti","quantidade":"1"}'::jsonb,
+  '{"few_quotes_reason":"pgtap: fornecedor unico","product_name":"Cadeira","department":"ti","quantidade":"1"}'::jsonb,
   '[{"supplier":"Loja A","valor_unitario":"100","link":"https://a"},
     {"supplier":"Loja B","valor_unitario":"90","link":"https://b"},
     {"supplier":"Loja C","valor_unitario":"120","link":"https://c"}]'::jsonb);

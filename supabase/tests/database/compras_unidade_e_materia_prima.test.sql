@@ -30,7 +30,7 @@ select lives_ok(
 insert into pedido
 select public.compras_abrir_pedido(
   '{"title":"Glicerina"}'::jsonb,
-  jsonb_build_object('product_id', (select id from prod), 'product_name', 'Glicerina', 'department', 'qualidade',
+  jsonb_build_object('few_quotes_reason', 'pgtap: fornecedor unico', 'product_id', (select id from prod), 'product_name', 'Glicerina', 'department', 'qualidade',
                      'quantidade', '2.5', 'unidade', 'kg'),
   '[{"supplier":"Quimica A","valor_unitario":"40","link":"https://a"}]'::jsonb);
 select is((select quantidade::text || ' ' || unidade from public.compras_solicitacoes
@@ -42,15 +42,15 @@ delete from pedido;
 insert into pedido
 select public.compras_abrir_pedido(
   '{"title":"Glicerina de novo"}'::jsonb,
-  jsonb_build_object('product_id', (select id from prod), 'product_name', 'Glicerina', 'department', 'qualidade',
+  jsonb_build_object('few_quotes_reason', 'pgtap: fornecedor unico', 'product_id', (select id from prod), 'product_name', 'Glicerina', 'department', 'qualidade',
                      'quantidade', '1'),
-  '[]'::jsonb);
+  '[{"supplier":"Quimica A","valor_unitario":"40","link":"https://a"}]'::jsonb);
 select is((select unidade from public.compras_solicitacoes where solicitacao_id = (select solicitacao from pedido)),
   'kg', 'sem a unidade no pedido (tela antiga), vale a do produto do catalogo');
 
 select throws_ok(
   $$ select public.compras_abrir_pedido('{"title":"X"}'::jsonb,
-       '{"product_name":"Areia","department":"qualidade","quantidade":"1","unidade":"tonelada"}'::jsonb, '[]'::jsonb) $$,
+       '{"few_quotes_reason":"pgtap: fornecedor unico","product_name":"Areia","department":"qualidade","quantidade":"1","unidade":"tonelada"}'::jsonb, '[]'::jsonb) $$,
   '23514', null, 'unidade fora da lista e recusada no pedido');
 select throws_ok(
   $$ insert into public.compras_produtos (tenant_id, name, unidade) select a, 'Areia', 'tonelada' from f returning id $$,

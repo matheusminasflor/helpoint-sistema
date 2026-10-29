@@ -33,7 +33,7 @@ grant select on f, u, hoje to authenticated;
 -- ═══ Ciclo da compra ═══
 select tests.authenticate_as('ana@relat.test');
 select public.compras_abrir_pedido('{"title":"Compra: Cadeira","description":"x"}'::jsonb,
-  '{"product_name":"Cadeira","department":"comercial"}'::jsonb, '[]'::jsonb);
+  '{"few_quotes_reason":"pgtap: fornecedor unico","product_name":"Cadeira","department":"comercial"}'::jsonb, '[]'::jsonb);
 select throws_ok($$ select * from public.rel_ciclo_da_compra((select d - 1 from hoje), (select d from hoje)) $$, '42501', null,
   'sem os indicadores de Compras, o ciclo da compra não abre');
 select tests.clear_authentication();

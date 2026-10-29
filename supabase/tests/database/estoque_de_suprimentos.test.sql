@@ -44,7 +44,7 @@ create or replace function pg_temp.compra(p text) returns public.compras_solicit
 
 select tests.authenticate_as('ana@estoque.test');
 insert into pedido select n, public.compras_abrir_pedido(jsonb_build_object('title', n, 'priority', 'low'),
-  jsonb_build_object('product_name', n, 'product_id', (select id from prod where name = n), 'department', 'ti', 'quantidade', '5'),
+  jsonb_build_object('few_quotes_reason', 'pgtap: fornecedor unico', 'product_name', n, 'product_id', (select id from prod where name = n), 'department', 'ti', 'quantidade', '5'),
   '[{"supplier":"Mercado","valor_unitario":"10","link":"https://m"}]'::jsonb)
 from unnest(array['Cafe', 'Monitor']) n;
 select tests.clear_authentication();

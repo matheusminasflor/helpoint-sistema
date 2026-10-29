@@ -194,6 +194,8 @@ export interface NewPurchaseInput {
   /** Índice, em `quotes`, do orçamento que quem pede recomenda. */
   recomendado?: number | null;
   motivoRecomendacao?: string;
+  /** Com menos de três orçamentos, o porquê — escrito por quem pede (dono, 2026-10-29). */
+  motivoPoucosOrcamentos?: string;
   quotes: NewQuoteInput[];
 }
 

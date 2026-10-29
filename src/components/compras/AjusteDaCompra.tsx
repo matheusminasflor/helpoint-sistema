@@ -26,6 +26,8 @@ export function AjusteDaCompra({ request, onDone }: { request: PurchaseRequest; 
   })));
   const [removidos, setRemovidos] = useState<string[]>([]);
   const [resposta, setResposta] = useState('');
+  // Com menos de três orçamentos, o porquê de quem pediu (dono, 2026-10-29); a Caixinha não exige.
+  const [motivoPoucos, setMotivoPoucos] = useState(request.few_quotes_reason ?? '');
 
   const muda = (i: number, campo: Partial<Linha>) => setLinhas(ls => ls.map((l, j) => (j === i ? { ...l, ...campo } : l)));
   const tira = (i: number) => {
@@ -34,8 +36,10 @@ export function AjusteDaCompra({ request, onDone }: { request: PurchaseRequest; 
     setLinhas(ls => ls.filter((_, j) => j !== i));
   };
   const qtd = Number(quantidade);
+  const poucos = !request.caixinha && linhas.length < 3;
   const valido = qtd > 0 && linhas.length > 0
-    && linhas.every(l => l.supplier.trim() && Number(l.valor) > 0 && Number(l.frete || 0) >= 0 && /^\d+$/.test(l.prazo.trim()));
+    && linhas.every(l => l.supplier.trim() && Number(l.valor) > 0 && Number(l.frete || 0) >= 0 && /^\d+$/.test(l.prazo.trim()))
+    && (!poucos || motivoPoucos.trim() !== '');
 
   const enviar = async () => {
     await reenviar.mutateAsync({
@@ -46,6 +50,7 @@ export function AjusteDaCompra({ request, onDone }: { request: PurchaseRequest; 
       })),
       removidos,
       response: resposta,
+      motivoPoucos: poucos ? motivoPoucos : undefined,
     });
     onDone?.();
   };
@@ -93,6 +98,13 @@ export function AjusteDaCompra({ request, onDone }: { request: PurchaseRequest; 
         onClick={() => setLinhas(ls => [...ls, { supplier: '', valor: '', frete: '0', prazo: '', link: null, notes: null, file: null }])}>
         <Plus className="w-3.5 h-3.5 mr-1" /> Acrescentar orçamento
       </Button>
+      {poucos && (
+        <div className="space-y-1.5">
+          <Label htmlFor="poucos-ajuste" className="text-[14px]">Por que menos de três orçamentos? *</Label>
+          <Textarea id="poucos-ajuste" rows={2} value={motivoPoucos} onChange={e => setMotivoPoucos(e.target.value)}
+            placeholder="Ex.: só esta gráfica tem a faca do nosso rótulo." />
+        </div>
+      )}
       <div className="space-y-1.5">
         <Label htmlFor="resposta-ajuste" className="text-[14px]">O que foi ajustado</Label>
         <Textarea id="resposta-ajuste" rows={2} value={resposta} onChange={e => setResposta(e.target.value)}

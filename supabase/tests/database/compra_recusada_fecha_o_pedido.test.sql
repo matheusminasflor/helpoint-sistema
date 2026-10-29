@@ -25,7 +25,7 @@ grant select, insert on pedido to authenticated;
 select tests.authenticate_as('ana@recusada.test');
 insert into pedido
 select public.compras_abrir_pedido('{"title":"Monitor","priority":"low"}'::jsonb,
-  '{"product_name":"Monitor","department":"ti","quantidade":"1"}'::jsonb,
+  '{"few_quotes_reason":"pgtap: fornecedor unico","product_name":"Monitor","department":"ti","quantidade":"1"}'::jsonb,
   '[{"supplier":"Loja","valor_unitario":"900","link":"https://l"}]'::jsonb);
 select tests.clear_authentication();
 

@@ -35,7 +35,7 @@ select tests.authenticate_as('ana@comprasqtd.test');
 insert into pedido
 select public.compras_abrir_pedido(
   '{"title":"Cadeira","priority":"low"}'::jsonb,
-  '{"product_name":"Cadeira","department":"ti","quantidade":"4","motivo_recomendacao":"Entrega mais rapida"}'::jsonb,
+  '{"few_quotes_reason":"pgtap: fornecedor unico","product_name":"Cadeira","department":"ti","quantidade":"4","motivo_recomendacao":"Entrega mais rapida"}'::jsonb,
   '[{"supplier":"Loja A","valor_unitario":"100","frete":"0","prazo_entrega_dias":"10","link":"https://a"},
     {"supplier":"Loja B","valor_unitario":"90","frete":"30","prazo_entrega_dias":"3","link":"https://b","recomendado":true},
     {"supplier":"Loja C","valor_unitario":"120","link":"https://c"}]'::jsonb);
@@ -87,7 +87,7 @@ select is((select amount from public.fin_entries where purchase_request_id = (pg
 
 -- ═══ 9. Quantidade zero não abre pedido. ═══
 select tests.authenticate_as('ana@comprasqtd.test');
-select throws_ok($$ select public.compras_abrir_pedido('{"title":"X"}'::jsonb, '{"product_name":"X","quantidade":"0"}'::jsonb, '[]'::jsonb) $$,
+select throws_ok($$ select public.compras_abrir_pedido('{"title":"X"}'::jsonb, '{"few_quotes_reason":"pgtap: fornecedor unico","product_name":"X","quantidade":"0"}'::jsonb, '[]'::jsonb) $$,
   '23514', null, 'quantidade zero e recusada');
 select tests.clear_authentication();
 

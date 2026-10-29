@@ -49,12 +49,12 @@ select tests.authenticate_as('ana@caixinha.test');
 insert into pedido
 select 'cafe', public.compras_abrir_pedido(
   jsonb_build_object('title', 'Cafe', 'priority', 'low', 'category_id', (select id from cat)),
-  '{"product_name":"Cafe 500g","quantidade":"2"}'::jsonb,
+  '{"few_quotes_reason":"pgtap: fornecedor unico","product_name":"Cafe 500g","quantidade":"2"}'::jsonb,
   '[{"supplier":"Mercado","valor_unitario":"20","link":"https://m"}]'::jsonb);
 insert into pedido
 select 'cadeira', public.compras_abrir_pedido(
   '{"title":"Cadeira","priority":"low"}'::jsonb,
-  '{"product_name":"Cadeira","department":"ti","quantidade":"1"}'::jsonb,
+  '{"few_quotes_reason":"pgtap: fornecedor unico","product_name":"Cadeira","department":"ti","quantidade":"1"}'::jsonb,
   '[{"supplier":"Loja A","valor_unitario":"100","link":"https://a"}]'::jsonb);
 select tests.clear_authentication();
 

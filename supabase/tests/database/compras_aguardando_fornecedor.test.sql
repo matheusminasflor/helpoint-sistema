@@ -33,7 +33,7 @@ create or replace function pg_temp.compra(p text) returns uuid language sql as
 
 select tests.authenticate_as('ana@aguardaforn.test');
 insert into pedido select n, public.compras_abrir_pedido(jsonb_build_object('title', n, 'priority', 'low'),
-  jsonb_build_object('product_name', n, 'department', 'ti', 'quantidade', '1'),
+  jsonb_build_object('few_quotes_reason', 'pgtap: fornecedor unico', 'product_name', n, 'department', 'ti', 'quantidade', '1'),
   jsonb_build_array(jsonb_build_object('supplier', 'Fabrica', 'valor_unitario', '50', 'link', 'https://f')))
 from (values ('Kit'), ('Pago')) x(n);
 select tests.clear_authentication();

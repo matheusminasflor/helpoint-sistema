@@ -20,8 +20,7 @@ import {
 } from '@/hooks/usePurchases';
 import { comUnidade, diferencaParaUltima, fraseDaDiferenca, porUnidade } from '@/lib/unidades-de-compra';
 import { useAuth } from '@/contexts/AuthContext';
-import { useComprasConfig, useDecideACaixinha } from '@/hooks/useCaixinha';
-import { IncluirOrcamento } from './IncluirOrcamento';
+import { useDecideACaixinha } from '@/hooks/useCaixinha';
 import { AjusteDaCompra } from './AjusteDaCompra';
 import { ReajusteDaCompra } from './ReajusteDaCompra';
 import { ComoFuncionaCompras } from './ComoFuncionaCompras';
@@ -53,7 +52,6 @@ export function PurchasePanel({ pedidoId, onUpdate }: Props) {
   const complete = useCompletePurchase();
   const pedirAjuste = useRequestAdjustment();
   const { user } = useAuth();
-  const { data: config } = useComprasConfig();
   const { data: decisoes = [] } = useDecisoesDaCompra(request?.id);
   // A última compra do mesmo item (sem contar esta): cada orçamento diz se está mais caro ou mais barato que ela.
   const { data: historico } = useHistoricoDeCompras();
@@ -156,7 +154,7 @@ export function PurchasePanel({ pedidoId, onUpdate }: Props) {
       formaPagamento2,
       parcelas2: formaPagamento2 === 'cartao' ? Number(parcelas2) : null,
       filial,
-      fewQuotesReason: poucosMotivo,
+      fewQuotesReason: poucosMotivo.trim() || request.few_quotes_reason || '',
       overBudgetReason: tetoMotivo,
       approvalNotes: obsAprovacao,
     });
@@ -189,9 +187,6 @@ export function PurchasePanel({ pedidoId, onUpdate }: Props) {
   };
 
   const souQuemPediu = !!user?.id && request.created_by === user.id;
-  // Quem compra (ou quem aprova) inclui os orçamentos que faltam enquanto a compra espera a decisão (etapa 4b).
-  const podeCotar = request.status === 'pending_approval' && !caixinha
-    && (canApprove || (!!user?.id && config?.comprador_id === user.id));
 
   const handleReject = async () => {
     if (!reason.trim()) return;
@@ -455,14 +450,15 @@ export function PurchasePanel({ pedidoId, onUpdate }: Props) {
         </div>
       )}
 
-      {/* O motivo só existe enquanto a aprovação que ele explica existe: o banco
-          o apaga ao reprovar, ao voltar para análise e ao aprovar com três
-          orçamentos. Por isso a condição não conta os orçamentos de agora —
-          acrescentar um terceiro depois de aprovada não apaga o porquê daquela
-          decisão, e escondê-lo aqui deixaria a compra sem explicação nenhuma. */}
-      {request.few_quotes_reason && request.status !== 'pending_approval' && (
-        <div className="rounded-lg border border-border bg-secondary/40 p-3 text-sm">
-          <p className="font-medium mb-1">Aprovada com menos de três orçamentos</p>
+      {/* Desde 2026-10-29 o porquê é de quem pediu (vem com o pedido) e fica visível em toda a vida da compra; o banco
+          só o apaga quando a compra é aprovada com três orçamentos, em que ele não explica mais nada. */}
+      {request.few_quotes_reason && (
+        <div className="rounded-lg border border-border badge-warning p-3 text-sm">
+          <p className="font-medium mb-1">
+            {request.status === 'approved' || request.status === 'completed'
+              ? 'Aprovada com menos de três orçamentos'
+              : `${(request.quotes || []).length} orçamento${(request.quotes || []).length === 1 ? '' : 's'} — o porquê de quem pediu`}
+          </p>
           <p className="text-muted-foreground">{request.few_quotes_reason}</p>
         </div>
       )}
@@ -508,12 +504,10 @@ export function PurchasePanel({ pedidoId, onUpdate }: Props) {
         </div>
       )}
 
-      {podeCotar && (
-        <IncluirOrcamento requestId={request.id} posicao={(request.quotes || []).length + 1} onDone={() => onUpdate?.()} />
-      )}
 
       {/* Ações de aprovação */}
-      {request.status === 'pending_approval' && canApprove && poucosOrcamentos && (
+      {/* Pedido antigo, sem o porquê de quem pediu: quem aprova o escreve. */}
+      {request.status === 'pending_approval' && canApprove && poucosOrcamentos && !request.few_quotes_reason && (
         <div className="space-y-1.5 rounded-lg border border-border p-3">
           <Label htmlFor="poucos-motivo" className="text-[14px]">
             Esta compra tem {(request.quotes || []).length} orçamento
@@ -585,7 +579,7 @@ export function PurchasePanel({ pedidoId, onUpdate }: Props) {
               onClick={handleApprove}
               disabled={
                 !selectedQuote || !(qtdEscolhida > 0) || faltaPagamento || approve.isPending
-                || (poucosOrcamentos && !poucosMotivo.trim())
+                || (poucosOrcamentos && !poucosMotivo.trim() && !request.few_quotes_reason)
                 || (overBudget && !tetoMotivo.trim())
               }
             >
