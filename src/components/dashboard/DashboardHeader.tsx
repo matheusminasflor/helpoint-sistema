@@ -48,7 +48,7 @@ export function DashboardHeader<P extends string = Period>({
     <PageHeader
       title={title}
       description={subtitle}
-      className="-mx-4 lg:-mx-6 mb-6"
+      className="-mx-4 lg:-mx-8 mb-6"
       actions={
         <>
           {actions}

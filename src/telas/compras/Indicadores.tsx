@@ -55,7 +55,7 @@ export default function ComprasIndicadores() {
   const anoAtual = new Date().getFullYear();
 
   return (
-    <div className="p-4 lg:p-6 max-w-7xl mx-auto">
+    <div className="px-4 lg:px-8 pb-6 w-full">
       <DashboardHeader
         title="Indicadores de Compras"
         subtitle="Quanto foi comprado no período, os setores que mais gastaram, o mês a mês, produtos e fornecedores."

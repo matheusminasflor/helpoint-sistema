@@ -71,7 +71,7 @@ export default function MKTRelatorios() {
   }, [scheduledPosts]);
 
   return (
-    <div className="p-4 sm:p-6 max-w-7xl mx-auto">
+    <div className="px-4 lg:px-8 pb-6 w-full">
       <DashboardHeader
         title="Indicadores — Marketing"
         subtitle={`Chamados, pedidos de arte, estoque, Benefício de sexta e redes sociais — ${format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}`}

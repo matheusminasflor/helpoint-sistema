@@ -451,7 +451,7 @@ export default function QualidadeDashboard() {
   }, [tickets]);
 
   return (
-    <div className="p-4 sm:p-6 max-w-7xl mx-auto">
+    <div className="px-4 lg:px-8 pb-6 w-full">
       <DashboardHeader
         title="Indicadores de Qualidade — SAC"
         subtitle="Visão executiva do atendimento ao cliente."

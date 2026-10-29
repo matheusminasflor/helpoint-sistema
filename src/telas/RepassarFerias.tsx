@@ -108,10 +108,10 @@ export default function RepassarFerias() {
     onError: (e) => toast.error(`Não foi possível repassar: ${mensagemDeErro(e)}`),
   });
 
-  if (isLoading) return <div className="p-4 sm:p-6 max-w-4xl mx-auto"><Skeleton className="h-64 w-full" /></div>;
+  if (isLoading) return <div className="px-4 lg:px-8 py-6 w-full"><Skeleton className="h-64 w-full" /></div>;
   if (error || !data) {
     return (
-      <div className="p-4 sm:p-6 max-w-4xl mx-auto">
+      <div className="px-4 lg:px-8 py-6 w-full">
         <Card><CardContent className="p-6 text-sm text-muted-foreground">
           {error ? mensagemDeErro(error) : 'Ausência não encontrada.'}
         </CardContent></Card>
@@ -130,7 +130,7 @@ export default function RepassarFerias() {
         description={`Fora de ${periodo} (${data.tipo}). Escolha quem assume os chamados abertos e, durante a ausência, as categorias dela. Na volta, as categorias retornam sozinhas.`}
       />
 
-      <div className="p-4 sm:p-6 w-full max-w-4xl mx-auto space-y-6">
+      <div className="px-4 lg:px-8 pb-6 w-full space-y-6">
       {nadaARepassar ? (
         <Card><CardContent className="p-6 text-sm text-muted-foreground">
           Nada para repassar: {data.pessoa.nome} não tem chamado aberto nem é responsável por categoria.

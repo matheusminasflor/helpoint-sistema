@@ -73,7 +73,7 @@ export function ModuloRelatorios({ module, label, subtitle, titulo, tutorial, ac
     .sort((a, b) => b.value - a.value).slice(0, 8), [metrics]);
 
   return (
-    <div className="p-4 sm:p-6 max-w-7xl mx-auto">
+    <div className="px-4 lg:px-8 pb-6 w-full">
       <DashboardHeader
         title={titulo ?? `Indicadores do ${label}`}
         subtitle={subtitle}
