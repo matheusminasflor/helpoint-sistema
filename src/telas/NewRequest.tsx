@@ -75,7 +75,8 @@ export default function NewRequest() {
   };
   const escolherAssunto = (cat: TICategory) => {
     const pedido = pedidoDoAssunto(cat);
-    if (pedido) { navigate(tenantPath(`/solicitacoes?novo=${pedido}`)); return; }
+    // A compra leva o assunto escolhido: no pedido ele já vem como "Tipo de compra" (2026-10-29).
+    if (pedido) { navigate(tenantPath(`/solicitacoes?novo=${pedido}${pedido === 'compra' ? `&tipo=${cat.id}` : ''}`)); return; }
     irPara({ setor: setor ?? undefined, assunto: cat.id });
   };
 

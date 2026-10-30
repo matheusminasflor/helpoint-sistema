@@ -461,7 +461,7 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
               // A categoria que virou pedido (2026-10-25) leva ao pedido, com etapas, em vez de abrir chamado.
               const pedido = categoriaVirouPedido(categoryModule, cat.name);
               if (pedido) return (
-                <Link key={cat.id} to={tenantPath(`/solicitacoes?novo=${pedido}`)}
+                <Link key={cat.id} to={tenantPath(`/solicitacoes?novo=${pedido}${pedido === 'compra' ? `&tipo=${cat.id}` : ''}`)}
                   className="flex flex-col justify-center p-4 text-sm font-medium text-left rounded-xl border border-dashed border-border bg-card hover:border-primary/30">
                   <span>{cat.name}</span>
                   <span className="text-[12px] font-normal text-muted-foreground">Agora é pedido, com etapas →</span>

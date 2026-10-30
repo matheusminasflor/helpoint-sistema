@@ -26,6 +26,8 @@ export default function Pedidos() {
   // `?aba=compras` (a aba que existiu até a rodada 2) cai na lista única.
   const aba = abaNaUrl === 'aprovar' ? 'aprovar' : 'meus';
   const [novo, setNovo] = useQueryState<string>('novo', '');
+  // O assunto escolhido em Nova solicitação (2026-10-29): já vem como "Tipo de compra".
+  const [tipoDaCompra, setTipoDaCompra] = useQueryState<string>('tipo', '');
   const [escolhendo, setEscolhendo] = useState(false);
   const tipoNovo = (TIPOS_DA_PORTA as string[]).includes(novo) || novo.startsWith('rh_') ? novo as TipoDeSolicitacao : null;
   const abertas = minhas.filter((s) => !terminou(s.tipo, s.etapa));
@@ -80,7 +82,7 @@ export default function Pedidos() {
         </DialogContent>
       </Dialog>
 
-      {novo === 'compra' && <PedirCompraDialog onFechar={() => setNovo('')} onEnviado={abrir} />}
+      {novo === 'compra' && <PedirCompraDialog tipoInicial={tipoDaCompra} onFechar={() => { setNovo(''); setTipoDaCompra(''); }} onEnviado={abrir} />}
 
       {tipoNovo && <NovoPedidoDialog tipo={tipoNovo} onFechar={() => setNovo('')} onEnviado={abrir} />}
     </div>

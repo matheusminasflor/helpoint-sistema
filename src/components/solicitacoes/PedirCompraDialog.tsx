@@ -21,13 +21,17 @@ import { normalizarSetor } from '@/lib/setores';
  * delas), o quê, quanto, o setor que paga, para quê e, se souber, um orçamento. Desde a rodada 2 a compra é um pedido
  * (sem chamado por trás): `onEnviado` recebe o id dele, e quem pediu acompanha em Pedidos.
  */
-export function PedirCompraDialog({ onFechar, onEnviado }: { onFechar: () => void; onEnviado: (pedidoId: string) => void }) {
+export function PedirCompraDialog({ onFechar, onEnviado, tipoInicial = '' }: {
+  onFechar: () => void; onEnviado: (pedidoId: string) => void;
+  /** O assunto escolhido em Nova solicitação (2026-10-29): já vem marcado. */
+  tipoInicial?: string;
+}) {
   const { profile } = useAuth();
   const { rootCategories } = useTICategories('compras');
   const tipos = rootCategories.filter((c) => c.is_purchase);
   const { data: caixinhas = [] } = useCaixinhas();
   const abrir = useAbrirPedidoDeCompra();
-  const [tipo, setTipo] = useState('');
+  const [tipo, setTipo] = useState(tipoInicial);
   const [caixinhaId, setCaixinhaId] = useState('');
   const [paraQue, setParaQue] = useState('');
   const [motivoPoucos, setMotivoPoucos] = useState('');
@@ -50,7 +54,9 @@ export function PedirCompraDialog({ onFechar, onEnviado }: { onFechar: () => voi
       return { ...p, quotes, recomendado: caixinha ? null : p.recomendado };
     });
   }, [caixinha]);
-  const poucos = !caixinha && orcamentosPreenchidos(pedido).length < 3;
+  // O porquê só aparece com 1 ou 2 orçamentos preenchidos: antes do primeiro, seria ruído (Hick).
+  const preenchidos = orcamentosPreenchidos(pedido).length;
+  const poucos = !caixinha && preenchidos > 0 && preenchidos < 3;
   const falta = !categoria ? 'Escolha o tipo de compra.'
     : caixinha && !caixinhaId ? 'Escolha de qual Caixinha sai.'
     : caixinha ? validarPedidoSimples(pedido)
