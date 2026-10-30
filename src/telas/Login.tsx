@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Shield, Zap, Database, Lock } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTenantBranding, applyTenantBrandingVars } from '@/hooks/useTenantBranding';
 import { useTenantSlug } from '@/hooks/useTenantPath';
@@ -31,7 +31,9 @@ import { env } from '@/lib/env';
  */
 function useMarcaDaEmpresa() {
   const slugDoHost = useTenantSlug();
-  const slug = slugDoHost || env('TENANT_SLUG') || null;
+  // ponytail: a produção nunca teve `VITE_TENANT_SLUG` (o login mostrava "Helpoint", dono 2026-10-29). O sistema é de
+  // uma empresa só (ADR-010), então o slug dela é o padrão; se um dia houver outra, ela vem pelo domínio ou pela variável.
+  const slug = slugDoHost || env('TENANT_SLUG') || 'minasflor';
   const { tenant } = useTenantBranding(slug);
   useEffect(() => {
     applyTenantBrandingVars(tenant);
@@ -49,6 +51,8 @@ export default function Login() {
   const [forgotOpen, setForgotOpen] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotLoading, setForgotLoading] = useState(false);
+  const [verSenha, setVerSenha] = useState(false);
+  const [capsLock, setCapsLock] = useState(false);
   const { signIn } = useAuth();
 
   const handleForgotPassword = async (e: React.FormEvent) => {
@@ -93,7 +97,7 @@ export default function Login() {
     setError('');
     const { error } = await signIn(email, password);
     if (error) {
-      setError('Credenciais inválidas. Verifique email e senha.');
+      setError('E-mail ou senha não conferem. Confira e tente de novo.');
     } else {
       navigate('/inicio');
     }
@@ -101,142 +105,92 @@ export default function Login() {
   };
 
 
+  // O nome da empresa — nunca "Helpoint" na porta de entrada (dono, 2026-10-29).
+  const nome = marca?.name || 'Minasflor';
+
+  // Desenho da DashStack (2026-10-29), pelas Leis de UX: só o essencial à vista (Hick, estética-usabilidade); "Esqueceu
+  // a senha?" onde todo mundo procura, ao lado do rótulo (Jakob); o Entrar na largura toda (Fitts); senha visível e
+  // aviso de Caps Lock, para a senha não falhar sem a pessoa entender por quê (Postel); o cartão branco no azul da
+  // marca, para o olho ir direto ao formulário (Von Restorff).
   return (
-    <div className="min-h-dvh bg-surface-2 flex flex-col">
-      {/* Faixa superior com a marca */}
-      <header className="w-full border-b border-border bg-card">
-        <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
-          <span className="flex items-center gap-2.5 min-h-11">
-            {marca?.logo_url ? (
-              <img src={marca.logo_url} alt={marca.name} className="h-9 max-w-[168px] object-contain" />
-            ) : (
-              <>
-                <span className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center">
-                  <span className="text-primary-foreground font-extrabold text-sm">H</span>
-                </span>
-                <span className="font-display font-extrabold text-lg tracking-tight text-primary">
-                  {marca?.name || 'Helpoint'}
-                </span>
-              </>
-            )}
-          </span>
-          <Link to="/sac/acesso" className="text-[14px] font-semibold text-muted-foreground hover:text-primary inline-flex items-center min-h-11 px-2">
-            Portal do cliente
-          </Link>
+    <div className="relative min-h-dvh overflow-hidden bg-primary flex flex-col items-center justify-center px-4 py-10">
+      {/* As formas claras do fundo da DashStack — só enfeite, fora da leitura de tela. */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+        <div className="absolute -left-24 -top-24 h-[420px] w-[420px] rotate-12 rounded-[80px] bg-white/10" />
+        <div className="absolute -right-32 top-1/3 h-[520px] w-[520px] -rotate-12 rounded-[100px] bg-white/10" />
+        <div className="absolute left-1/4 -bottom-40 h-[360px] w-[360px] rotate-45 rounded-[72px] bg-white/[0.07]" />
+      </div>
+
+      <main className="relative w-full max-w-[460px] rounded-3xl bg-card px-6 py-9 shadow-2xl sm:px-10">
+        <div className="flex justify-center">
+          {marca?.logo_url ? (
+            <img src={marca.logo_url} alt={nome} className="h-20 w-auto rounded-xl bg-white object-contain" />
+          ) : (
+            <span className="font-display text-[28px] font-extrabold tracking-tight text-foreground">{nome}</span>
+          )}
         </div>
-      </header>
+        <h1 className="mt-4 text-center text-[26px] font-bold text-foreground">Entrar no sistema</h1>
+        <p className="mt-1 text-center text-[15px] text-muted-foreground">Use o e-mail e a senha da {nome}.</p>
 
-      <main className="flex-1 w-full max-w-5xl mx-auto px-6 py-10 md:py-14">
-        <div className="text-center max-w-xl mx-auto mb-8">
-          <span className="inline-flex items-center gap-1.5 rounded-full badge-info px-3 py-1 text-[13px] font-semibold">
-            <Lock className="w-3.5 h-3.5" aria-hidden="true" />
-            Área restrita da sua empresa
-          </span>
-          <h1 className="font-display text-3xl md:text-4xl font-extrabold text-foreground tracking-tight mt-3">
-            {marca?.welcome_text || 'Acesse o seu Helpoint'}
-          </h1>
-          <p className="mt-2 text-[16px] text-muted-foreground">
-            {marca?.tagline || 'Chamados de TI, Qualidade, Marketing e RH — com a Lyra organizando o seu dia.'}
-          </p>
-        </div>
-
-        {marca?.login_banner_url && (
-          <div className="max-w-[460px] mx-auto mb-4 overflow-hidden rounded-xl border border-border">
-            <img src={marca.login_banner_url} alt="" className="w-full object-cover" />
-          </div>
-        )}
-
-        <div className="max-w-[460px] mx-auto">
-          <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden">
-            {/* Cabeçalho do cartão: identidade da marca + contexto de segurança */}
-            <div className="border-b border-border px-5 py-4 flex items-center gap-3">
-              {/* O logo da empresa no lugar do "H" (nova cara, 2026-10-24). */}
-              {marca?.logo_url ? (
-                <img src={marca.logo_url} alt="" className="h-10 max-w-[96px] object-contain shrink-0" />
-              ) : (
-                <span className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center shrink-0">
-                  <span className="text-primary-foreground font-extrabold text-base">H</span>
-                </span>
-              )}
-              <div className="min-w-0">
-                <p className="text-[15px] font-bold text-foreground leading-tight">
-                  {marca?.name ? `Painel ${marca.name}` : 'Painel Helpoint'}
-                </p>
-                <p className="text-[13px] text-muted-foreground leading-tight">
-                  Entrada restrita a quem trabalha na empresa.
-                </p>
-              </div>
-            </div>
-
-            <div className="px-5 pb-6 pt-5">
-              <form onSubmit={handleSignIn} className="space-y-4">
-                <div className="space-y-1.5">
-                  <label htmlFor="login-email" className="text-[14px] font-medium text-foreground">E-mail</label>
-                  <Input id="login-email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seu@email.com" required />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label htmlFor="login-password" className="text-[14px] font-medium text-foreground">Senha</label>
-                  <Input id="login-password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Sua senha" required />
-                </div>
-
-                {error && (
-                  <div role="alert" className="bg-monday-red/10 border border-monday-red/20 text-status-danger text-[14px] p-3 rounded-lg">{error}</div>
-                )}
-
-                <Button type="submit" className="w-full font-semibold min-h-11" disabled={isLoading}>
-                  {isLoading ? 'Autenticando…' : 'Entrar'}
-                </Button>
-
-                <button type="button" onClick={() => setForgotOpen(true)} className="w-full text-center text-[14px] text-muted-foreground hover:text-primary transition-colors font-medium min-h-11">
-                  Esqueceu sua senha?
-                </button>
-              </form>
-            </div>
+        <form onSubmit={handleSignIn} className="mt-7 space-y-5">
+          <div className="space-y-1.5">
+            <label htmlFor="login-email" className="text-[14px] font-semibold text-foreground">E-mail</label>
+            <Input id="login-email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)}
+              placeholder="seu@minasflor.com.br" required className="h-12 bg-muted text-[16px]" />
           </div>
 
-          {/* Provas de valor abaixo do cartão */}
-          <ul className="mt-6 grid gap-2.5 sm:grid-cols-3">
-            {[
-              { icon: Zap, title: 'Lyra resume seu dia', desc: 'Prioridades e pendências em um resumo.' },
-              { icon: Shield, title: 'Acesso por pessoa', desc: 'Cada um vê os módulos que recebeu.' },
-              { icon: Database, title: 'Sem planilhas soltas', desc: 'Histórico e prazos em um só lugar.' },
-            ].map(item => (
-              <li key={item.title} className="rounded-lg border border-border bg-card p-3 flex sm:flex-col items-start gap-2.5">
-                <span className="w-8 h-8 rounded-md badge-info flex items-center justify-center shrink-0">
-                  <item.icon className="w-4 h-4" aria-hidden="true" />
-                </span>
-                <div>
-                  <span className="text-[12.5px] font-semibold text-foreground leading-snug block">{item.title}</span>
-                  <span className="text-[12px] text-muted-foreground leading-snug block mt-0.5">{item.desc}</span>
-                </div>
-              </li>
-            ))}
-          </ul>
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label htmlFor="login-password" className="text-[14px] font-semibold text-foreground">Senha</label>
+              <button type="button" onClick={() => setForgotOpen(true)} className="text-[14px] font-semibold text-primary hover:underline">
+                Esqueceu a senha?
+              </button>
+            </div>
+            <div className="relative">
+              <Input id="login-password" type={verSenha ? 'text' : 'password'} autoComplete="current-password" value={password}
+                onChange={(e) => setPassword(e.target.value)} onKeyUp={(e) => setCapsLock(e.getModifierState('CapsLock'))}
+                placeholder="Sua senha" required className="h-12 bg-muted pr-12 text-[16px]" />
+              <button type="button" onClick={() => setVerSenha((v) => !v)} aria-label={verSenha ? 'Esconder a senha' : 'Mostrar a senha'}
+                className="absolute right-1 top-1/2 -translate-y-1/2 inline-flex h-10 w-10 items-center justify-center rounded-md text-muted-foreground hover:text-foreground">
+                {verSenha ? <EyeOff className="h-5 w-5" aria-hidden="true" /> : <Eye className="h-5 w-5" aria-hidden="true" />}
+              </button>
+            </div>
+            {capsLock && <p className="text-[13px] font-semibold text-status-warning">Caps Lock ligado.</p>}
+          </div>
 
+          {error && (
+            <div role="alert" className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-[14px] text-status-danger">{error}</div>
+          )}
 
-          <p className="mt-6 text-center text-[13px] text-muted-foreground">
-            Ao continuar, você aceita os{' '}
-            <Link to="/termos" className="text-primary font-medium underline underline-offset-2">Termos de Uso</Link>.
-          </p>
-          <p className="mt-1 text-center text-[13px] text-muted-foreground">© {new Date().getFullYear()} Helpoint</p>
-        </div>
+          <Button type="submit" className="h-12 w-full rounded-lg text-[16px] font-bold" disabled={isLoading}>
+            {isLoading ? 'Entrando…' : 'Entrar'}
+          </Button>
+        </form>
+
+        <p className="mt-7 text-center text-[14px] text-muted-foreground">
+          É cliente?{' '}
+          <Link to="/sac/acesso" className="font-semibold text-primary hover:underline">Abrir ou acompanhar um SAC</Link>
+        </p>
       </main>
 
-      {/* Forgot Password Dialog */}
+      <p className="relative mt-6 text-center text-[13px] text-white/85">
+        © {new Date().getFullYear()} {nome} ·{' '}
+        <Link to="/termos" className="underline underline-offset-2 hover:text-white">Termos de uso</Link>
+      </p>
+
       <Dialog open={forgotOpen} onOpenChange={setForgotOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Recuperar Senha</DialogTitle>
-            <DialogDescription>Informe seu email e enviaremos um link para redefinir sua senha.</DialogDescription>
+            <DialogTitle>Recuperar a senha</DialogTitle>
+            <DialogDescription>Informe o seu e-mail e enviamos um link para criar uma senha nova.</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleForgotPassword} className="space-y-4">
             <div className="space-y-1.5">
-              <label className="text-[14px] font-medium text-foreground">Email</label>
-              <Input type="email" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} placeholder="seu@email.com" required />
+              <label htmlFor="esqueci-email" className="text-[14px] font-medium text-foreground">E-mail</label>
+              <Input id="esqueci-email" type="email" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} placeholder="seu@minasflor.com.br" required />
             </div>
             <Button type="submit" className="w-full font-semibold" disabled={forgotLoading}>
-              {forgotLoading ? 'Enviando…' : 'Enviar Link de Recuperação'}
+              {forgotLoading ? 'Enviando…' : 'Enviar o link'}
             </Button>
           </form>
         </DialogContent>
