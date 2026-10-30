@@ -264,7 +264,7 @@ export function ConversaCanal({ canal, souAdmin }: {
                       )}
                       {m.noticia_id && !m.deleted_at && (
                         <Button asChild size="sm" variant="outline" className="mt-2 h-8 bg-background">
-                          <Link to={`/jornal?noticia=${m.noticia_id}`}>
+                          <Link to={`/jornal/${m.noticia_id}`}>
                             <Newspaper className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" /> Ler a notícia
                           </Link>
                         </Button>

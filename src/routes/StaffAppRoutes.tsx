@@ -148,6 +148,7 @@ const DiretoriaPainel = lazy(() => import('@/telas/diretoria/DiretoriaPainel'));
 const EducacionalConfiguracoes = lazy(() => import('@/telas/educacional/EducacionalConfiguracoes'));
 const ConsultaDeDiretrizes = lazy(() => import('@/telas/diretrizes/ConsultaDeDiretrizes'));
 const Jornal = lazy(() => import('@/telas/Jornal'));
+const NoticiaAberta = lazy(() => import('@/telas/NoticiaAberta'));
 
 /** O Meu RH e as Solicitações do RH abrem só com o interruptor ligado (Configurações do RH, 20270205010000). */
 function SeMeuRHLigado({ children }: { children: ReactNode }) {
@@ -391,6 +392,8 @@ export function StaffAppRoutes() {
       <Route path="diretrizes" element={S(<ConsultaDeDiretrizes />)} />
       {/* Jornal da empresa (decisão do dono, 2026-10-04): todos leem; o Marketing escreve. */}
       <Route path="jornal" element={S(<Jornal />)} />
+      {/* A notícia em página própria, com link para compartilhar (dono, 2026-10-30). */}
+      <Route path="jornal/:id" element={S(<NoticiaAberta />)} />
       <Route path="diretoria/diretrizes" element={S(<RequireDiretoria><ConsultaDeDiretrizes titulo="Diretrizes de todos os setores" /></RequireDiretoria>)} />
       <Route path="ti/diretrizes" element={S(<ConsultaDeDiretrizes setor="ti" />)} />
       <Route path="mkt/diretrizes" element={S(<ConsultaDeDiretrizes setor="marketing" />)} />

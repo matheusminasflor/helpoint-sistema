@@ -2,11 +2,13 @@
 // com busca e filtro por tipo. Quem tem a seção Jornal do Marketing vê também "Nova notícia", os
 // rascunhos e as despublicadas, e os botões de cada caixinha (o banco confere a mesma coisa).
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useTenantPath } from '@/hooks/useTenantPath';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
-import { Copy, EyeOff, Newspaper, Pencil, Plus, Repeat, Search, Send, Star, Trash2, MoreHorizontal } from 'lucide-react';
+import { Copy, EyeOff, Newspaper, Pencil, Plus, Repeat, Search, Send, Share2, Star, Trash2, MoreHorizontal } from 'lucide-react';
 import { ConfirmarExclusao } from '@/components/ui/ConfirmarExclusao';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useQueryState } from '@/hooks/useQueryState';
@@ -14,7 +16,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { EmptyState } from '@/components/ui/empty-state';
-import { LeituraDaNoticia } from '@/components/jornal/LeituraDaNoticia';
 import { EditorDeNoticia } from '@/components/jornal/EditorDeNoticia';
 import { todayISO } from '@/lib/dates';
 import { mensagemDeErro } from '@/lib/supabase-result';
@@ -45,32 +46,24 @@ export default function Jornal() {
   const [aba, setAba] = useQueryState<'noticias' | 'atualizacoes'>('aba', 'noticias');
   const { data: naoLidas = new Set<string>() } = useAtualizacoesNaoLidas();
   // A leitura de toda notícia aberta fica gravada (etapa 4, 2026-10-25) — é dela que sai o "lida por N de M".
-  const { nova, ler, carregou } = useLeituraDaNoticia();
-  const [aberta, setAberta] = useState<Noticia | null>(null);
+  const { nova, ler } = useLeituraDaNoticia();
   const { data: leituras } = useLeiturasDoJornal(pode.editar || pode.publicar);
   const [editando, setEditando] = useState<Noticia | 'nova' | null>(null);
-  // "Ler a notícia" da mensagem automática do chat (dono, 2026-10-19): `?noticia=<id>` abre a leitura dela.
-  const [noticiaDoLink, setNoticiaDoLink] = useQueryState<string>('noticia', '');
-  const jaAbriu = useRef<string | null>(null);
+  // A notícia abre em página própria (2026-10-30), que grava a leitura e tem o link para compartilhar.
+  const navigate = useNavigate();
+  const tenantPath = useTenantPath();
+  const abrir = (n: Noticia) => navigate(tenantPath(`/jornal/${n.id}`));
+  // O link antigo `?noticia=<id>` (mensagens do chat já enviadas, 2026-10-19) leva à página da notícia.
+  const [noticiaDoLink] = useQueryState<string>('noticia', '');
   useEffect(() => {
-    const n = noticiaDoLink ? noticias.find((x) => x.id === noticiaDoLink) : undefined;
-    if (!n || jaAbriu.current === n.id) return;
-    jaAbriu.current = n.id;
-    setAberta(n);
-    setNoticiaDoLink('');
-  }, [noticiaDoLink, noticias, setNoticiaDoLink]);
-  // Abrir a notícia (do destaque, da lista ou do link) grava a leitura.
-  useEffect(() => {
-    if (aberta) ler(aberta.id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [aberta?.id, carregou]);
+    if (noticiaDoLink) navigate(tenantPath(`/jornal/${noticiaDoLink}`), { replace: true });
+  }, [noticiaDoLink, navigate, tenantPath]);
 
   const publicadas = noticias.filter((n) => n.status === 'publicada' && n.tipo !== ATUALIZACAO_DO_SISTEMA);
   const atualizacoes = noticias.filter((n) => n.status === 'publicada' && n.tipo === ATUALIZACAO_DO_SISTEMA).sort(maisRecentePrimeiro);
   const naoPublicadas = noticias.filter((n) => n.status !== 'publicada');
   const { principal } = capaDaHome(noticias, todayISO());
   const imagemDe = useImagensDasNoticias(noticias.filter((n) => n.tipo !== ATUALIZACAO_DO_SISTEMA));
-  const imagemDaAberta = aberta ? imagemDe(aberta) : undefined;
 
   // Sem busca nem filtro, o destaque já está no topo e não se repete na grade.
   const historico = useMemo(() => {
@@ -188,9 +181,10 @@ export default function Jornal() {
               </summary>
               <div className="mt-3 max-w-3xl"><MarkdownRenderer content={n.texto} /></div>
               <PrintsDaNoticia noticiaId={n.id} origem={n.repeticao_de} />
-              {naoLidas.has(n.id) && (
-                <Button size="sm" variant="outline" className="mt-2" onClick={() => ler(n.id)}>Marcar como lida</Button>
-              )}
+              <div className="mt-2 flex flex-wrap gap-2">
+                {naoLidas.has(n.id) && <Button size="sm" variant="outline" onClick={() => ler(n.id)}>Marcar como lida</Button>}
+                <Button size="sm" variant="ghost" className="gap-1.5" onClick={() => abrir(n)}><Share2 className="h-4 w-4" aria-hidden="true" />Abrir e compartilhar</Button>
+              </div>
               {(pode.editar || pode.publicar || pode.excluir) && <div className="mt-2">{acoes(n)}</div>}
             </details>
           ))}
@@ -198,7 +192,7 @@ export default function Jornal() {
       ) : (
         <>
           {principal && (
-            <DestaqueDaNoticia noticia={principal} imagem={imagemDe(principal)} nova={nova(principal)} onAbrir={() => setAberta(principal)} deLado />
+            <DestaqueDaNoticia noticia={principal} imagem={imagemDe(principal)} nova={nova(principal)} onAbrir={() => abrir(principal)} deLado />
           )}
 
           {pode.editar || pode.publicar ? naoPublicadas.length > 0 && (
@@ -242,7 +236,7 @@ export default function Jornal() {
             ) : (
               <ul className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
                 {historico.map((n) => (
-                  <CartaoDaNoticia key={n.id} noticia={n} imagem={imagemDe(n)} nova={nova(n)} onAbrir={() => setAberta(n)}
+                  <CartaoDaNoticia key={n.id} noticia={n} imagem={imagemDe(n)} nova={nova(n)} onAbrir={() => abrir(n)}
                     extra={pode.editar ? seRepete(n) || undefined : undefined}
                     rodape={(pode.editar || pode.publicar || pode.excluir) ? acoes(n) : undefined} />
                 ))}
@@ -252,7 +246,6 @@ export default function Jornal() {
         </>
       )}
 
-      <LeituraDaNoticia noticia={aberta} capa={imagemDaAberta && !imagemDaAberta.inteira ? imagemDaAberta.url : undefined} onClose={() => setAberta(null)} />
       {editando && <EditorDeNoticia noticia={editando === 'nova' ? null : editando} onClose={() => setEditando(null)} />}
       </div>
     </div>

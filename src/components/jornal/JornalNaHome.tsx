@@ -2,7 +2,6 @@
 // seguintes, logo abaixo dos avisos. Some quando não há nada no ar. "Ver todas" abre a página Jornal.
 // Redesenhado em 2026-10-30 (dono: "não está atrativo"): o destaque grande com imagem, as seguintes com miniatura e a
 // cor do tipo, "Nova" no que falta ler — as peças em `CartaoDaNoticia.tsx`.
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Newspaper } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -10,7 +9,6 @@ import { useTenantPath } from '@/hooks/useTenantPath';
 import { todayISO } from '@/lib/dates';
 import { capaDaHome } from '@/lib/jornal';
 import { useImagensDasNoticias, useLeituraDaNoticia, useNoticias, type Noticia } from '@/hooks/useJornal';
-import { LeituraDaNoticia } from '@/components/jornal/LeituraDaNoticia';
 import { CartaoDaNoticia, DestaqueDaNoticia, LinhaDaNoticia } from '@/components/jornal/CartaoDaNoticia';
 
 export function JornalNaHome() {
@@ -20,14 +18,13 @@ export function JornalNaHome() {
   const { principal, seguintes } = capaDaHome(noticias, todayISO());
   const todas = principal ? [principal, ...seguintes] : seguintes;
   const imagemDe = useImagensDasNoticias(todas);
-  const { nova, ler } = useLeituraDaNoticia();
-  const [aberta, setAberta] = useState<Noticia | null>(null);
-  const abrir = (n: Noticia) => { setAberta(n); ler(n.id); };
+  const { nova } = useLeituraDaNoticia();
+  // A notícia abre em página própria (2026-10-30), que grava a leitura e tem o link para compartilhar.
+  const abrir = (n: Noticia) => navigate(tenantPath(`/jornal/${n.id}`));
 
   // Sem destaque marcado não há cartão grande, só os cartões (dono, 2026-10-21).
   if (todas.length === 0) return null;
   const novas = todas.filter(nova).length;
-  const imagemDaAberta = aberta ? imagemDe(aberta) : undefined;
 
   return (
     <section className="panel px-4 py-5 sm:px-6" aria-label="Notícias">
@@ -61,7 +58,6 @@ export function JornalNaHome() {
         </ul>
       )}
 
-      <LeituraDaNoticia noticia={aberta} capa={imagemDaAberta && !imagemDaAberta.inteira ? imagemDaAberta.url : undefined} onClose={() => setAberta(null)} />
     </section>
   );
 }
