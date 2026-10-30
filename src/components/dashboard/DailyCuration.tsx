@@ -29,6 +29,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useAISecretary } from '@/hooks/useAISecretary';
 import { LyraAvisa } from '@/components/dashboard/LyraAvisa';
 import { JornalNaHome } from '@/components/jornal/JornalNaHome';
+import { RotinasDeHoje } from '@/components/rotinas/RotinasDeHoje';
 import { useVisibleModules } from '@/hooks/useVisibleModules';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
 import { VoiceRecorderBar } from '@/components/ui/VoiceRecorderBar';
@@ -578,6 +579,8 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
 
       <div className="grid grid-cols-12 gap-6 lg:gap-7 items-start">
         <div className="col-span-12 lg:col-span-8 xl:col-span-9 flex flex-col gap-6 lg:gap-7 min-w-0">
+          {/* As rotinas de manhã, tarde e fim do dia vêm antes dos chamados (dono, 2026-10-30). */}
+          <RotinasDeHoje />
           {/* "Para fazer": UMA lista, na ordem do prazo (proposta aprovada, 2026-10-28), no cartão "Deals Details" da
               DashStack: título, a faixa do cabeçalho e uma linha por demanda. No celular cada linha tem duas linhas. */}
           {unifiedDemands.length > 0 ? (

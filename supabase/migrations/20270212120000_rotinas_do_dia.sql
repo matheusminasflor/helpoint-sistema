@@ -340,7 +340,23 @@ update public.access_profiles
    set permissions = coalesce(permissions, '{}'::jsonb) || '{"rotinas": {"view": true, "edit": true, "delete": true}}'::jsonb
  where name = 'Gestor' and department <> 'diretoria';
 
+-- Para a tela de cadastro: os setores em que trabalho (a rotina só minha) e em quais sou gestor (para a equipe).
+create or replace function public.rotina_setores()
+returns table (setor text, gerencio boolean)
+language sql
+stable
+security definer
+set search_path to 'public'
+as $$
+  select s, public.pode_no_setor(s, 'rotinas', 'edit')
+    from unnest(array['ti','marketing','rh','qualidade','financeiro','compras','comercial','educacional','expedicao','producao']) s
+   where s = any(array_replace(public.setores_da_pessoa(auth.uid()), 'tickets', 'ti'))
+      or public.pode_no_setor(s, 'rotinas', 'edit');
+$$;
+
 -- ─── 9. Ninguém de fora chama ─────────────────────────────────────────────────────────────────
+revoke all on function public.rotina_setores() from public, anon;
+grant execute on function public.rotina_setores() to authenticated;
 revoke all on function public.rotina_hoje() from public, anon;
 revoke all on function public.rotina_dia_util(uuid, date) from public, anon;
 revoke all on function public.rotina_dia_do_mes(uuid, date, smallint) from public, anon;

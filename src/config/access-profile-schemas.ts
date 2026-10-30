@@ -466,6 +466,20 @@ for (const setor of DEPARTMENT_LIST.filter((s) => s !== 'diretoria')) {
   DEPARTMENT_SCHEMAS[setor].modules.push({ key: 'diretrizes', label: 'Diretrizes do setor', actions: DIRETRIZES_ACTIONS });
 }
 
+/**
+ * ROTINAS DO DIA (dono, 2026-10-30; migration 20270212120000): a mesma seção em todo setor. Sem caixinha a pessoa cria
+ * e marca as suas; com ela, cria para a equipe do setor e vê o cumprimento. Vale no banco: `pode_no_setor(setor,
+ * 'rotinas', …)`. O perfil Gestor de cada setor nasceu com as três.
+ */
+export const ROTINAS_ACTIONS = [
+  { key: 'view', label: 'Ver as rotinas da equipe' },
+  { key: 'edit', label: 'Criar e editar para a equipe' },
+  { key: 'delete', label: 'Excluir as da equipe', sensitive: true },
+];
+for (const setor of DEPARTMENT_LIST.filter((s) => s !== 'diretoria')) {
+  DEPARTMENT_SCHEMAS[setor].modules.push({ key: 'rotinas', label: 'Rotinas do dia', actions: ROTINAS_ACTIONS });
+}
+
 // Permissions JSON format: { [moduleKey]: { [actionKey]: boolean } }
 export type PermissionsMap = Record<string, Record<string, boolean>>;
 

@@ -9,7 +9,7 @@ import {
   CheckCircle2, Receipt, HeartPulse, FolderLock, Palette,
   Gift, FileSignature, Banknote, CalendarOff, PanelLeftClose, PanelLeftOpen, X, Wallet, TrendingUp, PiggyBank, FileBarChart,
   ShoppingCart, Package, Boxes, Handshake, GraduationCap, KanbanSquare, PackageCheck, Factory, Building2, Upload,
-  IdCard, ClipboardList, Gauge, Briefcase, Clock, BookMarked, Newspaper, Store } from 'lucide-react';
+  IdCard, ClipboardList, Gauge, Briefcase, Clock, BookMarked, Newspaper, Store, ListChecks } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useVisibleModules } from '@/hooks/useVisibleModules';
@@ -263,6 +263,8 @@ const inicioMenuItems = (showPortal: boolean): MenuItem[] => ([
   // Rodada 3, etapa B: um lugar só para acompanhar o que eu pedi ("Meus chamados" e "Pedidos" eram dois).
   // "Minhas solicitações": um nome só para chamado e pedido (dono, 2026-10-28).
   { to: '/meus', icon: Inbox, label: 'Minhas solicitações', title: 'Tudo o que você pediu, com quem está e o que falta' },
+  // Rotinas do dia (dono, 2026-10-30): o cadastro; marcar é no próprio Início.
+  { to: '/rotinas', icon: ListChecks, label: 'Rotinas', title: 'O que se repete no seu dia: manhã, tarde e fim do dia' },
   { to: '/meu-rh', icon: Users, label: 'Meu RH' },
   { to: '/agenda', icon: Calendar, label: 'Agenda' },
   { to: '/meus-treinamentos', icon: GraduationCap, label: 'Meus treinamentos', title: 'As turmas em que você está inscrito e as horas que já concluiu' },
