@@ -98,8 +98,9 @@ export default function NoticiaAberta() {
       )}
 
       {/* Coluna de leitura (~70 letras por linha) e letra maior que a das telas de trabalho. */}
-      <div className="mt-6 max-w-[72ch] text-[17px] leading-relaxed">
-        <MarkdownRenderer content={noticia.texto} />
+      <div className="mt-6 max-w-[72ch]">
+        <MarkdownRenderer content={noticia.texto}
+          className="[&_h1]:text-[24px] [&_h2]:text-[21px] [&_h3]:text-[19px] [&_li]:text-[17px] [&_p]:mb-3 [&_p]:text-[17px] [&_ul]:space-y-1" />
       </div>
 
       <div className="mt-6">
