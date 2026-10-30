@@ -231,7 +231,7 @@ export default function Jornal() {
             <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1" role="group" aria-label="Filtrar por tipo">
               {(['', ...(Object.keys(ROTULO_DO_TIPO) as TipoDeNoticia[]).filter((t) => t !== ATUALIZACAO_DO_SISTEMA)] as const).map((t) => (
                 <button key={t || 'todos'} type="button" aria-pressed={tipo === t} onClick={() => setTipo(t)}
-                  className={cn('shrink-0 rounded-full transition-shadow', tipo === t ? 'ring-2 ring-primary ring-offset-1 ring-offset-background' : 'opacity-80 hover:opacity-100')}>
+                  className={cn('shrink-0 rounded-full transition-shadow', tipo === t ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : 'hover:shadow-md')}>
                   {t ? <SeloDoTipo tipo={t} className="rounded-full" /> : <span className="estado badge-neutral rounded-full">Todos</span>}
                 </button>
               ))}
