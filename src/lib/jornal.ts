@@ -4,6 +4,22 @@
 //     desmarcar o destaque da "série 76" não tirava do topo): sem nenhuma marcada, não há principal nem cartão
 //     grande — só a lista, a mais recente primeiro, até 4;
 //   * ao lado da principal, as 3 seguintes. Fora do período, a notícia continua no histórico da página Jornal.
+import { differenceInCalendarDays, format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+
+/** "Hoje", "Ontem" ou "30 de out." (2026-10-30): a data que a pessoa lê sem fazer conta. `hoje` em AAAA-MM-DD. */
+export function quandoFoi(d: string, hoje: string): string {
+  const meioDia = (x: string) => new Date(`${x}T12:00:00`);
+  if (d === hoje) return 'Hoje';
+  if (differenceInCalendarDays(meioDia(hoje), meioDia(d)) === 1) return 'Ontem';
+  return format(meioDia(d), "d 'de' MMM", { locale: ptBR });
+}
+
+/** Um trecho do texto, sem as marcas de formatação nem as imagens. */
+export function trecho(texto: string, n = 180): string {
+  const limpo = texto.replace(/!\[[^\]]*\]\([^)]*\)/g, '').replace(/[#*_>`]/g, '').replace(/\s+/g, ' ').trim();
+  return limpo.length > n ? `${limpo.slice(0, n)}…` : limpo;
+}
 
 /**
  * Capa e anexos até 10 MB (dono, 2026-10-06). O balde `jornal` recusa acima disso

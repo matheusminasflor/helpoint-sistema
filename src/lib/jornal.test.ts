@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { capaDaHome } from './jornal';
+import { capaDaHome, quandoFoi, trecho } from './jornal';
 
 const n = (id: string, extra: Partial<{ tipo: string; status: string; destaque: boolean; data_noticia: string; publicada_em: string; exibir_de: string; exibir_ate: string }> = {}) => ({
   id, status: 'publicada', destaque: false, data_noticia: '2026-10-01', publicada_em: '2026-10-01T10:00:00Z',
@@ -44,5 +44,18 @@ describe('capaDaHome', () => {
     const capa = capaDaHome([n('a'), n('sis', { tipo: 'atualizacao_sistema', destaque: true, data_noticia: '2026-10-03' })], hoje);
     expect(capa.principal).toBeNull();
     expect(capa.seguintes.map((x) => x.id)).toEqual(['a']);
+  });
+});
+
+describe('quandoFoi e trecho (o mural de 2026-10-30)', () => {
+  it('hoje, ontem — inclusive na virada do mês — e a data curta no resto', () => {
+    expect(quandoFoi('2026-10-30', '2026-10-30')).toBe('Hoje');
+    expect(quandoFoi('2026-10-31', '2026-11-01')).toBe('Ontem');
+    expect(quandoFoi('2026-10-28', '2026-10-30')).toBe('28 de out');
+  });
+
+  it('o trecho tira a imagem e as marcas, e corta com reticências', () => {
+    expect(trecho('## Olá **time**\n\n![foto](x.png) bom dia')).toBe('Olá time bom dia');
+    expect(trecho('abcdef', 3)).toBe('abc…');
   });
 });

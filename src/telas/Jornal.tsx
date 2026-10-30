@@ -18,13 +18,14 @@ import { LeituraDaNoticia } from '@/components/jornal/LeituraDaNoticia';
 import { EditorDeNoticia } from '@/components/jornal/EditorDeNoticia';
 import { todayISO } from '@/lib/dates';
 import { mensagemDeErro } from '@/lib/supabase-result';
-import { semAcento } from '@/lib/utils';
+import { cn, semAcento } from '@/lib/utils';
+import { CartaoDaNoticia, DestaqueDaNoticia, SeloDoTipo } from '@/components/jornal/CartaoDaNoticia';
 import { ATUALIZACAO_DO_SISTEMA, capaDaHome, maisRecentePrimeiro, ROTULO_DO_TIPO, type TipoDeNoticia } from '@/lib/jornal';
 import { MarkdownRenderer } from '@/components/ui/markdown-renderer';
 import { PrintsDaNoticia } from '@/components/jornal/PrintsDaNoticia';
 import {
-  ROTULO_DA_REPETICAO, useApagarNoticia, useAtualizacoesNaoLidas, useCapas, useImagemDoDestaque, useDuplicarNoticia, useLeiturasDoJornal, useMarcarComoLida, useMinhasLidas, useMudarStatusDaNoticia,
-  useNoticias, usePodeNoJornal,
+  ROTULO_DA_REPETICAO, useApagarNoticia, useAtualizacoesNaoLidas, useImagensDasNoticias, useDuplicarNoticia, useLeiturasDoJornal, useLeituraDaNoticia,
+  useMudarStatusDaNoticia, useNoticias, usePodeNoJornal,
   type Noticia,
 } from '@/hooks/useJornal';
 
@@ -43,15 +44,8 @@ export default function Jornal() {
   // Na URL: o aviso da "Lyra avisa" abre direto o mural (`?aba=atualizacoes`).
   const [aba, setAba] = useQueryState<'noticias' | 'atualizacoes'>('aba', 'noticias');
   const { data: naoLidas = new Set<string>() } = useAtualizacoesNaoLidas();
-  const marcarLida = useMarcarComoLida();
   // A leitura de toda notícia aberta fica gravada (etapa 4, 2026-10-25) — é dela que sai o "lida por N de M".
-  const { data: minhasLidas } = useMinhasLidas();
-  const marcadas = useRef(new Set<string>());
-  const ler = (id: string) => {
-    if (!minhasLidas || minhasLidas.has(id) || marcadas.current.has(id)) return;
-    marcadas.current.add(id);
-    marcarLida.mutate(id);
-  };
+  const { nova, ler, carregou } = useLeituraDaNoticia();
   const [aberta, setAberta] = useState<Noticia | null>(null);
   const { data: leituras } = useLeiturasDoJornal(pode.editar || pode.publicar);
   const [editando, setEditando] = useState<Noticia | 'nova' | null>(null);
@@ -69,21 +63,22 @@ export default function Jornal() {
   useEffect(() => {
     if (aberta) ler(aberta.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [aberta?.id, minhasLidas]);
+  }, [aberta?.id, carregou]);
 
   const publicadas = noticias.filter((n) => n.status === 'publicada' && n.tipo !== ATUALIZACAO_DO_SISTEMA);
   const atualizacoes = noticias.filter((n) => n.status === 'publicada' && n.tipo === ATUALIZACAO_DO_SISTEMA).sort(maisRecentePrimeiro);
   const naoPublicadas = noticias.filter((n) => n.status !== 'publicada');
   const { principal } = capaDaHome(noticias, todayISO());
-  const { data: capas } = useCapas(noticias.flatMap((n) => (n.capa_caminho ? [n.capa_caminho] : [])));
-  const capaDe = (n: Noticia) => (n.capa_caminho ? capas?.get(n.capa_caminho) : undefined);
-  const imagemDoDestaque = useImagemDoDestaque(principal);
+  const imagemDe = useImagensDasNoticias(noticias.filter((n) => n.tipo !== ATUALIZACAO_DO_SISTEMA));
+  const imagemDaAberta = aberta ? imagemDe(aberta) : undefined;
 
+  // Sem busca nem filtro, o destaque já está no topo e não se repete na grade.
   const historico = useMemo(() => {
     const q = semAcento(busca.trim());
     return [...publicadas].sort(maisRecentePrimeiro)
-      .filter((n) => (!tipo || n.tipo === tipo) && (!q || semAcento(`${n.titulo} ${n.texto}`).includes(q)));
-  }, [publicadas, busca, tipo]);
+      .filter((n) => (!tipo || n.tipo === tipo) && (!q || semAcento(`${n.titulo} ${n.texto}`).includes(q)))
+      .filter((n) => n !== principal || !!q || !!tipo);
+  }, [publicadas, busca, tipo, principal]);
 
   const falhou = (e: unknown) => toast.error(mensagemDeErro(e));
   // Quem cuida do Jornal vê o que se repete e quando sai a próxima.
@@ -203,20 +198,7 @@ export default function Jornal() {
       ) : (
         <>
           {principal && (
-            <button type="button" onClick={() => setAberta(principal)}
-              className="w-full max-w-4xl text-left rounded-lg border bg-card overflow-hidden hover:bg-muted/30 transition-colors">
-              {imagemDoDestaque.url && (imagemDoDestaque.inteira
-                ? <img src={imagemDoDestaque.url} alt="" className="block mx-auto max-h-[420px] w-auto max-w-full object-contain" />
-                : <img src={imagemDoDestaque.url} alt="" className="w-full aspect-video object-cover" />)}
-              <div className="p-4 space-y-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge>Em destaque</Badge>
-                  <Badge variant="outline">{ROTULO_DO_TIPO[principal.tipo] ?? principal.tipo}</Badge>
-                  <span className="text-[13px] text-muted-foreground">{dia(principal.data_noticia)}</span>
-                </div>
-                <p className="text-lg font-semibold text-foreground">{principal.titulo}</p>
-              </div>
-            </button>
+            <DestaqueDaNoticia noticia={principal} imagem={imagemDe(principal)} nova={nova(principal)} onAbrir={() => setAberta(principal)} deLado />
           )}
 
           {pode.editar || pode.publicar ? naoPublicadas.length > 0 && (
@@ -239,40 +221,30 @@ export default function Jornal() {
             </section>
           ) : null}
 
-          <section className="space-y-2">
-            <h2 className="text-[18px] font-bold">Histórico</h2>
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="relative flex-1 min-w-[200px]">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" aria-hidden="true" />
-                <Input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar notícia" className="pl-8" aria-label="Buscar notícia" />
-              </div>
-              <select value={tipo} onChange={(e) => setTipo(e.target.value)} aria-label="Filtrar por tipo"
-                className="h-9 rounded-md border border-input bg-background px-2 text-sm">
-                <option value="">Todos os tipos</option>
-                {(Object.keys(ROTULO_DO_TIPO) as TipoDeNoticia[]).filter((t) => t !== ATUALIZACAO_DO_SISTEMA).map((t) => <option key={t} value={t}>{ROTULO_DO_TIPO[t]}</option>)}
-              </select>
+          <section className="space-y-3">
+            <h2 className="text-[20px] font-bold">{busca || tipo ? 'Resultado' : 'Mais notícias'}</h2>
+            <div className="relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" aria-hidden="true" />
+              <Input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar notícia" className="h-10 pl-9" aria-label="Buscar notícia" />
+            </div>
+            {/* O tipo em fichas com a cor dele, em vez de uma lista fechada (Hick: as 6 opções à vista, um toque). */}
+            <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1" role="group" aria-label="Filtrar por tipo">
+              {(['', ...(Object.keys(ROTULO_DO_TIPO) as TipoDeNoticia[]).filter((t) => t !== ATUALIZACAO_DO_SISTEMA)] as const).map((t) => (
+                <button key={t || 'todos'} type="button" aria-pressed={tipo === t} onClick={() => setTipo(t)}
+                  className={cn('shrink-0 rounded-full transition-shadow', tipo === t ? 'ring-2 ring-primary ring-offset-1 ring-offset-background' : 'opacity-80 hover:opacity-100')}>
+                  {t ? <SeloDoTipo tipo={t} className="rounded-full" /> : <span className="estado badge-neutral rounded-full">Todos</span>}
+                </button>
+              ))}
             </div>
             {historico.length === 0 ? (
-              <EmptyState icon={Newspaper} title={busca || tipo ? 'Nenhuma notícia encontrada' : 'Nenhuma notícia publicada'}
+              <EmptyState icon={Newspaper} title={busca || tipo ? 'Nenhuma notícia encontrada' : 'Nenhuma outra notícia publicada'}
                 description={busca || tipo ? 'Tente outra busca.' : 'Quando o Marketing publicar uma notícia, ela aparece aqui.'} />
             ) : (
-              // Cartões com a imagem em cima, como o Products da DashStack (2026-10-29); sem capa, o ícone no lugar.
-              <ul className="grid gap-5 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
+              <ul className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
                 {historico.map((n) => (
-                  <li key={n.id} className="panel overflow-hidden flex flex-col">
-                    <button type="button" onClick={() => setAberta(n)} className="text-left">
-                      {capaDe(n)
-                        ? <img src={capaDe(n)} alt="" className="w-full aspect-video object-cover" />
-                        : <span className="w-full aspect-video bg-primary/10 flex items-center justify-center"><Newspaper className="w-10 h-10 text-primary" aria-hidden="true" /></span>}
-                      <span className="block px-5 pt-4 space-y-1.5">
-                        <Badge>{ROTULO_DO_TIPO[n.tipo] ?? n.tipo}</Badge>
-                        <span className="block text-[16px] font-bold text-foreground line-clamp-2">{n.titulo} {pode.editar && seRepete(n)}</span>
-                        <span className="block text-[13px] font-semibold text-muted-foreground">{dia(n.data_noticia)}{n.autor?.full_name ? ` · ${n.autor.full_name}` : ''}</span>
-                      </span>
-                    </button>
-                    {(pode.editar || pode.publicar || pode.excluir) && <div className="px-5 pb-4 pt-2 mt-auto">{acoes(n)}</div>}
-                    {!(pode.editar || pode.publicar || pode.excluir) && <div className="pb-4" />}
-                  </li>
+                  <CartaoDaNoticia key={n.id} noticia={n} imagem={imagemDe(n)} nova={nova(n)} onAbrir={() => setAberta(n)}
+                    extra={pode.editar ? seRepete(n) || undefined : undefined}
+                    rodape={(pode.editar || pode.publicar || pode.excluir) ? acoes(n) : undefined} />
                 ))}
               </ul>
             )}
@@ -280,7 +252,7 @@ export default function Jornal() {
         </>
       )}
 
-      <LeituraDaNoticia noticia={aberta} capa={aberta ? capaDe(aberta) : undefined} onClose={() => setAberta(null)} />
+      <LeituraDaNoticia noticia={aberta} capa={imagemDaAberta && !imagemDaAberta.inteira ? imagemDaAberta.url : undefined} onClose={() => setAberta(null)} />
       {editando && <EditorDeNoticia noticia={editando === 'nova' ? null : editando} onClose={() => setEditando(null)} />}
       </div>
     </div>

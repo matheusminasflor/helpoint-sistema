@@ -3,9 +3,8 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Paperclip } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
 import { MarkdownRenderer } from '@/components/ui/markdown-renderer';
-import { ROTULO_DO_TIPO } from '@/lib/jornal';
+import { SeloDoTipo } from '@/components/jornal/CartaoDaNoticia';
 import { abrirAnexoDoJornal, useAnexosDaNoticia, type Noticia } from '@/hooks/useJornal';
 import { PrintsDaNoticia } from '@/components/jornal/PrintsDaNoticia';
 
@@ -19,7 +18,7 @@ export function LeituraDaNoticia({ noticia, capa, onClose }: { noticia: Noticia 
         <DialogHeader>
           <DialogTitle>{noticia.titulo}</DialogTitle>
           <DialogDescription className="flex flex-wrap items-center gap-2">
-            <Badge variant="outline">{ROTULO_DO_TIPO[noticia.tipo] ?? noticia.tipo}</Badge>
+            <SeloDoTipo tipo={noticia.tipo} />
             <span>{format(new Date(`${noticia.data_noticia}T12:00:00`), "d 'de' MMMM 'de' yyyy", { locale: ptBR })}</span>
             {noticia.autor?.full_name && <span>· por {noticia.autor.full_name}</span>}
           </DialogDescription>

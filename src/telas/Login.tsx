@@ -124,7 +124,7 @@ export default function Login() {
       <main className="relative w-full max-w-[460px] rounded-3xl bg-card px-6 py-9 shadow-2xl sm:px-10">
         <div className="flex justify-center">
           {marca?.logo_url ? (
-            <img src={marca.logo_url} alt={nome} className="h-20 w-auto rounded-xl bg-white object-contain" />
+            <img src={marca.logo_url} alt={nome} className="h-28 w-auto rounded-xl bg-white object-contain" />
           ) : (
             <span className="font-display text-[28px] font-extrabold tracking-tight text-foreground">{nome}</span>
           )}

@@ -1,7 +1,10 @@
 // O Jornal da empresa (decisão do dono, 2026-10-04; migration 20261204020000). Ler é de todos (só o
 // publicado); escrever é da seção Jornal do perfil do Marketing — o banco confere as duas coisas.
+import { useRef } from 'react';
+import { subDays } from 'date-fns';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { toLocalISODate } from '@/lib/dates';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import { expectRows, unwrap } from '@/lib/supabase-result';
@@ -155,17 +158,53 @@ export function useCapas(caminhos: string[]) {
 
 const EH_IMAGEM = /\.(png|jpe?g|webp|gif)$/i;
 
+export interface ImagemDaNoticia { url?: string; inteira: boolean }
+
 /**
- * A imagem do destaque (dono, 2026-10-16: o "Sextou!" tinha só a imagem anexada, sem capa, e o mural mostrou só o
- * título). A capa, se houver; senão a primeira imagem anexada — `inteira` diz que ela não foi feita para a capa 16:9 e
- * deve aparecer sem corte.
+ * A imagem de cada notícia (dono, 2026-10-16: o "Sextou!" tinha só a imagem anexada, sem capa, e o mural mostrou só o
+ * título). A capa, se houver; senão a primeira imagem anexada (numa cópia de repetição, a da original) — `inteira` diz
+ * que ela não foi feita para a capa 16:9 e deve aparecer sem corte. Desde 2026-10-30 vale para todo cartão, não só o
+ * destaque: o histórico mostrava um ícone no lugar da imagem que a notícia tinha. Uma consulta para a lista toda.
  */
-export function useImagemDoDestaque(noticia: Noticia | null | undefined): { url?: string; inteira: boolean } {
-  const semCapa = !!noticia && !noticia.capa_caminho;
-  const { data: anexos = [] } = useAnexosDaNoticia(semCapa ? noticia!.id : null, noticia?.repeticao_de);
-  const caminho = noticia?.capa_caminho ?? anexos.find((a) => EH_IMAGEM.test(a.nome))?.caminho;
-  const { data: urls } = useCapas(caminho ? [caminho] : []);
-  return { url: caminho ? urls?.get(caminho) : undefined, inteira: semCapa };
+export function useImagensDasNoticias(noticias: Noticia[]): (n: Noticia) => ImagemDaNoticia {
+  const { tenantId } = useAuth();
+  const ids = [...new Set(noticias.filter((n) => !n.capa_caminho).flatMap((n) => (n.repeticao_de ? [n.id, n.repeticao_de] : [n.id])))].sort();
+  const { data: anexos = [] } = useQuery({
+    queryKey: ['jornal', tenantId, 'imagens-anexadas', ids],
+    enabled: !!tenantId && ids.length > 0,
+    staleTime: 30 * 60 * 1000,
+    queryFn: async () =>
+      (unwrap(await supabase.from('jornal_anexos').select('noticia_id, nome, caminho').in('noticia_id', ids).order('created_at')) ?? []) as
+        { noticia_id: string; nome: string; caminho: string }[],
+  });
+  const primeiraImagem = (id: string | null) => (id ? anexos.find((a) => a.noticia_id === id && EH_IMAGEM.test(a.nome))?.caminho : undefined);
+  const caminhoDe = (n: Noticia) => n.capa_caminho ?? primeiraImagem(n.id) ?? primeiraImagem(n.repeticao_de);
+  const { data: urls } = useCapas([...new Set(noticias.flatMap((n) => caminhoDe(n) ?? []))]);
+  return (n) => {
+    const caminho = caminhoDe(n);
+    return { url: caminho ? urls?.get(caminho) : undefined, inteira: !n.capa_caminho };
+  };
+}
+
+/**
+ * Abrir uma notícia grava a leitura, uma vez por pessoa (etapa 4, 2026-10-25) — de onde quer que se abra: o Início
+ * não gravava. `nova` (2026-10-30, Zeigarnik: o que falta ler fica à vista) é a que a pessoa ainda não abriu, dos
+ * últimos 15 dias: as de antes de a leitura ser gravada não acendem todas de uma vez.
+ */
+export function useLeituraDaNoticia() {
+  const { data: lidas } = useMinhasLidas();
+  const marcar = useMarcarComoLida();
+  const marcadas = useRef(new Set<string>());
+  const desde = toLocalISODate(subDays(new Date(), 14));
+  return {
+    nova: (n: Pick<Noticia, 'id' | 'data_noticia'>) => !!lidas && !lidas.has(n.id) && !marcadas.current.has(n.id) && n.data_noticia >= desde,
+    ler: (id: string) => {
+      if (!lidas || lidas.has(id) || marcadas.current.has(id)) return;
+      marcadas.current.add(id);
+      marcar.mutate(id);
+    },
+    carregou: !!lidas,
+  };
 }
 
 /** Os anexos da notícia — e, numa cópia de repetição, os da original (`origem`). */
