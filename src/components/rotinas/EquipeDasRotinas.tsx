@@ -201,7 +201,7 @@ function RelatorioDasRotinas() {
                 <ul className="divide-y">
                   {puladas.map((x) => (
                     <li key={x.titulo} className="py-2">
-                      <p className="text-[14px] font-semibold">{x.titulo} <span className="font-normal text-muted-foreground">· {x.falhas} de {x.vezes} vezes</span></p>
+                      <p className="text-[14px] font-semibold">{x.titulo} <span className="font-normal text-muted-foreground">· {x.falhas} de {x.vezes} {x.vezes === 1 ? 'vez' : 'vezes'}</span></p>
                       {x.motivos.length > 0 && <p className="text-[13px] text-muted-foreground">Motivos: {x.motivos.join('; ')}</p>}
                     </li>
                   ))}
