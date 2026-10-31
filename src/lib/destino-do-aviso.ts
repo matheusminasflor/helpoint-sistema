@@ -52,6 +52,8 @@ const TELA_DO_REGISTRO: Record<string, (id: string) => string> = {
   ped_reajuste_resposta: () => '/comercial/pedidos',
   // Cancelamento (20270212100000): a vendedora vê o motivo nos Pedidos enviados.
   ped_cancelado: () => '/comercial/pedidos?aba=cancelados',
+  // Rotina aberta perto do fim do expediente (20270212140000): marca-se no próprio Início.
+  rotina: () => '/inicio',
 };
 
 export interface AvisoComReferencia {

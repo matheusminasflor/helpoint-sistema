@@ -14,7 +14,10 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePessoasDaEmpresa } from '@/hooks/useProjetos';
-import { useExcluirRotina, useRotinasCadastradas, useSalvarRotina, useSetoresDaRotina, type Rotina, type RotinaNova } from '@/hooks/useRotinas';
+import { useExcluirRotina, useRotinasCadastradas, useSalvarRotina, useSetoresDaRotina, useSetoresQueVejo, type Rotina, type RotinaNova } from '@/hooks/useRotinas';
+import { useQueryState } from '@/hooks/useQueryState';
+import { AbasSegmentadas } from '@/components/ui/abas-segmentadas';
+import { EquipeDasRotinas } from '@/components/rotinas/EquipeDasRotinas';
 import {
   DIAS_UTEIS, PERIODOS, ROTULO_DA_REPETICAO, ROTULO_DO_PEDE, ROTULO_DO_PERIODO, descreverRepeticao,
   type Pede, type Periodo, type Repeticao,
@@ -51,6 +54,10 @@ export default function Rotinas() {
   const excluir = useExcluirRotina();
   const [editando, setEditando] = useState<{ id?: string; dados: RotinaNova } | null>(null);
   const [apagando, setApagando] = useState<Rotina | null>(null);
+  const { data: setoresQueVejo = [] } = useSetoresQueVejo();
+  const vejoEquipe = setoresQueVejo.length > 0;
+  // O gestor abre direto na equipe; a escolha fica na URL (`?aba=`).
+  const [aba, setAba] = useQueryState<'equipe' | 'cadastro'>('aba', 'equipe');
 
   const nome = useMemo(() => new Map(pessoas.map((p) => [p.id, p.nome])), [pessoas]);
   const gerencio = new Set(setores.filter((s) => s.gerencio).map((s) => s.setor));
@@ -114,7 +121,12 @@ export default function Rotinas() {
       <PageHeader icon={ListChecks} title="Rotinas" description="O que se repete no seu dia: manhã, tarde e fim do dia. Aparece no Início, antes dos chamados."
         actions={setores.length > 0 ? <Button onClick={() => setEditando({ dados: vazia(meuSetor, eu) })}><Plus className="mr-1 h-4 w-4" />Nova rotina</Button> : undefined} />
       <div className="w-full space-y-5 px-4 pb-6 lg:px-8">
-        {error ? <p className="text-sm text-destructive">Não foi possível carregar as rotinas.</p>
+        {/* "Da minha equipe" só para quem tem a caixinha "Ver as rotinas da equipe" em algum setor (etapa 2). */}
+        {vejoEquipe && (
+          <AbasSegmentadas rotulo="Rotinas" valor={aba} onValor={setAba}
+            opcoes={[{ valor: 'equipe', rotulo: 'Da minha equipe' }, { valor: 'cadastro', rotulo: 'Cadastro' }]} />
+        )}
+        {vejoEquipe && aba === 'equipe' ? <EquipeDasRotinas /> : error ? <p className="text-sm text-destructive">Não foi possível carregar as rotinas.</p>
           : isLoading ? <p className="text-sm text-muted-foreground">Carregando…</p>
             : rotinas.length === 0 ? (
               <EmptyState icon={ListChecks} title="Nenhuma rotina ainda"

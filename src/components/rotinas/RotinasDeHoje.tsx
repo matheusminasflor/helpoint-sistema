@@ -26,6 +26,7 @@ export function RotinasDeHoje() {
   const [pedido, setPedido] = useState<Pedido | null>(null);
   const [texto, setTexto] = useState('');
   const [arquivo, setArquivo] = useState<File | null>(null);
+  const [verTudo, setVerTudo] = useState(false);
 
   if (isLoading) return null;
   if (rotinas.length === 0) {
@@ -84,11 +85,15 @@ export function RotinasDeHoje() {
         </Button>
       </div>
 
-      {tudoFeito ? (
-        <p className="flex items-center gap-2 rounded-xl bg-[hsl(var(--badge-success-bg))] px-4 py-3 text-[15px] font-bold text-[hsl(var(--badge-success-text))]">
+      {tudoFeito && (
+        // A faixa fecha o dia (pico-final); "Ver as rotinas" reabre a lista para desfazer um toque errado.
+        <button type="button" onClick={() => setVerTudo((v) => !v)} aria-expanded={verTudo}
+          className="mb-2.5 flex w-full items-center gap-2 rounded-xl bg-[hsl(var(--badge-success-bg))] px-4 py-3 text-left text-[15px] font-bold text-[hsl(var(--badge-success-text))]">
           <Check className="h-5 w-5" aria-hidden="true" />Tudo feito hoje. Bom trabalho!
-        </p>
-      ) : (
+          <span className="ml-auto text-[13px] font-semibold underline-offset-2 hover:underline">{verTudo ? 'Esconder' : 'Ver as rotinas'}</span>
+        </button>
+      )}
+      {tudoFeito && !verTudo ? null : (
         <div className="space-y-2.5">
           {PERIODOS.map((p) => {
             const doPeriodo = rotinas.filter((r) => r.periodo === p);

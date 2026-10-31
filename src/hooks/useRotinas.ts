@@ -6,7 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { expectRows, unwrap } from '@/lib/supabase-result';
 import { sanitizeFileName } from '@/lib/utils';
-import type { Pede, Periodo, Repeticao } from '@/lib/rotinas';
+import type { LinhaDaEquipe, Pede, Periodo, Repeticao } from '@/lib/rotinas';
 
 const BALDE = 'rotinas';
 
@@ -160,5 +160,27 @@ export function useExcluirRotina() {
     },
     onSuccess: () => { invalidar(); toast.success('Rotina excluída. O que já foi marcado fica no histórico.'); },
     onError: (e: Error) => toast.error(`Não excluiu: ${e.message}`),
+  });
+}
+
+// ─── Etapa 2: o gestor vê a equipe (migration 20270212130000) ────────────────────────────────
+
+/** Os setores cujas rotinas da equipe eu vejo (caixinha "Ver as rotinas da equipe"). */
+export function useSetoresQueVejo() {
+  const { tenantId, user } = useAuth();
+  return useQuery({
+    queryKey: ['rotina-setores-que-vejo', tenantId, user?.id],
+    enabled: !!tenantId && !!user?.id,
+    queryFn: async () => ((unwrap(await supabase.rpc('rotina_setores_que_vejo' as never)) ?? []) as unknown as string[]),
+  });
+}
+
+/** Cada rotina de cada pessoa em cada dia útil do período, com a situação (o banco calcula). */
+export function useRotinasDaEquipe(de: string, ate: string, ligado = true) {
+  const { tenantId, user } = useAuth();
+  return useQuery({
+    queryKey: ['rotinas-equipe', tenantId, user?.id, de, ate],
+    enabled: !!tenantId && !!user?.id && ligado,
+    queryFn: async () => ((unwrap(await supabase.rpc('rotinas_da_equipe' as never, { p_de: de, p_ate: ate } as never)) ?? []) as unknown as LinhaDaEquipe[]),
   });
 }
