@@ -141,7 +141,9 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
       ]},
       { key: 'knowledge', label: 'Base de Conhecimento', actions: CRUD },
       // Só a TI pergunta "Exportar" nos Indicadores (TIRelatorios); nos outros setores a opção saiu (rodada 2, decisão 6).
-      { key: 'reports', label: 'Indicadores', actions: [...REPORT_ACTIONS, { key: 'export', label: 'Exportar' }] },
+      // "Lançar": o FSENSE e as interrupções da aba Semanal (20270212150000).
+      { key: 'reports', label: 'Indicadores', actions: [...REPORT_ACTIONS, { key: 'export', label: 'Exportar' },
+        { key: 'lancar', label: 'Lançar FSENSE e interrupções' }] },
     ],
   },
   marketing: {

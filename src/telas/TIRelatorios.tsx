@@ -22,6 +22,7 @@ import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { KPIGrid } from '@/components/dashboard/KPIGrid';
 import { KPICard as GlpiKPICard } from '@/components/glpi/KPICard';
 import { PatternsAnalysis } from '@/components/ti/PatternsAnalysis';
+import { TISemanal } from '@/components/ti/TISemanal';
 import { TILyraPanel } from '@/components/dashboard/TILyraPanel';
 import { TechnicianPerformanceChart } from '@/components/dashboard/TechnicianPerformanceChart';
 import { TopRequestersCard } from '@/components/dashboard/TopRequestersCard';
@@ -319,6 +320,7 @@ export default function TIRelatorios() {
         <TabsList>
           <TabsTrigger value="overview">Visão Geral</TabsTrigger>
           <TabsTrigger value="detailed">Análise Detalhada</TabsTrigger>
+          <TabsTrigger value="semanal">Semanal</TabsTrigger>
         </TabsList>
 
         {/* TAB: Visão Geral — enxuta */}
@@ -557,6 +559,11 @@ export default function TIRelatorios() {
               scheduledMaintenancesList={scheduledMaintenances.map(m => ({ id: m.id, title: m.title, scheduled_date: m.scheduled_date, status: m.status, asset: m.asset }))}
             />
           </div>
+        </TabsContent>
+
+        {/* TAB: Semanal — o FSENSE e as interrupções da reunião de segunda (2026-11-01), com seletor próprio */}
+        <TabsContent value="semanal">
+          <TISemanal />
         </TabsContent>
 
       </Tabs>
