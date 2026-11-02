@@ -359,7 +359,7 @@ function DialogoDeLancar({ onFechar }: { onFechar: () => void }) {
           <Input id="fsense-data" type="date" value={data} onChange={(e) => setData(e.target.value)} className="w-[180px]" />
         </div>
         <Textarea id="fsense-colar" rows={7} value={texto} onChange={(e) => setTexto(e.target.value)} className="font-mono text-sm"
-          placeholder={'Gislene\t29,3\t65,6%\t4,7%\t2,5%\t27,2%\nFenicio\t30\t55,3%\t0,1%\t37,4%\t7,2%'} />
+          placeholder={'Nome da pessoa\t40,5\t65%\t5%\t20%\t10%\nOutra pessoa\t38:15\t70%\t3%\t15%\t12%'} />
         {lido.erros.length > 0 && (
           <ul className="text-sm text-destructive space-y-0.5">{lido.erros.map((e) => <li key={e}>{e}</li>)}</ul>
         )}
