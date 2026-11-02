@@ -353,7 +353,7 @@ export default function TIRelatorios() {
               <div className="space-y-2">
                 {cartoesDosChamados}
                 <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                  <span>A cor do número segue a meta: verde na meta, amarelo perto, vermelho fora. A linha embaixo é {rotuloDaSerie}.{!anterior && ' Sem chamados no período anterior para comparar.'}</span>
+                  <span>A cor do número segue a meta: verde na meta, amarelo perto, vermelho fora. A linha embaixo mostra {rotuloDaSerie}.{!anterior && ' Sem chamados no período anterior para comparar.'}</span>
                   {podeMudarMetas && (
                     <Button asChild size="sm" variant="ghost" className="h-7 text-xs">
                       <Link to={tenantPath('/ti/configuracoes?aba=metas')}><Target className="h-3.5 w-3.5 mr-1" />Metas</Link>
@@ -511,7 +511,8 @@ export default function TIRelatorios() {
               )}
             </div>
           ) },
-          { titulo: 'Chamados', conteudo: cartoesDosChamados },
+          // 2 × 2 na apresentação: em 4 colunas, com a letra maior, a comparação quebrava em três linhas.
+          { titulo: 'Chamados', conteudo: <div className="[&_.faixa-de-numeros]:lg:grid-cols-2 max-w-4xl">{cartoesDosChamados}</div> },
           { titulo: 'Chamados por categoria', conteudo: <CategoriasDosChamados chamados={metrics?.chamados ?? []} modulo="tickets" /> },
           ...(podeVerEquipe ? [{ titulo: 'Equipe', conteudo: (
             <div className="space-y-6"><CartoesDaEquipe numeros={equipe.numeros} /><BarrasDaEquipe equipe={equipe} /></div>
