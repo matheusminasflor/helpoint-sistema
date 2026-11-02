@@ -22,9 +22,11 @@ select tests.grant_profile((select gest from u), (select a from f), 'ti', 'Gesto
 select tests.grant_profile((select leit from u), (select a from f), 'ti', 'Somente leitura');
 select tests.grant_profile((select op from u), (select a from f), 'ti', 'Operador');
 select tests.grant_role((select dono from u), 'owner');
--- Empresa nova não nasce com a ação (ponytail da migration): liga como a migration fez na Minasflor.
+-- Empresa nova não nasce com a ação (ponytail da migration) nem com "Ver métricas da equipe" no Gestor: liga as duas,
+-- como o Gestor da TI está na Minasflor.
 update public.access_profiles
-   set permissions = jsonb_set(permissions, '{reports}', coalesce(permissions -> 'reports', '{}'::jsonb) || '{"lancar": true}'::jsonb)
+   set permissions = jsonb_set(permissions, '{reports}',
+                               coalesce(permissions -> 'reports', '{}'::jsonb) || '{"lancar": true, "view_team_metrics": true}'::jsonb)
  where tenant_id = (select a from f) and department = 'ti' and name = 'Gestor';
 
 create temporary table r (nome text, id uuid) on commit drop;
