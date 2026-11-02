@@ -32,14 +32,19 @@ select tests.create_user('pede@prazo.test', (select a from f)) as pede;
 insert into public.sla_regras_do_setor (tenant_id, module, pausa_fim_de_semana)
 values ((select a from f), 'rh', false), ((select a from f), 'tickets', false);
 
+-- 2026-11-01: feriado nacional também pausa, e a conta "corrida" quebrava na véspera de um (o CI de domingo à noite,
+-- antes de Finados, deu 1200 minutos + o feriado). Os chamados nascem numa quarta sem feriado por perto; o prazo conta
+-- da abertura (`calculate_sla_due_at` usa `created_at`).
+create temporary table quando on commit drop as select timestamptz '2026-09-09 09:00-03' as q;
+
 -- O prazo que o trigger deu a cada chamado, pelo título. Inserir com RETURNING dentro de
 -- subconsulta não é permitido; no topo de um WITH, é.
 create temporary table prazo (titulo text, prazo interval) on commit drop;
 
 -- O padrão semeado com a empresa: prioridade média resolve em 1200 minutos (úteis).
 with t as (
-  insert into public.tickets (tenant_id, title, description, requester_id, module, priority)
-  values ((select a from f), 'rh antes', 'x', (select pede from u), 'rh', 'medium')
+  insert into public.tickets (tenant_id, title, description, requester_id, module, priority, created_at)
+  values ((select a from f), 'rh antes', 'x', (select pede from u), 'rh', 'medium', (select q from quando))
   returning title, sla_due_at - created_at as p
 ) insert into prazo select title, p from t;
 
@@ -47,9 +52,9 @@ insert into public.sla_policies (tenant_id, module, name, priority, first_respon
 values ((select a from f), 'rh', 'RH médio', 'medium', 30, 60);
 
 with t as (
-  insert into public.tickets (tenant_id, title, description, requester_id, module, priority)
-  values ((select a from f), 'rh depois', 'x', (select pede from u), 'rh', 'medium'),
-         ((select a from f), 'ti', 'x', (select pede from u), 'tickets', 'medium')
+  insert into public.tickets (tenant_id, title, description, requester_id, module, priority, created_at)
+  values ((select a from f), 'rh depois', 'x', (select pede from u), 'rh', 'medium', (select q from quando)),
+         ((select a from f), 'ti', 'x', (select pede from u), 'tickets', 'medium', (select q from quando))
   returning title, sla_due_at - created_at as p
 ) insert into prazo select title, p from t;
 
@@ -57,8 +62,8 @@ update public.sla_policies set is_active = false
  where tenant_id = (select a from f) and module = 'rh';
 
 with t as (
-  insert into public.tickets (tenant_id, title, description, requester_id, module, priority)
-  values ((select a from f), 'rh desligado', 'x', (select pede from u), 'rh', 'medium')
+  insert into public.tickets (tenant_id, title, description, requester_id, module, priority, created_at)
+  values ((select a from f), 'rh desligado', 'x', (select pede from u), 'rh', 'medium', (select q from quando))
   returning title, sla_due_at - created_at as p
 ) insert into prazo select title, p from t;
 

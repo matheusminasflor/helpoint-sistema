@@ -1,7 +1,9 @@
 -- O PRAZO RECOMEÇA NA TRANSFERÊNCIA (migration 20261229010000; dono, 2026-10-13 — caso do #27, que chegou
 -- à Mel quase vencido). Setor com a pausa de fim de semana desligada e expediente em branco: relógio
 -- corrido, conta exata. Urgência média = 8 horas.
---   1-2  transferir de uma pessoa para outra: o prazo vira agora + 8h, e `prazo_desde` marca o recomeço
+--   1-2  transferir de uma pessoa para outra: o prazo vira agora + 8h, e `prazo_desde` marca o recomeço. O esperado
+--        sai do mesmo calendário (`prazo_padrao_do_chamado`): feriado nacional também pausa, e "agora + 8h" quebrava
+--        na véspera de um (CI de 2026-11-01, véspera de Finados).
 --   3    pegar da fila (sem atendente → alguém) NÃO recomeça: continua o prazo da abertura
 --   4    prazo posto à mão fica, mesmo transferindo
 --   5-6  transferir parado (Pendente): a pausa até aqui fica contada e a pausa recomeça agora
@@ -41,14 +43,16 @@ update public.tickets set pendente_desde = now() - interval '2 hours' where id =
 -- ═══ 1-2. Transferir. ═══
 update public.tickets set assigned_to = (select b from u) where id = (select id from t where title = 'transfere');
 select is((select sla_due_at from public.tickets where id = (select id from t where title = 'transfere')),
-  now() + interval '8 hours', 'transferido: o prazo recomeca agora, cheio (8h)');
+  public.prazo_padrao_do_chamado((select tenant from f), 'expedicao', 'medium', now(), (select b from u), null),
+  'transferido: o prazo recomeca agora, cheio (8h, ou mais se cair feriado)');
 select is((select prazo_desde from public.tickets where id = (select id from t where title = 'transfere')),
   now(), 'e marca de quando o prazo conta');
 
 -- ═══ 3. Pegar da fila. ═══
 update public.tickets set assigned_to = (select a from u) where id = (select id from t where title = 'fila');
 select is((select sla_due_at from public.tickets where id = (select id from t where title = 'fila')),
-  now() + interval '1 hour', 'pegar da fila nao recomeca: continua o prazo da abertura (7h ja corridas)');
+  public.prazo_padrao_do_chamado((select tenant from f), 'expedicao', 'medium', now() - interval '7 hours', null, null),
+  'pegar da fila nao recomeca: continua o prazo da abertura (7h ja corridas)');
 
 -- ═══ 4. Prazo à mão. ═══
 update public.tickets set assigned_to = (select b from u) where id = (select id from t where title = 'mao');

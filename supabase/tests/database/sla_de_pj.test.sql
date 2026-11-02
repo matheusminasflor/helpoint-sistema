@@ -1,5 +1,6 @@
 -- PRAZOS PARA PJ (migration 20270101010000; dono, 2026-10-13). Setor com relógio corrido (pausa do fim de
--- semana desligada, expediente em branco) para a conta ser exata. Média: comum 8h, PJ 16h.
+-- semana desligada, expediente em branco) para a conta ser exata. Média: comum 8h, PJ 16h. Os chamados nascem numa quarta
+-- sem feriado por perto (2026-11-01: feriado nacional também pausa, e a véspera de Finados quebrava a conta).
 --   1  o chamado com atendente PJ ganha o prazo de PJ (16h)
 --   2  com atendente CLT, o prazo comum (8h)
 --   3  urgência sem prazo de PJ preenchido: o PJ usa o comum
@@ -26,8 +27,9 @@ insert into public.sla_pj (tenant_id, module, user_id) select a, 'expedicao', (s
 
 create temporary table t on commit drop as
 with x as (
-  insert into public.tickets (tenant_id, module, title, description, requester_id, created_by, priority, status, assigned_to)
-  select a, 'expedicao', nome, 'x', (select pede from u), (select pede from u), pr::public.ticket_priority, 'in_progress', quem
+  insert into public.tickets (tenant_id, module, title, description, requester_id, created_by, priority, status, assigned_to, created_at)
+  select a, 'expedicao', nome, 'x', (select pede from u), (select pede from u), pr::public.ticket_priority, 'in_progress', quem,
+         timestamptz '2026-09-09 09:00-03'
     from f, (values ('pj', 'medium', (select pj from u)), ('clt', 'medium', (select clt from u)), ('pj-alta', 'high', (select pj from u))) v(nome, pr, quem)
   returning id, title, sla_due_at, created_at
 ) select * from x;
