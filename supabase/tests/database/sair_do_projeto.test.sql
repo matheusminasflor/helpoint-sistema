@@ -69,7 +69,7 @@ select tests.clear_authentication();
 select is((select format('%s %s',
              (select count(*) from public.project_members where project_id = (select projeto from s) and user_id = (select meri from u)),
              (select referencia_id = (select meri from u) from public.project_setores where project_id = (select projeto from s)))),
-  '1 true', 'quem assume entra na equipe e herda a referencia do setor');
+  '1 t', 'quem assume entra na equipe e herda a referencia do setor');
 select is((select resolucao from public.project_saidas where id = (select saida from r)), 'substituido', 'a saida fica resolvida');
 
 select * from finish();

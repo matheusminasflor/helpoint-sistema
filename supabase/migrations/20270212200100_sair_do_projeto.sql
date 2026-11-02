@@ -74,7 +74,9 @@ begin
 
   select coalesce(full_name, email) into v_nome from public.profiles where id = v_eu;
   -- Quem comanda o projeto: o motivo e o pedido de decidir quem assume.
-  perform public.notify_users(v_proj.tenant_id, array[v_proj.created_by, v_proj.owner_id], 'projeto_saida', 'project', p_project,
+  -- Sem repetir: quem cria costuma ser também o dono (o teste pegou o aviso em dobro).
+  perform public.notify_users(v_proj.tenant_id, array(select distinct x from unnest(array[v_proj.created_by, v_proj.owner_id]) x),
+    'projeto_saida', 'project', p_project,
     coalesce(v_nome, 'Uma pessoa') || ' saiu do projeto ' || v_proj.name,
     'Motivo: ' || btrim(p_motivo) || '. Abra o projeto para chamar de volta ou escolher quem assume.', v_eu);
   -- O gestor do setor de quem saiu fica sabendo.
