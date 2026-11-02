@@ -2,6 +2,7 @@ import { jsPDF } from 'jspdf';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { TicketMetrics, TicketTrend, MetricsFilter, getDateRangeFromPeriod } from '@/hooks/useHelpdeskMetrics';
+import { formatarHoras } from '@/lib/horas';
 
 interface ComparativeData {
   current: number;
@@ -199,7 +200,7 @@ export function generatePDFReport(data: PDFReportData): void {
     drawKPICard(MARGIN_X, yPos, cardW, cardH, 'Chamados Abertos', `${metrics.open}`, [234, 88, 12]);
     drawKPICard(MARGIN_X + cardW + 4, yPos, cardW, cardH, 'SLA Cumprido', `${metrics.slaCompliance}%`, [37, 99, 235]);
     drawKPICard(MARGIN_X + (cardW + 4) * 2, yPos, cardW, cardH, 'Resolvidos', `${metrics.resolved}`, [22, 163, 74]);
-    drawKPICard(MARGIN_X + (cardW + 4) * 3, yPos, cardW, cardH, 'Tempo Médio', `${metrics.avgResolutionTime}h`, [100, 116, 139]);
+    drawKPICard(MARGIN_X + (cardW + 4) * 3, yPos, cardW, cardH, 'Tempo Médio', formatarHoras(metrics.avgResolutionTime), [100, 116, 139]);
     yPos += cardH + 12;
 
     const summaryRows = [

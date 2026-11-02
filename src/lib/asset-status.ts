@@ -31,7 +31,17 @@
  * `in_use`/`in_stock`. Unificar os valores no banco é migration de dado, e não faz
  * parte desta correção — o que importava era parar de perder ativo na leitura.
  */
-import type { AssetStatus } from '@/types/helpdesk';
+import type { AssetCategory, AssetStatus } from '@/types/helpdesk';
+
+/** O nome da categoria do ativo em português (o banco grava em inglês). Era só do Inventário; os Indicadores mostravam "peripheral". */
+export const ROTULO_DA_CATEGORIA_DO_ATIVO: Record<AssetCategory, string> = {
+  hardware: 'Hardware',
+  mobile: 'Móveis',
+  peripheral: 'Periféricos',
+  network: 'Rede',
+  software: 'Software',
+  other: 'Outros',
+};
 
 /** Em uso por alguém. Os dois nomes que o sistema já gravou querem dizer isto. */
 export function ativoEmUso(status: string | null | undefined): boolean {

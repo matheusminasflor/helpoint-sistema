@@ -22,6 +22,7 @@ import {
 import { cn } from '@/lib/utils';
 import { ticketQueuePath } from '@/lib/ticket-route';
 import { fromLocalISODate } from '@/lib/dates';
+import { formatarHoras } from '@/lib/horas';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -169,6 +170,9 @@ export function IndicatorsView({
 }: IndicatorsViewProps) {
   const navigate = useNavigate();
   const tenantPath = useTenantPath();
+  // Período anterior sem chamado nenhum não é base de comparação (revisão de 2026-11-01): antes do Helpoint entrar no
+  // ar, o "anterior" era 0% e a tela mostrava "+79 p.p." como se o SLA tivesse melhorado.
+  const anterior = previousMetrics && previousMetrics.total > 0 ? previousMetrics : null;
   const [activeCategories, setActiveCategories] = useState<Set<string>>(() => {
     const saved = localStorage.getItem('ti-indicators-categories');
     return saved ? new Set(JSON.parse(saved)) : new Set(CATEGORIES.map(c => c.id));
@@ -208,8 +212,8 @@ export function IndicatorsView({
     {
       id: 'total', label: 'Total de Chamados', category: 'helpdesk', explicacao: 'chamados.total',
       icon: <TicketCheck className="h-4 w-4 text-primary" />,
-      value: metrics?.total || 0, previous: previousMetrics?.total,
-      change: calcChange(metrics?.total || 0, previousMetrics?.total),
+      value: metrics?.total || 0, previous: anterior?.total,
+      change: calcChange(metrics?.total || 0, anterior?.total),
       hoverList: chamados,
       hoverEmpty: 'Nenhum chamado no período.',
       onClick: () => navigate(tenantPath(ticketQueuePath(filter.module ?? 'tickets'))),
@@ -217,8 +221,8 @@ export function IndicatorsView({
     {
       id: 'opened', label: 'Chamados Abertos', category: 'helpdesk', explicacao: 'chamados.abertos',
       icon: <TicketCheck className="h-4 w-4 text-primary" />,
-      value: metrics?.open || 0, previous: previousMetrics?.open,
-      change: calcChange(metrics?.open || 0, previousMetrics?.open), changeInverse: true,
+      value: metrics?.open || 0, previous: anterior?.open,
+      change: calcChange(metrics?.open || 0, anterior?.open), changeInverse: true,
       hoverList: comStatus('open'),
       hoverEmpty: 'Nenhum chamado aberto no período.',
       onClick: () => navigate(tenantPath(`${ticketQueuePath(filter.module ?? 'tickets')}?status=open`)),
@@ -226,8 +230,8 @@ export function IndicatorsView({
     {
       id: 'in_progress', label: 'Em Andamento', category: 'helpdesk', explicacao: 'chamados.em_andamento',
       icon: <Clock className="h-4 w-4 text-status-warning" />,
-      value: metrics?.inProgress || 0, previous: previousMetrics?.inProgress,
-      change: calcChange(metrics?.inProgress || 0, previousMetrics?.inProgress), changeInverse: true,
+      value: metrics?.inProgress || 0, previous: anterior?.inProgress,
+      change: calcChange(metrics?.inProgress || 0, anterior?.inProgress), changeInverse: true,
       hoverList: comStatus('in_progress'),
       hoverEmpty: 'Nenhum chamado em andamento no período.',
       onClick: () => navigate(tenantPath(`${ticketQueuePath(filter.module ?? 'tickets')}?status=in_progress`)),
@@ -235,8 +239,8 @@ export function IndicatorsView({
     {
       id: 'resolved', label: 'Resolvidos', category: 'helpdesk', explicacao: 'chamados.resolvidos',
       icon: <ShieldCheck className="h-4 w-4 text-status-success" />,
-      value: metrics?.resolved || 0, previous: previousMetrics?.resolved,
-      change: calcChange(metrics?.resolved || 0, previousMetrics?.resolved),
+      value: metrics?.resolved || 0, previous: anterior?.resolved,
+      change: calcChange(metrics?.resolved || 0, anterior?.resolved),
       hoverList: comStatus('resolved'),
       hoverEmpty: 'Nenhum chamado resolvido no período.',
       onClick: () => navigate(tenantPath(`${ticketQueuePath(filter.module ?? 'tickets')}?status=resolved`)),
@@ -244,54 +248,54 @@ export function IndicatorsView({
     {
       id: 'avg_resolution', label: 'Tempo Médio Resolução', category: 'helpdesk', explicacao: 'chamados.tempo_medio_resolucao',
       icon: <Clock className="h-4 w-4 text-muted-foreground" />,
-      value: `${metrics?.avgResolutionTime || 0}h`,
-      previous: previousMetrics ? `${previousMetrics.avgResolutionTime}h` : null,
-      change: calcChange(metrics?.avgResolutionTime || 0, previousMetrics?.avgResolutionTime), changeInverse: true,
+      value: formatarHoras(metrics?.avgResolutionTime || 0),
+      previous: anterior ? formatarHoras(anterior.avgResolutionTime) : null,
+      change: calcChange(metrics?.avgResolutionTime || 0, anterior?.avgResolutionTime), changeInverse: true,
     },
     {
       id: 'sla', label: 'SLA Cumprido', category: 'helpdesk', explicacao: 'chamados.sla_cumprido',
       icon: <ShieldCheck className="h-4 w-4 text-primary" />,
       value: `${metrics?.slaCompliance || 0}%`,
-      previous: previousMetrics ? `${previousMetrics.slaCompliance}%` : null,
-      change: calcChange(metrics?.slaCompliance || 0, previousMetrics?.slaCompliance, true), changePontos: true,
+      previous: anterior ? `${anterior.slaCompliance}%` : null,
+      change: calcChange(metrics?.slaCompliance || 0, anterior?.slaCompliance, true), changePontos: true,
     },
     {
       id: 'first_response', label: '1ª Resposta no Prazo', category: 'helpdesk', explicacao: 'chamados.primeira_resposta_no_prazo',
       icon: <ShieldCheck className="h-4 w-4 text-primary" />,
       value: `${metrics?.firstResponseCompliance || 0}%`,
-      previous: previousMetrics ? `${previousMetrics.firstResponseCompliance}%` : null,
-      change: calcChange(metrics?.firstResponseCompliance || 0, previousMetrics?.firstResponseCompliance, true), changePontos: true,
+      previous: anterior ? `${anterior.firstResponseCompliance}%` : null,
+      change: calcChange(metrics?.firstResponseCompliance || 0, anterior?.firstResponseCompliance, true), changePontos: true,
     },
     {
       id: 'sla_violated', label: 'SLA Violados', category: 'helpdesk', explicacao: 'chamados.sla_violados',
       icon: <AlertTriangle className="h-4 w-4 text-destructive" />,
-      value: metrics?.slaViolated || 0, previous: previousMetrics?.slaViolated,
-      change: calcChange(metrics?.slaViolated || 0, previousMetrics?.slaViolated), changeInverse: true,
+      value: metrics?.slaViolated || 0, previous: anterior?.slaViolated,
+      change: calcChange(metrics?.slaViolated || 0, anterior?.slaViolated), changeInverse: true,
       hoverList: chamados.filter(c => c.sla_estourado),
       hoverEmpty: 'Nenhum chamado do período com o prazo vencido.',
     },
     {
       id: 'scheduled', label: 'Agendados', category: 'helpdesk', explicacao: 'chamados.agendados',
       icon: <CalendarClock className="h-4 w-4 text-primary" />,
-      value: metrics?.agendados || 0, previous: previousMetrics?.agendados,
-      change: calcChange(metrics?.agendados || 0, previousMetrics?.agendados), changeInverse: true,
+      value: metrics?.agendados || 0, previous: anterior?.agendados,
+      change: calcChange(metrics?.agendados || 0, anterior?.agendados), changeInverse: true,
       hoverList: comStatus('scheduled'),
       hoverEmpty: 'Nenhum chamado agendado.',
     },
     {
       id: 'scheduled_overdue', label: 'Agendados com Prazo Vencido', category: 'helpdesk', explicacao: 'chamados.agendados_prazo_vencido',
       icon: <AlertTriangle className="h-4 w-4 text-destructive" />,
-      value: metrics?.agendadosVencidos || 0, previous: previousMetrics?.agendadosVencidos,
-      change: calcChange(metrics?.agendadosVencidos || 0, previousMetrics?.agendadosVencidos), changeInverse: true,
+      value: metrics?.agendadosVencidos || 0, previous: anterior?.agendadosVencidos,
+      change: calcChange(metrics?.agendadosVencidos || 0, anterior?.agendadosVencidos), changeInverse: true,
       hoverList: chamados.filter(c => c.agendou_vencido),
       hoverEmpty: 'Nenhum chamado do período foi agendado com o prazo já vencido.',
     },
     {
       id: 'scheduled_hours', label: 'Tempo Agendado', category: 'helpdesk', explicacao: 'chamados.horas_agendadas',
       icon: <Clock className="h-4 w-4 text-muted-foreground" />,
-      value: `${metrics?.horasAgendadas || 0}h`,
-      previous: previousMetrics ? `${previousMetrics.horasAgendadas}h` : null,
-      change: calcChange(metrics?.horasAgendadas || 0, previousMetrics?.horasAgendadas), changeInverse: true,
+      value: formatarHoras(metrics?.horasAgendadas || 0),
+      previous: anterior ? formatarHoras(anterior.horasAgendadas) : null,
+      change: calcChange(metrics?.horasAgendadas || 0, anterior?.horasAgendadas), changeInverse: true,
     },
     {
       id: 'help_other_sectors', label: 'Ajuda a Outros Setores', category: 'helpdesk', explicacao: 'chamados.ajuda_outros_setores',
@@ -611,8 +615,8 @@ export function IndicatorsView({
           </CardContent>
         </Card>
 
-        {/* Technician Performance & Top Requesters */}
-        <div className="grid gap-6 lg:grid-cols-2">
+        {/* Desempenho por técnico na largura toda: em meia coluna a tabela cortava a Satisfação (revisão de 2026-11-01). */}
+        <div className="grid gap-6">
           <TechnicianPerformanceChart filter={filter} />
           <TopRequestersCard filter={filter} />
         </div>

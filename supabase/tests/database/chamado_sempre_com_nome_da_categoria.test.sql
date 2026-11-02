@@ -1,4 +1,4 @@
--- O NOME DA CATEGORIA VEM DO BANCO (migration 20270129110000; dono, 2026-10-20 — o #142 da automação nasceu
+-- O NOME DA CATEGORIA VEM DO BANCO (migrations 20270129110000 e 20270212170000; dono, 2026-10-20 — o #142 da automação nasceu
 -- "sem categoria": tinha o id, não o nome). Vale para todo chamado aberto sem passar pelo formulário.
 begin;
 \ir _helpers.psql
@@ -34,11 +34,12 @@ select is((select category from public.tickets where id = (select id from t)), '
 select is((select subcategory from public.tickets where id = (select id from t)), 'Forteplus T › Relatórios',
   'e o caminho ate o item, no formato do formulario');
 
--- ═══ 3. O nome que o formulário mandou fica ═══
-insert into public.tickets (tenant_id, module, title, description, category_id, category, requester_id, created_by)
-select a, 'tickets', 'Do formulario', 'x', (select raiz from cat), 'Sistemas T', (select dono from u), (select dono from u) from f;
-select is((select subcategory from public.tickets where title = 'Do formulario' and tenant_id = (select a from f)), null,
-  'o banco nao reescreve o que o formulario ja mandou');
+-- ═══ 3. O nome que o formulário mandou não vale: o cadastro manda (20270212170000) ═══
+-- Era assim que "Software" (categoria que não existe mais) entrava nos Indicadores com 22 chamados de Sistemas.
+insert into public.tickets (tenant_id, module, title, description, category_id, category, subcategory, requester_id, created_by)
+select a, 'tickets', 'Do formulario', 'x', (select item from cat), 'Software', 'Velha', (select dono from u), (select dono from u) from f;
+select is((select category || ' / ' || subcategory from public.tickets where title = 'Do formulario' and tenant_id = (select a from f)),
+  'Sistemas T / Forteplus T › Relatórios', 'nome velho mandado pelo formulario da lugar ao do cadastro');
 
 -- ═══ 4. Trocar só o id (transferência entre setores) atualiza o nome ═══
 update public.tickets set category_id = (select outra from cat) where id = (select id from t);

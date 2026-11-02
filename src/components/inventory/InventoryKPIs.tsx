@@ -5,16 +5,8 @@ import { KPIGrid } from '@/components/dashboard/KPIGrid';
 import { KPICard } from '@/components/glpi/KPICard';
 import { useInventoryAssets } from '@/hooks/useInventory';
 import type { AssetCategory } from '@/types/helpdesk';
-import { ativoEmEstoque, ativoEmUso } from '@/lib/asset-status';
+import { ativoEmEstoque, ativoEmUso, ROTULO_DA_CATEGORIA_DO_ATIVO as CATEGORY_LABEL } from '@/lib/asset-status';
 
-const CATEGORY_LABEL: Record<AssetCategory, string> = {
-  hardware: 'Hardware',
-  mobile: 'Móveis',
-  peripheral: 'Periféricos',
-  network: 'Rede',
-  software: 'Software',
-  other: 'Outros',
-};
 
 // Subcategorias que costumam aparecer e ícones associados
 const SUBCATEGORY_ICONS: Record<string, any> = {

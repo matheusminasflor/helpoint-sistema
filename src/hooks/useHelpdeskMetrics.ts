@@ -22,6 +22,8 @@ export interface ChamadoDoPeriodo {
   status: string;
   priority: string | null;
   category: string;
+  /** O resto do caminho ("Correções e Ajustes", "Correções e Ajustes › Pedido"), para abrir a categoria nos Indicadores. */
+  subcategory: string | null;
   created_at: string;
   assignee?: { full_name?: string | null; email?: string | null } | null;
   /** Em aberto e com o prazo já vencido — a mesma conta do "SLA violados" (`slaDoChamado`). */
@@ -279,7 +281,7 @@ export function useTicketMetrics(filter?: MetricsFilter) {
           id: ticket.id, ticket_number: ticket.ticket_number, title: ticket.title,
           // O `closed` antigo entra como `resolved` (`statusVisivel`).
           status: statusVisivel(ticket.status || 'open'),
-          priority: ticket.priority, category, created_at: ticket.created_at, assignee: ticket.assignee,
+          priority: ticket.priority, category, subcategory: ticket.subcategory ?? null, created_at: ticket.created_at, assignee: ticket.assignee,
           sla_estourado: !!sla?.estourado,
           agendou_vencido: agendouVencido,
         });

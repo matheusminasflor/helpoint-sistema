@@ -20,6 +20,7 @@ import { ListaDeChamadosNoHover } from '@/components/dashboard/ListaDeChamadosNo
 import { useAjudaAOutrosSetores, ajudaNoHover } from '@/hooks/useAjudaAOutrosSetores';
 import { useVeAvaliacoes } from '@/hooks/useAvaliacoesDoAtendimento';
 import { LIMITE_DO_PRAZO_USADO } from '@/lib/prazo-usado';
+import { formatarHoras } from '@/lib/horas';
 
 interface TechnicianPerformanceChartProps {
   filter?: MetricsFilter;
@@ -165,7 +166,7 @@ export function TechnicianPerformanceChart({ filter, isFullscreen }: TechnicianP
                   <TableCell className="text-center">
                     <div className="flex items-center justify-center gap-1 text-sm">
                       <Clock className="h-3 w-3 text-muted-foreground" />
-                      {tech.avgResolutionTime > 0 ? `${tech.avgResolutionTime}h` : '-'}
+                      {tech.avgResolutionTime > 0 ? formatarHoras(tech.avgResolutionTime) : '—'}
                     </div>
                   </TableCell>
                   <TableCell className="text-center">
@@ -252,7 +253,7 @@ export function TechnicianPerformanceChart({ filter, isFullscreen }: TechnicianP
 
         {/* Chart */}
         <div>
-          <h4 className="text-sm font-medium mb-3">Tickets Resolvidos vs Ativos</h4>
+          <h4 className="text-sm font-medium mb-3">Chamados resolvidos × ativos</h4>
           <ResponsiveContainer width="100%" height={isFullscreen ? 300 : 200}>
             <BarChart data={chartData} layout="vertical">
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />

@@ -1,36 +1,29 @@
 import { describe, expect, it } from 'vitest';
 import {
-  comparar, farol, horasParadas, lerColagem, mediaAnteriorDosMesmos, mediaDaEquipe, metaDoPeriodo, periodoAnterior, periodoDaSemana,
-  porColaborador, semanaDoDia,
-} from './ti-semanal';
+  comparar, diasDoPeriodo, farol, horasParadas, lerColagem, mediaAnteriorDosMesmos, mediaDaEquipe, metaDoPeriodo,
+  lerNumero, periodoAnterior, periodoDoIntervalo, porColaborador, somaDosPercentuais,
+} from './ti-equipe';
 
-describe('semanas da planilha', () => {
-  it('S1 a S3 têm 7 dias; S4 vai do dia 22 ao fim do mês', () => {
-    expect(periodoDaSemana('2026-10', 1)).toEqual({ de: '2026-10-01', ate: '2026-10-08' });
-    expect(periodoDaSemana('2026-10', 3)).toEqual({ de: '2026-10-15', ate: '2026-10-22' });
-    expect(periodoDaSemana('2026-10', 4)).toEqual({ de: '2026-10-22', ate: '2026-11-01' });
-    expect(periodoDaSemana('2026-02', 4)).toEqual({ de: '2026-02-22', ate: '2026-03-01' });
-    expect(periodoDaSemana('2026-12', 0)).toEqual({ de: '2026-12-01', ate: '2027-01-01' });
+const S4_OUTUBRO = { de: '2026-10-22', ate: '2026-11-01' };
+
+describe('período do filtro da tela', () => {
+  it('o intervalo da tela (último dia incluído) vira período com o fim exclusivo', () => {
+    expect(periodoDoIntervalo({ de: '2026-10-26', ate: '2026-11-01' })).toEqual({ de: '2026-10-26', ate: '2026-11-02' });
+    expect(diasDoPeriodo({ de: '2026-10-26', ate: '2026-11-02' })).toBe(7);
   });
 
-  it('compara S4 com S3, S1 com a S4 do mês anterior e o mês com o mês anterior', () => {
-    expect(periodoAnterior('2026-10', 4)).toEqual({ de: '2026-10-15', ate: '2026-10-22' });
-    expect(periodoAnterior('2026-10', 1)).toEqual({ de: '2026-09-22', ate: '2026-10-01' });
-    expect(periodoAnterior('2026-01', 0)).toEqual({ de: '2025-12-01', ate: '2026-01-01' });
-  });
-
-  it('o dia da planilha cai na semana certa', () => {
-    expect(semanaDoDia('2026-10-25')).toBe(4);
-    expect(semanaDoDia('2026-10-07')).toBe(1);
-    expect(semanaDoDia('2026-10-31')).toBe(4);
+  it('compara com o período anterior do mesmo tamanho, colado antes', () => {
+    expect(periodoAnterior({ de: '2026-10-26', ate: '2026-11-02' })).toEqual({ de: '2026-10-19', ate: '2026-10-26' });
+    expect(periodoAnterior({ de: '2026-10-01', ate: '2026-11-01' })).toEqual({ de: '2026-08-31', ate: '2026-10-01' });
   });
 });
 
 describe('meta e farol', () => {
-  it('quantidade divide por 4 na semana; percentual não', () => {
-    expect(metaDoPeriodo(2, 4, true)).toBe(0.5);
-    expect(metaDoPeriodo(2, 0, true)).toBe(2);
-    expect(metaDoPeriodo(65, 3, false)).toBe(65);
+  it('a meta de quantidade é proporcional aos dias; a de percentual vale inteira', () => {
+    expect(metaDoPeriodo(2, 7, true)).toBe(0.5);
+    expect(metaDoPeriodo(2, 30, true)).toBe(2);
+    expect(metaDoPeriodo(65, 7, false)).toBe(65);
+    expect(metaDoPeriodo(undefined, 7, true)).toBeUndefined();
   });
 
   it('maior é melhor: na meta, até 70% atenção, abaixo fora', () => {
@@ -63,7 +56,7 @@ describe('FSENSE', () => {
   ];
 
   it('uma linha por pessoa no período: horas somadas, percentual pela média', () => {
-    const s4 = porColaborador(linhas, periodoDaSemana('2026-10', 4));
+    const s4 = porColaborador(linhas, S4_OUTUBRO);
     expect(s4).toHaveLength(2);
     expect(s4.find((c) => c.colaborador === 'Gislene')).toMatchObject({ horas: 39.3, trabalho: 68, ocioso: 1.25 });
   });
@@ -107,6 +100,19 @@ describe('FSENSE', () => {
     ]);
   });
 
+  it('lê as horas como o FSENSE mostra e confere a soma dos percentuais', () => {
+    expect(lerNumero('64h 45m')).toBe(64.8);
+    expect(lerNumero('64h45m')).toBe(64.8);
+    expect(lerNumero('45:36')).toBe(45.6);
+    expect(lerNumero('45,6')).toBe(45.6);
+    expect(lerNumero('58,1%')).toBe(58.1);
+    expect(lerNumero('')).toBeNull();
+    expect(lerNumero('abc')).toBeNaN();
+    expect(lerColagem('jacqueline\t64h 45m\t58,1%\t8,4%\t4,4%\t29,1%').linhas[0]).toMatchObject({ horas: 64.8, trabalho: 58.1, suspenso: 29.1 });
+    expect(somaDosPercentuais({ trabalho: 58.1, bloqueada: 8.4, ocioso: 4.4, suspenso: 29.1 })).toBe(100);
+    expect(somaDosPercentuais({ trabalho: 51.1, bloqueada: 0, ocioso: 45.9, suspenso: null })).toBeNull();
+  });
+
   it('acusa linha sem nome e percentual impossível', () => {
     const { linhas: l, erros } = lerColagem('45,6 62%\nKarina 8 108% 0 0 0');
     expect(l).toEqual([]);
@@ -116,7 +122,7 @@ describe('FSENSE', () => {
 
 describe('interrupções', () => {
   it('soma as horas paradas do período; a que está parada conta até agora; a da planilha antiga não soma', () => {
-    const p = periodoDaSemana('2026-10', 4);
+    const p = S4_OUTUBRO;
     const lista = [
       { inicio: '2026-10-24T17:00:00.000Z', fim: '2026-10-24T19:30:00.000Z', sem_horario: false },
       { inicio: '2026-10-30T12:00:00.000Z', fim: null, sem_horario: false },

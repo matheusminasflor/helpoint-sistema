@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
+import { formatarHoras } from '@/lib/horas';
 
 interface OverdueMetrics {
   slaViolated: number;
@@ -138,7 +139,7 @@ export function OverdueTicketsCard({ metrics, previousViolationRate, className }
             <Clock className="h-4 w-4 text-muted-foreground" />
             <div>
               <p className="text-sm font-medium">
-                Atraso médio: <span className="text-destructive">{avgOverdueTime}h</span>
+                Atraso médio: <span className="text-destructive">{formatarHoras(avgOverdueTime)}</span>
               </p>
               <p className="text-xs text-muted-foreground">
                 Tempo médio além do prazo de SLA

@@ -1,55 +1,38 @@
-// TI › Indicadores › Semanal (dono, 2026-11-01; docs/proposta-indicadores-da-semana.md): as regras da planilha que o
-// dono apresenta ao diretor toda segunda, para o número do Helpoint bater com o que ele já conhece.
+// TI › Indicadores › bloco "Equipe" (dono, 2026-11-01; revisão aprovada): o FSENSE e as interrupções obedecem ao mesmo
+// filtro de período da tela e comparam com o período anterior do mesmo tamanho, como os outros indicadores.
 //
-//   Semanas do mês: S1 = dias 1–7 · S2 = 8–14 · S3 = 15–21 · S4 = 22 ao fim. 0 = o mês inteiro.
-//   Comparativo: mês inteiro → mês anterior · S2–S4 → semana anterior · S1 → S4 do mês anterior.
+//   Meta mensal: a de percentual vale para qualquer período; a de quantidade (interrupções) é proporcional aos dias.
 //   Farol: verde na meta · amarelo até 70% da meta (ou até 130% quando menor é melhor) · vermelho fora.
 
-import { addMonths, endOfMonth } from 'date-fns';
 import { fromLocalISODate, toLocalISODate } from '@/lib/dates';
+import type { IntervaloDeDias } from '@/lib/period';
 
-export type Semana = 0 | 1 | 2 | 3 | 4;
 /** `ate` exclusivo. */
 export interface Periodo { de: string; ate: string }
 
-function dia(competencia: string, n: number): Date {
-  const [a, m] = competencia.split('-').map(Number);
-  return new Date(a, m - 1, n);
-}
-const fimExclusivo = (competencia: string) => toLocalISODate(new Date(endOfMonth(dia(competencia, 1)).getTime() + 86_400_000));
+const somarDias = (iso: string, n: number) => {
+  const d = fromLocalISODate(iso);
+  d.setDate(d.getDate() + n);
+  return toLocalISODate(d);
+};
 
-export function semanaDoDia(iso: string): 1 | 2 | 3 | 4 {
-  return Math.min(4, Math.floor((fromLocalISODate(iso).getDate() - 1) / 7) + 1) as 1 | 2 | 3 | 4;
-}
+/** O intervalo da tela (último dia incluído) → período com `ate` exclusivo. */
+export const periodoDoIntervalo = ({ de, ate }: IntervaloDeDias): Periodo => ({ de, ate: somarDias(ate, 1) });
 
-export function periodoDaSemana(competencia: string, s: Semana): Periodo {
-  if (s === 0) return { de: toLocalISODate(dia(competencia, 1)), ate: fimExclusivo(competencia) };
-  return {
-    de: toLocalISODate(dia(competencia, (s - 1) * 7 + 1)),
-    ate: s === 4 ? fimExclusivo(competencia) : toLocalISODate(dia(competencia, s * 7 + 1)),
-  };
-}
+export const diasDoPeriodo = ({ de, ate }: Periodo) =>
+  Math.round((fromLocalISODate(ate).getTime() - fromLocalISODate(de).getTime()) / 86_400_000);
 
-export function competenciaAnterior(competencia: string): string {
-  return toLocalISODate(addMonths(dia(competencia, 1), -1)).slice(0, 7);
-}
-
-export function periodoAnterior(competencia: string, s: Semana): Periodo {
-  if (s === 0) return periodoDaSemana(competenciaAnterior(competencia), 0);
-  if (s === 1) return periodoDaSemana(competenciaAnterior(competencia), 4);
-  return periodoDaSemana(competencia, (s - 1) as Semana);
-}
-
-export function textoDoAnterior(s: Semana): string {
-  return s === 0 ? 'do mês anterior' : 'da semana anterior';
+/** O período anterior do mesmo tamanho, colado antes deste. */
+export function periodoAnterior(p: Periodo): Periodo {
+  return { de: somarDias(p.de, -diasDoPeriodo(p)), ate: p.de };
 }
 
 export const dentro = (iso: string, p: Periodo) => iso >= p.de && iso < p.ate;
 
-/** A meta mensal vale no período; a de quantidade divide por 4 na semana. */
-export function metaDoPeriodo(metaMensal: number | undefined, s: Semana, divide: boolean): number | undefined {
+/** A meta mensal no período: a de quantidade é proporcional aos dias (mês = 30); a de percentual vale inteira. */
+export function metaDoPeriodo(metaMensal: number | undefined, dias: number, proporcional: boolean): number | undefined {
   if (metaMensal === undefined) return undefined;
-  return divide && s !== 0 ? metaMensal / 4 : metaMensal;
+  return proporcional ? Math.round((metaMensal * dias / 30) * 10) / 10 : metaMensal;
 }
 
 export type Sentido = 'mais' | 'menos';
@@ -120,14 +103,27 @@ export interface LinhaColada {
   suspenso: number | null;
 }
 
-const NUMERO = /(\d{1,3}:\d{2})|(\d+(?:[.,]\d+)?)\s*%?/g;
+// Horas como o FSENSE mostra ("64h 45m", "64h45m"), em relógio ("45:36") ou decimal ("45,6"); percentual com ou sem "%".
+const NUMERO = /(\d{1,3}\s*h\s*\d{1,2}\s*m?|\d{1,3}:\d{2})|(\d+(?:[.,]\d+)?)\s*%?/gi;
 
 function paraNumero(t: string): number {
-  if (t.includes(':')) {
-    const [h, m] = t.split(':').map(Number);
-    return Math.round((h + m / 60) * 10) / 10;
-  }
+  const relogio = t.match(/^(\d{1,3})\s*[h:]\s*(\d{1,2})/i);
+  if (relogio) return Math.round((Number(relogio[1]) + Number(relogio[2]) / 60) * 10) / 10;
   return Number(t.replace(',', '.'));
+}
+
+/** Uma célula da grade: número (horas em qualquer dos formatos, ou percentual) ou `null` se vazia; `NaN` se não é número. */
+export function lerNumero(texto: string): number | null {
+  const t = texto.replace('%', '').trim();
+  if (!t) return null;
+  if (!/^(\d{1,3}\s*h\s*\d{1,2}\s*m?|\d{1,3}:\d{2}|\d+(?:[.,]\d+)?)$/i.test(t)) return NaN;
+  return paraNumero(t);
+}
+
+/** A soma dos quatro percentuais de uma pessoa, quando os quatro estão preenchidos (o FSENSE fecha em 100%). */
+export function somaDosPercentuais(l: Pick<LinhaColada, 'trabalho' | 'bloqueada' | 'ocioso' | 'suspenso'>): number | null {
+  const v = [l.trabalho, l.bloqueada, l.ocioso, l.suspenso];
+  return v.some((x) => x === null) ? null : Math.round(v.reduce((a, b) => a! + b!, 0)! * 10) / 10;
 }
 
 /**

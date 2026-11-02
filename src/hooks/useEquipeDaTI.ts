@@ -1,10 +1,10 @@
-// TI › Indicadores › Semanal (dono, 2026-11-01; migration 20270212150000): o FSENSE e as interrupções. As metas são as
-// de `dir_metas_dos_setores` (setor 'ti'), lidas e gravadas pelos hooks da Diretoria.
+// TI › Indicadores › bloco "Equipe" (dono, 2026-11-01; migration 20270212150000): o FSENSE e as interrupções. As metas
+// são as de `dir_metas_dos_setores` (setor 'ti'), lidas e gravadas pelos hooks da Diretoria.
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { expectRows, unwrap } from '@/lib/supabase-result';
-import type { LinhaColada, Periodo } from '@/lib/ti-semanal';
+import type { LinhaColada, Periodo } from '@/lib/ti-equipe';
 
 export interface LinhaFsenseDoBanco extends LinhaColada {
   id: string;
@@ -35,6 +35,21 @@ export function useFsense({ de, ate }: Periodo) {
     queryFn: async () => ((unwrap(await supabase.from('ti_fsense' as never)
       .select('id, data, colaborador, horas, trabalho, bloqueada, ocioso, suspenso, confirmado_em')
       .gte('data', de).lt('data', ate).order('data').order('colaborador'))) ?? []) as unknown as LinhaFsenseDoBanco[],
+  });
+}
+
+/** A última semana lançada antes de `antesDe`: os nomes (e os números, apagados) que a grade de lançamento já traz. */
+export function useUltimaSemanaDoFsense(antesDe: string) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['ti-fsense-ultima', tenantId, antesDe],
+    enabled: !!tenantId && !!antesDe,
+    queryFn: async () => {
+      const linhas = ((unwrap(await supabase.from('ti_fsense' as never)
+        .select('id, data, colaborador, horas, trabalho, bloqueada, ocioso, suspenso, confirmado_em')
+        .lt('data', antesDe).order('data', { ascending: false }).limit(80))) ?? []) as unknown as LinhaFsenseDoBanco[];
+      return linhas.filter((l) => l.data === linhas[0]?.data).sort((a, b) => a.colaborador.localeCompare(b.colaborador));
+    },
   });
 }
 
@@ -76,6 +91,18 @@ export function useConfirmarFsense() {
     mutationFn: async (data: string) => {
       expectRows(await supabase.from('ti_fsense' as never).update({ confirmado_em: new Date().toISOString() } as never)
         .eq('data', data).is('confirmado_em', null).select('id'), 'a semana');
+    },
+    onSuccess: invalidar,
+  });
+}
+
+/** Corrigir uma pessoa à mão (o FSENSE veio errado). Semana confirmada continua confirmada: quem corrige é gente. */
+export function useEditarFsense() {
+  const invalidar = useInvalidar('ti-fsense');
+  return useMutation({
+    mutationFn: async ({ id, ...campos }: LinhaColada & { id: string }) => {
+      expectRows(await supabase.from('ti_fsense' as never).update({ ...campos, colaborador: campos.colaborador.trim() } as never)
+        .eq('id', id).select('id'), 'a linha');
     },
     onSuccess: invalidar,
   });

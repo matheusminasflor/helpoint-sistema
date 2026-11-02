@@ -93,6 +93,19 @@ describe('intervaloDoPeriodoRapido', () => {
     expect(intervaloDoPeriodoRapido('este_trimestre', '2026-10-03')).toEqual({ de: '2026-10-01', ate: '2026-12-31' });
   });
 
+  it('semana passada e esta semana: de segunda a domingo (a reunião de segunda olha a semana que fechou)', () => {
+    // 2026-11-02 é segunda; 2026-11-01, domingo.
+    expect(intervaloDoPeriodoRapido('semana_passada', '2026-11-02')).toEqual({ de: '2026-10-26', ate: '2026-11-01' });
+    expect(intervaloDoPeriodoRapido('semana_passada', '2026-11-01')).toEqual({ de: '2026-10-19', ate: '2026-10-25' });
+    expect(intervaloDoPeriodoRapido('esta_semana', '2026-11-05')).toEqual({ de: '2026-11-02', ate: '2026-11-05' });
+    expect(intervaloDoPeriodoRapido('esta_semana', '2026-11-01')).toEqual({ de: '2026-10-26', ate: '2026-11-01' });
+  });
+
+  it('mês passado: o mês inteiro antes do de hoje, virando o ano', () => {
+    expect(intervaloDoPeriodoRapido('mes_passado', '2026-11-02')).toEqual({ de: '2026-10-01', ate: '2026-10-31' });
+    expect(intervaloDoPeriodoRapido('mes_passado', '2027-01-15')).toEqual({ de: '2026-12-01', ate: '2026-12-31' });
+  });
+
   it('este ano: 1º de janeiro a 31 de dezembro do ano de hoje', () => {
     expect(intervaloDoPeriodoRapido('este_ano', '2026-10-03')).toEqual({ de: '2026-01-01', ate: '2026-12-31' });
   });

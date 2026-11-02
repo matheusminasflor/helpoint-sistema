@@ -64,7 +64,14 @@ export const PERSONALIZADO = 'personalizado' as const;
  * trimestre e o ano DE HOJE, do primeiro ao último dia — não "os últimos N
  * dias". Uma conta só, aqui; toda tela chama `intervaloDoPeriodoRapido`.
  */
-export type PeriodoRapido = 'este_mes' | 'este_trimestre' | 'este_ano';
+export type PeriodoRapido = 'este_mes' | 'este_trimestre' | 'este_ano' | SemanaOuMesPassado;
+
+/**
+ * O recorte da reunião de segunda (TI › Indicadores, dono, 2026-11-01): a semana passada, esta semana e o mês passado.
+ * Semana de segunda a domingo.
+ */
+export type SemanaOuMesPassado = 'semana_passada' | 'esta_semana' | 'mes_passado';
+const RAPIDOS: readonly string[] = ['este_mes', 'este_trimestre', 'este_ano', 'semana_passada', 'esta_semana', 'mes_passado'];
 
 /** Os três rápidos e o "Personalizado", na ordem em que aparecem depois dos presets de cada tela. */
 export const OPCOES_DE_CALENDARIO: { value: PeriodoRapido | typeof PERSONALIZADO; label: string }[] = [
@@ -75,12 +82,20 @@ export const OPCOES_DE_CALENDARIO: { value: PeriodoRapido | typeof PERSONALIZADO
 ];
 
 export function ehPeriodoRapido(valor: string): valor is PeriodoRapido {
-  return valor === 'este_mes' || valor === 'este_trimestre' || valor === 'este_ano';
+  return RAPIDOS.includes(valor);
 }
 
 export function intervaloDoPeriodoRapido(periodo: PeriodoRapido, hojeISO: string = todayISO()): IntervaloDeDias {
   const ano = Number(hojeISO.slice(0, 4));
   const mes = Number(hojeISO.slice(5, 7));
+  if (periodo === 'semana_passada' || periodo === 'esta_semana') {
+    const segunda = fromLocalISODate(hojeISO);
+    segunda.setDate(segunda.getDate() - ((segunda.getDay() + 6) % 7) - (periodo === 'semana_passada' ? 7 : 0));
+    const domingo = new Date(segunda);
+    domingo.setDate(segunda.getDate() + 6);
+    return { de: toLocalISODate(segunda), ate: periodo === 'esta_semana' ? hojeISO : toLocalISODate(domingo) };
+  }
+  if (periodo === 'mes_passado') return mes === 1 ? primeiroEUltimoDiaDoMes(ano - 1, 12) : primeiroEUltimoDiaDoMes(ano, mes - 1);
   if (periodo === 'este_ano') return { de: `${ano}-01-01`, ate: `${ano}-12-31` };
   if (periodo === 'este_mes') return primeiroEUltimoDiaDoMes(ano, mes);
   const primeiroMes = Math.floor((mes - 1) / 3) * 3 + 1;

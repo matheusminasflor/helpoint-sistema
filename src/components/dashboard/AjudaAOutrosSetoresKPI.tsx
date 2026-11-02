@@ -8,6 +8,7 @@ import type { TicketMetrics } from '@/hooks/useHelpdeskMetrics';
 import { ListaDeChamadosNoHover } from '@/components/dashboard/ListaDeChamadosNoHover';
 import { useAjudaAOutrosSetores, ajudaNoHover } from '@/hooks/useAjudaAOutrosSetores';
 import type { MetricsFilter } from '@/hooks/useHelpdeskMetrics';
+import { formatarHoras } from '@/lib/horas';
 
 export function AjudaAOutrosSetoresKPI({ modulo, filter }: { modulo: string; filter: MetricsFilter }) {
   const { data: ajuda = [] } = useAjudaAOutrosSetores(modulo, filter);
@@ -31,7 +32,7 @@ export function LinhaAgendaEAjuda({ metrics, modulo, filter }: { metrics: Ticket
   return (
     <KPIGrid lgCols={3}>
       <KPICard value={metrics?.agendados ?? 0} label="Agendados" icon={CalendarClock} color="purple" explicacao="chamados.agendados" />
-      <KPICard value={`${metrics?.horasAgendadas ?? 0}h`} label="Tempo agendado" icon={Clock} color="grey" explicacao="chamados.horas_agendadas" />
+      <KPICard value={formatarHoras(metrics?.horasAgendadas ?? 0)} label="Tempo agendado" icon={Clock} color="grey" explicacao="chamados.horas_agendadas" />
       <AjudaAOutrosSetoresKPI modulo={modulo} filter={filter} />
     </KPIGrid>
   );
