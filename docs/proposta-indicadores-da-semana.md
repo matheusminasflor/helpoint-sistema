@@ -151,6 +151,11 @@ Proposta: https://claude.ai/artifact/Syu6gZsfGyds6BpHNRmRUY.
   - O dono muda os degraus em Configurações de TI › Metas.
   - A tela mostra a meta do mês e o próximo degrau.
   - O período usa o degrau que vale no último dia dele.
+- **Revisto no mesmo dia (dono): uma meta por indicador, sem mostrar meses nem degraus.**
+  - A tela mostra só "meta: pelo menos 80%".
+  - O gestor da TI muda quando quiser; a nova vale a partir do mês da mudança, e os meses anteriores ficam com a que
+    valia (a tabela de degraus guarda essa história sem mostrá-la).
+  - Padrões: SLA 80%, 1ª resposta 85%, tempo médio 24 h, trabalho 55%, ocioso 20%, interrupções 2 por mês.
 - **Total de chamados.** Um quinto cartão, "Total de chamados", e "Chamados resolvidos" continua.
 - **Eficiência por pessoa.** No Analítico, a "Equipe por semana" é trocada pela "Eficiência por pessoa", que obedece
   ao filtro de período da tela.
