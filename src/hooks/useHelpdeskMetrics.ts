@@ -8,6 +8,8 @@ import { intervaloEmDatas, type IntervaloDeDias } from '@/lib/period';
 import { contaComoResolvido, statusVisivel } from '@/lib/status-do-chamado';
 import { primeiraRespostaDoChamado } from '@/lib/primeira-resposta';
 import { SLA_PAUSED_STATUSES } from '@/types/helpdesk';
+import { SLA_PARADO, slaDoChamado } from '@/lib/sla-do-chamado';
+import { iniciosDaSerie, serieDosChamados, type ChamadoDaSerie, type PontoDaSerie } from '@/lib/serie-dos-chamados';
 
 /**
  * Um chamado do período, com o que a lista do "passar o mouse" mostra. Vem da MESMA consulta que
@@ -76,50 +78,6 @@ export interface TicketTrend {
   resolved: number;
 }
 
-/** Status em que o relógio do SLA parou de correr. */
-const SLA_PARADO = ['resolved', 'closed', 'cancelled', 'rejected'];
-
-/**
- * O SLA de UM chamado, por uma regra só.
- *
- * POR QUE ISTO EXISTE (2026-09-27). A aderência do período atual e a do período
- * anterior eram calculadas por **regras diferentes**, nos dois lados da mesma
- * seta de "vs. período anterior": o atual contava como cumprido tanto o resolvido
- * no prazo quanto o que ainda estava correndo dentro dele; o anterior contava só
- * o resolvido no prazo. Comparar os dois é comparar coisas diferentes, e a seta
- * dizia "melhorou" ou "piorou" a partir disso.
- *
- * E o **denominador** era `metrics.total`, que inclui chamado cancelado,
- * reprovado e chamado **sem SLA nenhum** — todos contados como "não cumpriu".
- * Empresa que configura política de SLA para um setor só teria a aderência
- * diluída por todos os outros. Agora o denominador é quem tem prazo.
- *
- * Devolve `null` para chamado sem `sla_due_at`: ele não entra em nenhum dos dois
- * lados da conta, em vez de entrar como falha.
- */
-function slaDoChamado(
-  ticket: { sla_due_at?: string | null; resolved_at?: string | null; status?: string | null; agendou_vencido?: boolean | null },
-  agora: Date,
-): { cumpriu: boolean; estourado: boolean } | null {
-  if (!ticket.sla_due_at) return null;
-
-  const prazo = new Date(ticket.sla_due_at);
-  // Marco final do SLA = resolved_at. Nunca closed_at/updated_at.
-  const resolvido = ticket.resolved_at ? new Date(ticket.resolved_at) : null;
-  const correndo = !SLA_PARADO.includes(ticket.status ?? 'open');
-
-  if (resolvido) return { cumpriu: resolvido <= prazo, estourado: false };
-  // Pendente = prazo pausado esperando o solicitante (dono, 2026-10-06): não estoura enquanto
-  // espera; ao sair, o banco empurra o vencimento pelo tempo útil parado (20261210010000).
-  // Agendado (2026-10-07) é a mesma pausa, até a data marcada.
-  // Exceção (2026-10-15; 20270115010000): agendado com o prazo JÁ vencido continua atrasado — agendar não apaga o atraso.
-  if (ticket.status === 'scheduled' && ticket.agendou_vencido) return { cumpriu: false, estourado: agora > prazo };
-  if ((SLA_PAUSED_STATUSES as readonly string[]).includes(ticket.status ?? '')) return { cumpriu: true, estourado: false };
-  // Sem resolução: só o que ainda corre tem veredito. Cancelado e reprovado sem
-  // resolução não cumpriram nem violaram — o relógio parou sem entrega.
-  if (!correndo) return { cumpriu: false, estourado: false };
-  return { cumpriu: agora <= prazo, estourado: agora > prazo };
-}
 
 export interface MetricsFilter {
   period: 'today' | '7d' | '30d' | '90d' | 'custom';
@@ -552,52 +510,9 @@ export function useViolatedSlaTickets(filter?: MetricsFilter) {
 }
 
 
-// ─── A linha das últimas semanas (Indicadores da TI, rodada 2, 2026-11-02) ───────────────────────────
-// Cada número do topo ganha a linha dos últimos períodos do MESMO tamanho do filtro (na "Semana passada", as 8 semanas
-// que acabam nela). As contas são as de `useTicketMetrics` — `slaDoChamado`, `primeiraRespostaDoChamado`, tempo médio
-// da abertura à resolução —, então o último ponto é o número do cartão.
-
-export interface ChamadoDaSerie {
-  created_at: string;
-  resolved_at: string | null;
-  status: string | null;
-  sla_due_at: string | null;
-  agendou_vencido?: boolean | null;
-  first_response_at?: string | null;
-  first_response_due_at?: string | null;
-}
-
-export interface PontoDaSerie { sla: number | null; primeira: number | null; tempo: number | null; resolvidos: number }
-
-/** `inicios` em ordem; cada período vai do seu início ao início do próximo (o último, até `fim`). */
-export function serieDosChamados(chamados: ChamadoDaSerie[], inicios: Date[], fim: Date, agora: Date): PontoDaSerie[] {
-  return inicios.map((de, i) => {
-    const ate = inicios[i + 1] ?? fim;
-    const doPeriodo = chamados.filter((c) => { const t = new Date(c.created_at); return t >= de && t < ate; });
-    const sla = doPeriodo.map((c) => slaDoChamado(c, agora)).filter((s): s is NonNullable<typeof s> => !!s);
-    const resposta = doPeriodo.map((c) => primeiraRespostaDoChamado(c, agora)).filter((s): s is NonNullable<typeof s> => !!s);
-    const resolvidos = doPeriodo.filter((c) => c.resolved_at);
-    const horas = resolvidos.reduce((a, c) => a + (new Date(c.resolved_at!).getTime() - new Date(c.created_at).getTime()) / 3_600_000, 0);
-    return {
-      sla: sla.length ? Math.round((sla.filter((s) => s.cumpriu).length / sla.length) * 100) : null,
-      primeira: resposta.length ? Math.round((resposta.filter((s) => s.cumpriu).length / resposta.length) * 100) : null,
-      tempo: resolvidos.length ? Math.round((horas / resolvidos.length) * 10) / 10 : null,
-      resolvidos: doPeriodo.filter((c) => contaComoResolvido(c.status)).length,
-    };
-  });
-}
-
-/** Os inícios dos `n` períodos do tamanho do filtro, o último sendo o do filtro. */
-export function iniciosDaSerie(filter: MetricsFilter, n: number): { inicios: Date[]; fim: Date } {
-  const { startDate, endDate } = getDateRangeFromPeriod(filter);
-  const dias = Math.round((endOfDay(endDate).getTime() - startOfDay(startDate).getTime()) / 86_400_000);
-  const inicios = Array.from({ length: n }, (_, i) => startOfDay(subDays(startDate, dias * (n - 1 - i))));
-  return { inicios, fim: new Date(endOfDay(endDate).getTime() + 1) };
-}
-
 export function useSerieDosChamados(filter: MetricsFilter, n = 8) {
   const { tenantId } = useAuth();
-  const { inicios, fim } = iniciosDaSerie(filter, n);
+  const { inicios, fim } = iniciosDaSerie(getDateRangeFromPeriod(filter), n);
   return useQuery({
     queryKey: ['ticket-serie', tenantId, inicios[0].toISOString(), fim.toISOString(), filter.technicianId, filter.module ?? 'todos', n],
     enabled: !!tenantId,

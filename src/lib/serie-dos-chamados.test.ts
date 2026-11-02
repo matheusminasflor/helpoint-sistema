@@ -1,16 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { iniciosDaSerie, serieDosChamados } from './useHelpdeskMetrics';
+import { iniciosDaSerie, serieDosChamados } from './serie-dos-chamados';
 
 describe('a linha das últimas semanas dos indicadores de chamado', () => {
   const agora = new Date('2026-11-02T12:00:00-03:00');
 
+  // Dias locais (a tela trabalha no fuso de quem abre; o CI roda em UTC): `new Date(ano, mês, dia)`.
   it('na "Semana passada", 8 semanas que acabam nela, de segunda a segunda', () => {
-    const { inicios, fim } = iniciosDaSerie(
-      { period: 'custom', startDate: new Date('2026-10-26T00:00:00-03:00'), endDate: new Date('2026-11-01T00:00:00-03:00') }, 8);
+    const { inicios, fim } = iniciosDaSerie({ startDate: new Date(2026, 9, 26), endDate: new Date(2026, 10, 1) }, 8);
     expect(inicios).toHaveLength(8);
-    expect(inicios[7].getTime()).toBe(new Date('2026-10-26T00:00:00-03:00').getTime());
-    expect(inicios[0].getTime()).toBe(new Date('2026-09-07T00:00:00-03:00').getTime());
-    expect(fim.getTime()).toBe(new Date('2026-11-02T00:00:00-03:00').getTime());
+    expect(inicios[7].getTime()).toBe(new Date(2026, 9, 26).getTime());
+    expect(inicios[0].getTime()).toBe(new Date(2026, 8, 7).getTime());
+    expect(fim.getTime()).toBe(new Date(2026, 10, 2).getTime());
   });
 
   it('cada ponto faz as contas do cartão: SLA e 1ª resposta de quem tem prazo, tempo médio e resolvidos', () => {

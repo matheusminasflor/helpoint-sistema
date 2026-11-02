@@ -24,22 +24,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { META_DA_TI, metaEmVigor } from '@/config/metas-da-ti';
+import { META_DA_TI } from '@/config/metas-da-ti';
 import { useConfiguracaoDosSetores, usePodeVerEquipe } from '@/hooks/useAccessProfiles';
-import { useMetasDosSetores } from '@/hooks/useDiretoria';
 import {
-  TIPOS_DE_INTERRUPCAO, useApagarFsense, useApagarInterrupcao, useConfirmarFsense, useEditarFsense, useFsense,
-  useInterrupcoes, useLancarFsense, useSalvarInterrupcao, useUltimaSemanaDoFsense,
-  type InterrupcaoDoBanco, type LinhaFsenseDoBanco, type TipoDeInterrupcao,
+  TIPOS_DE_INTERRUPCAO, useApagarFsense, useApagarInterrupcao, useConfirmarFsense, useEditarFsense, useEquipeDoPeriodo,
+  useLancarFsense, useSalvarInterrupcao, useUltimaSemanaDoFsense,
+  type InterrupcaoDoBanco, type LinhaFsenseDoBanco, type NumeroDaEquipe, type TipoDeInterrupcao,
 } from '@/hooks/useEquipeDaTI';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { dataHora, diaCurto, fromLocalDateTimeInput, toLocalDateTimeInput, toLocalISODate } from '@/lib/dates';
 import type { IntervaloDeDias } from '@/lib/period';
 import { mensagemDeErro } from '@/lib/supabase-result';
 import {
-  COR_DO_FAROL, dentro, diasDoPeriodo, domingoDaSemana, farol, somarDias, horasParadas, lerColagem, lerNumero, mediaAnteriorDosMesmos, mediaDaEquipe,
-  metaDoPeriodo, periodoAnterior, periodoDoIntervalo, piorFarol, porColaborador, somaDosPercentuais,
-  type DoColaborador, type Farol, type LinhaColada, type Sentido,
+  COR_DO_FAROL, domingoDaSemana, lerColagem, lerNumero, somarDias, somaDosPercentuais,
+  type Farol, type LinhaColada,
 } from '@/lib/ti-equipe';
 import { cn } from '@/lib/utils';
 
@@ -58,17 +56,29 @@ function SeloDoFarol({ f }: { f: Farol }) {
   return <Badge variant="outline" className={`${FAROL[f].classe} border-0`}>{FAROL[f].texto}</Badge>;
 }
 
+const ICONE: Record<NumeroDaEquipe['chave'], LucideIcon> = { fsense_trabalho: Briefcase, fsense_ocioso: Coffee, interrupcoes: Zap };
+
+/** Os três números da Equipe nos mesmos cartões dos chamados (Lei de Jakob: um jeito só de mostrar número na tela). */
+export function CartoesDaEquipe({ numeros }: { numeros: NumeroDaEquipe[] }) {
+  return (
+    <KPIGrid lgCols={3}>
+      {numeros.map((c) => {
+        const def = META_DA_TI[c.chave];
+        const fmt = (v: number) => (def.percentual ? pct(v) : num(v));
+        const nota = [c.metaTexto && textoDaMeta(c.metaTexto, def.sentido), c.extra].filter(Boolean).join(' · ');
+        return (
+          <KPICard key={c.chave} label={c.nome} icon={ICONE[c.chave]} value={c.atual === null ? '—' : fmt(c.atual)} numero={c.atual}
+            color={COR_DO_FAROL[c.farol]} nota={nota || undefined} notaRuim={c.farol === 'fora'}
+            anterior={c.anterior} melhorQuando={def.sentido} formatarDiferenca={(n) => (def.percentual ? `${num(n)} p.p.` : num(n))} />
+        );
+      })}
+    </KPIGrid>
+  );
+}
+
 /** O bloco inteiro. `intervalo` é o do filtro do topo da tela (último dia incluído). */
 export function EquipeDaTI({ intervalo }: { intervalo: IntervaloDeDias }) {
   const tenantPath = useTenantPath();
-  const atual = periodoDoIntervalo(intervalo);
-  const anterior = periodoAnterior(atual);
-  const dias = diasDoPeriodo(atual);
-  const tudo = { de: anterior.de, ate: atual.ate };
-
-  const fsense = useFsense(tudo);
-  const interrupcoes = useInterrupcoes(tudo);
-  const metas = useMetasDosSetores();
   const podeVerEquipe = usePodeVerEquipe('tickets');
   const perfil = useConfiguracaoDosSetores();
   const podeLancar = perfil.pode('ti', 'reports', 'lancar');
@@ -76,29 +86,7 @@ export function EquipeDaTI({ intervalo }: { intervalo: IntervaloDeDias }) {
     && (perfil.alteraAba('ti', 'chamados') || perfil.pode('diretoria', 'indicadores', 'definir_metas'));
   const [lancando, setLancando] = useState(false);
   const [registrando, setRegistrando] = useState(false);
-
-  const meta = (chave: string) => metaEmVigor(metas.data, chave);
-
-  // O FSENSE conta pela semana lançada (o dia que a fecha cai no período) e só depois de confirmada.
-  const confirmadas = (fsense.data ?? []).filter((l) => l.confirmado_em);
-  const doAtual = porColaborador(confirmadas, atual);
-  const doAnterior = porColaborador(confirmadas, anterior);
-  const listaDeInterrupcoes = interrupcoes.data ?? [];
-  const doPeriodo = (p: typeof atual) => listaDeInterrupcoes.filter((i) => dentro(toLocalISODate(new Date(i.inicio)), p));
-  const horas = horasParadas(listaDeInterrupcoes, atual);
-  const lancamentos = (fsense.data ?? []).filter((l) => dentro(l.data, atual));
-
-  // Os três números da Equipe nos mesmos cartões dos chamados (Lei de Jakob: um jeito só de mostrar número na tela).
-  const cartoes: { chave: string; nome: string; atual: number | null; anterior: number | null; extra?: string; icone: LucideIcon }[] = [
-    ...(podeVerEquipe ? [
-      { chave: 'fsense_trabalho', nome: '% Trabalho da equipe', icone: Briefcase,
-        atual: mediaDaEquipe(doAtual, 'trabalho'), anterior: mediaAnteriorDosMesmos(doAtual, doAnterior, 'trabalho') },
-      { chave: 'fsense_ocioso', nome: '% Ocioso da equipe', icone: Coffee,
-        atual: mediaDaEquipe(doAtual, 'ocioso'), anterior: mediaAnteriorDosMesmos(doAtual, doAnterior, 'ocioso') },
-    ] : []),
-    { chave: 'interrupcoes', nome: 'Interrupções', icone: Zap, atual: doPeriodo(atual).length, anterior: doPeriodo(anterior).length,
-      extra: horas > 0 ? `${num(horas)} h paradas` : undefined },
-  ];
+  const equipe = useEquipeDoPeriodo(intervalo, podeVerEquipe);
 
   return (
     <Card id="equipe-da-ti" className="p-5 space-y-5 scroll-mt-4">
@@ -116,31 +104,12 @@ export function EquipeDaTI({ intervalo }: { intervalo: IntervaloDeDias }) {
         </div>
       </div>
 
-      <KPIGrid lgCols={3}>
-        {cartoes.map((c) => {
-          const def = META_DA_TI[c.chave];
-          const mensal = meta(c.chave);
-          const doPeriodoDaTela = metaDoPeriodo(mensal, dias, !!def.proporcional);
-          const fmt = (v: number) => (def.percentual ? pct(v) : num(v));
-          // Só a de quantidade muda com o período: "até 0,5 no período (2 por mês)".
-          const meta_ = doPeriodoDaTela === undefined ? undefined
-            : def.proporcional && doPeriodoDaTela !== mensal ? `${num(doPeriodoDaTela)} no período (${num(mensal!)}${def.unidade})` : fmt(doPeriodoDaTela);
-          const f = farol(c.atual, doPeriodoDaTela, def.sentido, def.percentual);
-          const nota = [meta_ && textoDaMeta(meta_, def.sentido), c.extra].filter(Boolean).join(' · ');
-          return (
-            <KPICard key={c.chave} label={c.nome} icon={c.icone} value={c.atual === null ? '—' : fmt(c.atual)} numero={c.atual}
-              color={COR_DO_FAROL[f]} nota={nota || undefined} notaRuim={f === 'fora'}
-              anterior={c.anterior} melhorQuando={def.sentido} formatarDiferenca={(n) => (def.percentual ? `${num(n)} p.p.` : num(n))} />
-          );
-        })}
-      </KPIGrid>
+      <CartoesDaEquipe numeros={equipe.numeros} />
 
-      {podeVerEquipe && (
-        <BarrasDaEquipe atual={doAtual} anterior={doAnterior} metaTrabalho={meta('fsense_trabalho')} metaOcioso={meta('fsense_ocioso')} />
-      )}
+      {podeVerEquipe && <BarrasDaEquipe equipe={equipe} />}
 
-      {podeVerEquipe && <LancamentosDoFsense linhas={lancamentos} podeLancar={podeLancar} />}
-      <ListaDeInterrupcoes lista={doPeriodo(atual)} podeLancar={podeLancar} />
+      {podeVerEquipe && <LancamentosDoFsense linhas={equipe.lancamentos} podeLancar={podeLancar} />}
+      <ListaDeInterrupcoes lista={equipe.interrupcoesDoPeriodo} podeLancar={podeLancar} />
 
       {lancando && <DialogoDaGrade onFechar={() => setLancando(false)} />}
       {registrando && <DialogoDaInterrupcao inicial={null} onFechar={() => setRegistrando(false)} />}
@@ -161,9 +130,8 @@ const PARTES = [
  * com a barra). A linha escura é a meta de trabalho. Passar o mouse mostra as horas, os quatro números e a semana
  * anterior.
  */
-function BarrasDaEquipe({ atual, anterior, metaTrabalho, metaOcioso }: {
-  atual: DoColaborador[]; anterior: DoColaborador[]; metaTrabalho: number | undefined; metaOcioso: number | undefined;
-}) {
+export function BarrasDaEquipe({ equipe }: { equipe: ReturnType<typeof useEquipeDoPeriodo> }) {
+  const { doAtual: atual, doAnterior: anterior, metaTrabalho, statusDa } = equipe;
   const ordem = [...atual].sort((a, b) => (b.trabalho ?? -1) - (a.trabalho ?? -1));
   return (
     <div className="space-y-3">
@@ -180,7 +148,7 @@ function BarrasDaEquipe({ atual, anterior, metaTrabalho, metaOcioso }: {
         <ul className="space-y-2">
           {ordem.map((c) => {
             const antes = anterior.find((a) => a.colaborador.toLowerCase() === c.colaborador.toLowerCase());
-            const status = piorFarol(farol(c.trabalho, metaTrabalho, 'mais', true), farol(c.ocioso, metaOcioso, 'menos', true));
+            const status = statusDa(c);
             return (
               <li key={c.colaborador} className="grid grid-cols-[minmax(96px,150px)_1fr_auto] items-center gap-3 text-sm">
                 <span className="min-w-0">

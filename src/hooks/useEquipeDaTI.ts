@@ -4,7 +4,15 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { expectRows, unwrap } from '@/lib/supabase-result';
-import type { LinhaColada, Periodo } from '@/lib/ti-equipe';
+import { META_DA_TI, metaEmVigor } from '@/config/metas-da-ti';
+import { useMetasDosSetores } from '@/hooks/useDiretoria';
+import { toLocalISODate } from '@/lib/dates';
+import type { IntervaloDeDias } from '@/lib/period';
+import {
+  dentro, diasDoPeriodo, farol, horasParadas, mediaAnteriorDosMesmos, mediaDaEquipe, metaDoPeriodo, periodoAnterior,
+  periodoDoIntervalo, piorFarol, porColaborador,
+  type DoColaborador, type Farol, type LinhaColada, type Periodo,
+} from '@/lib/ti-equipe';
 
 export interface LinhaFsenseDoBanco extends LinhaColada {
   id: string;
@@ -158,4 +166,67 @@ export function useApagarInterrupcao() {
     },
     onSuccess: invalidar,
   });
+}
+
+// ─── O período inteiro da Equipe, numa conta só (rodada 2, 2026-11-02) ────────────────────────────────
+// O bloco da tela, o modo apresentação e o PDF mostram os mesmos números: daqui.
+
+export interface NumeroDaEquipe {
+  chave: 'fsense_trabalho' | 'fsense_ocioso' | 'interrupcoes';
+  nome: string;
+  atual: number | null;
+  anterior: number | null;
+  /** A meta já no período (a de interrupções é proporcional) e o texto dela: "60%", "0,5 no período (2 por mês)". */
+  meta: number | undefined;
+  metaTexto: string | undefined;
+  farol: Farol;
+  extra?: string;
+}
+
+const num = (v: number) => v.toLocaleString('pt-BR', { maximumFractionDigits: 1 });
+
+export function useEquipeDoPeriodo(intervalo: IntervaloDeDias, podeVerEquipe: boolean) {
+  const atual = periodoDoIntervalo(intervalo);
+  const anterior = periodoAnterior(atual);
+  const dias = diasDoPeriodo(atual);
+  const fsense = useFsense({ de: anterior.de, ate: atual.ate });
+  const interrupcoes = useInterrupcoes({ de: anterior.de, ate: atual.ate });
+  const metas = useMetasDosSetores();
+
+  // O FSENSE conta pela semana lançada (o dia que a fecha cai no período) e só depois de confirmada.
+  const confirmadas = (fsense.data ?? []).filter((l) => l.confirmado_em);
+  const doAtual = porColaborador(confirmadas, atual);
+  const doAnterior = porColaborador(confirmadas, anterior);
+  const lista = interrupcoes.data ?? [];
+  const doPeriodo = (p: Periodo) => lista.filter((i) => dentro(toLocalISODate(new Date(i.inicio)), p));
+  const horas = horasParadas(lista, atual);
+  const metaTrabalho = metaEmVigor(metas.data, 'fsense_trabalho');
+  const metaOcioso = metaEmVigor(metas.data, 'fsense_ocioso');
+
+  const numero = (chave: NumeroDaEquipe['chave'], nome: string, valor: number | null, antes: number | null, extra?: string): NumeroDaEquipe => {
+    const def = META_DA_TI[chave];
+    const mensal = metaEmVigor(metas.data, chave);
+    const meta = metaDoPeriodo(mensal, dias, !!def.proporcional);
+    const fmt = (v: number) => (def.percentual ? `${num(v)}%` : num(v));
+    const metaTexto = meta === undefined ? undefined
+      : def.proporcional && meta !== mensal ? `${num(meta)} no período (${num(mensal!)}${def.unidade})` : fmt(meta);
+    return { chave, nome, atual: valor, anterior: antes, meta, metaTexto, farol: farol(valor, meta, def.sentido, def.percentual), extra };
+  };
+
+  const numeros: NumeroDaEquipe[] = [
+    ...(podeVerEquipe ? [
+      numero('fsense_trabalho', '% Trabalho da equipe', mediaDaEquipe(doAtual, 'trabalho'), mediaAnteriorDosMesmos(doAtual, doAnterior, 'trabalho')),
+      numero('fsense_ocioso', '% Ocioso da equipe', mediaDaEquipe(doAtual, 'ocioso'), mediaAnteriorDosMesmos(doAtual, doAnterior, 'ocioso')),
+    ] : []),
+    numero('interrupcoes', 'Interrupções', doPeriodo(atual).length, doPeriodo(anterior).length, horas > 0 ? `${num(horas)} h paradas` : undefined),
+  ];
+
+  /** O status da pessoa: o pior entre trabalho e ocioso (2026-11-02: 3% de trabalho não fica verde). */
+  const statusDa = (c: DoColaborador) => piorFarol(farol(c.trabalho, metaTrabalho, 'mais', true), farol(c.ocioso, metaOcioso, 'menos', true));
+
+  return {
+    doAtual, doAnterior, numeros, statusDa, metaTrabalho, metaOcioso,
+    lancamentos: (fsense.data ?? []).filter((l) => dentro(l.data, atual)),
+    interrupcoesDoPeriodo: doPeriodo(atual),
+  };
 }
