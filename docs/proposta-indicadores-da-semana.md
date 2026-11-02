@@ -33,22 +33,27 @@ reavaliar); esta proposta é só da TI.
 
 ## Como fica
 
-Aba nova **Semanal** em TI › Indicadores, com o seletor da planilha (competência + semana):
+> **Revisto no mesmo dia (dono, 2026-11-01)**: a primeira versão tinha uma aba "Semanal" com o seletor S1–S4 da
+> planilha. O dono recusou: "se já tem como personalizar o período, precisa mesmo ter campo semanal?". Ficou um filtro
+> só para a tela inteira (revisão dos Indicadores da TI com as Leis de UX, aprovada no mesmo dia).
 
-- **S1** = dias 1–7, **S2** = 8–14, **S3** = 15–21, **S4** = 22 ao fim do mês, ou **Mês inteiro**.
-- **Comparativo**: mês inteiro → mês anterior; S2–S4 → semana anterior; S1 → S4 do mês anterior.
+Bloco **Equipe** na Visão Geral de TI › Indicadores, no filtro de período da tela (Semana passada, Esta semana, Mês
+passado, Este mês, Personalizado):
+
+- **Comparação**: com o período anterior do mesmo tamanho, como os outros indicadores.
 - **Farol**: verde na meta; amarelo até 70% da meta (ou até 130% quando menor é melhor, ↓); vermelho fora.
-- **Metas mensais editáveis**: % Trabalho 65%, % Ocioso 20% ↓ (não dividem por semana), Interrupções 2/mês ↓ (a
-  meta da semana é a mensal ÷ 4).
+- **Metas mensais editáveis** (Diretoria): % Trabalho 65%, % Ocioso 20% ↓ (valem para qualquer período),
+  Interrupções 2/mês ↓ (proporcional aos dias do período: 0,5 numa semana).
 
-Blocos:
+Conteúdo:
 
 1. **Indicadores** — Interrupções (quantas e horas paradas), % Trabalho médio da equipe, % Ocioso médio da equipe:
-   meta do período, anterior, realizado, comparativo, farol.
-2. **Produtividade por colaborador** — quem tem lançamento confirmado no período: horas, % trabalho, % ocioso,
-   anterior, comparativo, farol do ocioso.
-3. **Lançar FSENSE** (data do fim da semana, linhas por pessoa, Colar, Confirmar) e **Interrupções** (lista e
-   "Registrar interrupção").
+   meta do período, anterior, realizado, comparação, farol.
+2. **Por colaborador** — quem tem lançamento confirmado no período: horas, % trabalho, % ocioso, anterior, farol do
+   ocioso. O "anterior" da equipe é só de quem está no período (regra da planilha).
+3. **Lançar semana do FSENSE** numa grade como a planilha (nomes da semana anterior, colar a tabela numa célula, soma
+   dos % = 100%), a semana "a confirmar" até **Confirmar semana**, lápis para corrigir; **Interrupções** (lista e
+   "Registrar interrupção"). A semana fecha na sexta (a tarefa roda sexta às 17h40).
 
 Médias como na planilha: média simples das pessoas com valor > 0 no período; uma pessoa com várias linhas no
 período usa a média das linhas dela (horas somadas).
