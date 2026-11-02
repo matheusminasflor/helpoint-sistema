@@ -102,6 +102,15 @@ export function mediaDaEquipe(lista: DoColaborador[], campo: 'trabalho' | 'ocios
   return media(lista.flatMap((c) => (c[campo] && c[campo]! > 0 ? [c[campo]!] : [])));
 }
 
+/**
+ * O "anterior" da equipe, como a planilha: a média do período anterior **só de quem está no período atual** (a
+ * planilha tira a média da coluna "anterior" das pessoas listadas). Quem saiu não puxa a comparação.
+ */
+export function mediaAnteriorDosMesmos(atual: DoColaborador[], anterior: DoColaborador[], campo: 'trabalho' | 'ocioso'): number | null {
+  const nomes = new Set(atual.map((c) => c.colaborador.toLowerCase()));
+  return mediaDaEquipe(anterior.filter((c) => nomes.has(c.colaborador.toLowerCase())), campo);
+}
+
 export interface LinhaColada {
   colaborador: string;
   horas: number;

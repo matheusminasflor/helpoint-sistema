@@ -24,7 +24,7 @@ import {
 import { dataHora, daysFromTodayISO, diaCurto, fromLocalDateTimeInput, toLocalDateTimeInput, toLocalISODate } from '@/lib/dates';
 import { mensagemDeErro } from '@/lib/supabase-result';
 import {
-  comparar, farol, horasParadas, lerColagem, mediaDaEquipe, metaDoPeriodo, periodoAnterior, periodoDaSemana,
+  comparar, farol, horasParadas, lerColagem, mediaAnteriorDosMesmos, mediaDaEquipe, metaDoPeriodo, periodoAnterior, periodoDaSemana,
   porColaborador, semanaDoDia, textoDoAnterior, dentro, type Comparativo, type Farol, type Semana, type Sentido,
 } from '@/lib/ti-semanal';
 
@@ -92,9 +92,9 @@ export function TISemanal() {
       extra: contas.interrupcoes.horas > 0 ? `${num(contas.interrupcoes.horas)} h paradas` : undefined },
     ...(podeVerEquipe ? [
       { chave: 'fsense_trabalho', nome: '% Trabalho médio da equipe (FSENSE)', sentido: 'mais' as Sentido, divide: false,
-        atual: mediaDaEquipe(contas.doAtual, 'trabalho'), anterior: mediaDaEquipe(contas.doAnterior, 'trabalho'), fmt: pct },
+        atual: mediaDaEquipe(contas.doAtual, 'trabalho'), anterior: mediaAnteriorDosMesmos(contas.doAtual, contas.doAnterior, 'trabalho'), fmt: pct },
       { chave: 'fsense_ocioso', nome: '% Ocioso médio da equipe (FSENSE) ↓', sentido: 'menos' as Sentido, divide: false,
-        atual: mediaDaEquipe(contas.doAtual, 'ocioso'), anterior: mediaDaEquipe(contas.doAnterior, 'ocioso'), fmt: pct },
+        atual: mediaDaEquipe(contas.doAtual, 'ocioso'), anterior: mediaAnteriorDosMesmos(contas.doAtual, contas.doAnterior, 'ocioso'), fmt: pct },
     ] : []),
   ];
 

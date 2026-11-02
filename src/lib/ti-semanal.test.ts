@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  comparar, farol, horasParadas, lerColagem, mediaDaEquipe, metaDoPeriodo, periodoAnterior, periodoDaSemana,
+  comparar, farol, horasParadas, lerColagem, mediaAnteriorDosMesmos, mediaDaEquipe, metaDoPeriodo, periodoAnterior, periodoDaSemana,
   porColaborador, semanaDoDia,
 } from './ti-semanal';
 
@@ -77,6 +77,17 @@ describe('FSENSE', () => {
     expect(mediaDaEquipe(lista, 'trabalho')).toBe(55);
     expect(mediaDaEquipe(lista, 'ocioso')).toBe(20);
     expect(mediaDaEquipe([], 'ocioso')).toBeNull();
+  });
+
+  it('o anterior da equipe é só de quem está no período atual (a planilha de outubro: 60,0% e 11,9%)', () => {
+    const atual = ['Matheus Freitas', 'Vinicius', 'Rondinelly', 'Jacqueline', 'Gislene', 'Fenicio']
+      .map((colaborador) => ({ colaborador, horas: 1, trabalho: 50, ocioso: 10 }));
+    const anterior = [
+      ['Matheus Freitas', 72.2, 7.5], ['Fenicio', 41.8, 35.4], ['Gislene', 56.9, 1], ['Jacqueline', 70.6, 7.8],
+      ['Rondinelly', 58.3, 7.8], ['Karina', 21.6, 78.4],
+    ].map(([colaborador, trabalho, ocioso]) => ({ colaborador: colaborador as string, horas: 1, trabalho: trabalho as number, ocioso: ocioso as number }));
+    expect(mediaAnteriorDosMesmos(atual, anterior, 'trabalho')!.toFixed(1)).toBe('60.0');
+    expect(mediaAnteriorDosMesmos(atual, anterior, 'ocioso')!.toFixed(1)).toBe('11.9');
   });
 
   it('lê a tabela colada: tabulação, vírgula, %, horas em hh:mm, cabeçalho e data no começo', () => {
