@@ -63,8 +63,11 @@ select is((select sla_due_at from public.tickets where id = (select id from t wh
 update public.tickets set assigned_to = (select b from u) where id = (select id from t where title = 'parado');
 select is((select pendente_desde from public.tickets where id = (select id from t where title = 'parado')),
   now(), 'transferido em Pendente: a pausa recomeca agora');
-select ok((select minutos_pausados from public.tickets where id = (select id from t where title = 'parado')) >= 120,
-  'e as 2 horas paradas antes da transferencia ficam contadas');
+-- O esperado sai do mesmo calendário (`minutos_uteis_do_chamado`), como nos testes 1-2: "≥ 120" quebrava num feriado
+-- nacional, em que o relógio para e as 2 horas valem zero (CI #615, 2026-11-02, Finados).
+select is((select minutos_pausados from public.tickets where id = (select id from t where title = 'parado')),
+  coalesce(public.minutos_uteis_do_chamado((select tenant from f), 'expedicao', now() - interval '2 hours', now(), (select a from u)), 0),
+  'e as 2 horas paradas antes da transferencia ficam contadas (em tempo de prazo: 120 num dia comum)');
 
 select * from finish();
 rollback;

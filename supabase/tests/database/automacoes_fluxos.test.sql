@@ -259,7 +259,9 @@ select is(
 -- ───────────────────────────────────────────────────────────────────────────
 -- O tick: agendado vencido, prazo estourado, espera vencida — cada um uma vez
 -- ───────────────────────────────────────────────────────────────────────────
-update public.automation_workflows set next_run_at = now() - interval '1 minute' where name = 'Bom dia';
+-- O disparo vencido é de um dia útil fixo: com `now() - 1 minuto`, num feriado nacional o tick pulava o "Bom dia"
+-- (regra de 20261219010000) e o teste reprovava (CI #615, 2026-11-02, Finados). O feriado tem teste próprio.
+update public.automation_workflows set next_run_at = timestamptz '2026-09-09 08:00-03' where name = 'Bom dia';
 update public.automation_runs set resume_at = now() - interval '1 second' where status = 'waiting';
 insert into public.tickets (id, tenant_id, module, title, description, priority, status, created_by, requester_id, due_date)
 select t2, tenant, 'tickets', 'Atrasado', 'x', 'low', 'open', solicitante, solicitante, now() - interval '1 hour' from s, f, u;

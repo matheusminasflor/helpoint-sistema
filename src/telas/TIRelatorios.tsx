@@ -31,6 +31,7 @@ import { TILyraPanel } from '@/components/dashboard/TILyraPanel';
 import { ExportPDFDialog } from '@/components/dashboard/ExportPDFDialog';
 import { CategoriasDosChamados } from '@/components/ti/CategoriasDosChamados';
 import { EquipeDaTI } from '@/components/ti/EquipeDaTI';
+import { ProjetosDaTI } from '@/components/ti/ProjetosDaTI';
 import { metaEmVigor } from '@/config/metas-da-ti';
 import { useSemanasDoFsenseAConfirmar } from '@/hooks/useEquipeDaTI';
 import {
@@ -301,6 +302,8 @@ export default function TIRelatorios() {
               </div>
 
               <EquipeDaTI intervalo={intervaloDaTela} />
+
+              <ProjetosDaTI />
 
               <Collapsible>
                 <Card className="p-0 overflow-hidden">

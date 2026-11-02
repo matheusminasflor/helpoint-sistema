@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   farolDaAtividade, faseAtual, hojeNaJanela, iniciais, janelaDoCronograma, mesesDaJanela, numerarCronograma,
-  andamentoDaSituacao, percentualMedio, posicaoNaJanela, seloDoConjunto, setoresSemPlano, situacaoDaTarefa, type AtividadeBase,
+  andamentoDaSituacao, diasAlemDoTermino, percentualMedio, posicaoNaJanela, resumoDosProjetos, seloDoConjunto, setoresSemPlano,
+  situacaoDaTarefa, type AtividadeBase,
 } from './projetos';
 
 
@@ -93,5 +94,25 @@ describe('situação em três passos (dono, 2026-10-13)', () => {
     expect(andamentoDaSituacao('fazendo', 100)).toEqual({ percentual: 50, status: 'in_progress' });
     expect(andamentoDaSituacao('a_fazer', 70)).toEqual({ percentual: 0, status: 'pending' });
     expect(andamentoDaSituacao('pronto', 10)).toEqual({ percentual: 100 });
+  });
+});
+
+describe('projetos nos Indicadores (rodada 2 da TI)', () => {
+  const hoje = '2026-11-02';
+  const p = (status: string, due_date: string | null, percentual = 0, total = 0) => ({ status, due_date, percentual, total });
+
+  it('passou do término: aberto, término antes de hoje e não chegou a 100% (os dias contam do término)', () => {
+    expect(diasAlemDoTermino(p('active', '2026-08-31'), hoje)).toBe(63);
+    expect(diasAlemDoTermino(p('planned', '2026-10-30'), hoje)).toBe(3);
+    expect(diasAlemDoTermino(p('planned', '2026-12-20'), hoje)).toBe(0);
+    expect(diasAlemDoTermino(p('done', '2026-08-31'), hoje)).toBe(0);
+    expect(diasAlemDoTermino(p('active', '2026-08-31', 100, 4), hoje)).toBe(0);
+    expect(diasAlemDoTermino(p('active', null), hoje)).toBe(0);
+  });
+
+  it('o resumo da planilha: em andamento, pendentes e quantos passaram do término', () => {
+    const lista = [p('active', '2026-08-31'), p('active', '2026-10-26'), p('planned', '2026-12-20'),
+      p('planned', '2026-10-30'), p('planned', '2026-10-20'), p('done', '2026-09-18'), p('cancelled', '2026-09-01')];
+    expect(resumoDosProjetos(lista, hoje)).toEqual({ emAndamento: 2, pendentes: 3, alemDoTermino: 4 });
   });
 });

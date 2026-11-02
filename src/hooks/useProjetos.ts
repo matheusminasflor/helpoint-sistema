@@ -503,3 +503,19 @@ export function traduzir(e: unknown): string {
   }
   return msg;
 }
+
+/**
+ * Os projetos em que o setor participa (Indicadores da TI, rodada 2, 2026-11-02): os de `useProjetos` (só os que a
+ * pessoa vê — equipe do projeto e Diretoria) com o setor marcado em `project_setores`.
+ */
+export function useProjetosDoSetor(setor: string) {
+  const { tenantId } = useAuth();
+  const projetos = useProjetos();
+  const doSetor = useQuery({
+    queryKey: ['projetos', tenantId, 'do-setor', setor],
+    enabled: !!tenantId,
+    queryFn: async () => new Set(unwrap(await supabase.from('project_setores').select('project_id').eq('setor', setor)).map((s) => s.project_id)),
+  });
+  const data = projetos.data && doSetor.data ? projetos.data.filter((p) => doSetor.data.has(p.id)) : undefined;
+  return { data, isLoading: projetos.isLoading || doSetor.isLoading };
+}

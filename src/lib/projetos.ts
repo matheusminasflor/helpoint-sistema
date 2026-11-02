@@ -193,3 +193,26 @@ export function iniciais(nome: string): string {
   if (partes.length === 0) return '?';
   return ((partes[0][0] ?? '') + (partes.length > 1 ? partes[partes.length - 1][0] : '')).toUpperCase();
 }
+
+// ─── Os projetos de um setor nos Indicadores (rodada 2 da TI, 2026-11-02) ────────────────────────────
+// A planilha da reunião de segunda tinha "Em andamento (hoje)" e "Pendentes (hoje)". Aqui: `active` = em andamento,
+// `planned` = pendente; passou do término quem está aberto, tem término antes de hoje e não chegou a 100%.
+
+export interface ProjetoNoIndicador { status: string | null; due_date: string | null; percentual: number; total: number }
+
+const ABERTO = ['planned', 'active'];
+
+/** Quantos dias passou do término (0 se não passou, se não tem término ou se terminou). */
+export function diasAlemDoTermino(p: ProjetoNoIndicador, hojeISO: string): number {
+  if (!ABERTO.includes(p.status ?? '') || !p.due_date || p.due_date >= hojeISO) return 0;
+  if (p.total > 0 && p.percentual >= 100) return 0;
+  return Math.round((Date.parse(`${hojeISO}T12:00:00`) - Date.parse(`${p.due_date}T12:00:00`)) / 86_400_000);
+}
+
+export function resumoDosProjetos(lista: ProjetoNoIndicador[], hojeISO: string) {
+  return {
+    emAndamento: lista.filter((p) => p.status === 'active').length,
+    pendentes: lista.filter((p) => p.status === 'planned').length,
+    alemDoTermino: lista.filter((p) => diasAlemDoTermino(p, hojeISO) > 0).length,
+  };
+}
