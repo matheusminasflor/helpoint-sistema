@@ -33,10 +33,10 @@ import { CategoriasDosChamados } from '@/components/ti/CategoriasDosChamados';
 import { EquipeDaTI } from '@/components/ti/EquipeDaTI';
 import { ProjetosDaTI } from '@/components/ti/ProjetosDaTI';
 import { metaEmVigor } from '@/config/metas-da-ti';
-import { useSemanasDoFsenseAConfirmar } from '@/hooks/useEquipeDaTI';
+import { useFsense, useSemanasDoFsenseAConfirmar } from '@/hooks/useEquipeDaTI';
 import {
   useTicketMetrics, useTicketTrends, usePreviousMetrics, useViolatedSlaTickets, MetricsFilter, filtroDoPeriodo,
-  getPreviousPeriodRange, intervaloDoFiltro,
+  getPreviousPeriodRange, intervaloDoFiltro, useSerieDosChamados,
 } from '@/hooks/useHelpdeskMetrics';
 import { useInventoryAssets } from '@/hooks/useInventory';
 import { useLicenses } from '@/hooks/useLicenses';
@@ -58,7 +58,13 @@ import { cn } from '@/lib/utils';
 import { ativoEmEstoque, ativoEmUso, ROTULO_DA_CATEGORIA_DO_ATIVO } from '@/lib/asset-status';
 import { formatarHoras } from '@/lib/horas';
 import { barrasDaTendencia } from '@/lib/tendencia';
-import { farol, somarDias, type Farol } from '@/lib/ti-equipe';
+import {
+  COR_DO_FAROL, diasDoPeriodo, farol, mediaDaEquipe, periodoAnterior, periodoDoIntervalo, porColaborador, somarDias,
+} from '@/lib/ti-equipe';
+import { fraseDoResumo } from '@/lib/resumo-da-ti';
+import { resumoDosProjetos } from '@/lib/projetos';
+import { useProjetosDoSetor } from '@/hooks/useProjetos';
+import { EquipePorSemana } from '@/components/ti/EquipePorSemana';
 import { textoDaMeta } from '@/lib/meta-do-indicador';
 import type { AssetCategory } from '@/types/helpdesk';
 
@@ -71,9 +77,16 @@ const PERIODOS = [
   { value: PERSONALIZADO, label: 'Personalizado' },
 ];
 
-const COR_DO_FAROL: Record<Farol, 'green' | 'yellow' | 'red' | 'blue'> = {
-  no_alvo: 'green', atencao: 'yellow', fora: 'red', sem_meta: 'blue', sem_dado: 'blue',
-};
+// O índice do Analítico: as âncoras moram nos cartões (`IndicatorsView`, `EquipePorSemana`, `ProjetosDaTI`).
+const SECOES_DO_ANALITICO = [
+  { id: 'analitico-chamados', rotulo: 'Chamados' },
+  { id: 'analitico-categorias', rotulo: 'Categorias' },
+  { id: 'analitico-atencao', rotulo: 'Fora do prazo agora' },
+  { id: 'analitico-pessoas', rotulo: 'Por técnico e quem abre' },
+  { id: 'analitico-equipe', rotulo: 'Equipe por semana' },
+  { id: 'analitico-projetos', rotulo: 'Projetos' },
+  { id: 'analitico-ativos', rotulo: 'Ativos e contratos' },
+];
 
 const ddmm = (d: Date) => toLocalISODate(d).split('-').reverse().slice(0, 2).join('/');
 
@@ -172,7 +185,28 @@ export default function TIRelatorios() {
   // ela está no período da tela, o aviso só desce até o bloco Equipe; senão, abre o período dela.
   const semanaAConfirmar = semanasAConfirmar[0];
   const naTela = !!semanaAConfirmar && semanaAConfirmar >= intervaloDaTela.de && semanaAConfirmar <= intervaloDaTela.ate;
+  // A linha das últimas semanas dos quatro cartões e a frase de resumo (rodada 2): os mesmos números da tela.
+  const { data: serie } = useSerieDosChamados(filterWithTech);
+  const diasDaTela = diasDoPeriodo(periodoDoIntervalo(intervaloDaTela));
+  const rotuloDaSerie = diasDaTela === 7 ? 'as últimas 8 semanas' : `os últimos 8 períodos de ${diasDaTela} dias`;
+  const periodoDaEquipe = periodoDoIntervalo(intervaloDaTela);
+  const { data: fsenseDoPeriodo } = useFsense({ de: periodoAnterior(periodoDaEquipe).de, ate: periodoDaEquipe.ate });
+  const trabalhoDaEquipe = podeVerEquipe
+    ? mediaDaEquipe(porColaborador((fsenseDoPeriodo ?? []).filter((l) => l.confirmado_em), periodoDaEquipe), 'trabalho') : null;
+  const { data: projetosDaTI = [] } = useProjetosDoSetor('ti');
+  const projetosAlem = resumoDosProjetos(projetosDaTI, hojeISO).alemDoTermino;
+  const frase = fraseDoResumo({
+    periodo: `De ${rotuloDoIntervalo(intervaloDaTela)}`,
+    total: metrics?.total ?? 0, resolvidos: metrics?.resolved ?? 0, sla: metrics ? sla : null, metaSla: meta('sla_cumprido'),
+    tempo: metrics?.avgResolutionTime ?? null, tempoAnterior: anterior?.avgResolutionTime ?? null,
+    trabalho: trabalhoDaEquipe, metaTrabalho: meta('fsense_trabalho'), semanaAConfirmar: naTela,
+    projetosAlemDoTermino: projetosAlem,
+  });
+
   const atencao = [
+    projetosAlem > 0 && {
+      texto: `${projetosAlem} ${projetosAlem === 1 ? 'projeto passou' : 'projetos passaram'} do término`, cor: 'perigo', para: '#projetos-da-ti',
+    },
     semanaAConfirmar && {
       texto: `Semana do FSENSE até ${diaCurto(semanaAConfirmar)} a confirmar`, cor: 'aviso',
       para: naTela ? '#equipe-da-ti' : `/ti/indicadores?periodo=${PERSONALIZADO}&de=${somarDias(semanaAConfirmar, -6)}&ate=${semanaAConfirmar}`,
@@ -228,7 +262,7 @@ export default function TIRelatorios() {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="overview">Visão Geral</TabsTrigger>
-          <TabsTrigger value="detailed">Análise Detalhada</TabsTrigger>
+          <TabsTrigger value="detailed">Analítico</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview">
@@ -255,23 +289,29 @@ export default function TIRelatorios() {
                 </div>
               )}
 
+              <p className="rounded-lg bg-muted/60 px-4 py-3 text-[15px] text-foreground" aria-label="Resumo do período">{frase}</p>
+
               <div className="space-y-2">
                 <KPIGrid lgCols={4}>
                   <KPICard value={`${sla}%`} numero={sla} label="SLA cumprido" icon={ShieldCheck} color={COR_DO_FAROL[farolSla]}
                     anterior={anterior?.slaCompliance ?? null} melhorQuando="mais" formatarDiferenca={(n) => `${n} p.p.`}
-                    nota={notaDaMeta(meta('sla_cumprido'), '%', 'mais')} notaRuim={farolSla === 'fora'} explicacao="chamados.sla_cumprido" />
+                    nota={notaDaMeta(meta('sla_cumprido'), '%', 'mais')} notaRuim={farolSla === 'fora'} explicacao="chamados.sla_cumprido"
+                    serie={serie?.map((p) => p.sla)} rotuloDaSerie={rotuloDaSerie} />
                   <KPICard value={`${primeira}%`} numero={primeira} label="1ª resposta no prazo" icon={Timer} color={COR_DO_FAROL[farolPrimeira]}
                     anterior={anterior?.firstResponseCompliance ?? null} melhorQuando="mais" formatarDiferenca={(n) => `${n} p.p.`}
-                    nota={notaDaMeta(meta('primeira_resposta'), '%', 'mais')} notaRuim={farolPrimeira === 'fora'} explicacao="chamados.primeira_resposta_no_prazo" />
+                    nota={notaDaMeta(meta('primeira_resposta'), '%', 'mais')} notaRuim={farolPrimeira === 'fora'} explicacao="chamados.primeira_resposta_no_prazo"
+                    serie={serie?.map((p) => p.primeira)} rotuloDaSerie={rotuloDaSerie} />
                   <KPICard value={formatarHoras(tempo)} numero={tempo} label="Tempo médio de resolução" icon={Clock} color={COR_DO_FAROL[farolTempo]}
                     anterior={anterior?.avgResolutionTime ?? null} melhorQuando="menos" formatarDiferenca={(n) => formatarHoras(Math.abs(n))}
-                    nota={notaDaMeta(meta('tempo_medio_horas'), ' h', 'menos')} notaRuim={farolTempo === 'fora'} explicacao="chamados.tempo_medio_resolucao" />
+                    nota={notaDaMeta(meta('tempo_medio_horas'), ' h', 'menos')} notaRuim={farolTempo === 'fora'} explicacao="chamados.tempo_medio_resolucao"
+                    serie={serie?.map((p) => p.tempo)} rotuloDaSerie={rotuloDaSerie} />
                   <KPICard value={metrics?.resolved ?? 0} label="Chamados resolvidos" icon={CheckCircle2} color="green"
                     anterior={anterior?.resolved ?? null} melhorQuando="mais" explicacao="chamados.resolvidos"
+                    serie={serie?.map((p) => p.resolvidos)} rotuloDaSerie={rotuloDaSerie}
                     onClick={() => navigate(tenantPath('/ti/chamados?status=resolved'))} />
                 </KPIGrid>
                 <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                  <span>A cor do número segue a meta: verde na meta, amarelo perto, vermelho fora.{!anterior && ' Sem chamados no período anterior para comparar.'}</span>
+                  <span>A cor do número segue a meta: verde na meta, amarelo perto, vermelho fora. A linha embaixo é {rotuloDaSerie}.{!anterior && ' Sem chamados no período anterior para comparar.'}</span>
                   {podeMudarMetas && (
                     <Button asChild size="sm" variant="ghost" className="h-7 text-xs">
                       <Link to={tenantPath('/ti/configuracoes?aba=metas')}><Target className="h-3.5 w-3.5 mr-1" />Metas</Link>
@@ -279,6 +319,10 @@ export default function TIRelatorios() {
                   )}
                 </div>
               </div>
+
+              <EquipeDaTI intervalo={intervaloDaTela} />
+
+              <ProjetosDaTI />
 
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                 <CategoriasDosChamados chamados={metrics?.chamados ?? []} modulo="tickets" />
@@ -301,11 +345,51 @@ export default function TIRelatorios() {
                 </Card>
               </div>
 
-              <EquipeDaTI intervalo={intervaloDaTela} />
 
-              <ProjetosDaTI />
+            </div>
 
-              <Collapsible>
+            {iaLigada && (
+              <div className="hidden lg:block">
+                <TILyraPanel
+                  messages={messages} isTyping={isTyping} onSend={sendMessage}
+                  ticketCount={metrics?.open} slaCompliance={metrics?.slaCompliance}
+                  expiringLicenses={licencasVencendo.length}
+                />
+              </div>
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="detailed">
+          {/* Analítico (rodada 2): detalhe por detalhe, com um índice que fica no topo ao rolar (revelação progressiva;
+              região comum). Cada seção responde uma pergunta. */}
+          <nav aria-label="Seções do Analítico"
+            className="sticky top-0 z-20 -mx-1 mt-3 flex flex-wrap gap-1.5 bg-background/95 px-1 py-2 backdrop-blur">
+            {SECOES_DO_ANALITICO.filter((s) => s.id !== 'analitico-equipe' || podeVerEquipe).map((s) => (
+              <button key={s.id} type="button" className="rounded-full border px-3 py-1 text-xs font-medium hover:bg-muted"
+                onClick={() => document.getElementById(s.id)?.scrollIntoView({ behavior: 'smooth' })}>{s.rotulo}</button>
+            ))}
+          </nav>
+          <div className="mt-2 space-y-6">
+            <IndicatorsView
+              metrics={metrics || null}
+              previousMetrics={previousMetrics || null}
+              activeAssets={assetsInUse}
+              totalAssets={totalAssets}
+              assetsInStock={assetsInStock}
+              assetsInMaintenance={assetsInMaintenance}
+              expiringLicenses={licencasVencendo.length}
+              expiringContractsCount={contratosVencendo.length}
+              scheduledMaintenancesCount={manutencoesProximas.length}
+              filter={filterWithTech}
+              expiringLicensesList={licencasVencendo}
+              expiringContractsList={contratosVencendo.map(c => ({ id: c.id, name: c.name, end_date: c.end_date }))}
+              scheduledMaintenancesList={manutencoesProximas.map(m => ({ id: m.id, title: m.title, scheduled_date: m.scheduled_date, status: m.status, asset: m.asset }))}
+            />
+            {podeVerEquipe && <EquipePorSemana ate={intervaloDaTela.ate} />}
+            <ProjetosDaTI id="analitico-projetos" />
+            <div id="analitico-ativos" className="scroll-mt-20">
+              <Collapsible defaultOpen>
                 <Card className="p-0 overflow-hidden">
                   <CollapsibleTrigger className="group w-full flex flex-wrap items-center gap-x-3 gap-y-1 px-5 py-4 text-left hover:bg-muted/30">
                     <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform -rotate-90 group-data-[state=open]:rotate-0" />
@@ -366,36 +450,6 @@ export default function TIRelatorios() {
                 </Card>
               </Collapsible>
             </div>
-
-            {iaLigada && (
-              <div className="hidden lg:block">
-                <TILyraPanel
-                  messages={messages} isTyping={isTyping} onSend={sendMessage}
-                  ticketCount={metrics?.open} slaCompliance={metrics?.slaCompliance}
-                  expiringLicenses={licencasVencendo.length}
-                />
-              </div>
-            )}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="detailed">
-          <div className="mt-4">
-            <IndicatorsView
-              metrics={metrics || null}
-              previousMetrics={previousMetrics || null}
-              activeAssets={assetsInUse}
-              totalAssets={totalAssets}
-              assetsInStock={assetsInStock}
-              assetsInMaintenance={assetsInMaintenance}
-              expiringLicenses={licencasVencendo.length}
-              expiringContractsCount={contratosVencendo.length}
-              scheduledMaintenancesCount={manutencoesProximas.length}
-              filter={filterWithTech}
-              expiringLicensesList={licencasVencendo}
-              expiringContractsList={contratosVencendo.map(c => ({ id: c.id, name: c.name, end_date: c.end_date }))}
-              scheduledMaintenancesList={manutencoesProximas.map(m => ({ id: m.id, title: m.title, scheduled_date: m.scheduled_date, status: m.status, asset: m.asset }))}
-            />
           </div>
         </TabsContent>
       </Tabs>

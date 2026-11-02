@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils';
 import { ExplicacaoDoIndicador } from '@/components/ajuda/ExplicacaoDoIndicador';
 import type { IdDaExplicacao } from '@/config/explicacoes-dos-indicadores';
 import { ListaDeChamadosNoHover, type ChamadoNoHover } from '@/components/dashboard/ListaDeChamadosNoHover';
+import { Sparkline } from '@/components/dashboard/Sparkline';
 
 type KPIColor = 'yellow' | 'green' | 'red' | 'blue' | 'grey' | 'purple' | 'orange';
 
@@ -48,6 +49,9 @@ interface KPICardProps {
   /** Uma linha de apoio embaixo do número (a meta, por exemplo); vermelha com `notaRuim`. */
   nota?: string;
   notaRuim?: boolean;
+  /** Os últimos períodos do mesmo tamanho, do mais antigo ao atual: vira a linha pequena no pé do cartão. */
+  serie?: (number | null)[];
+  rotuloDaSerie?: string;
 }
 
 export function KPICard({ explicacao, chamados, modulo, ...props }: KPICardProps) {
@@ -68,7 +72,7 @@ export function KPICard({ explicacao, chamados, modulo, ...props }: KPICardProps
 
 function KPICardSemExplicacao({
   value, label, color = 'blue', icon: Icon, onClick, className, anterior, melhorQuando = 'mais', numero, formatarDiferenca = String,
-  nota, notaRuim,
+  nota, notaRuim, serie, rotuloDaSerie = 'os últimos períodos',
 }: Omit<KPICardProps, 'explicacao'>) {
   const atual = typeof value === 'number' ? value : numero;
   const c = colorMap[color];
@@ -80,7 +84,7 @@ function KPICardSemExplicacao({
 
   const content = (
     <div className="flex items-start justify-between gap-3 w-full min-w-0">
-      <div className="flex flex-col gap-1 min-w-0">
+      <div className="flex flex-col gap-1 min-w-0 flex-1">
         <span className="kpi-tile-label text-foreground">{label}</span>
         <span className={cn('kpi-tile-number tabular-nums mt-2', alerta && 'text-status-danger')}>{value}</span>
         {nota && <span className={cn('text-[14px] font-semibold', notaRuim ? 'text-status-danger' : 'text-muted-foreground')}>{nota}</span>}
@@ -97,6 +101,7 @@ function KPICardSemExplicacao({
             </span>
           );
         })()}
+        {serie && <Sparkline valores={serie} rotulo={`${label}: ${rotuloDaSerie}`} className="mt-2" />}
       </div>
       {Icon && (
         <span className={cn('kpi-icone w-[60px] h-[60px] rounded-[23px] shrink-0 flex items-center justify-center', c.iconBg)}>

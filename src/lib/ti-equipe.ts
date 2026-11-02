@@ -196,3 +196,8 @@ export function horasParadas(lista: Interrupcao[], p: Periodo, agora: Date = new
     .reduce((a, i) => a + ((i.fim ? new Date(i.fim) : agora).getTime() - new Date(i.inicio).getTime()), 0);
   return Math.round((ms / 3_600_000) * 10) / 10;
 }
+
+/** A cor do cartão de número (`KPICard`) pelo farol: a mesma em toda a tela de Indicadores da TI. */
+export const COR_DO_FAROL: Record<Farol, 'green' | 'yellow' | 'red' | 'blue'> = {
+  no_alvo: 'green', atencao: 'yellow', fora: 'red', sem_meta: 'blue', sem_dado: 'blue',
+};

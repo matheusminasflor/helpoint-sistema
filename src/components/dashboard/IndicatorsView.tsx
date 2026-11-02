@@ -361,8 +361,8 @@ export function IndicatorsView({
           })}
         </div>}
 
-        {/* Main Indicators Table */}
-        <Card className="">
+        {/* Main Indicators Table — os `id` "analitico-*" são as âncoras do índice do Analítico da TI. */}
+        <Card id="analitico-chamados" className="scroll-mt-20">
           <CardHeader className="pb-2 px-5">
             <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2 uppercase tracking-wider">
               <BookOpen className="h-4 w-4" />
@@ -462,7 +462,7 @@ export function IndicatorsView({
 
         {/* O que pede atenção agora — era "Detalhamento dos Dados", título que não dizia o que havia
             dentro (o dono, 2026-10-04, não entendia a seção). */}
-        <Card className="">
+        <Card id="analitico-atencao" className="scroll-mt-20">
           <CardHeader className="pb-2 px-5">
             <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2 uppercase tracking-wider">
               <AlertTriangle className="h-4 w-4" />
@@ -624,7 +624,7 @@ export function IndicatorsView({
         </Card>
 
         {/* Desempenho por técnico na largura toda: em meia coluna a tabela cortava a Satisfação (revisão de 2026-11-01). */}
-        <div className="grid gap-6">
+        <div id="analitico-pessoas" className="grid gap-6 scroll-mt-20">
           <TechnicianPerformanceChart filter={filter} />
           <TopRequestersCard filter={filter} />
         </div>
@@ -652,7 +652,7 @@ export function TabelaCategoriaPorStatus({ chamados, modulo }: { chamados: Chama
   const colunas = COLUNAS_DE_STATUS.filter((col) => col.id !== 'cancelled' || chamados.some((c) => c.status === 'cancelled'));
 
   return (
-    <Card className="">
+    <Card id="analitico-categorias" className="scroll-mt-20">
       <CardHeader className="pb-2 px-5">
         <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2 uppercase tracking-wider">
           <TicketCheck className="h-4 w-4" />

@@ -7,7 +7,10 @@
 // partes do tempo e a linha da meta, e o status dela é o pior entre trabalho e ocioso.
 import { useEffect, useState, type ClipboardEvent, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { Check, ChevronDown, ClipboardPaste, Pencil, Plus, Target, Trash2, Users, Zap } from 'lucide-react';
+import { Briefcase, Check, ChevronDown, ClipboardPaste, Coffee, Pencil, Plus, Target, Trash2, Users, Zap, type LucideIcon } from 'lucide-react';
+import { KPIGrid } from '@/components/dashboard/KPIGrid';
+import { KPICard } from '@/components/glpi/KPICard';
+import { textoDaMeta } from '@/lib/meta-do-indicador';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -34,7 +37,7 @@ import { dataHora, diaCurto, fromLocalDateTimeInput, toLocalDateTimeInput, toLoc
 import type { IntervaloDeDias } from '@/lib/period';
 import { mensagemDeErro } from '@/lib/supabase-result';
 import {
-  dentro, diasDoPeriodo, domingoDaSemana, farol, somarDias, horasParadas, lerColagem, lerNumero, mediaAnteriorDosMesmos, mediaDaEquipe,
+  COR_DO_FAROL, dentro, diasDoPeriodo, domingoDaSemana, farol, somarDias, horasParadas, lerColagem, lerNumero, mediaAnteriorDosMesmos, mediaDaEquipe,
   metaDoPeriodo, periodoAnterior, periodoDoIntervalo, piorFarol, porColaborador, somaDosPercentuais,
   type DoColaborador, type Farol, type LinhaColada, type Sentido,
 } from '@/lib/ti-equipe';
@@ -53,19 +56,6 @@ const FAROL: Record<Farol, { texto: string; classe: string }> = {
 
 function SeloDoFarol({ f }: { f: Farol }) {
   return <Badge variant="outline" className={`${FAROL[f].classe} border-0`}>{FAROL[f].texto}</Badge>;
-}
-
-/** A diferença para o anterior, verde quando melhorou e vermelha quando piorou (o "acima" do ocioso é ruim). */
-function Diferenca({ atual, anterior, sentido, unidade }: { atual: number | null; anterior: number | null; sentido: Sentido; unidade: string }) {
-  if (atual === null || anterior === null) return null;
-  const d = Math.round((atual - anterior) * 10) / 10;
-  if (d === 0) return <span className="text-xs text-muted-foreground">igual</span>;
-  const melhorou = sentido === 'mais' ? d > 0 : d < 0;
-  return (
-    <span className={cn('text-xs font-semibold', melhorou ? 'text-status-success' : 'text-destructive')}>
-      {d > 0 ? '▲ +' : '▼ '}{num(d)}{unidade}
-    </span>
-  );
 }
 
 /** O bloco inteiro. `intervalo` é o do filtro do topo da tela (último dia incluído). */
@@ -98,16 +88,16 @@ export function EquipeDaTI({ intervalo }: { intervalo: IntervaloDeDias }) {
   const horas = horasParadas(listaDeInterrupcoes, atual);
   const lancamentos = (fsense.data ?? []).filter((l) => dentro(l.data, atual));
 
-  const linhas: { chave: string; nome: string; atual: number | null; anterior: number | null; unidade: string; extra?: string }[] = [
-    { chave: 'interrupcoes', nome: 'Interrupções (luz, internet, sistema, intranet) ↓', unidade: '',
-      atual: doPeriodo(atual).length, anterior: doPeriodo(anterior).length,
-      extra: horas > 0 ? `${num(horas)} h paradas` : undefined },
+  // Os três números da Equipe nos mesmos cartões dos chamados (Lei de Jakob: um jeito só de mostrar número na tela).
+  const cartoes: { chave: string; nome: string; atual: number | null; anterior: number | null; extra?: string; icone: LucideIcon }[] = [
     ...(podeVerEquipe ? [
-      { chave: 'fsense_trabalho', nome: '% Trabalho médio da equipe', unidade: ' p.p.',
+      { chave: 'fsense_trabalho', nome: '% Trabalho da equipe', icone: Briefcase,
         atual: mediaDaEquipe(doAtual, 'trabalho'), anterior: mediaAnteriorDosMesmos(doAtual, doAnterior, 'trabalho') },
-      { chave: 'fsense_ocioso', nome: '% Ocioso médio da equipe ↓', unidade: ' p.p.',
+      { chave: 'fsense_ocioso', nome: '% Ocioso da equipe', icone: Coffee,
         atual: mediaDaEquipe(doAtual, 'ocioso'), anterior: mediaAnteriorDosMesmos(doAtual, doAnterior, 'ocioso') },
     ] : []),
+    { chave: 'interrupcoes', nome: 'Interrupções', icone: Zap, atual: doPeriodo(atual).length, anterior: doPeriodo(anterior).length,
+      extra: horas > 0 ? `${num(horas)} h paradas` : undefined },
   ];
 
   return (
@@ -126,39 +116,24 @@ export function EquipeDaTI({ intervalo }: { intervalo: IntervaloDeDias }) {
         </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Indicador</TableHead><TableHead>Meta</TableHead><TableHead>Anterior</TableHead>
-              <TableHead>Realizado</TableHead><TableHead>Status</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {linhas.map((l) => {
-              const def = META_DA_TI[l.chave];
-              const mensal = meta(l.chave);
-              const doPeriodoDaTela = metaDoPeriodo(mensal, dias, !!def.proporcional);
-              const fmt = (v: number | null | undefined) => (v === null || v === undefined ? '—' : def.percentual ? pct(v) : num(v));
-              // Só a de quantidade muda com o período: "0,5 na semana (2 por mês)".
-              const textoDaMeta = def.proporcional && mensal !== undefined && doPeriodoDaTela !== mensal
-                ? `${fmt(doPeriodoDaTela)} no período (${num(mensal)}${def.unidade})` : fmt(mensal);
-              return (
-                <TableRow key={l.chave}>
-                  <TableCell className="font-medium">{l.nome}{l.extra && <span className="block text-xs text-muted-foreground font-normal">{l.extra}</span>}</TableCell>
-                  <TableCell className="tabular-nums whitespace-nowrap">{textoDaMeta}</TableCell>
-                  <TableCell className="tabular-nums text-muted-foreground">{fmt(l.anterior)}</TableCell>
-                  <TableCell className="tabular-nums whitespace-nowrap">
-                    <span className="font-semibold mr-2">{fmt(l.atual)}</span>
-                    <Diferenca atual={l.atual} anterior={l.anterior} sentido={def.sentido} unidade={l.unidade} />
-                  </TableCell>
-                  <TableCell><SeloDoFarol f={farol(l.atual, doPeriodoDaTela, def.sentido, def.percentual)} /></TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </div>
+      <KPIGrid lgCols={3}>
+        {cartoes.map((c) => {
+          const def = META_DA_TI[c.chave];
+          const mensal = meta(c.chave);
+          const doPeriodoDaTela = metaDoPeriodo(mensal, dias, !!def.proporcional);
+          const fmt = (v: number) => (def.percentual ? pct(v) : num(v));
+          // Só a de quantidade muda com o período: "até 0,5 no período (2 por mês)".
+          const meta_ = doPeriodoDaTela === undefined ? undefined
+            : def.proporcional && doPeriodoDaTela !== mensal ? `${num(doPeriodoDaTela)} no período (${num(mensal!)}${def.unidade})` : fmt(doPeriodoDaTela);
+          const f = farol(c.atual, doPeriodoDaTela, def.sentido, def.percentual);
+          const nota = [meta_ && textoDaMeta(meta_, def.sentido), c.extra].filter(Boolean).join(' · ');
+          return (
+            <KPICard key={c.chave} label={c.nome} icon={c.icone} value={c.atual === null ? '—' : fmt(c.atual)} numero={c.atual}
+              color={COR_DO_FAROL[f]} nota={nota || undefined} notaRuim={f === 'fora'}
+              anterior={c.anterior} melhorQuando={def.sentido} formatarDiferenca={(n) => (def.percentual ? `${num(n)} p.p.` : num(n))} />
+          );
+        })}
+      </KPIGrid>
 
       {podeVerEquipe && (
         <BarrasDaEquipe atual={doAtual} anterior={doAnterior} metaTrabalho={meta('fsense_trabalho')} metaOcioso={meta('fsense_ocioso')} />
@@ -227,7 +202,9 @@ function BarrasDaEquipe({ atual, anterior, metaTrabalho, metaOcioso }: {
                     {PARTES.map((p) => <p key={p.campo}>{p.rotulo}: {pct(c[p.campo])}{antes && ` (antes ${pct(antes[p.campo])})`}</p>)}
                   </TooltipContent>
                 </Tooltip>
-                <span className="flex items-center gap-2 justify-end">
+                {/* Largura fixa: com "No alvo" mais largo que "Fora", as barras ficavam de tamanhos diferentes e a linha
+                    da meta desalinhava de uma pessoa para outra. */}
+                <span className="flex items-center gap-2 justify-end w-[76px] sm:w-[180px]">
                   <span className="hidden sm:inline text-xs tabular-nums text-muted-foreground w-[92px] text-right">trab. {pct(c.trabalho)}</span>
                   <SeloDoFarol f={status} />
                 </span>

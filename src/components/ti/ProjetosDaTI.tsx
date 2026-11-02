@@ -17,7 +17,7 @@ const STATUS: Record<string, { texto: string; classe: string }> = {
   planned: { texto: 'Pendente', classe: 'badge-neutral' },
 };
 
-export function ProjetosDaTI() {
+export function ProjetosDaTI({ id = 'projetos-da-ti' }: { id?: string }) {
   const tenantPath = useTenantPath();
   const { data: projetos = [], isLoading } = useProjetosDoSetor('ti');
   const hoje = todayISO();
@@ -28,7 +28,7 @@ export function ProjetosDaTI() {
   const resumo = resumoDosProjetos(projetos, hoje);
 
   return (
-    <Card className="p-5 space-y-4">
+    <Card id={id} className="p-5 space-y-4 scroll-mt-20">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
           <FolderKanban className="h-4 w-4 text-primary" />Projetos da TI
@@ -55,14 +55,17 @@ export function ProjetosDaTI() {
       ) : (
         <ul className="divide-y">
           {abertos.map(({ p, atraso }) => (
-            <li key={p.id} className="grid grid-cols-[1fr_auto] sm:grid-cols-[1fr_120px_auto_auto] items-center gap-x-3 gap-y-1 py-2.5 text-sm">
+            // Colunas de largura fixa: cada linha é uma grade própria, e com `auto` elas desalinhavam entre si.
+            <li key={p.id} className="grid grid-cols-[1fr_auto] sm:grid-cols-[1fr_130px_110px_170px] items-center gap-x-3 gap-y-1 py-2.5 text-sm">
               <Link to={tenantPath(`/projetos/${p.id}`)} className="font-medium hover:underline min-w-0 break-words">{p.name}</Link>
-              <span className="hidden sm:flex items-center gap-2" title={p.total ? `${p.percentual}% das atividades` : 'Ainda sem atividades'}>
-                <span className="h-2 flex-1 rounded-full bg-muted overflow-hidden"><span className="block h-full bg-primary" style={{ width: `${p.percentual}%` }} /></span>
-                <span className="text-xs tabular-nums text-muted-foreground w-9 text-right">{p.total ? `${p.percentual}%` : '—'}</span>
-              </span>
+              {p.total ? (
+                <span className="hidden sm:flex items-center gap-2" title={`${p.percentual}% das atividades`}>
+                  <span className="h-2 flex-1 rounded-full bg-muted overflow-hidden"><span className="block h-full bg-primary" style={{ width: `${p.percentual}%` }} /></span>
+                  <span className="text-xs tabular-nums text-muted-foreground w-9 text-right">{p.percentual}%</span>
+                </span>
+              ) : <span className="hidden sm:block text-xs text-muted-foreground">sem atividades</span>}
               <Badge variant="outline" className={cn('border-0 justify-self-start', STATUS[p.status ?? '']?.classe)}>{STATUS[p.status ?? '']?.texto}</Badge>
-              <span className={cn('text-xs whitespace-nowrap text-right', atraso ? 'badge-danger rounded px-2 py-0.5 font-semibold' : 'text-muted-foreground')}>
+              <span className={cn('text-xs whitespace-nowrap text-right justify-self-end', atraso ? 'badge-danger rounded px-2 py-0.5 font-semibold' : 'text-muted-foreground')}>
                 {atraso ? `${atraso} ${atraso === 1 ? 'dia' : 'dias'} além do término` : p.due_date ? `término ${diaCurto(p.due_date)}` : 'sem término'}
               </span>
             </li>
