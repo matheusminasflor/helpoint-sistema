@@ -14,12 +14,15 @@ interface SectionDef {
 
 const SECTIONS: SectionDef[] = [
   { id: 'cover', label: 'Capa', description: 'Página de capa com título e período', locked: true },
-  { id: 'executive_summary', label: 'Resumo Executivo', description: 'KPIs principais e tabela resumo' },
-  { id: 'assets', label: 'Ativos e Infraestrutura', description: 'Status de ativos, licenças, contratos e manutenções' },
-  { id: 'priority', label: 'Distribuição por Prioridade', description: 'Chamados agrupados por nível de prioridade' },
-  { id: 'category', label: 'Distribuição por Categoria', description: 'Chamados agrupados por categoria' },
-  { id: 'comparative', label: 'Comparativo com Período Anterior', description: 'Variação percentual dos indicadores' },
-  { id: 'trends', label: 'Tendência Diária', description: 'Abertos vs resolvidos por dia' },
+  { id: 'executive_summary', label: 'Resumo', description: 'A frase de resumo e os números de chamado com meta, anterior e status' },
+  // Rodada 2 da TI (2026-11-02): o PDF leva tudo o que a Visão Geral mostra. O "Comparativo" saiu: o anterior já está
+  // ao lado de cada número no Resumo.
+  { id: 'team', label: 'Equipe (FSENSE) e interrupções', description: 'Produtividade da equipe e de cada pessoa, com meta e status' },
+  { id: 'projects', label: 'Projetos da TI', description: 'Em andamento e pendentes, com o término e o que passou dele' },
+  { id: 'category', label: 'Chamados por categoria', description: 'Categorias e subcategorias, como na Visão Geral' },
+  { id: 'trends', label: 'Abertos × resolvidos por dia', description: 'Os últimos 14 dias do período' },
+  { id: 'priority', label: 'Por prioridade', description: 'Chamados agrupados por prioridade' },
+  { id: 'assets', label: 'Ativos e contratos', description: 'Equipamentos, licenças, contratos e manutenções' },
 ];
 
 type SectionId = string;

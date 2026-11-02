@@ -30,10 +30,13 @@ import { KPICard } from '@/components/glpi/KPICard';
 import { TILyraPanel } from '@/components/dashboard/TILyraPanel';
 import { ExportPDFDialog } from '@/components/dashboard/ExportPDFDialog';
 import { CategoriasDosChamados } from '@/components/ti/CategoriasDosChamados';
-import { EquipeDaTI } from '@/components/ti/EquipeDaTI';
+import { arvoreDosChamados, type No } from '@/lib/arvore-de-categorias';
+import type { DadosDaTINoPDF } from '@/components/dashboard/PDFReportGenerator';
+import { BarrasDaEquipe, CartoesDaEquipe, EquipeDaTI } from '@/components/ti/EquipeDaTI';
+import { ModoApresentacao } from '@/components/dashboard/ModoApresentacao';
 import { ProjetosDaTI } from '@/components/ti/ProjetosDaTI';
-import { metaEmVigor } from '@/config/metas-da-ti';
-import { useFsense, useSemanasDoFsenseAConfirmar } from '@/hooks/useEquipeDaTI';
+import { META_DA_TI, metaEmVigor } from '@/config/metas-da-ti';
+import { useEquipeDoPeriodo, useSemanasDoFsenseAConfirmar } from '@/hooks/useEquipeDaTI';
 import {
   useTicketMetrics, useTicketTrends, usePreviousMetrics, useViolatedSlaTickets, MetricsFilter, filtroDoPeriodo,
   getPreviousPeriodRange, intervaloDoFiltro, useSerieDosChamados,
@@ -49,7 +52,7 @@ import { useKanbanReportMetrics, ReportFilter } from '@/hooks/useReportMetrics';
 import { useLyraChat } from '@/hooks/useLyraChat';
 import { useAISecretary } from '@/hooks/useAISecretary';
 import { useIALigada } from '@/hooks/useAssistantName';
-import { AlertTriangle, BarChart3, BrainCircuit, CheckCircle2, ChevronDown, Clock, Download, FileKey, Monitor, ShieldCheck, Target, Timer, Wrench } from 'lucide-react';
+import { AlertTriangle, BarChart3, BrainCircuit, CheckCircle2, ChevronDown, Clock, Download, FileKey, Monitor, Presentation, ShieldCheck, Target, Timer, Wrench } from 'lucide-react';
 import { AIIndicatorAnalysis } from '@/components/dashboard/AIIndicatorAnalysis';
 import { Link, useNavigate } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
@@ -59,10 +62,10 @@ import { ativoEmEstoque, ativoEmUso, ROTULO_DA_CATEGORIA_DO_ATIVO } from '@/lib/
 import { formatarHoras } from '@/lib/horas';
 import { barrasDaTendencia } from '@/lib/tendencia';
 import {
-  COR_DO_FAROL, diasDoPeriodo, farol, mediaDaEquipe, periodoAnterior, periodoDoIntervalo, porColaborador, somarDias,
+  COR_DO_FAROL, diasDoPeriodo, farol, periodoDoIntervalo, somarDias,
 } from '@/lib/ti-equipe';
 import { fraseDoResumo } from '@/lib/resumo-da-ti';
-import { resumoDosProjetos } from '@/lib/projetos';
+import { diasAlemDoTermino, resumoDosProjetos } from '@/lib/projetos';
 import { useProjetosDoSetor } from '@/hooks/useProjetos';
 import { EquipePorSemana } from '@/components/ti/EquipePorSemana';
 import { textoDaMeta } from '@/lib/meta-do-indicador';
@@ -98,6 +101,7 @@ export default function TIRelatorios() {
   const [activeTab, setActiveTab] = useQueryState<string>('aba', 'overview');
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [aiAnalysisOpen, setAiAnalysisOpen] = useState(false);
+  const [apresentando, setApresentando] = useState(false);
   const iaLigada = useIALigada();
 
   const filter = filtroDoPeriodo(selectedPeriod, intervalo);
@@ -189,10 +193,8 @@ export default function TIRelatorios() {
   const { data: serie } = useSerieDosChamados(filterWithTech);
   const diasDaTela = diasDoPeriodo(periodoDoIntervalo(intervaloDaTela));
   const rotuloDaSerie = diasDaTela === 7 ? 'as últimas 8 semanas' : `os últimos 8 períodos de ${diasDaTela} dias`;
-  const periodoDaEquipe = periodoDoIntervalo(intervaloDaTela);
-  const { data: fsenseDoPeriodo } = useFsense({ de: periodoAnterior(periodoDaEquipe).de, ate: periodoDaEquipe.ate });
-  const trabalhoDaEquipe = podeVerEquipe
-    ? mediaDaEquipe(porColaborador((fsenseDoPeriodo ?? []).filter((l) => l.confirmado_em), periodoDaEquipe), 'trabalho') : null;
+  const equipe = useEquipeDoPeriodo(intervaloDaTela, podeVerEquipe);
+  const trabalhoDaEquipe = equipe.numeros.find((n) => n.chave === 'fsense_trabalho')?.atual ?? null;
   const { data: projetosDaTI = [] } = useProjetosDoSetor('ti');
   const projetosAlem = resumoDosProjetos(projetosDaTI, hojeISO).alemDoTermino;
   const frase = fraseDoResumo({
@@ -223,6 +225,60 @@ export default function TIRelatorios() {
   const barras = barrasDaTendencia(trends || []);
   const km = kanbanData?.metrics;
 
+  // O PDF leva o que a Visão Geral mostra (rodada 2): os mesmos números, já em texto.
+  const n1 = (v: number) => v.toLocaleString('pt-BR', { maximumFractionDigits: 1 });
+  const textoDaMetaNoPdf = (v: number | undefined, sufixo: string, sentido: 'mais' | 'menos') =>
+    (v === undefined ? '—' : `${sentido === 'mais' ? 'pelo menos' : 'até'} ${n1(v)}${sufixo}`);
+  const achatar = (nos: No[], nivel = 0): DadosDaTINoPDF['categorias'] =>
+    nos.flatMap((no) => [{ nome: no.nome, nivel, chamados: no.chamados.length }, ...achatar(no.filhos, nivel + 1)]);
+  const dadosDaTINoPDF: DadosDaTINoPDF = {
+    resumo: frase,
+    chamados: [
+      { indicador: 'SLA cumprido', meta: textoDaMetaNoPdf(meta('sla_cumprido'), '%', 'mais'), anterior: anterior ? `${anterior.slaCompliance}%` : '—', atual: `${sla}%`, status: farolSla },
+      { indicador: '1ª resposta no prazo', meta: textoDaMetaNoPdf(meta('primeira_resposta'), '%', 'mais'), anterior: anterior ? `${anterior.firstResponseCompliance}%` : '—', atual: `${primeira}%`, status: farolPrimeira },
+      { indicador: 'Tempo médio de resolução', meta: textoDaMetaNoPdf(meta('tempo_medio_horas'), ' h', 'menos'), anterior: anterior ? formatarHoras(anterior.avgResolutionTime) : '—', atual: formatarHoras(tempo), status: farolTempo },
+      { indicador: 'Chamados resolvidos', meta: '—', anterior: anterior ? `${anterior.resolved}` : '—', atual: `${metrics?.resolved ?? 0}`, status: 'sem_meta' },
+    ],
+    equipe: equipe.numeros.map((n) => {
+      const def = META_DA_TI[n.chave];
+      const fmt = (v: number | null) => (v === null ? '—' : def.percentual ? `${n1(v)}%` : n1(v));
+      return { indicador: n.nome, meta: n.metaTexto ? `${def.sentido === 'mais' ? 'pelo menos' : 'até'} ${n.metaTexto}` : '—',
+        anterior: fmt(n.anterior), atual: fmt(n.atual) + (n.extra ? ` (${n.extra})` : ''), status: n.farol };
+    }),
+    pessoas: [...equipe.doAtual].sort((a, b) => (b.trabalho ?? -1) - (a.trabalho ?? -1)).map((p) => ({
+      nome: p.colaborador, horas: `${n1(p.horas)} h`, trabalho: p.trabalho === null ? '—' : `${n1(p.trabalho)}%`,
+      ocioso: p.ocioso === null ? '—' : `${n1(p.ocioso)}%`, status: equipe.statusDa(p),
+    })),
+    projetos: projetosDaTI.filter((p) => p.status === 'active' || p.status === 'planned')
+      .map((p) => ({ p, atraso: diasAlemDoTermino(p, hojeISO) }))
+      .sort((a, b) => b.atraso - a.atraso)
+      .map(({ p, atraso }) => ({ nome: p.name, situacao: p.status === 'active' ? 'Em andamento' : 'Pendente',
+        termino: p.due_date ? diaCurto(p.due_date) : '—', atraso: atraso ? `${atraso} ${atraso === 1 ? 'dia' : 'dias'}` : '—' })),
+    categorias: achatar(arvoreDosChamados(metrics?.chamados ?? [])),
+  };
+
+  // Os quatro números de chamado: na Visão Geral e na tela 2 do modo apresentação.
+  const cartoesDosChamados = (
+                <KPIGrid lgCols={4}>
+                  <KPICard value={`${sla}%`} numero={sla} label="SLA cumprido" icon={ShieldCheck} color={COR_DO_FAROL[farolSla]}
+                    anterior={anterior?.slaCompliance ?? null} melhorQuando="mais" formatarDiferenca={(n) => `${n} p.p.`}
+                    nota={notaDaMeta(meta('sla_cumprido'), '%', 'mais')} notaRuim={farolSla === 'fora'} explicacao="chamados.sla_cumprido"
+                    serie={serie?.map((p) => p.sla)} rotuloDaSerie={rotuloDaSerie} />
+                  <KPICard value={`${primeira}%`} numero={primeira} label="1ª resposta no prazo" icon={Timer} color={COR_DO_FAROL[farolPrimeira]}
+                    anterior={anterior?.firstResponseCompliance ?? null} melhorQuando="mais" formatarDiferenca={(n) => `${n} p.p.`}
+                    nota={notaDaMeta(meta('primeira_resposta'), '%', 'mais')} notaRuim={farolPrimeira === 'fora'} explicacao="chamados.primeira_resposta_no_prazo"
+                    serie={serie?.map((p) => p.primeira)} rotuloDaSerie={rotuloDaSerie} />
+                  <KPICard value={formatarHoras(tempo)} numero={tempo} label="Tempo médio de resolução" icon={Clock} color={COR_DO_FAROL[farolTempo]}
+                    anterior={anterior?.avgResolutionTime ?? null} melhorQuando="menos" formatarDiferenca={(n) => formatarHoras(Math.abs(n))}
+                    nota={notaDaMeta(meta('tempo_medio_horas'), ' h', 'menos')} notaRuim={farolTempo === 'fora'} explicacao="chamados.tempo_medio_resolucao"
+                    serie={serie?.map((p) => p.tempo)} rotuloDaSerie={rotuloDaSerie} />
+                  <KPICard value={metrics?.resolved ?? 0} label="Chamados resolvidos" icon={CheckCircle2} color="green"
+                    anterior={anterior?.resolved ?? null} melhorQuando="mais" explicacao="chamados.resolvidos"
+                    serie={serie?.map((p) => p.resolvidos)} rotuloDaSerie={rotuloDaSerie}
+                    onClick={() => navigate(tenantPath('/ti/chamados?status=resolved'))} />
+                </KPIGrid>
+  );
+
   return (
     <div className="px-4 lg:px-8 pb-6 w-full">
       <DashboardHeader
@@ -245,6 +301,9 @@ export default function TIRelatorios() {
                 </SelectContent>
               </Select>
             )}
+            <Button size="sm" variant="default" className="max-[860px]:hidden" onClick={() => setApresentando(true)}>
+              <Presentation className="w-3.5 h-3.5 mr-1" />Apresentar
+            </Button>
             {iaLigada && (
               <Button size="sm" variant="default" onClick={() => setAiAnalysisOpen(true)}>
                 <BrainCircuit className="w-3 h-3 mr-1" />Analisar com IA
@@ -292,24 +351,7 @@ export default function TIRelatorios() {
               <p className="rounded-lg bg-muted/60 px-4 py-3 text-[15px] text-foreground" aria-label="Resumo do período">{frase}</p>
 
               <div className="space-y-2">
-                <KPIGrid lgCols={4}>
-                  <KPICard value={`${sla}%`} numero={sla} label="SLA cumprido" icon={ShieldCheck} color={COR_DO_FAROL[farolSla]}
-                    anterior={anterior?.slaCompliance ?? null} melhorQuando="mais" formatarDiferenca={(n) => `${n} p.p.`}
-                    nota={notaDaMeta(meta('sla_cumprido'), '%', 'mais')} notaRuim={farolSla === 'fora'} explicacao="chamados.sla_cumprido"
-                    serie={serie?.map((p) => p.sla)} rotuloDaSerie={rotuloDaSerie} />
-                  <KPICard value={`${primeira}%`} numero={primeira} label="1ª resposta no prazo" icon={Timer} color={COR_DO_FAROL[farolPrimeira]}
-                    anterior={anterior?.firstResponseCompliance ?? null} melhorQuando="mais" formatarDiferenca={(n) => `${n} p.p.`}
-                    nota={notaDaMeta(meta('primeira_resposta'), '%', 'mais')} notaRuim={farolPrimeira === 'fora'} explicacao="chamados.primeira_resposta_no_prazo"
-                    serie={serie?.map((p) => p.primeira)} rotuloDaSerie={rotuloDaSerie} />
-                  <KPICard value={formatarHoras(tempo)} numero={tempo} label="Tempo médio de resolução" icon={Clock} color={COR_DO_FAROL[farolTempo]}
-                    anterior={anterior?.avgResolutionTime ?? null} melhorQuando="menos" formatarDiferenca={(n) => formatarHoras(Math.abs(n))}
-                    nota={notaDaMeta(meta('tempo_medio_horas'), ' h', 'menos')} notaRuim={farolTempo === 'fora'} explicacao="chamados.tempo_medio_resolucao"
-                    serie={serie?.map((p) => p.tempo)} rotuloDaSerie={rotuloDaSerie} />
-                  <KPICard value={metrics?.resolved ?? 0} label="Chamados resolvidos" icon={CheckCircle2} color="green"
-                    anterior={anterior?.resolved ?? null} melhorQuando="mais" explicacao="chamados.resolvidos"
-                    serie={serie?.map((p) => p.resolvidos)} rotuloDaSerie={rotuloDaSerie}
-                    onClick={() => navigate(tenantPath('/ti/chamados?status=resolved'))} />
-                </KPIGrid>
+                {cartoesDosChamados}
                 <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                   <span>A cor do número segue a meta: verde na meta, amarelo perto, vermelho fora. A linha embaixo é {rotuloDaSerie}.{!anterior && ' Sem chamados no período anterior para comparar.'}</span>
                   {podeMudarMetas && (
@@ -454,6 +496,30 @@ export default function TIRelatorios() {
         </TabsContent>
       </Tabs>
 
+      {apresentando && (
+        <ModoApresentacao subtitulo={rotuloDoIntervalo(intervaloDaTela)} onSair={() => setApresentando(false)} telas={[
+          { titulo: 'Resumo', conteudo: (
+            <div className="space-y-6">
+              <p className="text-2xl leading-relaxed text-foreground">{frase}</p>
+              {atencao.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {atencao.map((a) => (
+                    <span key={a.texto} className={cn('rounded-md px-3 py-1.5 text-base font-semibold',
+                      a.cor === 'perigo' ? 'badge-danger' : a.cor === 'aviso' ? 'badge-warning' : 'badge-neutral')}>{a.texto}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) },
+          { titulo: 'Chamados', conteudo: cartoesDosChamados },
+          { titulo: 'Chamados por categoria', conteudo: <CategoriasDosChamados chamados={metrics?.chamados ?? []} modulo="tickets" /> },
+          ...(podeVerEquipe ? [{ titulo: 'Equipe', conteudo: (
+            <div className="space-y-6"><CartoesDaEquipe numeros={equipe.numeros} /><BarrasDaEquipe equipe={equipe} /></div>
+          ) }] : []),
+          { titulo: 'Projetos da TI', conteudo: <ProjetosDaTI id="apresentacao-projetos" /> },
+        ]} />
+      )}
+
       <ExportPDFDialog
         open={exportDialogOpen}
         onOpenChange={setExportDialogOpen}
@@ -462,6 +528,7 @@ export default function TIRelatorios() {
           filter: filterWithTech, activeAssets: assetsInUse, totalAssets, expiringLicenses: licencasVencendo.length,
           expiringContractsCount: contratosVencendo.length, scheduledMaintenancesCount: manutencoesProximas.length,
           technicianName: technicians?.find(t => t.id === collaboratorId)?.full_name || technicians?.find(t => t.id === collaboratorId)?.email,
+          ti: dadosDaTINoPDF,
         }}
       />
 

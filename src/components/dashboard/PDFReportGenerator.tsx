@@ -4,13 +4,6 @@ import { ptBR } from 'date-fns/locale';
 import { TicketMetrics, TicketTrend, MetricsFilter, getDateRangeFromPeriod } from '@/hooks/useHelpdeskMetrics';
 import { formatarHoras } from '@/lib/horas';
 
-interface ComparativeData {
-  current: number;
-  previous: number;
-  percentageChange: number;
-  trend: 'up' | 'down' | 'stable';
-}
-
 export interface PDFReportData {
   metrics: TicketMetrics | null;
   previousMetrics: TicketMetrics | null;
@@ -23,7 +16,31 @@ export interface PDFReportData {
   scheduledMaintenancesCount: number;
   technicianName?: string;
   selectedSections?: string[];
+  /**
+   * O que a Visão Geral da TI mostra além dos chamados (rodada 2, 2026-11-02: "o PDF leva tudo o que a Visão Geral
+   * mostra"): a frase de resumo, a meta e o status de cada número, a Equipe, os Projetos e as categorias em níveis.
+   */
+  ti?: DadosDaTINoPDF;
 }
+
+export type StatusNoPDF = 'no_alvo' | 'atencao' | 'fora' | 'sem_meta' | 'sem_dado';
+export interface LinhaComMeta { indicador: string; meta: string; anterior: string; atual: string; status: StatusNoPDF }
+export interface DadosDaTINoPDF {
+  resumo: string;
+  chamados: LinhaComMeta[];
+  equipe: LinhaComMeta[];
+  pessoas: { nome: string; horas: string; trabalho: string; ocioso: string; status: StatusNoPDF }[];
+  projetos: { nome: string; situacao: string; termino: string; atraso: string }[];
+  /** A árvore das categorias já achatada: `nivel` 0 é a categoria, 1 a subcategoria… */
+  categorias: { nome: string; nivel: number; chamados: number }[];
+}
+
+const TEXTO_DO_STATUS: Record<StatusNoPDF, string> = {
+  no_alvo: 'No alvo', atencao: 'Atenção', fora: 'Fora', sem_meta: 'Sem meta', sem_dado: 'Sem dado',
+};
+const COR_DO_STATUS: Record<StatusNoPDF, [number, number, number]> = {
+  no_alvo: [22, 163, 74], atencao: [217, 119, 6], fora: [220, 38, 38], sem_meta: [100, 116, 139], sem_dado: [100, 116, 139],
+};
 
 const PRIORITY_LABELS: Record<string, string> = {
   critical: 'Crítica', high: 'Alta', medium: 'Média', low: 'Baixa',
@@ -39,12 +56,6 @@ const ZEBRA: [number, number, number] = [248, 250, 252];
 const MARGIN_X = 18;
 const MARGIN_TOP = 20;
 const FOOTER_ZONE = 24;
-
-function calculateChange(current: number, previous: number): ComparativeData {
-  const diff = current - previous;
-  const pct = previous === 0 ? (current > 0 ? 100 : 0) : Math.round((diff / previous) * 100);
-  return { current, previous, percentageChange: pct, trend: pct > 1 ? 'up' : pct < -1 ? 'down' : 'stable' };
-}
 
 function hasSection(sections: string[] | undefined, id: string): boolean {
   return !sections || sections.includes(id);
@@ -85,6 +96,8 @@ export function generatePDFReport(data: PDFReportData): void {
   };
 
   const sectionTitle = (title: string) => {
+    // Sem o Resumo marcado, a primeira seção ainda estaria na página da capa (o rodapé da capa já foi posto).
+    if (yPos < MARGIN_TOP) { doc.addPage(); yPos = MARGIN_TOP; }
     checkPageBreak(30);
     doc.setFillColor(...BRAND_COLOR);
     doc.rect(MARGIN_X, yPos, 3, 14, 'F');
@@ -95,7 +108,8 @@ export function generatePDFReport(data: PDFReportData): void {
     yPos += 20;
   };
 
-  const drawTable = (headers: string[], rows: string[][], colWidths: number[]) => {
+  const drawTable = (headers: string[], rows: string[][], colWidths: number[],
+    corDaCelula?: (linha: number, coluna: number) => [number, number, number] | undefined) => {
     const rowH = 9;
     const headerH = 10;
     // Ensure at least header + 3 rows fit before breaking
@@ -123,10 +137,11 @@ export function generatePDFReport(data: PDFReportData): void {
         doc.rect(MARGIN_X, yPos, contentW, rowH, 'F');
       }
       doc.setFontSize(8);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(...DARK);
       x = MARGIN_X + 3;
       row.forEach((cell, ci) => {
+        const cor = corDaCelula?.(ri, ci);
+        doc.setFont('helvetica', cor ? 'bold' : 'normal');
+        doc.setTextColor(...(cor ?? DARK));
         doc.text(cell, x, yPos + 6);
         x += colWidths[ci];
       });
@@ -145,6 +160,14 @@ export function generatePDFReport(data: PDFReportData): void {
     doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
     doc.text(value, x + 5, y + 25);
+  };
+
+  // Indicador · Meta · Anterior · Atual · Status (o status na cor dele).
+  const drawTabelaComMeta = (linhas: LinhaComMeta[]) => {
+    drawTable(['Indicador', 'Meta', 'Anterior', 'Atual', 'Status'],
+      linhas.map((l) => [l.indicador, l.meta, l.anterior, l.atual, TEXTO_DO_STATUS[l.status]]),
+      [contentW * 0.34, contentW * 0.22, contentW * 0.15, contentW * 0.15, contentW * 0.14],
+      (ri, ci) => (ci === 4 ? COR_DO_STATUS[linhas[ri].status] : undefined));
   };
 
   // ════════════════════════════════════════
@@ -195,13 +218,31 @@ export function generatePDFReport(data: PDFReportData): void {
 
     sectionTitle('RESUMO EXECUTIVO');
 
+    // A TI manda a frase da Visão Geral e cada número com meta e status; o cartão leva a cor do status.
+    if (data.ti) {
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...DARK);
+      const linhas = doc.splitTextToSize(data.ti.resumo, contentW) as string[];
+      doc.text(linhas, MARGIN_X, yPos + 4);
+      yPos += linhas.length * 5 + 8;
+      const cardW = (contentW - 12) / 4;
+      data.ti.chamados.slice(0, 4).forEach((c, i) => {
+        drawKPICard(MARGIN_X + (cardW + 4) * i, yPos, cardW, 32, c.indicador, c.atual, COR_DO_STATUS[c.status]);
+      });
+      yPos += 32 + 10;
+      drawTabelaComMeta(data.ti.chamados);
+    }
+
     const cardW = (contentW - 12) / 4;
     const cardH = 32;
-    drawKPICard(MARGIN_X, yPos, cardW, cardH, 'Chamados Abertos', `${metrics.open}`, [234, 88, 12]);
-    drawKPICard(MARGIN_X + cardW + 4, yPos, cardW, cardH, 'SLA Cumprido', `${metrics.slaCompliance}%`, [37, 99, 235]);
-    drawKPICard(MARGIN_X + (cardW + 4) * 2, yPos, cardW, cardH, 'Resolvidos', `${metrics.resolved}`, [22, 163, 74]);
-    drawKPICard(MARGIN_X + (cardW + 4) * 3, yPos, cardW, cardH, 'Tempo Médio', formatarHoras(metrics.avgResolutionTime), [100, 116, 139]);
-    yPos += cardH + 12;
+    if (!data.ti) {
+      drawKPICard(MARGIN_X, yPos, cardW, cardH, 'Chamados Abertos', `${metrics.open}`, [234, 88, 12]);
+      drawKPICard(MARGIN_X + cardW + 4, yPos, cardW, cardH, 'SLA Cumprido', `${metrics.slaCompliance}%`, [37, 99, 235]);
+      drawKPICard(MARGIN_X + (cardW + 4) * 2, yPos, cardW, cardH, 'Resolvidos', `${metrics.resolved}`, [22, 163, 74]);
+      drawKPICard(MARGIN_X + (cardW + 4) * 3, yPos, cardW, cardH, 'Tempo Médio', formatarHoras(metrics.avgResolutionTime), [100, 116, 139]);
+      yPos += cardH + 12;
+    }
 
     const summaryRows = [
       ['Total de Chamados', `${metrics.total}`, prevMetrics ? `${prevMetrics.total}` : '—'],
@@ -214,20 +255,27 @@ export function generatePDFReport(data: PDFReportData): void {
     drawTable(['Indicador', 'Atual', 'Anterior'], summaryRows, [contentW * 0.5, contentW * 0.25, contentW * 0.25]);
   }
 
-  // ── Assets & Infrastructure ──
-  if (hasSection(sections, 'assets')) {
-    if (yPos === 0 || yPos < MARGIN_TOP) { doc.addPage(); yPos = MARGIN_TOP; }
-    sectionTitle('ATIVOS E INFRAESTRUTURA');
-    drawTable(
-      ['Indicador', 'Valor'],
-      [
-        ['Ativos Ativos', `${data.activeAssets} de ${data.totalAssets}`],
-        ['Licenças Expirando (30 dias)', `${data.expiringLicenses}`],
-        ['Contratos Expirando (30 dias)', `${data.expiringContractsCount}`],
-        ['Manutenções Agendadas', `${data.scheduledMaintenancesCount}`],
-      ],
-      [contentW * 0.6, contentW * 0.4]
-    );
+  // ── Equipe (FSENSE) e interrupções ── (rodada 2 da TI)
+  if (hasSection(sections, 'team') && data.ti && data.ti.equipe.length > 0) {
+    sectionTitle('EQUIPE (FSENSE) E INTERRUPÇÕES');
+    drawTabelaComMeta(data.ti.equipe);
+    if (data.ti.pessoas.length > 0) {
+      const pessoas = data.ti.pessoas;
+      drawTable(['Colaborador', 'Horas medidas', '% Trabalho', '% Ocioso', 'Status'],
+        pessoas.map((p) => [p.nome, p.horas, p.trabalho, p.ocioso, TEXTO_DO_STATUS[p.status]]),
+        [contentW * 0.34, contentW * 0.18, contentW * 0.16, contentW * 0.16, contentW * 0.16],
+        (ri, ci) => (ci === 4 ? COR_DO_STATUS[pessoas[ri].status] : undefined));
+    }
+  }
+
+  // ── Projetos da TI ── (rodada 2 da TI)
+  if (hasSection(sections, 'projects') && data.ti && data.ti.projetos.length > 0) {
+    sectionTitle('PROJETOS DA TI');
+    const projetos = data.ti.projetos;
+    drawTable(['Projeto', 'Situação', 'Término', 'Além do término'],
+      projetos.map((p) => [doc.splitTextToSize(p.nome, contentW * 0.5 - 4)[0] as string, p.situacao, p.termino, p.atraso]),
+      [contentW * 0.5, contentW * 0.17, contentW * 0.15, contentW * 0.18],
+      (ri, ci) => (ci === 3 && projetos[ri].atraso !== '—' ? COR_DO_STATUS.fora : undefined));
   }
 
   // ── Priority Distribution ──
@@ -242,7 +290,16 @@ export function generatePDFReport(data: PDFReportData): void {
   }
 
   // ── Category Distribution ──
-  if (hasSection(sections, 'category') && metrics && Object.keys(metrics.byCategory).length > 0) {
+  // A TI manda a árvore (Sistemas › Forteplus › …), como a Visão Geral mostra.
+  if (hasSection(sections, 'category') && metrics && data.ti && data.ti.categorias.length > 0) {
+    sectionTitle('CHAMADOS POR CATEGORIA E SUBCATEGORIA');
+    const total = metrics.total || 1;
+    const categorias = data.ti.categorias;
+    drawTable(['Categoria', 'Chamados', '% do Total'],
+      categorias.map((c) => [`${'    '.repeat(c.nivel)}${c.nivel ? '- ' : ''}${c.nome}`, `${c.chamados}`, `${Math.round((c.chamados / total) * 100)}%`]),
+      [contentW * 0.6, contentW * 0.2, contentW * 0.2],
+      (ri) => (categorias[ri].nivel === 0 ? DARK : GRAY));
+  } else if (hasSection(sections, 'category') && metrics && Object.keys(metrics.byCategory).length > 0) {
     sectionTitle('DISTRIBUIÇÃO POR CATEGORIA');
     const total = metrics.total || 1;
     const catRows = Object.entries(metrics.byCategory)
@@ -252,25 +309,6 @@ export function generatePDFReport(data: PDFReportData): void {
         return [cat, `${count}`, `${pct}%`];
       });
     drawTable(['Categoria', 'Chamados', '% do Total'], catRows, [contentW * 0.5, contentW * 0.25, contentW * 0.25]);
-  }
-
-  // ── Comparative ──
-  if (hasSection(sections, 'comparative') && prevMetrics && metrics) {
-    sectionTitle('COMPARATIVO COM PERÍODO ANTERIOR');
-    const comparisons = [
-      { label: 'Total de Chamados', current: metrics.total, previous: prevMetrics.total },
-      { label: 'Chamados Abertos', current: metrics.open, previous: prevMetrics.open },
-      { label: 'Resolvidos', current: metrics.resolved, previous: prevMetrics.resolved },
-      { label: 'SLA Cumprido (%)', current: metrics.slaCompliance, previous: prevMetrics.slaCompliance },
-      { label: 'Tempo Médio (h)', current: metrics.avgResolutionTime, previous: prevMetrics.avgResolutionTime },
-    ];
-    const compRows = comparisons.map(c => {
-      const change = calculateChange(c.current, c.previous);
-      const arrow = change.trend === 'up' ? '↑' : change.trend === 'down' ? '↓' : '→';
-      const sign = change.percentageChange > 0 ? '+' : '';
-      return [c.label, `${c.previous}`, `${c.current}`, `${arrow} ${sign}${change.percentageChange}%`];
-    });
-    drawTable(['Indicador', 'Anterior', 'Atual', 'Variação'], compRows, [contentW * 0.35, contentW * 0.2, contentW * 0.2, contentW * 0.25]);
   }
 
   // ── Trends ──
@@ -283,6 +321,21 @@ export function generatePDFReport(data: PDFReportData): void {
       `${t.opened - t.resolved > 0 ? '+' : ''}${t.opened - t.resolved}`,
     ]);
     drawTable(['Data', 'Abertos', 'Resolvidos', 'Saldo'], trendRows, [contentW * 0.25, contentW * 0.25, contentW * 0.25, contentW * 0.25]);
+  }
+
+  // ── Assets & Infrastructure ──
+  if (hasSection(sections, 'assets')) {
+    sectionTitle('ATIVOS E INFRAESTRUTURA');
+    drawTable(
+      ['Indicador', 'Valor'],
+      [
+        ['Equipamentos em uso', `${data.activeAssets} de ${data.totalAssets}`],
+        ['Licenças Expirando (30 dias)', `${data.expiringLicenses}`],
+        ['Contratos Expirando (30 dias)', `${data.expiringContractsCount}`],
+        ['Manutenções Agendadas', `${data.scheduledMaintenancesCount}`],
+      ],
+      [contentW * 0.6, contentW * 0.4]
+    );
   }
 
   // Final footer
