@@ -108,7 +108,7 @@ const COLUNAS_DE_STATUS = [
 ] as const;
 
 /** A variação e a unidade em que ela aparece. */
-interface Variacao { n: number; unidade: '%' | ' p.p.' | '' }
+interface Variacao { n: number; unidade: '%' | ' pontos' | '' }
 
 /**
  * Anterior ausente não tem variação: a tela mostra "—". Percentual (`pontos`) compara em pontos percentuais.
@@ -117,7 +117,7 @@ interface Variacao { n: number; unidade: '%' | ' p.p.' | '' }
  */
 function calcChange(current: number, previous: number | undefined, modo: 'contagem' | 'pontos' | 'percentual' = 'contagem'): Variacao | null {
   if (previous === undefined) return null;
-  if (modo === 'pontos') return { n: Math.round(current - previous), unidade: ' p.p.' };
+  if (modo === 'pontos') return { n: Math.round(current - previous), unidade: ' pontos' };
   if (modo === 'contagem' && Math.max(current, previous) < 20) return { n: current - previous, unidade: '' };
   if (previous === 0) return null;
   return { n: Math.round(((current - previous) / previous) * 100), unidade: '%' };
@@ -386,7 +386,7 @@ export function IndicatorsView({
                           </span>
                         </HoverCardTrigger>
                         <HoverCardContent side="top" className="w-[240px] p-3">
-                          <p className="text-xs">Comparação com o período equivalente anterior. Ex: se o filtro é 30 dias, compara com os 30 dias anteriores. Indicadores em % mostram a diferença em pontos percentuais (p.p.); sem valor anterior para comparar, aparece "—".</p>
+                          <p className="text-xs">Comparação com o período equivalente anterior. Ex: se o filtro é 30 dias, compara com os 30 dias anteriores. Indicadores em % mostram a diferença em pontos (de 71% para 76% são 5 pontos); sem valor anterior para comparar, aparece "—".</p>
                         </HoverCardContent>
                       </HoverCard>
                     </th>

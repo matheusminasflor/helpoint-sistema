@@ -10,7 +10,6 @@ import { Link } from 'react-router-dom';
 import { Briefcase, Check, ChevronDown, ClipboardPaste, Coffee, Pencil, Plus, Target, Trash2, Users, Zap, type LucideIcon } from 'lucide-react';
 import { KPIGrid } from '@/components/dashboard/KPIGrid';
 import { KPICard } from '@/components/glpi/KPICard';
-import { textoDaMeta } from '@/lib/meta-do-indicador';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -36,7 +35,7 @@ import { dataHora, diaCurto, fromLocalDateTimeInput, toLocalDateTimeInput, toLoc
 import type { IntervaloDeDias } from '@/lib/period';
 import { mensagemDeErro } from '@/lib/supabase-result';
 import {
-  COR_DO_FAROL, domingoDaSemana, lerColagem, lerNumero, somarDias, somaDosPercentuais,
+  COR_DO_FAROL, domingoDaSemana, farol, lerColagem, lerNumero, somarDias, somaDosPercentuais,
   type Farol, type LinhaColada,
 } from '@/lib/ti-equipe';
 import { cn } from '@/lib/utils';
@@ -65,19 +64,51 @@ export function CartoesDaEquipe({ numeros }: { numeros: NumeroDaEquipe[] }) {
       {numeros.map((c) => {
         const def = META_DA_TI[c.chave];
         const fmt = (v: number) => (def.percentual ? pct(v) : num(v));
-        const nota = [c.metaTexto && textoDaMeta(c.metaTexto, def.sentido), c.extra].filter(Boolean).join(' · ');
+        const nota = [c.nota, c.extra].filter(Boolean).join(' · ');
         return (
           <KPICard key={c.chave} label={c.nome} icon={ICONE[c.chave]} value={c.atual === null ? '—' : fmt(c.atual)} numero={c.atual}
             color={COR_DO_FAROL[c.farol]} nota={nota || undefined} notaRuim={c.farol === 'fora'}
-            anterior={c.anterior} melhorQuando={def.sentido} formatarDiferenca={(n) => (def.percentual ? `${num(n)} p.p.` : num(n))} />
+            anterior={c.anterior} melhorQuando={def.sentido} formatarDiferenca={(n) => (def.percentual ? `${num(n)} pontos` : num(n))} />
         );
       })}
     </KPIGrid>
   );
 }
 
-/** O bloco inteiro. `intervalo` é o do filtro do topo da tela (último dia incluído). */
+/**
+ * O bloco da Visão Geral — o que se apresenta: os números e as barras. Rodada 3 (dono, 2026-11-02: "precisa aparecer
+ * isso no relatório depois que eu confirmei?"): os lançamentos só aparecem enquanto há semana a confirmar; a gestão
+ * (lançar, corrigir, interrupções) fica no Analítico, em `EquipeNoAnalitico`.
+ */
 export function EquipeDaTI({ intervalo }: { intervalo: IntervaloDeDias }) {
+  const podeVerEquipe = usePodeVerEquipe('tickets');
+  const perfil = useConfiguracaoDosSetores();
+  const podeLancar = perfil.pode('ti', 'reports', 'lancar');
+  const equipe = useEquipeDoPeriodo(intervalo, podeVerEquipe);
+
+  return (
+    <Card id="equipe-da-ti" className="p-5 space-y-5 scroll-mt-4">
+      <div className="space-y-1">
+        <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Users className="h-4 w-4 text-primary" />Equipe · produtividade (FSENSE) e interrupções</h3>
+        <p className="text-xs text-muted-foreground">O FSENSE conta só semana confirmada. Lançar, corrigir e registrar interrupção ficam no Analítico.</p>
+      </div>
+
+      <CartoesDaEquipe numeros={equipe.numeros} />
+
+      {podeVerEquipe && <BarrasDaEquipe equipe={equipe} />}
+
+      {podeVerEquipe && equipe.aConfirmar && (
+        <LancamentosDoFsense linhas={equipe.lancamentos.filter((l) => !l.confirmado_em)} podeLancar={podeLancar} />
+      )}
+    </Card>
+  );
+}
+
+/**
+ * O Analítico da Equipe (rodada 3): a eficiência de cada pessoa NO PERÍODO DO FILTRO (no lugar da "Equipe por semana"),
+ * e a gestão — lançar e corrigir o FSENSE, registrar e editar interrupções.
+ */
+export function EquipeNoAnalitico({ intervalo }: { intervalo: IntervaloDeDias }) {
   const tenantPath = useTenantPath();
   const podeVerEquipe = usePodeVerEquipe('tickets');
   const perfil = useConfiguracaoDosSetores();
@@ -89,12 +120,9 @@ export function EquipeDaTI({ intervalo }: { intervalo: IntervaloDeDias }) {
   const equipe = useEquipeDoPeriodo(intervalo, podeVerEquipe);
 
   return (
-    <Card id="equipe-da-ti" className="p-5 space-y-5 scroll-mt-4">
+    <Card id="analitico-equipe" className="p-5 space-y-5 scroll-mt-20">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="space-y-1">
-          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Users className="h-4 w-4 text-primary" />Equipe · produtividade (FSENSE) e interrupções</h3>
-          <p className="text-xs text-muted-foreground">O FSENSE conta só semana confirmada. ↓ = quanto menos, melhor.</p>
-        </div>
+        <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Users className="h-4 w-4 text-primary" />Equipe: eficiência por pessoa, lançamentos e interrupções</h3>
         <div className="flex flex-wrap gap-2">
           {podeMudarMetas && (
             <Button asChild size="sm" variant="ghost"><Link to={tenantPath('/ti/configuracoes?aba=metas')}><Target className="h-4 w-4 mr-1.5" />Metas</Link></Button>
@@ -104,16 +132,65 @@ export function EquipeDaTI({ intervalo }: { intervalo: IntervaloDeDias }) {
         </div>
       </div>
 
-      <CartoesDaEquipe numeros={equipe.numeros} />
-
-      {podeVerEquipe && <BarrasDaEquipe equipe={equipe} />}
-
+      {podeVerEquipe && <EficienciaPorPessoa equipe={equipe} />}
       {podeVerEquipe && <LancamentosDoFsense linhas={equipe.lancamentos} podeLancar={podeLancar} />}
       <ListaDeInterrupcoes lista={equipe.interrupcoesDoPeriodo} podeLancar={podeLancar} />
 
       {lancando && <DialogoDaGrade onFechar={() => setLancando(false)} />}
       {registrando && <DialogoDaInterrupcao inicial={null} onFechar={() => setRegistrando(false)} />}
     </Card>
+  );
+}
+
+const CELULA: Record<Farol, string> = {
+  no_alvo: 'badge-success', atencao: 'badge-warning', fora: 'badge-danger', sem_meta: '', sem_dado: '',
+};
+
+/**
+ * Cada pessoa no período do filtro (o dono gostou das cores da "Equipe por semana" e pediu o período escolhido): % de
+ * trabalho e % ocioso com a cor da meta, o trabalho do período anterior com a seta, e o status. Período com várias
+ * semanas soma as horas e tira a média dos percentuais (`porColaborador`).
+ */
+function EficienciaPorPessoa({ equipe }: { equipe: ReturnType<typeof useEquipeDoPeriodo> }) {
+  const { doAtual, doAnterior, metaTrabalho, metaOcioso, statusDa } = equipe;
+  const pessoas = [...doAtual].sort((a, b) => (b.trabalho ?? -1) - (a.trabalho ?? -1));
+  if (pessoas.length === 0) return <p className="text-sm text-muted-foreground">Nenhuma semana do FSENSE confirmada neste período.</p>;
+  const cel = (v: number | null, f: Farol) => (
+    <span className={cn('inline-block min-w-[60px] rounded px-1.5 py-0.5 tabular-nums font-semibold', CELULA[f])}>{pct(v)}</span>
+  );
+  return (
+    <div className="overflow-x-auto">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Colaborador</TableHead><TableHead className="text-right">Horas medidas</TableHead>
+            <TableHead className="text-center">% Trabalho</TableHead><TableHead className="text-center">% Ocioso</TableHead>
+            <TableHead className="text-center">Antes (trabalho)</TableHead><TableHead className="text-center">Status</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {pessoas.map((c) => {
+            const antes = doAnterior.find((a) => a.colaborador.toLowerCase() === c.colaborador.toLowerCase());
+            const subiu = antes?.trabalho != null && c.trabalho != null ? c.trabalho - antes.trabalho : null;
+            return (
+              <TableRow key={c.colaborador} title={`Tela bloqueada ${pct(c.bloqueada)} · suspenso ${pct(c.suspenso)}`}>
+                <TableCell className="font-medium">{c.colaborador}</TableCell>
+                <TableCell className="text-right tabular-nums">{num(c.horas)} h</TableCell>
+                <TableCell className="text-center">{cel(c.trabalho, farol(c.trabalho, metaTrabalho, 'mais', true))}</TableCell>
+                <TableCell className="text-center">{cel(c.ocioso, farol(c.ocioso, metaOcioso, 'menos', true))}</TableCell>
+                <TableCell className="text-center tabular-nums text-muted-foreground whitespace-nowrap">
+                  {antes ? pct(antes.trabalho) : '—'}
+                  {subiu !== null && subiu !== 0 && (
+                    <span className={cn('ml-1 font-semibold', subiu > 0 ? 'text-status-success' : 'text-destructive')}>{subiu > 0 ? '▲' : '▼'}</span>
+                  )}
+                </TableCell>
+                <TableCell className="text-center"><SeloDoFarol f={statusDa(c)} /></TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </div>
   );
 }
 
@@ -130,7 +207,7 @@ const PARTES = [
  * com a barra). A linha escura é a meta de trabalho. Passar o mouse mostra as horas, os quatro números e a semana
  * anterior.
  */
-export function BarrasDaEquipe({ equipe }: { equipe: ReturnType<typeof useEquipeDoPeriodo> }) {
+export function BarrasDaEquipe({ equipe, compacto = false }: { equipe: ReturnType<typeof useEquipeDoPeriodo>; compacto?: boolean }) {
   const { doAtual: atual, doAnterior: anterior, metaTrabalho, statusDa } = equipe;
   const ordem = [...atual].sort((a, b) => (b.trabalho ?? -1) - (a.trabalho ?? -1));
   return (
@@ -145,7 +222,8 @@ export function BarrasDaEquipe({ equipe }: { equipe: ReturnType<typeof useEquipe
       {ordem.length === 0 ? (
         <p className="text-sm text-muted-foreground">Nenhuma semana do FSENSE confirmada neste período.</p>
       ) : (
-        <ul className="space-y-2">
+        // Compacto (apresentação): nome e horas numa linha só, para 10 pessoas caberem sem rolar.
+        <ul className={compacto ? 'space-y-1.5' : 'space-y-2'}>
           {ordem.map((c) => {
             const antes = anterior.find((a) => a.colaborador.toLowerCase() === c.colaborador.toLowerCase());
             const status = statusDa(c);
@@ -153,7 +231,7 @@ export function BarrasDaEquipe({ equipe }: { equipe: ReturnType<typeof useEquipe
               <li key={c.colaborador} className="grid grid-cols-[minmax(96px,150px)_1fr_auto] items-center gap-3 text-sm">
                 <span className="min-w-0">
                   <span className="block truncate font-medium">{c.colaborador}</span>
-                  <span className="block text-xs text-muted-foreground tabular-nums">{num(c.horas)} h medidas</span>
+                  <span className={cn('text-xs text-muted-foreground tabular-nums', compacto ? 'hidden' : 'block')}>{num(c.horas)} h medidas</span>
                 </span>
                 <Tooltip>
                   <TooltipTrigger asChild>

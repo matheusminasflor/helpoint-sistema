@@ -23,7 +23,7 @@ describe('a linha das últimas semanas dos indicadores de chamado', () => {
       c('2026-10-21T09:00:00-03:00', '2026-10-22T09:00:00-03:00', '2026-10-21T17:00:00-03:00'), // fora, 24 h
       c('2026-10-27T09:00:00-03:00', null, null), // sem prazo: fora da conta de SLA
     ], inicios, fim, agora);
-    expect(serie[0]).toEqual({ sla: 50, primeira: 50, tempo: 14, resolvidos: 2 });
-    expect(serie[1]).toEqual({ sla: null, primeira: null, tempo: null, resolvidos: 0 });
+    expect(serie[0]).toEqual({ total: 2, sla: 50, primeira: 50, tempo: 14, resolvidos: 2 });
+    expect(serie[1]).toEqual({ total: 1, sla: null, primeira: null, tempo: null, resolvidos: 0 });
   });
 });

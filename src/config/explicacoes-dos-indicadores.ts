@@ -96,7 +96,7 @@ export const EXPLICACOES = {
     titulo: 'Indicadores do período',
     oQueE: 'Os números principais do atendimento, lado a lado com o período anterior.',
     deOndeVem: 'A fila de chamados do setor.',
-    comoCalcula: `${PERIODO_DOS_CHAMADOS} "Anterior" é o mesmo tamanho de período, logo antes deste. A seta mostra quanto subiu ou desceu: em %, ou em pontos (p.p.) nos indicadores que já são percentual; quando os dois números são pequenos (menos de 20), mostra a diferença ("+6"), porque de 1 para 7 não é "+600%". Nas linhas com ícone de informação, toque ou passe o mouse para ver os chamados.`,
+    comoCalcula: `${PERIODO_DOS_CHAMADOS} "Anterior" é o mesmo tamanho de período, logo antes deste. A seta mostra quanto subiu ou desceu: em %, ou em pontos nos indicadores que já são percentual (de 71% para 76% são 5 pontos); quando os dois números são pequenos (menos de 20), mostra a diferença ("+6"), porque de 1 para 7 não é "+600%". Nas linhas com ícone de informação, toque ou passe o mouse para ver os chamados.`,
   },
   'chamados.evolucao': {
     titulo: 'Evolução: abertos × resolvidos',

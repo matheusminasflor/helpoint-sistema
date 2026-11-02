@@ -17,7 +17,7 @@ export interface ChamadoDaSerie {
   first_response_due_at?: string | null;
 }
 
-export interface PontoDaSerie { sla: number | null; primeira: number | null; tempo: number | null; resolvidos: number }
+export interface PontoDaSerie { total: number; sla: number | null; primeira: number | null; tempo: number | null; resolvidos: number }
 
 /** `inicios` em ordem; cada período vai do seu início ao início do próximo (o último, até `fim`). */
 export function serieDosChamados(chamados: ChamadoDaSerie[], inicios: Date[], fim: Date, agora: Date): PontoDaSerie[] {
@@ -29,6 +29,7 @@ export function serieDosChamados(chamados: ChamadoDaSerie[], inicios: Date[], fi
     const resolvidos = doPeriodo.filter((c) => c.resolved_at);
     const horas = resolvidos.reduce((a, c) => a + (new Date(c.resolved_at!).getTime() - new Date(c.created_at).getTime()) / 3_600_000, 0);
     return {
+      total: doPeriodo.length,
       sla: sla.length ? Math.round((sla.filter((s) => s.cumpriu).length / sla.length) * 100) : null,
       primeira: resposta.length ? Math.round((resposta.filter((s) => s.cumpriu).length / resposta.length) * 100) : null,
       tempo: resolvidos.length ? Math.round((horas / resolvidos.length) * 10) / 10 : null,

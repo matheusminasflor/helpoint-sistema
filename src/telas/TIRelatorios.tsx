@@ -32,10 +32,10 @@ import { ExportPDFDialog } from '@/components/dashboard/ExportPDFDialog';
 import { CategoriasDosChamados } from '@/components/ti/CategoriasDosChamados';
 import { arvoreDosChamados, type No } from '@/lib/arvore-de-categorias';
 import type { DadosDaTINoPDF } from '@/components/dashboard/PDFReportGenerator';
-import { BarrasDaEquipe, CartoesDaEquipe, EquipeDaTI } from '@/components/ti/EquipeDaTI';
+import { BarrasDaEquipe, CartoesDaEquipe, EquipeDaTI, EquipeNoAnalitico } from '@/components/ti/EquipeDaTI';
 import { ModoApresentacao } from '@/components/dashboard/ModoApresentacao';
 import { ProjetosDaTI } from '@/components/ti/ProjetosDaTI';
-import { META_DA_TI, metaEmVigor } from '@/config/metas-da-ti';
+import { META_DA_TI, metaNoDia, notaDaMeta } from '@/config/metas-da-ti';
 import { useEquipeDoPeriodo, useSemanasDoFsenseAConfirmar } from '@/hooks/useEquipeDaTI';
 import {
   useTicketMetrics, useTicketTrends, usePreviousMetrics, useViolatedSlaTickets, MetricsFilter, filtroDoPeriodo,
@@ -47,12 +47,12 @@ import { useContracts } from '@/hooks/useContracts';
 import { useMaintenances } from '@/hooks/useMaintenances';
 import { useMembrosDoSetor } from '@/hooks/useMembrosDoSetor';
 import { useConfiguracaoDosSetores, usePodeVerEquipe } from '@/hooks/useAccessProfiles';
-import { useMetasDosSetores } from '@/hooks/useDiretoria';
+import { useMetasDaTI } from '@/hooks/useMetasDaTI';
 import { useKanbanReportMetrics, ReportFilter } from '@/hooks/useReportMetrics';
 import { useLyraChat } from '@/hooks/useLyraChat';
 import { useAISecretary } from '@/hooks/useAISecretary';
 import { useIALigada } from '@/hooks/useAssistantName';
-import { AlertTriangle, BarChart3, BrainCircuit, CheckCircle2, ChevronDown, Clock, Download, FileKey, Monitor, Presentation, ShieldCheck, Target, Timer, Wrench } from 'lucide-react';
+import { AlertTriangle, BarChart3, BrainCircuit, CheckCircle2, ChevronDown, Clock, Download, FileKey, Inbox, Monitor, Presentation, ShieldCheck, Target, Timer, Wrench } from 'lucide-react';
 import { AIIndicatorAnalysis } from '@/components/dashboard/AIIndicatorAnalysis';
 import { Link, useNavigate } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
@@ -67,8 +67,7 @@ import {
 import { fraseDoResumo } from '@/lib/resumo-da-ti';
 import { diasAlemDoTermino, resumoDosProjetos } from '@/lib/projetos';
 import { useProjetosDoSetor } from '@/hooks/useProjetos';
-import { EquipePorSemana } from '@/components/ti/EquipePorSemana';
-import { textoDaMeta } from '@/lib/meta-do-indicador';
+
 import type { AssetCategory } from '@/types/helpdesk';
 
 // O recorte da reunião de segunda primeiro (dono, 2026-11-01). Links antigos (`?periodo=30d`) continuam abrindo.
@@ -80,13 +79,13 @@ const PERIODOS = [
   { value: PERSONALIZADO, label: 'Personalizado' },
 ];
 
-// O índice do Analítico: as âncoras moram nos cartões (`IndicatorsView`, `EquipePorSemana`, `ProjetosDaTI`).
+// O índice do Analítico: as âncoras moram nos cartões (`IndicatorsView`, `EquipeNoAnalitico`, `ProjetosDaTI`).
 const SECOES_DO_ANALITICO = [
   { id: 'analitico-chamados', rotulo: 'Chamados' },
   { id: 'analitico-categorias', rotulo: 'Categorias' },
   { id: 'analitico-atencao', rotulo: 'Fora do prazo agora' },
   { id: 'analitico-pessoas', rotulo: 'Por técnico e quem abre' },
-  { id: 'analitico-equipe', rotulo: 'Equipe por semana' },
+  { id: 'analitico-equipe', rotulo: 'Eficiência por pessoa' },
   { id: 'analitico-projetos', rotulo: 'Projetos' },
   { id: 'analitico-ativos', rotulo: 'Ativos e contratos' },
 ];
@@ -122,7 +121,7 @@ export default function TIRelatorios() {
   const { data: licenses } = useLicenses();
   const { data: contracts } = useContracts();
   const { data: maintenances } = useMaintenances();
-  const metas = useMetasDosSetores();
+  const metas = useMetasDaTI();
   // Só quem atende a TI, e só para quem tem "Ver métricas da equipe"; "Exportar" segue a caixinha "Exportar".
   const { data: technicians } = useMembrosDoSetor('ti');
   const podeVerEquipe = usePodeVerEquipe('tickets');
@@ -171,19 +170,18 @@ export default function TIRelatorios() {
   const contratosVencendo = contracts?.filter(c => venceEm30(c.end_date)) || [];
   const manutencoesProximas = maintenances?.filter(m => venceEm30(m.scheduled_date) && ['scheduled', 'in_progress'].includes(m.status)) || [];
 
-  // A meta em vigor: a gravada em Configurações de TI › Metas, ou o padrão (mercado + histórico; rodada 2).
-  const meta = (chave: string) => metaEmVigor(metas.data, chave);
-  const fmtMeta = (v: number | undefined, sufixo: string) => (v === undefined ? undefined : `${v.toLocaleString('pt-BR')}${sufixo}`);
+  // A meta é o degrau em vigor no último dia do período (rodada 3: a meta sobe em degraus; padrão em
+  // `config/metas-da-ti`, mudado em Configurações de TI › Metas).
+  const meta = (chave: string) => metaNoDia(metas.data, chave, intervaloDaTela.ate);
+  const n1Meta = (sufixo: string) => (v: number) => `${v.toLocaleString('pt-BR')}${sufixo}`;
   const sla = metrics?.slaCompliance ?? 0;
   const primeira = metrics?.firstResponseCompliance ?? 0;
   const tempo = metrics?.avgResolutionTime ?? 0;
   const farolSla = farol(metrics ? sla : null, meta('sla_cumprido'), 'mais', true);
   const farolPrimeira = farol(metrics ? primeira : null, meta('primeira_resposta'), 'mais', true);
   const farolTempo = farol(metrics ? tempo : null, meta('tempo_medio_horas'), 'menos');
-  const notaDaMeta = (v: number | undefined, sufixo: string, sentido: 'mais' | 'menos') => {
-    const t = fmtMeta(v, sufixo);
-    return t ? textoDaMeta(t, sentido) : undefined;
-  };
+  // "meta de novembro: pelo menos 80% · em janeiro sobe para 85%".
+  const notaDoCartao = (chave: string, sufixo: string) => notaDaMeta(metas.data, chave, intervaloDaTela.ate, n1Meta(sufixo));
 
   // Semana do FSENSE lançada e não confirmada (rodada 2): sem confirmar, a reunião mostra "Sem dado". A mais recente; se
   // ela está no período da tela, o aviso só desce até o bloco Equipe; senão, abre o período dela.
@@ -234,6 +232,7 @@ export default function TIRelatorios() {
   const dadosDaTINoPDF: DadosDaTINoPDF = {
     resumo: frase,
     chamados: [
+      { indicador: 'Total de chamados', meta: '—', anterior: anterior ? `${anterior.total}` : '—', atual: `${metrics?.total ?? 0}`, status: 'sem_meta' },
       { indicador: 'SLA cumprido', meta: textoDaMetaNoPdf(meta('sla_cumprido'), '%', 'mais'), anterior: anterior ? `${anterior.slaCompliance}%` : '—', atual: `${sla}%`, status: farolSla },
       { indicador: '1ª resposta no prazo', meta: textoDaMetaNoPdf(meta('primeira_resposta'), '%', 'mais'), anterior: anterior ? `${anterior.firstResponseCompliance}%` : '—', atual: `${primeira}%`, status: farolPrimeira },
       { indicador: 'Tempo médio de resolução', meta: textoDaMetaNoPdf(meta('tempo_medio_horas'), ' h', 'menos'), anterior: anterior ? formatarHoras(anterior.avgResolutionTime) : '—', atual: formatarHoras(tempo), status: farolTempo },
@@ -257,25 +256,31 @@ export default function TIRelatorios() {
     categorias: achatar(arvoreDosChamados(metrics?.chamados ?? [])),
   };
 
-  // Os quatro números de chamado: na Visão Geral e na tela 2 do modo apresentação.
+  // Os cinco números de chamado: na Visão Geral e na tela 2 do modo apresentação. O total entrou como quinto cartão
+  // (dono, 2026-11-02: "é legal ter total de chamados e quantos foram resolvidos"; antes só estava na frase).
   const cartoesDosChamados = (
-                <KPIGrid lgCols={4}>
-                  <KPICard value={`${sla}%`} numero={sla} label="SLA cumprido" icon={ShieldCheck} color={COR_DO_FAROL[farolSla]}
-                    anterior={anterior?.slaCompliance ?? null} melhorQuando="mais" formatarDiferenca={(n) => `${n} p.p.`}
-                    nota={notaDaMeta(meta('sla_cumprido'), '%', 'mais')} notaRuim={farolSla === 'fora'} explicacao="chamados.sla_cumprido"
-                    serie={serie?.map((p) => p.sla)} rotuloDaSerie={rotuloDaSerie} />
-                  <KPICard value={`${primeira}%`} numero={primeira} label="1ª resposta no prazo" icon={Timer} color={COR_DO_FAROL[farolPrimeira]}
-                    anterior={anterior?.firstResponseCompliance ?? null} melhorQuando="mais" formatarDiferenca={(n) => `${n} p.p.`}
-                    nota={notaDaMeta(meta('primeira_resposta'), '%', 'mais')} notaRuim={farolPrimeira === 'fora'} explicacao="chamados.primeira_resposta_no_prazo"
-                    serie={serie?.map((p) => p.primeira)} rotuloDaSerie={rotuloDaSerie} />
-                  <KPICard value={formatarHoras(tempo)} numero={tempo} label="Tempo médio de resolução" icon={Clock} color={COR_DO_FAROL[farolTempo]}
-                    anterior={anterior?.avgResolutionTime ?? null} melhorQuando="menos" formatarDiferenca={(n) => formatarHoras(Math.abs(n))}
-                    nota={notaDaMeta(meta('tempo_medio_horas'), ' h', 'menos')} notaRuim={farolTempo === 'fora'} explicacao="chamados.tempo_medio_resolucao"
-                    serie={serie?.map((p) => p.tempo)} rotuloDaSerie={rotuloDaSerie} />
+                <KPIGrid lgCols={5}>
+                  <KPICard value={metrics?.total ?? 0} label="Total de chamados" icon={Inbox} color="blue"
+                    anterior={anterior?.total ?? null} melhorQuando="neutro" explicacao="chamados.total"
+                    serie={serie?.map((p) => p.total)} rotuloDaSerie={rotuloDaSerie}
+                    onClick={() => navigate(tenantPath('/ti/chamados'))} />
                   <KPICard value={metrics?.resolved ?? 0} label="Chamados resolvidos" icon={CheckCircle2} color="green"
+                    nota={metrics?.total ? `${Math.round((metrics.resolved / metrics.total) * 100)}% do total` : undefined}
                     anterior={anterior?.resolved ?? null} melhorQuando="mais" explicacao="chamados.resolvidos"
                     serie={serie?.map((p) => p.resolvidos)} rotuloDaSerie={rotuloDaSerie}
                     onClick={() => navigate(tenantPath('/ti/chamados?status=resolved'))} />
+                  <KPICard value={`${sla}%`} numero={sla} label="SLA cumprido" icon={ShieldCheck} color={COR_DO_FAROL[farolSla]}
+                    anterior={anterior?.slaCompliance ?? null} melhorQuando="mais" formatarDiferenca={(n) => `${n} pontos`}
+                    nota={notaDoCartao('sla_cumprido', '%')} notaRuim={farolSla === 'fora'} explicacao="chamados.sla_cumprido"
+                    serie={serie?.map((p) => p.sla)} rotuloDaSerie={rotuloDaSerie} />
+                  <KPICard value={`${primeira}%`} numero={primeira} label="1ª resposta no prazo" icon={Timer} color={COR_DO_FAROL[farolPrimeira]}
+                    anterior={anterior?.firstResponseCompliance ?? null} melhorQuando="mais" formatarDiferenca={(n) => `${n} pontos`}
+                    nota={notaDoCartao('primeira_resposta', '%')} notaRuim={farolPrimeira === 'fora'} explicacao="chamados.primeira_resposta_no_prazo"
+                    serie={serie?.map((p) => p.primeira)} rotuloDaSerie={rotuloDaSerie} />
+                  <KPICard value={formatarHoras(tempo)} numero={tempo} label="Tempo médio de resolução" icon={Clock} color={COR_DO_FAROL[farolTempo]}
+                    anterior={anterior?.avgResolutionTime ?? null} melhorQuando="menos" formatarDiferenca={(n) => formatarHoras(Math.abs(n))}
+                    nota={notaDoCartao('tempo_medio_horas', ' h')} notaRuim={farolTempo === 'fora'} explicacao="chamados.tempo_medio_resolucao"
+                    serie={serie?.map((p) => p.tempo)} rotuloDaSerie={rotuloDaSerie} />
                 </KPIGrid>
   );
 
@@ -428,7 +433,7 @@ export default function TIRelatorios() {
               expiringContractsList={contratosVencendo.map(c => ({ id: c.id, name: c.name, end_date: c.end_date }))}
               scheduledMaintenancesList={manutencoesProximas.map(m => ({ id: m.id, title: m.title, scheduled_date: m.scheduled_date, status: m.status, asset: m.asset }))}
             />
-            {podeVerEquipe && <EquipePorSemana ate={intervaloDaTela.ate} />}
+            <EquipeNoAnalitico intervalo={intervaloDaTela} />
             <ProjetosDaTI id="analitico-projetos" />
             <div id="analitico-ativos" className="scroll-mt-20">
               <Collapsible defaultOpen>
@@ -512,10 +517,10 @@ export default function TIRelatorios() {
             </div>
           ) },
           // 2 × 2 na apresentação: em 4 colunas, com a letra maior, a comparação quebrava em três linhas.
-          { titulo: 'Chamados', conteudo: <div className="[&_.faixa-de-numeros]:lg:grid-cols-2 max-w-4xl">{cartoesDosChamados}</div> },
+          { titulo: 'Chamados', conteudo: <div className="[&_.faixa-de-numeros]:lg:grid-cols-3">{cartoesDosChamados}</div> },
           { titulo: 'Chamados por categoria', conteudo: <CategoriasDosChamados chamados={metrics?.chamados ?? []} modulo="tickets" /> },
           ...(podeVerEquipe ? [{ titulo: 'Equipe', conteudo: (
-            <div className="space-y-6"><CartoesDaEquipe numeros={equipe.numeros} /><BarrasDaEquipe equipe={equipe} /></div>
+            <div className="space-y-6"><CartoesDaEquipe numeros={equipe.numeros} /><BarrasDaEquipe equipe={equipe} compacto /></div>
           ) }] : []),
           { titulo: 'Projetos da TI', conteudo: <ProjetosDaTI id="apresentacao-projetos" /> },
         ]} />

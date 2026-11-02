@@ -129,6 +129,39 @@ Proposta: https://claude.ai/artifact/8KiJeDHv7ZoM51iMDecrcU. Aprovadas as quatro
 3. A Visão Geral e o Analítico.
 4. O modo apresentação e o PDF.
 
+## Rodada 3 (dono, 2026-11-02)
+
+Proposta: https://claude.ai/artifact/Syu6gZsfGyds6BpHNRmRUY.
+
+- **Meta em escada.** A TI tem 1 pessoa no helpdesk e o dono, que é Líder de Recursos Operacionais e atende quando
+  dá. Projetos de infraestrutura param o helpdesk; essas paradas são registradas como pausa do setor.
+  - O SLA por semana foi 100%, 83%, 88%, 71% e 76% (média de 80% nas últimas 4 semanas). Com isso, 90% não se sustenta.
+  - Degraus padrão:
+
+    | Indicador | Nov–dez | Jan–fev | A partir de mar |
+    |---|---|---|---|
+    | SLA | 80% | 85% | 90% |
+    | 1ª resposta | 85% | 90% | 90% |
+    | Tempo médio | 24 h | 16 h | 12 h |
+    | Trabalho | 55% | 60% | 60% |
+    | Ocioso | 20% | 15% | 15% |
+    | Interrupções | 2 por mês, sempre | | |
+
+    O tempo médio conta horas corridas: os 8 h da rodada 2 estavam errados.
+  - O dono muda os degraus em Configurações de TI › Metas.
+  - A tela mostra a meta do mês e o próximo degrau.
+  - O período usa o degrau que vale no último dia dele.
+- **Total de chamados.** Um quinto cartão, "Total de chamados", e "Chamados resolvidos" continua.
+- **Eficiência por pessoa.** No Analítico, a "Equipe por semana" é trocada pela "Eficiência por pessoa", que obedece
+  ao filtro de período da tela.
+  - As cores são as mesmas: verde, amarelo e vermelho.
+  - Mostra horas, % trabalho, % ocioso, o anterior e o status.
+- **Jornal.** Toda notícia de melhoria sai no tom de comunicado da empresa (memória do dono).
+  - As notícias de 30/10 a 02/11 são reescritas.
+  - As duas sobre notícias viram uma só.
+  - As duas dos Indicadores da TI viram uma só, nova, para a TI e a Diretoria; as antigas saem do Jornal.
+- **Projetos.** Ficam para depois: o dono vai trazer os pontos.
+
 ## Marketing
 
 Parado até o dono reavaliar. O que foi medido em 2026-11-01 e pode servir depois: o Kommo responde leads por

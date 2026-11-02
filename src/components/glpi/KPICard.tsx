@@ -96,7 +96,7 @@ function KPICardSemExplicacao({
           return (
             <span className="mt-3 flex items-center gap-1.5 text-[14px] font-semibold text-muted-foreground tabular-nums">
               <Seta className={cn('w-5 h-5 shrink-0', piorou ? 'text-aviso' : 'text-status-success')} aria-hidden="true" />
-              <span className={piorou ? 'text-aviso' : 'text-status-success'}>{formatarDiferenca(Math.abs(dif))}</span>
+              <span className={cn('whitespace-nowrap', piorou ? 'text-aviso' : 'text-status-success')}>{formatarDiferenca(Math.abs(dif))}</span>
               {dif > 0 ? 'a mais que o anterior' : 'a menos que o anterior'}
             </span>
           );

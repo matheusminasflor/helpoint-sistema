@@ -7,7 +7,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(20);
+select plan(24);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-ti-semanal', 'TI semanal', false) as a;
@@ -116,6 +116,21 @@ select tests.clear_authentication();
 select tests.authenticate_as('leit@tisemanal.test');
 select throws_ok($$ insert into public.dir_metas_dos_setores (tenant_id, setor, indicador, meta)
   select a, 'ti', 'primeira_resposta', 80 from f $$, '42501', null, 'quem só vê a configuração da TI não muda meta');
+select tests.clear_authentication();
+
+-- ═══ 21-24. Rodada 3 (20270212190000): a meta em degraus. Quem configura a TI grava a escada inteira de uma vez;
+-- gravar de novo substitui; quem vê os Indicadores lê, e não grava. ═══
+select tests.authenticate_as('gest@tisemanal.test');
+select is(public.ti_metas_salvar('sla_cumprido', '[{"a_partir_de": "2026-11-01", "meta": 80}, {"a_partir_de": "2027-01-01", "meta": 85}]'::jsonb), 2,
+  'quem configura a TI grava a escada do SLA');
+select public.ti_metas_salvar('sla_cumprido', '[{"a_partir_de": "2026-11-01", "meta": 75}]'::jsonb);
+select is((select format('%s %s', count(*), max(meta)) from public.ti_metas_degraus where indicador = 'sla_cumprido'), '1 75',
+  'gravar de novo substitui a escada inteira');
+select tests.clear_authentication();
+select tests.authenticate_as('leit@tisemanal.test');
+select is((select count(*)::int from public.ti_metas_degraus), 1, 'quem ve os Indicadores da TI le os degraus');
+select throws_ok($$ insert into public.ti_metas_degraus (tenant_id, indicador, a_partir_de, meta)
+  select a, 'sla_cumprido', date '2027-03-01', 90 from f $$, '42501', null, 'e nao grava degrau');
 select tests.clear_authentication();
 
 select * from finish();

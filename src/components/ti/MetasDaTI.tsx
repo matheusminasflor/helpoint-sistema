@@ -1,47 +1,61 @@
-// Configurações de TI › Metas (dono, 2026-11-02, rodada 2): cada indicador da TI com o padrão de mercado ao lado e a
-// meta em vigor. Quem altera a aba Chamados da configuração da TI, ou define metas na Diretoria, muda aqui; o banco
-// confere o mesmo (`dir_metas_ti_configura`, 20270212180000). Em branco = volta ao padrão.
+// Configurações de TI › Metas. Rodada 2 (dono, 2026-11-02): cada indicador com o padrão de mercado ao lado. Rodada 3
+// (mesmo dia): a meta sobe em DEGRAUS — "a partir de tal mês, tal meta" (`ti_metas_degraus`, 20270212190000). Cada
+// indicador já vem com a escada padrão (`config/metas-da-ti`); mudar grava a escada inteira, e "Voltar ao padrão"
+// apaga a gravada. Quem altera a aba Chamados da configuração da TI, ou define metas na Diretoria, muda aqui; o banco
+// confere o mesmo.
 import { useEffect, useState } from 'react';
-import { RotateCcw } from 'lucide-react';
+import { Plus, RotateCcw, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { METAS_DA_TI } from '@/config/metas-da-ti';
+import { METAS_DA_TI, escadaDe, nomeDoMes, type Degrau } from '@/config/metas-da-ti';
 import { useConfiguracaoDosSetores } from '@/hooks/useAccessProfiles';
-import { useMetasDosSetores, useSalvarMetaDoSetor } from '@/hooks/useDiretoria';
+import { useMetasDaTI, useSalvarEscadaDaTI } from '@/hooks/useMetasDaTI';
 import { mensagemDeErro } from '@/lib/supabase-result';
 
-const texto = (v: number | undefined) => (v === undefined ? '' : String(v).replace('.', ','));
-const mostrar = (v: number, unidade: string) => `${v.toLocaleString('pt-BR')}${unidade}`;
+// O degrau na tela: o mês ("2026-11", o `<input type="month">`) e a meta como a pessoa digitou ("80" ou "12,5").
+interface DegrauNaTela { mes: string; meta: string }
+const paraTela = (d: Degrau): DegrauNaTela => ({ mes: d.a_partir_de.slice(0, 7), meta: String(d.meta).replace('.', ',') });
+const iguais = (a: DegrauNaTela[], b: DegrauNaTela[]) => JSON.stringify(a) === JSON.stringify(b);
 
 export function MetasDaTI({ podeAlterarAba }: { podeAlterarAba: boolean }) {
-  const metas = useMetasDosSetores();
+  const metas = useMetasDaTI();
   const perfil = useConfiguracaoDosSetores();
   const pode = podeAlterarAba || perfil.pode('diretoria', 'indicadores', 'definir_metas');
-  const salvar = useSalvarMetaDoSetor();
-  const [valores, setValores] = useState<Record<string, string>>({});
-  const gravada = (chave: string) => metas.data?.get(`ti.${chave}`);
+  const salvar = useSalvarEscadaDaTI();
+  const [escadas, setEscadas] = useState<Record<string, DegrauNaTela[]>>({});
 
   useEffect(() => {
-    if (metas.data) setValores(Object.fromEntries(METAS_DA_TI.map((m) => [m.chave, texto(gravada(m.chave))])));
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- recarrega só quando o banco responde
+    if (metas.data) setEscadas(Object.fromEntries(METAS_DA_TI.map((m) => [m.chave, escadaDe(metas.data, m.chave).map(paraTela)])));
   }, [metas.data]);
+
+  const mudar = (chave: string, i: number, campo: keyof DegrauNaTela, valor: string) =>
+    setEscadas((e) => ({ ...e, [chave]: e[chave].map((d, j) => (j === i ? { ...d, [campo]: valor } : d)) }));
 
   const enviar = async () => {
     try {
       let mudou = 0;
       for (const m of METAS_DA_TI) {
-        const t = (valores[m.chave] ?? '').trim();
-        const novo = t === '' ? null : Number(t.replace(',', '.'));
-        if (novo !== null && (Number.isNaN(novo) || novo < 0 || (m.percentual && novo > 100))) {
-          toast.error(`${m.rotulo}: escreva um número${m.percentual ? ' de 0 a 100' : ''}.`);
+        const tela = escadas[m.chave] ?? [];
+        const gravada = metas.data?.get(m.chave) ?? [];
+        const padrao = m.escada.map(paraTela);
+        // Igual ao que já vale: nada a gravar. Igual ao padrão: apaga a gravada (volta a seguir o padrão).
+        if (iguais(tela, (gravada.length ? gravada : m.escada).map(paraTela))) continue;
+        const degraus: Degrau[] = [];
+        for (const d of tela) {
+          const n = Number(d.meta.replace(',', '.'));
+          if (!d.mes || d.meta.trim() === '' || Number.isNaN(n) || n < 0 || (m.percentual && n > 100)) {
+            toast.error(`${m.rotulo}: cada degrau precisa do mês e de um número${m.percentual ? ' de 0 a 100' : ''}.`);
+            return;
+          }
+          degraus.push({ a_partir_de: `${d.mes}-01`, meta: n });
+        }
+        if (new Set(degraus.map((d) => d.a_partir_de)).size !== degraus.length) {
+          toast.error(`${m.rotulo}: dois degraus no mesmo mês.`);
           return;
         }
-        const atual = gravada(m.chave);
-        if ((novo ?? undefined) === atual) continue;
-        await salvar.mutateAsync({ setor: 'ti', indicador: m.chave, meta: novo });
+        await salvar.mutateAsync({ indicador: m.chave, degraus: iguais(tela, padrao) ? [] : degraus });
         mudou++;
       }
       toast.success(mudou ? 'Metas salvas. Já valem nos Indicadores da TI.' : 'Nada mudou.');
@@ -55,42 +69,57 @@ export function MetasDaTI({ podeAlterarAba }: { podeAlterarAba: boolean }) {
       <CardHeader>
         <CardTitle className="text-base">Metas dos Indicadores da TI</CardTitle>
         <CardDescription>
-          Cada indicador já nasce com uma meta padrão (o mercado e o histórico da empresa). Escreva outra para mudar; em
-          branco, vale o padrão. Valem para qualquer período; a de interrupções é por mês e o período leva a parte dele.
+          A meta sobe em degraus: a partir de cada mês, uma meta. Cada indicador já vem com uma escada (a média de hoje
+          primeiro, o padrão de mercado no fim). Mude os degraus quando quiser; um período usa o degrau do último dia dele.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Indicador</TableHead><TableHead>Mercado</TableHead>
-                <TableHead className="text-right">Padrão</TableHead><TableHead className="w-[170px]">Meta da empresa</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {METAS_DA_TI.map((m) => (
-                <TableRow key={m.chave}>
-                  <TableCell className="font-medium align-top">{m.rotulo}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground align-top max-w-[380px]">{m.mercado}</TableCell>
-                  <TableCell className="text-right tabular-nums align-top whitespace-nowrap">{mostrar(m.padrao, m.unidade)}</TableCell>
-                  <TableCell className="align-top">
-                    <div className="flex items-center gap-1">
-                      <Input id={`meta-ti-${m.chave}`} inputMode="decimal" className="h-8 w-24 text-right tabular-nums"
-                        aria-label={`Meta da empresa: ${m.rotulo}`} placeholder={texto(m.padrao)} disabled={!pode}
-                        value={valores[m.chave] ?? ''} onChange={(e) => setValores({ ...valores, [m.chave]: e.target.value })} />
-                      <span className="text-xs text-muted-foreground whitespace-nowrap">{m.unidade.trim()}</span>
-                      {pode && (valores[m.chave] ?? '') !== '' && (
-                        <Button variant="ghost" size="icon" className="h-7 w-7" aria-label={`Voltar ${m.rotulo} ao padrão`}
-                          onClick={() => setValores({ ...valores, [m.chave]: '' })}><RotateCcw className="h-3.5 w-3.5" /></Button>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+      <CardContent className="space-y-5">
+        {METAS_DA_TI.map((m) => {
+          const lista = escadas[m.chave] ?? [];
+          const ePadrao = iguais(lista, m.escada.map(paraTela));
+          return (
+            <div key={m.chave} className="rounded-lg border p-4 space-y-3">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div className="min-w-0 space-y-0.5">
+                  <h4 className="font-medium">{m.rotulo}</h4>
+                  <p className="text-sm text-muted-foreground max-w-[70ch]">{m.mercado}</p>
+                </div>
+                {pode && !ePadrao && (
+                  <Button variant="ghost" size="sm" onClick={() => setEscadas((e) => ({ ...e, [m.chave]: m.escada.map(paraTela) }))}>
+                    <RotateCcw className="h-3.5 w-3.5 mr-1.5" />Voltar ao padrão
+                  </Button>
+                )}
+              </div>
+              <ol className="flex flex-wrap gap-2">
+                {lista.map((d, i) => (
+                  <li key={i} className="flex items-center gap-1.5 rounded-md bg-muted/50 px-2 py-1.5">
+                    <span className="text-xs text-muted-foreground">a partir de</span>
+                    <Input type="month" value={d.mes} disabled={!pode} className="h-8 w-[150px]" aria-label={`${m.rotulo}: mês do degrau ${i + 1}`}
+                      id={`meta-${m.chave}-${i}-mes`} onChange={(e) => mudar(m.chave, i, 'mes', e.target.value)} />
+                    <Input inputMode="decimal" value={d.meta} disabled={!pode} className="h-8 w-20 text-right tabular-nums"
+                      aria-label={`${m.rotulo}: meta do degrau ${i + 1}`} id={`meta-${m.chave}-${i}-valor`}
+                      onChange={(e) => mudar(m.chave, i, 'meta', e.target.value)} />
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">{m.unidade.trim()}</span>
+                    {pode && lista.length > 1 && (
+                      <Button variant="ghost" size="icon" className="h-7 w-7" aria-label={`Tirar o degrau de ${d.mes ? nomeDoMes(`${d.mes}-01`) : 'mês vazio'}`}
+                        onClick={() => setEscadas((e) => ({ ...e, [m.chave]: e[m.chave].filter((_, j) => j !== i) }))}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
+                  </li>
+                ))}
+                {pode && (
+                  <li>
+                    <Button variant="outline" size="sm" className="h-11"
+                      onClick={() => setEscadas((e) => ({ ...e, [m.chave]: [...(e[m.chave] ?? []), { mes: '', meta: '' }] }))}>
+                      <Plus className="h-3.5 w-3.5 mr-1" />Degrau
+                    </Button>
+                  </li>
+                )}
+              </ol>
+            </div>
+          );
+        })}
         {pode ? (
           <div className="flex justify-end"><Button onClick={enviar} disabled={salvar.isPending || metas.isLoading}>Salvar metas</Button></div>
         ) : (

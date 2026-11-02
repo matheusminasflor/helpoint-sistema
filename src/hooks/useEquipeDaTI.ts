@@ -4,8 +4,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { expectRows, unwrap } from '@/lib/supabase-result';
-import { META_DA_TI, metaEmVigor } from '@/config/metas-da-ti';
-import { useMetasDosSetores } from '@/hooks/useDiretoria';
+import { META_DA_TI, metaNoDia, notaDaMeta } from '@/config/metas-da-ti';
+import { useMetasDaTI } from '@/hooks/useMetasDaTI';
 import { toLocalISODate } from '@/lib/dates';
 import type { IntervaloDeDias } from '@/lib/period';
 import {
@@ -179,6 +179,8 @@ export interface NumeroDaEquipe {
   /** A meta já no período (a de interrupções é proporcional) e o texto dela: "60%", "0,5 no período (2 por mês)". */
   meta: number | undefined;
   metaTexto: string | undefined;
+  /** A linha do cartão: "meta de novembro: pelo menos 55% · em janeiro sobe para 60%". */
+  nota: string | undefined;
   farol: Farol;
   extra?: string;
 }
@@ -191,7 +193,9 @@ export function useEquipeDoPeriodo(intervalo: IntervaloDeDias, podeVerEquipe: bo
   const dias = diasDoPeriodo(atual);
   const fsense = useFsense({ de: anterior.de, ate: atual.ate });
   const interrupcoes = useInterrupcoes({ de: anterior.de, ate: atual.ate });
-  const metas = useMetasDosSetores();
+  const metas = useMetasDaTI();
+  // A meta é a do degrau em vigor no último dia do período (rodada 3).
+  const dia = intervalo.ate;
 
   // O FSENSE conta pela semana lançada (o dia que a fecha cai no período) e só depois de confirmada.
   const confirmadas = (fsense.data ?? []).filter((l) => l.confirmado_em);
@@ -200,17 +204,21 @@ export function useEquipeDoPeriodo(intervalo: IntervaloDeDias, podeVerEquipe: bo
   const lista = interrupcoes.data ?? [];
   const doPeriodo = (p: Periodo) => lista.filter((i) => dentro(toLocalISODate(new Date(i.inicio)), p));
   const horas = horasParadas(lista, atual);
-  const metaTrabalho = metaEmVigor(metas.data, 'fsense_trabalho');
-  const metaOcioso = metaEmVigor(metas.data, 'fsense_ocioso');
+  const metaTrabalho = metaNoDia(metas.data, 'fsense_trabalho', dia);
+  const metaOcioso = metaNoDia(metas.data, 'fsense_ocioso', dia);
 
   const numero = (chave: NumeroDaEquipe['chave'], nome: string, valor: number | null, antes: number | null, extra?: string): NumeroDaEquipe => {
     const def = META_DA_TI[chave];
-    const mensal = metaEmVigor(metas.data, chave);
+    const mensal = metaNoDia(metas.data, chave, dia);
     const meta = metaDoPeriodo(mensal, dias, !!def.proporcional);
     const fmt = (v: number) => (def.percentual ? `${num(v)}%` : num(v));
+    // Curta, para não quebrar linha no cartão nem na apresentação: "até 0,5 (2 por mês)".
     const metaTexto = meta === undefined ? undefined
-      : def.proporcional && meta !== mensal ? `${num(meta)} no período (${num(mensal!)}${def.unidade})` : fmt(meta);
-    return { chave, nome, atual: valor, anterior: antes, meta, metaTexto, farol: farol(valor, meta, def.sentido, def.percentual), extra };
+      : def.proporcional && meta !== mensal ? `${num(meta)} (${num(mensal!)}${def.unidade})` : fmt(meta);
+    const nota = def.proporcional
+      ? (metaTexto && `meta: até ${metaTexto}`)
+      : notaDaMeta(metas.data, chave, dia, fmt);
+    return { chave, nome, atual: valor, anterior: antes, meta, metaTexto, nota, farol: farol(valor, meta, def.sentido, def.percentual), extra };
   };
 
   const numeros: NumeroDaEquipe[] = [
@@ -227,6 +235,8 @@ export function useEquipeDoPeriodo(intervalo: IntervaloDeDias, podeVerEquipe: bo
   return {
     doAtual, doAnterior, numeros, statusDa, metaTrabalho, metaOcioso,
     lancamentos: (fsense.data ?? []).filter((l) => dentro(l.data, atual)),
+    /** Há semana lançada e não confirmada no período: só então a Visão Geral mostra os lançamentos (rodada 3). */
+    aConfirmar: (fsense.data ?? []).some((l) => dentro(l.data, atual) && !l.confirmado_em),
     interrupcoesDoPeriodo: doPeriodo(atual),
   };
 }
