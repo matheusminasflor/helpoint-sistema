@@ -2,7 +2,7 @@
 --
 --   gest  TI, Gestor (com "Lançar FSENSE e interrupções") — lança, confirma, vê tudo
 --   leit  TI, Somente leitura — vê as interrupções; NÃO vê a produtividade por pessoa; não lança
---   op    TI, Operador — sem os Indicadores: não vê nada
+--   op    TI sem perfil (o módulo só) — sem os Indicadores: não vê nada
 --   dono  dono — vê tudo e define a meta
 begin;
 \ir _helpers.psql
@@ -20,7 +20,6 @@ select tests.grant_module(x, (select a from f), 'ti')
   from (select gest x from u union all select leit from u union all select op from u) s;
 select tests.grant_profile((select gest from u), (select a from f), 'ti', 'Gestor');
 select tests.grant_profile((select leit from u), (select a from f), 'ti', 'Somente leitura');
-select tests.grant_profile((select op from u), (select a from f), 'ti', 'Operador');
 select tests.grant_role((select dono from u), 'owner');
 -- Empresa nova não nasce com a ação (ponytail da migration) nem com "Ver métricas da equipe" no Gestor: liga as duas,
 -- como o Gestor da TI está na Minasflor.
@@ -73,7 +72,7 @@ select throws_ok($$ insert into public.ti_interrupcoes (tenant_id, tipo, inicio)
   '42501', null, 'sem "Lançar" não registra interrupção');
 select tests.clear_authentication();
 
--- ═══ 12. Operador (sem os Indicadores): nada ═══
+-- ═══ 12. Sem perfil da TI (sem os Indicadores): nada ═══
 select tests.authenticate_as('op@tisemanal.test');
 select is((select count(*)::int from public.ti_interrupcoes) + (select count(*)::int from public.ti_fsense), 0,
   'sem os Indicadores da TI não vê nada');
