@@ -519,3 +519,50 @@ export function useProjetosDoSetor(setor: string) {
   const data = projetos.data && doSetor.data ? projetos.data.filter((p) => doSetor.data.has(p.id)) : undefined;
   return { data, isLoading: projetos.isLoading || doSetor.isLoading };
 }
+
+// ─── Sair do projeto (dono, 2026-11-02; 20270212200100) ────────────────────────────────────────────────
+// Quem sai dá o motivo e só sai sem atividade aberta (o banco confere e explica). Quem criou (ou o dono) vê as
+// saídas pendentes e chama de volta ou escolhe quem assume.
+
+export interface SaidaDoProjeto { id: string; user_id: string; motivo: string; saiu_em: string; nome: string }
+
+export function useSaidasPendentes(projectId: string, habilitado: boolean) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['projeto-saidas', tenantId, projectId],
+    enabled: !!tenantId && !!projectId && habilitado,
+    queryFn: async (): Promise<SaidaDoProjeto[]> => {
+      const linhas = (unwrap(await supabase.from('project_saidas' as never)
+        .select('id, user_id, motivo, saiu_em').eq('project_id', projectId).is('resolvido_em', null).order('saiu_em'))
+        ?? []) as unknown as Omit<SaidaDoProjeto, 'nome'>[];
+      const nomes = await nomesDasPessoas(linhas.map((l) => l.user_id));
+      return linhas.map((l) => ({ ...l, nome: nomes[l.user_id] ?? 'Uma pessoa' }));
+    },
+  });
+}
+
+export function useSairDoProjeto() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ projectId, motivo }: { projectId: string; motivo: string }) => {
+      const id = unwrap(await supabase.rpc('projeto_sair' as never, { p_project: projectId, p_motivo: motivo } as never));
+      if (!id) throw new Error('Não deu para sair do projeto. Tente de novo.');
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['projetos'] }),
+  });
+}
+
+export function useResolverSaida(projectId: string) {
+  const { tenantId } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ saida, resolucao, substituto }: { saida: string; resolucao: 'voltou' | 'substituido'; substituto?: string }) => {
+      unwrap(await supabase.rpc('projeto_resolver_saida' as never,
+        { p_saida: saida, p_resolucao: resolucao, p_substituto: substituto ?? null } as never));
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['projeto-saidas', tenantId, projectId] });
+      qc.invalidateQueries({ queryKey: ['projeto-estrutura'] });
+    },
+  });
+}

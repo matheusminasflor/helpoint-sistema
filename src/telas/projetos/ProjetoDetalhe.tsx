@@ -20,6 +20,8 @@ import { AtividadeDialog } from '@/components/projetos/AtividadeDialog';
 import { AtividadePainel } from '@/components/projetos/AtividadePainel';
 import { AnexosDoProjeto } from '@/components/projetos/AnexosDoProjeto';
 import { SeloDoFarol } from '@/components/projetos/SeloDoFarol';
+import { SaidasPendentes, SairDoProjeto } from '@/components/projetos/SaidaDoProjeto';
+import { useAuth } from '@/contexts/AuthContext';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { useQueryState } from '@/hooks/useQueryState';
 import { SETORES, rotuloDoSetor } from '@/lib/setores';
@@ -37,6 +39,7 @@ export default function ProjetoDetalhe() {
   const { id = '' } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const tenantPath = useTenantPath();
+  const { user } = useAuth();
   const { data: projeto, isLoading } = useProjeto(id);
   const { data: estrutura } = useEstruturaDoProjeto(id);
   const setores = useMemo(() => (estrutura?.setores ?? []).map((s) => s.setor), [estrutura]);
@@ -70,6 +73,7 @@ export default function ProjetoDetalhe() {
   const atrasadas = atividades.filter((a) => farolDaAtividade(a, hoje) === 'atrasado').length;
   const comFator = atividades.filter((a) => a.fator_externo && a.status !== 'completed').length;
   const finalizadas = atividades.filter((a) => a.status === 'completed').length;
+  const quemComanda = !!user && (projeto.owner_id === user.id || projeto.created_by === user.id);
 
   return (
     <div className="flex flex-col h-full">
@@ -86,11 +90,14 @@ export default function ProjetoDetalhe() {
             {setoresQuePlanejo.length > 0 && (
               <Button onClick={() => novaTarefa(grupos.find((g) => g.fase)?.fase?.id ?? null)}><Plus className="w-4 h-4 mr-1.5" />Nova tarefa</Button>
             )}
+            {/* Sair (dono, 2026-11-02): quem foi chamado; quem criou ou comanda não sai. */}
+            {user && !quemComanda && estrutura.equipe.includes(user.id) && <SairDoProjeto projectId={id} nome={projeto.name} />}
           </div>
         )}
       />
 
       <div className="flex-1 overflow-y-auto px-4 lg:px-8 pb-6">
+        <SaidasPendentes projectId={id} quemComanda={quemComanda} />
         <div className="grid gap-4 grid-cols-2 lg:grid-cols-4 mb-5">
           <Kpi rotulo="Concluído" valor={`${percentualMedio(atividades)}%`} id="projetos.concluido" />
           <Kpi rotulo="Atrasadas" valor={String(atrasadas)} id="projetos.atrasadas" tom={atrasadas ? 'text-destructive' : ''} />

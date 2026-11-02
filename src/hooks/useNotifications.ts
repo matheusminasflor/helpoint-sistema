@@ -56,6 +56,8 @@ export type NotificationType =
   | 'projeto_atividade'
   | 'projeto_prazo'
   | 'projeto_dependencia'
+  // Saiu do projeto, chamado de volta ou assumiu o lugar (20270212200000).
+  | 'projeto_saida'
   // Atualização do sistema publicada no Jornal (2026-10-14; 20270111020000).
   | 'system_update'
   // Pedido de solicitação (etapa 4b) e distribuidor pedindo acesso ao portal (etapa 6).

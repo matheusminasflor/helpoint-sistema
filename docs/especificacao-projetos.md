@@ -34,6 +34,24 @@ fases e atividades de todos os setores: **cada setor sabe o que deve fazer**. En
 - **Atividade pode nascer só do setor** (sem pessoa); aparece como "sem responsável" para o gestor do setor.
 - O histórico guarda quem mudou o quê.
 
+## Sair do projeto (dono, 2026-11-02)
+
+Desenho: https://claude.ai/artifact/2o3k7KJoZ5Fy1Lf5DuGj1B, parte 4.
+
+- **Quem vê:** continua como está. Um projeto aparece só para:
+  - o criador, o dono e quem foi chamado;
+  - quem tem o módulo Diretoria (conferido em 2026-11-02: hoje ninguém tem).
+- **Botão "Sair do projeto"** para quem foi chamado. O motivo é obrigatório.
+- **Só sai quem não tem atividade aberta** (pendente ou em andamento) no projeto; as concluídas não impedem. Se tiver
+  atividade aberta, a tela diz quais são e o que fazer: concluir, ou pedir para passarem a outra pessoa.
+- **Quem criou o projeto não sai.** Para deixar o projeto, primeiro passa o comando a outra pessoa.
+- **Ao sair:**
+  - quem criou o projeto é avisado com o motivo;
+  - o aviso tem duas opções: "Chamar de volta" ou **escolher quem assume no lugar** de quem saiu;
+  - quem assume entra na equipe e, se quem saiu era a referência de um setor, vira a referência;
+  - o gestor do setor de quem saiu também é avisado.
+- **Histórico:** registra quem saiu, quando e o motivo.
+
 ## A atividade (colunas da planilha)
 
 ID (fase.atividade, numerado sozinho) · Fase · Atividade (título) · Descrição · Link de acesso · Dependência
