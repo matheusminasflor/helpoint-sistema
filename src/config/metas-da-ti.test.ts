@@ -21,8 +21,8 @@ describe('a meta da TI em degraus (rodada 3, 2026-11-02)', () => {
   });
 
   it('a nota do cartão diz a meta do mês e o próximo degrau', () => {
-    expect(notaDaMeta(undefined, 'sla_cumprido', '2026-11-01', pct)).toBe('meta de novembro: pelo menos 80% · em janeiro sobe para 85%');
-    expect(notaDaMeta(undefined, 'tempo_medio_horas', '2027-02-28', (v) => `${v} h`)).toBe('meta de fevereiro: até 16 h · em março cai para 12 h');
+    expect(notaDaMeta(undefined, 'sla_cumprido', '2026-11-01', pct)).toBe('meta de novembro: pelo menos 80% · janeiro: 85%');
+    expect(notaDaMeta(undefined, 'tempo_medio_horas', '2027-02-28', (v) => `${v} h`)).toBe('meta de fevereiro: até 16 h · março: 12 h');
     expect(notaDaMeta(undefined, 'sla_cumprido', '2027-05-03', pct)).toBe('meta de maio: pelo menos 90%');
   });
 });

@@ -72,7 +72,7 @@ const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julh
 export const nomeDoMes = (diaISO: string) => MESES[Number(diaISO.slice(5, 7)) - 1];
 
 /**
- * A nota do cartão: "meta de novembro: pelo menos 80% · em janeiro sobe para 85%". `formatar` escreve o número com a
+ * A nota do cartão: "meta de novembro: pelo menos 80% · janeiro: 85%". `formatar` escreve o número com a
  * unidade ("80%", "24 h"); `dia` é o último dia do período da tela.
  */
 export function notaDaMeta(gravados: DegrausGravados | undefined, chave: string, dia: string, formatar: (v: number) => string): string | undefined {
@@ -82,6 +82,7 @@ export function notaDaMeta(gravados: DegrausGravados | undefined, chave: string,
   if (!def || !agora) return undefined;
   const sentido = def.sentido === 'mais' ? 'pelo menos' : 'até';
   const prox = proximoDegrau(escada, dia);
-  const muda = prox ? ` · em ${nomeDoMes(prox.a_partir_de)} ${prox.meta > agora.meta ? 'sobe' : 'cai'} para ${formatar(prox.meta)}` : '';
+  // Curta: com cinco cartões lado a lado, "em janeiro sobe para 85%" quebrava o cartão em quatro linhas.
+  const muda = prox ? ` · ${nomeDoMes(prox.a_partir_de)}: ${formatar(prox.meta)}` : '';
   return `meta de ${nomeDoMes(dia)}: ${sentido} ${formatar(agora.meta)}${muda}`;
 }

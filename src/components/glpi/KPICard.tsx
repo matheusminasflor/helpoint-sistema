@@ -94,10 +94,12 @@ function KPICardSemExplicacao({
           if (dif === 0) return <span className="mt-3 text-[14px] font-semibold text-muted-foreground">igual ao anterior</span>;
           const Seta = dif > 0 ? TrendingUp : TrendingDown;
           return (
-            <span className="mt-3 flex items-center gap-1.5 text-[14px] font-semibold text-muted-foreground tabular-nums">
-              <Seta className={cn('w-5 h-5 shrink-0', piorou ? 'text-aviso' : 'text-status-success')} aria-hidden="true" />
+            // Texto corrido (não flex): em cartão estreito, a frase quebra uma vez embaixo da seta, e não em três colunas
+            // (2026-11-02, cinco cartões lado a lado).
+            <span className="mt-3 block text-[14px] font-semibold text-muted-foreground tabular-nums">
+              <Seta className={cn('mr-1.5 inline w-5 h-5 align-[-5px]', piorou ? 'text-aviso' : 'text-status-success')} aria-hidden="true" />
               <span className={cn('whitespace-nowrap', piorou ? 'text-aviso' : 'text-status-success')}>{formatarDiferenca(Math.abs(dif))}</span>
-              {dif > 0 ? 'a mais que o anterior' : 'a menos que o anterior'}
+              {dif > 0 ? ' a mais que o anterior' : ' a menos que o anterior'}
             </span>
           );
         })()}
