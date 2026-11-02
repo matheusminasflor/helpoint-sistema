@@ -69,10 +69,10 @@ export const EXPLICACOES = {
     comoCalcula: `${PERIODO_DOS_CHAMADOS} Cumpriu: resolvido até o prazo, ou ainda aberto e com o prazo correndo. Chamado com o prazo pausado (Pendente, Aguardando aprovação, Agendado) conta como dentro do prazo enquanto estiver pausado — EXCETO o Agendado cujo prazo já estava vencido ao agendar: esse conta como atrasado (regra de 2026-10-15). Chamado sem prazo não entra na conta; cancelado sem resolução não cumpre nem viola. ${REGRA_DO_SLA}`,
   },
   'chamados.sla_violados': {
-    titulo: 'SLA violados',
-    oQueE: 'Chamados ainda em aberto cujo prazo já passou.',
+    titulo: 'Fora do prazo no período',
+    oQueE: 'Chamados abertos no período que ainda não terminaram e cujo prazo já passou.',
     deOndeVem: 'O prazo (SLA) gravado em cada chamado.',
-    comoCalcula: `${PERIODO_DOS_CHAMADOS} Conta o chamado que não foi resolvido nem cancelado e cujo prazo já venceu agora. ${REGRA_DO_SLA}`,
+    comoCalcula: `${PERIODO_DOS_CHAMADOS} Conta o chamado que não foi resolvido nem cancelado e cujo prazo já venceu agora — inclusive o Agendado que foi agendado com o prazo já vencido. A lista "Fora do prazo agora" é de qualquer data de abertura, por isso pode ter mais chamados. ${REGRA_DO_SLA}`,
   },
   'chamados.tempo_medio_resolucao': {
     titulo: 'Tempo médio de resolução',
@@ -96,7 +96,7 @@ export const EXPLICACOES = {
     titulo: 'Indicadores do período',
     oQueE: 'Os números principais do atendimento, lado a lado com o período anterior.',
     deOndeVem: 'A fila de chamados do setor.',
-    comoCalcula: `${PERIODO_DOS_CHAMADOS} "Anterior" é o mesmo tamanho de período, logo antes deste. A seta mostra quanto subiu ou desceu em %. Nas linhas com ícone de informação, toque ou passe o mouse para ver os chamados.`,
+    comoCalcula: `${PERIODO_DOS_CHAMADOS} "Anterior" é o mesmo tamanho de período, logo antes deste. A seta mostra quanto subiu ou desceu: em %, ou em pontos (p.p.) nos indicadores que já são percentual; quando os dois números são pequenos (menos de 20), mostra a diferença ("+6"), porque de 1 para 7 não é "+600%". Nas linhas com ícone de informação, toque ou passe o mouse para ver os chamados.`,
   },
   'chamados.evolucao': {
     titulo: 'Evolução: abertos × resolvidos',
@@ -120,7 +120,7 @@ export const EXPLICACOES = {
     titulo: 'Chamados por categoria',
     oQueE: 'Cada categoria, com quantos chamados estão em cada situação.',
     deOndeVem: 'A categoria e o status de cada chamado.',
-    comoCalcula: `${PERIODO_DOS_CHAMADOS} Pendentes = os chamados parados esperando alguém (inclui o status antigo "aguardando peça"). ${RESOLVIDO} Toque ou passe o mouse num número para ver os chamados dele; clique para abrir.`,
+    comoCalcula: `${PERIODO_DOS_CHAMADOS} Pendentes = os chamados parados esperando alguém (inclui o status antigo "aguardando peça"). ${RESOLVIDO} A coluna Cancelados só aparece quando há cancelado no período, para a linha fechar com o Total. Toque ou passe o mouse num número para ver os chamados dele; clique para abrir.`,
   },
   'chamados.o_que_pede_atencao': {
     titulo: 'O que pede atenção agora',
@@ -129,10 +129,10 @@ export const EXPLICACOES = {
     comoCalcula: 'É uma foto de HOJE, não do período: chamado em aberto com o prazo já vencido (de qualquer data de abertura); licença e contrato que vencem nos próximos 30 dias; manutenção agendada para os próximos 30 dias.',
   },
   'chamados.sla_violado_lista': {
-    titulo: 'Chamados com SLA violado',
+    titulo: 'Fora do prazo agora',
     oQueE: 'Os chamados em aberto cujo prazo já venceu, do mais atrasado para o menos.',
     deOndeVem: 'O prazo (SLA) gravado em cada chamado.',
-    comoCalcula: `Foto de HOJE, de qualquer data de abertura: não resolvido, não cancelado, prazo menor que agora. "Atraso" é quanto tempo passou desde o prazo. ${REGRA_DO_SLA}`,
+    comoCalcula: `Foto de HOJE, de qualquer data de abertura: não resolvido, não cancelado, prazo menor que agora. Pendente e Agendado ficam de fora (prazo pausado), menos o Agendado que foi agendado com o prazo já vencido. "Atraso" é quanto tempo passou desde o prazo. ${REGRA_DO_SLA}`,
   },
   'chamados.desempenho_por_pessoa': {
     titulo: 'Desempenho por pessoa',
@@ -147,7 +147,7 @@ export const EXPLICACOES = {
     comoCalcula: `${PERIODO_DOS_CHAMADOS} Conta os que estão Agendados agora. Enquanto agendado, o prazo fica pausado e não vence; na hora marcada o chamado volta sozinho para Em andamento.`,
   },
   'chamados.agendados_prazo_vencido': {
-    titulo: 'Agendados com prazo vencido',
+    titulo: 'Agendou com o prazo já vencido',
     oQueE: 'Chamados do período que foram agendados quando o prazo já tinha vencido.',
     deOndeVem: 'O botão "Agendar" do chamado: o sistema marca o chamado quando o agendamento acontece com o prazo já estourado.',
     comoCalcula: `${PERIODO_DOS_CHAMADOS} Conta os chamados marcados como "agendou com prazo vencido", mesmo que já tenham saído do status Agendado. Agendar não apaga o atraso: este número mostra quanto o agendamento foi usado para esconder prazo estourado.`,

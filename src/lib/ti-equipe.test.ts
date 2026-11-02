@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  comparar, diasDoPeriodo, farol, horasParadas, lerColagem, mediaAnteriorDosMesmos, mediaDaEquipe, metaDoPeriodo,
-  lerNumero, periodoAnterior, periodoDoIntervalo, porColaborador, somaDosPercentuais,
+  comparar, diasDoPeriodo, domingoDaSemana, farol, horasParadas, lerColagem, mediaAnteriorDosMesmos, mediaDaEquipe, metaDoPeriodo,
+  lerNumero, periodoAnterior, periodoDoIntervalo, piorFarol, porColaborador, somaDosPercentuais,
 } from './ti-equipe';
 
 const S4_OUTUBRO = { de: '2026-10-22', ate: '2026-11-01' };
@@ -10,6 +10,12 @@ describe('período do filtro da tela', () => {
   it('o intervalo da tela (último dia incluído) vira período com o fim exclusivo', () => {
     expect(periodoDoIntervalo({ de: '2026-10-26', ate: '2026-11-01' })).toEqual({ de: '2026-10-26', ate: '2026-11-02' });
     expect(diasDoPeriodo({ de: '2026-10-26', ate: '2026-11-02' })).toBe(7);
+  });
+
+  it('a semana do FSENSE fecha no domingo, como o banco grava', () => {
+    expect(domingoDaSemana('2026-10-26')).toBe('2026-11-01'); // segunda
+    expect(domingoDaSemana('2026-10-30')).toBe('2026-11-01'); // sexta, o dia da tarefa
+    expect(domingoDaSemana('2026-11-01')).toBe('2026-11-01'); // o próprio domingo
   });
 
   it('compara com o período anterior do mesmo tamanho, colado antes', () => {
@@ -38,6 +44,24 @@ describe('meta e farol', () => {
     expect(farol(1, 0.5, 'menos')).toBe('fora');
     expect(farol(null, 20, 'menos')).toBe('sem_dado');
     expect(farol(3, undefined, 'menos')).toBe('sem_meta');
+  });
+
+  it('percentual: amarelo só até 10 pontos da meta (SLA de 64% com meta de 90% é vermelho, não amarelo)', () => {
+    expect(farol(90, 90, 'mais', true)).toBe('no_alvo');
+    expect(farol(80, 90, 'mais', true)).toBe('atencao');
+    expect(farol(76, 90, 'mais', true)).toBe('fora');
+    expect(farol(64, 90, 'mais', true)).toBe('fora');
+    expect(farol(17.1, 15, 'menos', true)).toBe('atencao');
+    expect(farol(25, 15, 'menos', true)).toBe('atencao');
+    expect(farol(33.7, 15, 'menos', true)).toBe('fora');
+  });
+
+  it('o status da pessoa é o pior entre trabalho e ocioso (tela bloqueada 92,5%: 3% de trabalho não fica verde)', () => {
+    const daPessoa = (t: number, o: number) => piorFarol(farol(t, 60, 'mais', true), farol(o, 15, 'menos', true));
+    expect(daPessoa(3.1, 3.1)).toBe('fora');
+    expect(daPessoa(85.1, 10.3)).toBe('no_alvo');
+    expect(daPessoa(67.6, 20.9)).toBe('atencao');
+    expect(piorFarol('sem_dado', 'no_alvo')).toBe('no_alvo');
   });
 
   it('compara com o anterior', () => {

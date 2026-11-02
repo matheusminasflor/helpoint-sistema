@@ -32,10 +32,8 @@ interface IndicatorRow {
   icon: React.ReactNode;
   value: string | number;
   previous?: string | number | null;
-  change?: number | null;
+  change?: Variacao | null;
   changeInverse?: boolean;
-  /** Indicador em %: a variação é a diferença em pontos percentuais, não o % relativo. */
-  changePontos?: boolean;
   category: string;
   explicacao: IdDaExplicacao;
   /** Os chamados por trás do número — aparecem ao passar o mouse (dono, 2026-10-04). */
@@ -105,32 +103,40 @@ const COLUNAS_DE_STATUS = [
   { id: 'waiting', rotulo: 'Pendentes', status: ['waiting_user', 'waiting_parts'], cor: 'text-status-warning' },
   { id: 'scheduled', rotulo: 'Agendados', status: ['scheduled'], cor: 'text-primary' },
   { id: 'resolved', rotulo: 'Resolvidos', status: ['resolved'], cor: 'text-status-success' },
+  // O cancelado entra no total; sem coluna, a linha não fechava (Outros: 4 nas colunas, 5 no total — 2026-11-02).
+  { id: 'cancelled', rotulo: 'Cancelados', status: ['cancelled'], cor: 'text-muted-foreground' },
 ] as const;
 
+/** A variação e a unidade em que ela aparece. */
+interface Variacao { n: number; unidade: '%' | ' p.p.' | '' }
+
 /**
- * Anterior zero (ou ausente) não tem variação: "de 0 para 5" não é +100%. Devolve null e a tela mostra "—".
- * Para percentuais (`emPontos`) a diferença é em pontos percentuais, e aí o anterior 0% é um número válido.
+ * Anterior ausente não tem variação: a tela mostra "—". Percentual (`pontos`) compara em pontos percentuais.
+ * Contagem pequena (abaixo de 20 nos dois períodos) mostra a diferença, não o percentual: de 1 para 7 é "+6", e não
+ * "+600%" (revisão de 2026-11-02). Na contagem maior, e no tempo, anterior zero não tem percentual.
  */
-function calcChange(current: number, previous: number | undefined, emPontos = false): number | null {
+function calcChange(current: number, previous: number | undefined, modo: 'contagem' | 'pontos' | 'percentual' = 'contagem'): Variacao | null {
   if (previous === undefined) return null;
-  if (emPontos) return Math.round(current - previous);
+  if (modo === 'pontos') return { n: Math.round(current - previous), unidade: ' p.p.' };
+  if (modo === 'contagem' && Math.max(current, previous) < 20) return { n: current - previous, unidade: '' };
   if (previous === 0) return null;
-  return Math.round(((current - previous) / previous) * 100);
+  return { n: Math.round(((current - previous) / previous) * 100), unidade: '%' };
 }
 
-function TrendIcon({ change, inverse, pontos }: { change: number | null; inverse?: boolean; pontos?: boolean }) {
-  if (change === null || change === undefined) return <Minus className="h-3.5 w-3.5 text-muted-foreground" />;
-  const isGood = inverse ? change < 0 : change > 0;
-  const isBad = inverse ? change > 0 : change < 0;
-  if (Math.abs(change) <= 1) return <Minus className="h-3.5 w-3.5 text-muted-foreground" />;
-  const Icon = change > 0 ? TrendingUp : TrendingDown;
+function TrendIcon({ change, inverse }: { change: Variacao | null; inverse?: boolean }) {
+  // Em percentual, ±1 é ruído; na diferença de chamados, 1 a mais já é um chamado.
+  if (!change || Math.abs(change.n) <= (change.unidade === '' ? 0 : 1)) return <Minus className="h-3.5 w-3.5 text-muted-foreground" />;
+  const { n } = change;
+  const isGood = inverse ? n < 0 : n > 0;
+  const isBad = inverse ? n > 0 : n < 0;
+  const Icon = n > 0 ? TrendingUp : TrendingDown;
   return (
     <div className={cn("flex items-center gap-1 text-xs font-semibold",
       isGood && "text-status-success",
       isBad && "text-destructive"
     )}>
       <Icon className="h-3.5 w-3.5" />
-      <span>{change > 0 ? '+' : ''}{change}{pontos ? ' p.p.' : '%'}</span>
+      <span>{n > 0 ? '+' : ''}{n}{change.unidade}</span>
     </div>
   );
 }
@@ -250,24 +256,25 @@ export function IndicatorsView({
       icon: <Clock className="h-4 w-4 text-muted-foreground" />,
       value: formatarHoras(metrics?.avgResolutionTime || 0),
       previous: anterior ? formatarHoras(anterior.avgResolutionTime) : null,
-      change: calcChange(metrics?.avgResolutionTime || 0, anterior?.avgResolutionTime), changeInverse: true,
+      change: calcChange(metrics?.avgResolutionTime || 0, anterior?.avgResolutionTime, 'percentual'), changeInverse: true,
     },
     {
       id: 'sla', label: 'SLA Cumprido', category: 'helpdesk', explicacao: 'chamados.sla_cumprido',
       icon: <ShieldCheck className="h-4 w-4 text-primary" />,
       value: `${metrics?.slaCompliance || 0}%`,
       previous: anterior ? `${anterior.slaCompliance}%` : null,
-      change: calcChange(metrics?.slaCompliance || 0, anterior?.slaCompliance, true), changePontos: true,
+      change: calcChange(metrics?.slaCompliance || 0, anterior?.slaCompliance, 'pontos'),
     },
     {
       id: 'first_response', label: '1ª Resposta no Prazo', category: 'helpdesk', explicacao: 'chamados.primeira_resposta_no_prazo',
       icon: <ShieldCheck className="h-4 w-4 text-primary" />,
       value: `${metrics?.firstResponseCompliance || 0}%`,
       previous: anterior ? `${anterior.firstResponseCompliance}%` : null,
-      change: calcChange(metrics?.firstResponseCompliance || 0, anterior?.firstResponseCompliance, true), changePontos: true,
+      change: calcChange(metrics?.firstResponseCompliance || 0, anterior?.firstResponseCompliance, 'pontos'),
     },
     {
-      id: 'sla_violated', label: 'SLA Violados', category: 'helpdesk', explicacao: 'chamados.sla_violados',
+      // "no período" × "agora" no próprio nome (2026-11-02): a lista de baixo é a situação de hoje e dava outro número.
+      id: 'sla_violated', label: 'Fora do prazo no período', category: 'helpdesk', explicacao: 'chamados.sla_violados',
       icon: <AlertTriangle className="h-4 w-4 text-destructive" />,
       value: metrics?.slaViolated || 0, previous: anterior?.slaViolated,
       change: calcChange(metrics?.slaViolated || 0, anterior?.slaViolated), changeInverse: true,
@@ -283,7 +290,8 @@ export function IndicatorsView({
       hoverEmpty: 'Nenhum chamado agendado.',
     },
     {
-      id: 'scheduled_overdue', label: 'Agendados com Prazo Vencido', category: 'helpdesk', explicacao: 'chamados.agendados_prazo_vencido',
+      // Conta quem AGENDOU com o prazo vencido no período, inclusive já resolvido — por isso pode passar de "Agendados".
+      id: 'scheduled_overdue', label: 'Agendou com o prazo já vencido', category: 'helpdesk', explicacao: 'chamados.agendados_prazo_vencido',
       icon: <AlertTriangle className="h-4 w-4 text-destructive" />,
       value: metrics?.agendadosVencidos || 0, previous: anterior?.agendadosVencidos,
       change: calcChange(metrics?.agendadosVencidos || 0, anterior?.agendadosVencidos), changeInverse: true,
@@ -295,7 +303,7 @@ export function IndicatorsView({
       icon: <Clock className="h-4 w-4 text-muted-foreground" />,
       value: formatarHoras(metrics?.horasAgendadas || 0),
       previous: anterior ? formatarHoras(anterior.horasAgendadas) : null,
-      change: calcChange(metrics?.horasAgendadas || 0, anterior?.horasAgendadas), changeInverse: true,
+      change: calcChange(metrics?.horasAgendadas || 0, anterior?.horasAgendadas, 'percentual'), changeInverse: true,
     },
     {
       id: 'help_other_sectors', label: 'Ajuda a Outros Setores', category: 'helpdesk', explicacao: 'chamados.ajuda_outros_setores',
@@ -432,7 +440,7 @@ export function IndicatorsView({
                       </td>
                       <td className="px-4 py-2 text-center">
                         <div className="flex justify-center">
-                          <TrendIcon change={row.change ?? null} inverse={row.changeInverse} pontos={row.changePontos} />
+                          <TrendIcon change={row.change ?? null} inverse={row.changeInverse} />
                         </div>
                       </td>
                       <td className="px-4 py-2 text-right text-muted-foreground font-mono text-xs">
@@ -468,7 +476,7 @@ export function IndicatorsView({
           <CardContent className="p-0 divide-y divide-slate-100">
             {/* SLA Violated Tickets */}
             <DetailSection
-              title="Chamados com SLA Violado"
+              title="Fora do prazo agora"
               icon={<AlertTriangle className="h-4 w-4 text-destructive" />}
               count={violatedTickets?.length || 0}
               explicacao="chamados.sla_violado_lista"
@@ -641,6 +649,7 @@ export function TabelaCategoriaPorStatus({ chamados, modulo }: { chamados: Chama
   }
   const linhas = [...porCategoria.entries()].sort(([, a], [, b]) => b.length - a.length);
   if (linhas.length === 0) return null;
+  const colunas = COLUNAS_DE_STATUS.filter((col) => col.id !== 'cancelled' || chamados.some((c) => c.status === 'cancelled'));
 
   return (
     <Card className="">
@@ -658,7 +667,7 @@ export function TabelaCategoriaPorStatus({ chamados, modulo }: { chamados: Chama
             <thead>
               <tr className="border-b border-border/50 bg-background sticky top-0 z-10">
                 <th className="text-left px-4 py-2 font-semibold text-muted-foreground text-xs uppercase tracking-wider">Categoria</th>
-                {COLUNAS_DE_STATUS.map(col => (
+                {colunas.map(col => (
                   <th key={col.id} className={cn('text-center px-4 py-2 font-semibold text-xs uppercase tracking-wider', col.cor)}>{col.rotulo}</th>
                 ))}
                 <th className="text-center px-4 py-2 font-semibold text-xs uppercase tracking-wider text-foreground">Total</th>
@@ -671,7 +680,7 @@ export function TabelaCategoriaPorStatus({ chamados, modulo }: { chamados: Chama
                   i % 2 === 0 && 'bg-background/30',
                 )}>
                   <td className="px-4 py-2 font-medium text-foreground">{categoria}</td>
-                  {COLUNAS_DE_STATUS.map(col => {
+                  {colunas.map(col => {
                     const lista = doCat.filter(c => (col.status as readonly string[]).includes(c.status));
                     return (
                       <td key={col.id} className={cn('px-4 py-2 text-center font-mono font-bold', col.cor)}>

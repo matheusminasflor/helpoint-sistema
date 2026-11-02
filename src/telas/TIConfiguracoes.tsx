@@ -6,7 +6,7 @@
 // prazos da empresa com os alertas da TI. As categorias agora são o `CategoryManager` de todo
 // setor; os prazos, o `PrazosDeAtendimento`; os alertas, `AlertasTab`.
 import { useState } from 'react';
-import { Bell, Boxes, CheckSquare, Monitor } from 'lucide-react';
+import { Bell, Boxes, CheckSquare, Monitor, Target } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ConfiguracaoDoSetor } from '@/components/configuracoes/ConfiguracaoDoSetor';
@@ -14,6 +14,7 @@ import { CategoryManager } from '@/components/ti/CategoryManager';
 import { ChecklistTemplatesTab } from '@/components/ti/ChecklistTemplatesTab';
 import { AlertasTab } from '@/components/ti/AlertasTab';
 import { ConferenciaDeEquipamentosConfig } from '@/components/ti/ConferenciaDeEquipamentosConfig';
+import { MetasDaTI } from '@/components/ti/MetasDaTI';
 
 const CADASTROS = [
   { modulo: 'inventory', rotulo: 'Inventário' },
@@ -62,6 +63,9 @@ export default function TIConfiguracoes() {
         },
         { valor: 'checklists', permissao: 'checklists', rotulo: 'Checklists', icone: CheckSquare, conteudo: <ChecklistTemplatesTab /> },
         { valor: 'alertas', permissao: 'alertas', rotulo: 'Alertas', icone: Bell, conteudo: <AlertasTab /> },
+        // As metas dos Indicadores (rodada 2, 2026-11-02): abre e altera com a aba Chamados — quem configura os chamados
+        // da TI cuida das metas deles. A Diretoria também muda (decide o próprio componente).
+        { valor: 'metas', permissao: 'chamados', rotulo: 'Metas', icone: Target, conteudo: (pode) => <MetasDaTI podeAlterarAba={pode} /> },
       ]}
     />
   );

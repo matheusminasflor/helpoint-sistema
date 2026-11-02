@@ -1,8 +1,13 @@
 // TI › Indicadores › bloco "Equipe" (dono, 2026-11-01; revisão aprovada): a produtividade do FSENSE e as interrupções,
 // que a planilha da reunião de segunda tinha e o Helpoint não. Obedece ao filtro de período da tela e compara com o
 // período anterior do mesmo tamanho, como os outros indicadores (`lib/ti-equipe`).
+//
+// Rodada 2 (2026-11-02): as metas vêm de `config/metas-da-ti` (padrão de mercado + histórico; muda-se em Configurações
+// de TI › Metas); a tabela ficou com uma coluna de meta e a comparação com cor; cada pessoa é uma barra com as quatro
+// partes do tempo e a linha da meta, e o status dela é o pior entre trabalho e ocioso.
 import { useEffect, useState, type ClipboardEvent, type ReactNode } from 'react';
-import { ArrowDown, ArrowUp, Check, ChevronDown, ClipboardPaste, Equal, Pencil, Plus, Trash2, Users, Zap } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Check, ChevronDown, ClipboardPaste, Pencil, Plus, Target, Trash2, Users, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,25 +20,25 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { META_DA_TI, metaEmVigor } from '@/config/metas-da-ti';
 import { useConfiguracaoDosSetores, usePodeVerEquipe } from '@/hooks/useAccessProfiles';
-import { useMetasDosSetores, useSalvarMetaDoSetor } from '@/hooks/useDiretoria';
+import { useMetasDosSetores } from '@/hooks/useDiretoria';
 import {
   TIPOS_DE_INTERRUPCAO, useApagarFsense, useApagarInterrupcao, useConfirmarFsense, useEditarFsense, useFsense,
   useInterrupcoes, useLancarFsense, useSalvarInterrupcao, useUltimaSemanaDoFsense,
   type InterrupcaoDoBanco, type LinhaFsenseDoBanco, type TipoDeInterrupcao,
 } from '@/hooks/useEquipeDaTI';
+import { useTenantPath } from '@/hooks/useTenantPath';
 import { dataHora, diaCurto, fromLocalDateTimeInput, toLocalDateTimeInput, toLocalISODate } from '@/lib/dates';
 import type { IntervaloDeDias } from '@/lib/period';
 import { mensagemDeErro } from '@/lib/supabase-result';
 import {
-  comparar, dentro, diasDoPeriodo, farol, horasParadas, lerColagem, lerNumero, mediaAnteriorDosMesmos, mediaDaEquipe,
-  metaDoPeriodo, periodoAnterior, periodoDoIntervalo, porColaborador, somaDosPercentuais,
-  type Comparativo, type Farol, type LinhaColada, type Sentido,
+  dentro, diasDoPeriodo, domingoDaSemana, farol, somarDias, horasParadas, lerColagem, lerNumero, mediaAnteriorDosMesmos, mediaDaEquipe,
+  metaDoPeriodo, periodoAnterior, periodoDoIntervalo, piorFarol, porColaborador, somaDosPercentuais,
+  type DoColaborador, type Farol, type LinhaColada, type Sentido,
 } from '@/lib/ti-equipe';
 import { cn } from '@/lib/utils';
-
-// As metas da planilha antiga valem até a Diretoria escrever outras.
-const META_PADRAO: Record<string, number> = { interrupcoes: 2, fsense_trabalho: 65, fsense_ocioso: 20 };
 
 const num = (v: number) => v.toLocaleString('pt-BR', { maximumFractionDigits: 1 });
 const pct = (v: number | null) => (v === null ? '—' : `${num(v)}%`);
@@ -50,15 +55,22 @@ function SeloDoFarol({ f }: { f: Farol }) {
   return <Badge variant="outline" className={`${FAROL[f].classe} border-0`}>{FAROL[f].texto}</Badge>;
 }
 
-function TextoDoComparativo({ c }: { c: Comparativo | null }) {
-  if (!c) return <span className="text-muted-foreground">—</span>;
-  const Icone = c === 'acima' ? ArrowUp : c === 'abaixo' ? ArrowDown : Equal;
-  const texto = c === 'igual' ? 'Igual ao anterior' : c === 'acima' ? 'Acima do anterior' : 'Abaixo do anterior';
-  return <span className="inline-flex items-center gap-1 text-sm"><Icone className="h-3.5 w-3.5" />{texto}</span>;
+/** A diferença para o anterior, verde quando melhorou e vermelha quando piorou (o "acima" do ocioso é ruim). */
+function Diferenca({ atual, anterior, sentido, unidade }: { atual: number | null; anterior: number | null; sentido: Sentido; unidade: string }) {
+  if (atual === null || anterior === null) return null;
+  const d = Math.round((atual - anterior) * 10) / 10;
+  if (d === 0) return <span className="text-xs text-muted-foreground">igual</span>;
+  const melhorou = sentido === 'mais' ? d > 0 : d < 0;
+  return (
+    <span className={cn('text-xs font-semibold', melhorou ? 'text-status-success' : 'text-destructive')}>
+      {d > 0 ? '▲ +' : '▼ '}{num(d)}{unidade}
+    </span>
+  );
 }
 
 /** O bloco inteiro. `intervalo` é o do filtro do topo da tela (último dia incluído). */
 export function EquipeDaTI({ intervalo }: { intervalo: IntervaloDeDias }) {
+  const tenantPath = useTenantPath();
   const atual = periodoDoIntervalo(intervalo);
   const anterior = periodoAnterior(atual);
   const dias = diasDoPeriodo(atual);
@@ -70,12 +82,12 @@ export function EquipeDaTI({ intervalo }: { intervalo: IntervaloDeDias }) {
   const podeVerEquipe = usePodeVerEquipe('tickets');
   const perfil = useConfiguracaoDosSetores();
   const podeLancar = perfil.pode('ti', 'reports', 'lancar');
-  const podeDefinirMetas = !perfil.isLoading && perfil.pode('diretoria', 'indicadores', 'definir_metas');
-  const [editandoMeta, setEditandoMeta] = useState<{ chave: string; nome: string } | null>(null);
+  const podeMudarMetas = !perfil.isLoading
+    && (perfil.alteraAba('ti', 'chamados') || perfil.pode('diretoria', 'indicadores', 'definir_metas'));
   const [lancando, setLancando] = useState(false);
   const [registrando, setRegistrando] = useState(false);
 
-  const meta = (chave: string) => metas.data?.get(`ti.${chave}`) ?? META_PADRAO[chave];
+  const meta = (chave: string) => metaEmVigor(metas.data, chave);
 
   // O FSENSE conta pela semana lançada (o dia que a fecha cai no período) e só depois de confirmada.
   const confirmadas = (fsense.data ?? []).filter((l) => l.confirmado_em);
@@ -86,65 +98,61 @@ export function EquipeDaTI({ intervalo }: { intervalo: IntervaloDeDias }) {
   const horas = horasParadas(listaDeInterrupcoes, atual);
   const lancamentos = (fsense.data ?? []).filter((l) => dentro(l.data, atual));
 
-  const linhas: { chave: string; nome: string; sentido: Sentido; proporcional: boolean; atual: number | null; anterior: number | null;
-    fmt: (v: number | null) => string; extra?: string }[] = [
-    { chave: 'interrupcoes', nome: 'Interrupções (luz, internet, sistema, intranet) ↓', sentido: 'menos', proporcional: true,
-      atual: doPeriodo(atual).length, anterior: doPeriodo(anterior).length, fmt: (v) => (v === null ? '—' : num(v)),
+  const linhas: { chave: string; nome: string; atual: number | null; anterior: number | null; unidade: string; extra?: string }[] = [
+    { chave: 'interrupcoes', nome: 'Interrupções (luz, internet, sistema, intranet) ↓', unidade: '',
+      atual: doPeriodo(atual).length, anterior: doPeriodo(anterior).length,
       extra: horas > 0 ? `${num(horas)} h paradas` : undefined },
     ...(podeVerEquipe ? [
-      { chave: 'fsense_trabalho', nome: '% Trabalho médio da equipe', sentido: 'mais' as Sentido, proporcional: false,
-        atual: mediaDaEquipe(doAtual, 'trabalho'), anterior: mediaAnteriorDosMesmos(doAtual, doAnterior, 'trabalho'), fmt: pct },
-      { chave: 'fsense_ocioso', nome: '% Ocioso médio da equipe ↓', sentido: 'menos' as Sentido, proporcional: false,
-        atual: mediaDaEquipe(doAtual, 'ocioso'), anterior: mediaAnteriorDosMesmos(doAtual, doAnterior, 'ocioso'), fmt: pct },
+      { chave: 'fsense_trabalho', nome: '% Trabalho médio da equipe', unidade: ' p.p.',
+        atual: mediaDaEquipe(doAtual, 'trabalho'), anterior: mediaAnteriorDosMesmos(doAtual, doAnterior, 'trabalho') },
+      { chave: 'fsense_ocioso', nome: '% Ocioso médio da equipe ↓', unidade: ' p.p.',
+        atual: mediaDaEquipe(doAtual, 'ocioso'), anterior: mediaAnteriorDosMesmos(doAtual, doAnterior, 'ocioso') },
     ] : []),
   ];
 
   return (
-    <Card className="p-5 space-y-5">
+    <Card id="equipe-da-ti" className="p-5 space-y-5 scroll-mt-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="space-y-1">
           <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Users className="h-4 w-4 text-primary" />Equipe · produtividade (FSENSE) e interrupções</h3>
-          <p className="text-xs text-muted-foreground">
-            Meta mensal: a de quantidade é proporcional aos dias do período. Farol: no alvo na meta, atenção até 70% dela (ou
-            até 130% quando menos é melhor, ↓). O FSENSE conta só semana confirmada.
-          </p>
+          <p className="text-xs text-muted-foreground">O FSENSE conta só semana confirmada. ↓ = quanto menos, melhor.</p>
         </div>
-        {podeLancar && (
-          <div className="flex flex-wrap gap-2">
-            {podeVerEquipe && <Button size="sm" onClick={() => setLancando(true)}><ClipboardPaste className="h-4 w-4 mr-1.5" />Lançar semana do FSENSE</Button>}
-            <Button size="sm" variant="outline" onClick={() => setRegistrando(true)}><Plus className="h-4 w-4 mr-1.5" />Registrar interrupção</Button>
-          </div>
-        )}
+        <div className="flex flex-wrap gap-2">
+          {podeMudarMetas && (
+            <Button asChild size="sm" variant="ghost"><Link to={tenantPath('/ti/configuracoes?aba=metas')}><Target className="h-4 w-4 mr-1.5" />Metas</Link></Button>
+          )}
+          {podeLancar && podeVerEquipe && <Button size="sm" onClick={() => setLancando(true)}><ClipboardPaste className="h-4 w-4 mr-1.5" />Lançar semana do FSENSE</Button>}
+          {podeLancar && <Button size="sm" variant="outline" onClick={() => setRegistrando(true)}><Plus className="h-4 w-4 mr-1.5" />Registrar interrupção</Button>}
+        </div>
       </div>
 
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Indicador</TableHead><TableHead>Meta mensal</TableHead><TableHead>Meta do período</TableHead>
-              <TableHead>Anterior</TableHead><TableHead>Realizado</TableHead><TableHead>Comparação</TableHead><TableHead>Status</TableHead>
+              <TableHead>Indicador</TableHead><TableHead>Meta</TableHead><TableHead>Anterior</TableHead>
+              <TableHead>Realizado</TableHead><TableHead>Status</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {linhas.map((l) => {
-              const m = meta(l.chave);
-              const mp = metaDoPeriodo(m, dias, l.proporcional);
-              const formatoDaMeta = (v: number | undefined) => (v === undefined ? '—' : l.chave === 'interrupcoes' ? num(v) : pct(v));
+              const def = META_DA_TI[l.chave];
+              const mensal = meta(l.chave);
+              const doPeriodoDaTela = metaDoPeriodo(mensal, dias, !!def.proporcional);
+              const fmt = (v: number | null | undefined) => (v === null || v === undefined ? '—' : def.percentual ? pct(v) : num(v));
+              // Só a de quantidade muda com o período: "0,5 na semana (2 por mês)".
+              const textoDaMeta = def.proporcional && mensal !== undefined && doPeriodoDaTela !== mensal
+                ? `${fmt(doPeriodoDaTela)} no período (${num(mensal)}${def.unidade})` : fmt(mensal);
               return (
                 <TableRow key={l.chave}>
                   <TableCell className="font-medium">{l.nome}{l.extra && <span className="block text-xs text-muted-foreground font-normal">{l.extra}</span>}</TableCell>
-                  <TableCell className="whitespace-nowrap">
-                    <span className="tabular-nums">{formatoDaMeta(m)}</span>
-                    {podeDefinirMetas && (
-                      <Button variant="ghost" size="icon" className="h-7 w-7 ml-1" aria-label={`Mudar a meta de ${l.nome}`}
-                        onClick={() => setEditandoMeta({ chave: l.chave, nome: l.nome })}><Pencil className="h-3.5 w-3.5" /></Button>
-                    )}
+                  <TableCell className="tabular-nums whitespace-nowrap">{textoDaMeta}</TableCell>
+                  <TableCell className="tabular-nums text-muted-foreground">{fmt(l.anterior)}</TableCell>
+                  <TableCell className="tabular-nums whitespace-nowrap">
+                    <span className="font-semibold mr-2">{fmt(l.atual)}</span>
+                    <Diferenca atual={l.atual} anterior={l.anterior} sentido={def.sentido} unidade={l.unidade} />
                   </TableCell>
-                  <TableCell className="tabular-nums">{formatoDaMeta(mp)}</TableCell>
-                  <TableCell className="tabular-nums">{l.fmt(l.anterior)}</TableCell>
-                  <TableCell className="tabular-nums font-semibold">{l.fmt(l.atual)}</TableCell>
-                  <TableCell><TextoDoComparativo c={comparar(l.atual, l.anterior)} /></TableCell>
-                  <TableCell><SeloDoFarol f={farol(l.atual, mp, l.sentido)} /></TableCell>
+                  <TableCell><SeloDoFarol f={farol(l.atual, doPeriodoDaTela, def.sentido, def.percentual)} /></TableCell>
                 </TableRow>
               );
             })}
@@ -153,41 +161,7 @@ export function EquipeDaTI({ intervalo }: { intervalo: IntervaloDeDias }) {
       </div>
 
       {podeVerEquipe && (
-        <div className="space-y-2">
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Por colaborador · o status olha o % ocioso</h4>
-          {doAtual.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Nenhuma semana do FSENSE confirmada neste período.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Colaborador</TableHead><TableHead>Horas</TableHead><TableHead>% Trabalho</TableHead>
-                    <TableHead>% Trab. anterior</TableHead><TableHead>% Ocioso</TableHead><TableHead>% Ocioso anterior</TableHead>
-                    <TableHead>Comparação (ocioso)</TableHead><TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {doAtual.map((c) => {
-                    const antes = doAnterior.find((a) => a.colaborador.toLowerCase() === c.colaborador.toLowerCase());
-                    return (
-                      <TableRow key={c.colaborador}>
-                        <TableCell className="font-medium">{c.colaborador}</TableCell>
-                        <TableCell className="tabular-nums">{num(c.horas)}</TableCell>
-                        <TableCell className="tabular-nums">{pct(c.trabalho)}</TableCell>
-                        <TableCell className="tabular-nums text-muted-foreground">{pct(antes?.trabalho ?? null)}</TableCell>
-                        <TableCell className="tabular-nums font-semibold">{pct(c.ocioso)}</TableCell>
-                        <TableCell className="tabular-nums text-muted-foreground">{pct(antes?.ocioso ?? null)}</TableCell>
-                        <TableCell><TextoDoComparativo c={comparar(c.ocioso, antes?.ocioso ?? null)} /></TableCell>
-                        <TableCell><SeloDoFarol f={farol(c.ocioso, meta('fsense_ocioso'), 'menos')} /></TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </div>
+        <BarrasDaEquipe atual={doAtual} anterior={doAnterior} metaTrabalho={meta('fsense_trabalho')} metaOcioso={meta('fsense_ocioso')} />
       )}
 
       {podeVerEquipe && <LancamentosDoFsense linhas={lancamentos} podeLancar={podeLancar} />}
@@ -195,38 +169,74 @@ export function EquipeDaTI({ intervalo }: { intervalo: IntervaloDeDias }) {
 
       {lancando && <DialogoDaGrade onFechar={() => setLancando(false)} />}
       {registrando && <DialogoDaInterrupcao inicial={null} onFechar={() => setRegistrando(false)} />}
-      {editandoMeta && (
-        <DialogoDaMeta chave={editandoMeta.chave} nome={editandoMeta.nome} atual={meta(editandoMeta.chave)} onFechar={() => setEditandoMeta(null)} />
-      )}
     </Card>
   );
 }
 
-function DialogoDaMeta({ chave, nome, atual, onFechar }: { chave: string; nome: string; atual: number | undefined; onFechar: () => void }) {
-  const [valor, setValor] = useState(atual === undefined ? '' : String(atual).replace('.', ','));
-  const salvar = useSalvarMetaDoSetor();
-  const enviar = () => {
-    const n = Number(valor.replace(',', '.'));
-    if (valor.trim() === '' || Number.isNaN(n) || n < 0) { toast.error('Escreva um número (0 ou mais).'); return; }
-    salvar.mutate({ setor: 'ti', indicador: chave, meta: n }, {
-      onSuccess: () => { toast.success('Meta salva.'); onFechar(); },
-      onError: (e) => toast.error(mensagemDeErro(e)),
-    });
-  };
+// As quatro partes do tempo, nas cores que dizem o que são: trabalho verde, ocioso amarelo, bloqueada e suspenso cinza.
+const PARTES = [
+  { campo: 'trabalho', rotulo: 'Trabalho', cor: 'bg-status-success' },
+  { campo: 'bloqueada', rotulo: 'Tela bloqueada', cor: 'bg-muted-foreground/60' },
+  { campo: 'ocioso', rotulo: 'Ocioso', cor: 'bg-status-warning' },
+  { campo: 'suspenso', rotulo: 'Suspenso', cor: 'bg-muted-foreground/25' },
+] as const;
+
+/**
+ * Uma barra por pessoa, da que mais trabalhou para a que menos (Leis de UX: pré-atenção pela cor, proximidade do nome
+ * com a barra). A linha escura é a meta de trabalho. Passar o mouse mostra as horas, os quatro números e a semana
+ * anterior.
+ */
+function BarrasDaEquipe({ atual, anterior, metaTrabalho, metaOcioso }: {
+  atual: DoColaborador[]; anterior: DoColaborador[]; metaTrabalho: number | undefined; metaOcioso: number | undefined;
+}) {
+  const ordem = [...atual].sort((a, b) => (b.trabalho ?? -1) - (a.trabalho ?? -1));
   return (
-    <Dialog open onOpenChange={(o) => !o && onFechar()}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Meta mensal</DialogTitle>
-          <DialogDescription>{nome}. Vale todo mês até alguém mudar.</DialogDescription>
-        </DialogHeader>
-        <Input id="equipe-meta" inputMode="decimal" value={valor} onChange={(e) => setValor(e.target.value)} autoFocus />
-        <DialogFooter>
-          <Button variant="outline" onClick={onFechar}>Cancelar</Button>
-          <Button onClick={enviar} disabled={salvar.isPending}>Salvar meta</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Por colaborador · o status olha trabalho e ocioso</h4>
+        <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+          {PARTES.map((p) => <span key={p.campo} className="inline-flex items-center gap-1.5"><i className={cn('h-2.5 w-2.5 rounded-sm', p.cor)} />{p.rotulo}</span>)}
+          {metaTrabalho !== undefined && <span className="inline-flex items-center gap-1.5"><i className="h-3 w-0.5 bg-foreground" />Meta {num(metaTrabalho)}%</span>}
+        </div>
+      </div>
+      {ordem.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Nenhuma semana do FSENSE confirmada neste período.</p>
+      ) : (
+        <ul className="space-y-2">
+          {ordem.map((c) => {
+            const antes = anterior.find((a) => a.colaborador.toLowerCase() === c.colaborador.toLowerCase());
+            const status = piorFarol(farol(c.trabalho, metaTrabalho, 'mais', true), farol(c.ocioso, metaOcioso, 'menos', true));
+            return (
+              <li key={c.colaborador} className="grid grid-cols-[minmax(96px,150px)_1fr_auto] items-center gap-3 text-sm">
+                <span className="min-w-0">
+                  <span className="block truncate font-medium">{c.colaborador}</span>
+                  <span className="block text-xs text-muted-foreground tabular-nums">{num(c.horas)} h medidas</span>
+                </span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="relative flex h-4 rounded bg-muted overflow-visible cursor-default" tabIndex={0}
+                      aria-label={`${c.colaborador}: trabalho ${pct(c.trabalho)}, ocioso ${pct(c.ocioso)}`}>
+                      <span className="flex h-full w-full overflow-hidden rounded">
+                        {PARTES.map((p) => <span key={p.campo} className={cn('h-full', p.cor)} style={{ width: `${c[p.campo] ?? 0}%` }} />)}
+                      </span>
+                      {metaTrabalho !== undefined && <span className="absolute -top-1 -bottom-1 w-0.5 bg-foreground" style={{ left: `${metaTrabalho}%` }} />}
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent className="text-xs space-y-0.5">
+                    <p className="font-semibold">{c.colaborador} · {num(c.horas)} h medidas</p>
+                    {PARTES.map((p) => <p key={p.campo}>{p.rotulo}: {pct(c[p.campo])}{antes && ` (antes ${pct(antes[p.campo])})`}</p>)}
+                  </TooltipContent>
+                </Tooltip>
+                <span className="flex items-center gap-2 justify-end">
+                  <span className="hidden sm:inline text-xs tabular-nums text-muted-foreground w-[92px] text-right">trab. {pct(c.trabalho)}</span>
+                  <SeloDoFarol f={status} />
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
   );
 }
 
@@ -376,10 +386,13 @@ function DialogoDeCorrigir({ linha, onFechar }: { linha: LinhaFsenseDoBanco; onF
   );
 }
 
-/** A última sexta (hoje, se hoje é sexta): a tarefa lê o FSENSE na sexta às 17h40 e a semana fecha nela. */
-function ultimaSexta(): string {
+/**
+ * O domingo da semana a lançar: a da última sexta (hoje, se hoje é sexta). A tarefa lê o FSENSE na sexta às 17h40; de
+ * segunda a quinta, quem abre está lançando a semana que passou. O banco grava sempre no domingo (20270212180000).
+ */
+function domingoDaUltimaSexta(): string {
   const d = new Date();
-  d.setDate(d.getDate() - ((d.getDay() + 2) % 7));
+  d.setDate(d.getDate() - ((d.getDay() + 2) % 7) + 2);
   return toLocalISODate(d);
 }
 
@@ -395,7 +408,9 @@ const linhaVazia = (colaborador = '', antes?: LinhaFsenseDoBanco): LinhaDaGrade 
  * Colar uma tabela em qualquer célula preenche a grade.
  */
 function DialogoDaGrade({ onFechar }: { onFechar: () => void }) {
-  const [data, setData] = useState(ultimaSexta());
+  const [escolhido, setData] = useState(domingoDaUltimaSexta());
+  // Qualquer dia escolhido vale a semana dele (segunda a domingo), como o banco grava.
+  const data = escolhido ? domingoDaSemana(escolhido) : '';
   const [linhas, setLinhas] = useState<LinhaDaGrade[]>([]);
   const [tocou, setTocou] = useState(false);
   const ultima = useUltimaSemanaDoFsense(data);
@@ -464,9 +479,10 @@ function DialogoDaGrade({ onFechar }: { onFechar: () => void }) {
         </DialogHeader>
         <div className="flex flex-wrap items-end gap-3">
           <div className="space-y-1">
-            <Label htmlFor="fsense-data">Semana até</Label>
-            <Input id="fsense-data" type="date" value={data} onChange={(e) => setData(e.target.value)} className="w-[170px]" />
+            <Label htmlFor="fsense-data">Um dia da semana</Label>
+            <Input id="fsense-data" type="date" value={escolhido} onChange={(e) => setData(e.target.value)} className="w-[170px]" />
           </div>
+          {data && <p className="text-sm text-muted-foreground pb-2">Semana de {diaCurto(somarDias(data, -6))} a {diaCurto(data)}</p>}
           <Button variant="outline" size="sm" onClick={() => { setTocou(true); setLinhas((ls) => [...ls, linhaVazia()]); }}>
             <Plus className="h-4 w-4 mr-1.5" />Pessoa
           </Button>

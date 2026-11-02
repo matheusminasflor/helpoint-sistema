@@ -62,6 +62,73 @@ período usa a média das linhas dela (horas somadas).
 uma vez, já confirmadas, para o comparativo funcionar desde o primeiro dia. As interrupções antigas só têm a
 quantidade por semana, sem horário: entram como registros sem duração.
 
+## Rodada 2 (dono, 2026-11-02)
+
+Proposta: https://claude.ai/artifact/8KiJeDHv7ZoM51iMDecrcU. Aprovadas as quatro recomendações.
+
+**Falhas a corrigir:**
+
+1. A semana do FSENSE é gravada sempre no domingo, e lançar de novo substitui. Antes, a grade sugeria a sexta e o histórico usava o domingo, então a mesma semana podia entrar em dobro.
+2. O status por pessoa vale o pior entre % trabalho e % ocioso. Antes, a tela bloqueada a 92,5% saía "No alvo".
+3. "Semana do FSENSE a confirmar" aparece em "Atenção agora".
+4. O PDF leva tudo o que a Visão Geral mostra.
+5. Os rótulos do Analítico se separam em "na semana" e "agora":
+   - "Agendou com o prazo já vencido";
+   - "SLA violados" na semana e "fora do prazo agora";
+   - coluna "Outros status" para a linha de categoria fechar;
+   - abaixo de 20 chamados, a variação é a diferença ("+6") e não a porcentagem.
+
+**Metas padrão:** você ajusta em Configurações de TI › Metas, com o mercado ao lado.
+
+| Indicador | Meta padrão |
+|---|---|
+| SLA cumprido | 90% |
+| 1ª resposta no prazo | 90% |
+| Tempo médio de resolução ↓ | 8 h |
+| % trabalho | 60% |
+| % ocioso ↓ | 15% |
+| Interrupções ↓ | 2 por mês |
+
+- **Origem:** SLA e 1ª resposta seguem a prática de contrato de suporte, de 90% a 95%.
+- **Trabalho e ocioso:** vêm do histórico, com 158 semanas por pessoa (mediana de 54,9% de trabalho e 14,8% de ocioso). O mercado fica em cerca de 50% produtivo (WorkTime e Hubstaff).
+- **Amarelo:** em percentual, até **10 pontos abaixo** da meta (antes era até 70% da meta). Em tempo e quantidade, a regra antiga continua.
+- **Quem muda:** quem tem "Configurar" na TI e quem define metas na Diretoria. A tabela é a mesma de hoje, `dir_metas_dos_setores`.
+
+**Projetos:** os Indicadores leem o módulo Projetos, só os projetos em que a TI participa. Os 5 abertos da aba DEMANDAS da planilha entram uma vez, com o término dela:
+
+- Sistema Helpoint;
+- Sistema IA do Distribuidor;
+- Tráfego pago Power Complex;
+- Migração do site para a VPS Hostinger;
+- Infraestrutura.
+
+**Telas:**
+
+- **Visão Geral** em 5 blocos:
+  - atenção agora;
+  - frase de resumo montada com os números, sem IA;
+  - chamados, com meta, cor e as últimas 8 semanas;
+  - equipe;
+  - projetos.
+- **Equipe em barras**, uma por pessoa: trabalho, tela bloqueada, ocioso e suspenso, com a linha da meta.
+- **Analítico**, ex-"Análise Detalhada", com um índice por seção.
+- **Modo apresentação**, uma tela por vez, como slides:
+  1. Resumo;
+  2. Chamados;
+  3. Categorias;
+  4. Equipe;
+  5. Projetos.
+
+  Avança pela seta ou pelo clique; Esc sai.
+- **Tarefa de sexta:** a mensagem pergunta se teve queda na semana.
+
+**Ordem de entrega:**
+
+1. As falhas, as metas, as barras e a tabela enxuta.
+2. Projetos.
+3. A Visão Geral e o Analítico.
+4. O modo apresentação e o PDF.
+
 ## Marketing
 
 Parado até o dono reavaliar. O que foi medido em 2026-11-01 e pode servir depois: o Kommo responde leads por

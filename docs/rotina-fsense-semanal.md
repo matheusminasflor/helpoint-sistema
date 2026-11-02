@@ -21,12 +21,16 @@ no FSENSE e no Helpoint, com a aba do FSENSE dentro do grupo do Claude.
    "Não classificado" e as outras ficam fora (é o mesmo total que aparece em cima de cada barra).
 4. **Nomes**: trocar o login do FSENSE pelo nome do histórico (tabela abaixo). **Login que não está na tabela: não
    adivinhar** — lançar com o login e avisar o dono, que diz quem é (e a tabela ganha a linha).
-5. **Helpoint**, TI › Indicadores › Visão Geral › bloco **Equipe** › **Lançar semana do FSENSE**: "Semana até" = a
-   sexta (já vem preenchida); colar a tabela (`Nome⇥horas⇥%trabalho⇥%bloqueada⇥%ocioso⇥%suspenso`, uma pessoa por
+5. **Helpoint**, TI › Indicadores › Visão Geral › bloco **Equipe** › **Lançar semana do FSENSE**: "Um dia da semana"
+   já vem com o domingo desta semana, e o sistema grava sempre no domingo (20270212180000), então lançar de novo
+   substitui em vez de duplicar. Colar a tabela (`Nome⇥horas⇥%trabalho⇥%bloqueada⇥%ocioso⇥%suspenso`, uma pessoa por
    linha) em qualquer célula da grade — quem já está nela é preenchido, quem não está entra numa linha nova; conferir a
    grade (a soma dos % de cada pessoa tem de dar 100%) e **Gravar**.
 6. **Nunca clicar em "Confirmar semana".** Mandar ao dono a tabela lida (login → nome, horas e os quatro %) e avisar
    que está "A confirmar".
+7. **Terminar perguntando das quedas** (rodada 2, 2026-11-02): "Teve queda de luz, internet, sistema ou intranet
+   nesta semana?". O FSENSE não mostra isso; se teve, o dono registra em "Registrar interrupção" (ou diz o dia, a
+   hora e o tipo para o Claude registrar).
 
 ## Logins do FSENSE → nome no Helpoint
 

@@ -15,7 +15,7 @@ import { useState } from 'react';
 import { useQueryState } from '@/hooks/useQueryState';
 import { usePeriodoNaUrl } from '@/hooks/usePeriodoNaUrl';
 import { PERSONALIZADO, rotuloDoIntervalo, type IntervaloDeDias } from '@/lib/period';
-import { fromLocalISODate, toLocalISODate, todayISO } from '@/lib/dates';
+import { diaCurto, fromLocalISODate, toLocalISODate, todayISO } from '@/lib/dates';
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TermosNosIndicadores } from '@/components/ti/TermosNosIndicadores';
@@ -31,7 +31,8 @@ import { TILyraPanel } from '@/components/dashboard/TILyraPanel';
 import { ExportPDFDialog } from '@/components/dashboard/ExportPDFDialog';
 import { CategoriasDosChamados } from '@/components/ti/CategoriasDosChamados';
 import { EquipeDaTI } from '@/components/ti/EquipeDaTI';
-import { DefinirMetasDosChamados } from '@/components/ti/MetasDosChamados';
+import { metaEmVigor } from '@/config/metas-da-ti';
+import { useSemanasDoFsenseAConfirmar } from '@/hooks/useEquipeDaTI';
 import {
   useTicketMetrics, useTicketTrends, usePreviousMetrics, useViolatedSlaTickets, MetricsFilter, filtroDoPeriodo,
   getPreviousPeriodRange, intervaloDoFiltro,
@@ -47,7 +48,7 @@ import { useKanbanReportMetrics, ReportFilter } from '@/hooks/useReportMetrics';
 import { useLyraChat } from '@/hooks/useLyraChat';
 import { useAISecretary } from '@/hooks/useAISecretary';
 import { useIALigada } from '@/hooks/useAssistantName';
-import { AlertTriangle, BarChart3, BrainCircuit, CheckCircle2, ChevronDown, Clock, Download, FileKey, Monitor, ShieldCheck, Timer, Wrench } from 'lucide-react';
+import { AlertTriangle, BarChart3, BrainCircuit, CheckCircle2, ChevronDown, Clock, Download, FileKey, Monitor, ShieldCheck, Target, Timer, Wrench } from 'lucide-react';
 import { AIIndicatorAnalysis } from '@/components/dashboard/AIIndicatorAnalysis';
 import { Link, useNavigate } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
@@ -56,7 +57,7 @@ import { cn } from '@/lib/utils';
 import { ativoEmEstoque, ativoEmUso, ROTULO_DA_CATEGORIA_DO_ATIVO } from '@/lib/asset-status';
 import { formatarHoras } from '@/lib/horas';
 import { barrasDaTendencia } from '@/lib/tendencia';
-import { farol, type Farol } from '@/lib/ti-equipe';
+import { farol, somarDias, type Farol } from '@/lib/ti-equipe';
 import { textoDaMeta } from '@/lib/meta-do-indicador';
 import type { AssetCategory } from '@/types/helpdesk';
 
@@ -109,7 +110,9 @@ export default function TIRelatorios() {
   const podeVerEquipe = usePodeVerEquipe('tickets');
   const perfil = useConfiguracaoDosSetores();
   const podeExportar = perfil.pode('ti', 'reports', 'export');
-  const podeDefinirMetas = !perfil.isLoading && perfil.pode('diretoria', 'indicadores', 'definir_metas');
+  const podeMudarMetas = !perfil.isLoading
+    && (perfil.alteraAba('ti', 'chamados') || perfil.pode('diretoria', 'indicadores', 'definir_metas'));
+  const { data: semanasAConfirmar = [] } = useSemanasDoFsenseAConfirmar();
 
   const reportFilter: ReportFilter = { period: selectedPeriod as ReportFilter['period'], collaboratorId };
   const { data: kanbanData } = useKanbanReportMetrics('ti', reportFilter);
@@ -150,20 +153,29 @@ export default function TIRelatorios() {
   const contratosVencendo = contracts?.filter(c => venceEm30(c.end_date)) || [];
   const manutencoesProximas = maintenances?.filter(m => venceEm30(m.scheduled_date) && ['scheduled', 'in_progress'].includes(m.status)) || [];
 
-  const meta = (chave: string) => metas.data?.get(`ti.${chave}`);
+  // A meta em vigor: a gravada em Configurações de TI › Metas, ou o padrão (mercado + histórico; rodada 2).
+  const meta = (chave: string) => metaEmVigor(metas.data, chave);
   const fmtMeta = (v: number | undefined, sufixo: string) => (v === undefined ? undefined : `${v.toLocaleString('pt-BR')}${sufixo}`);
   const sla = metrics?.slaCompliance ?? 0;
   const primeira = metrics?.firstResponseCompliance ?? 0;
   const tempo = metrics?.avgResolutionTime ?? 0;
-  const farolSla = farol(metrics ? sla : null, meta('sla_cumprido'), 'mais');
-  const farolPrimeira = farol(metrics ? primeira : null, meta('primeira_resposta'), 'mais');
+  const farolSla = farol(metrics ? sla : null, meta('sla_cumprido'), 'mais', true);
+  const farolPrimeira = farol(metrics ? primeira : null, meta('primeira_resposta'), 'mais', true);
   const farolTempo = farol(metrics ? tempo : null, meta('tempo_medio_horas'), 'menos');
   const notaDaMeta = (v: number | undefined, sufixo: string, sentido: 'mais' | 'menos') => {
     const t = fmtMeta(v, sufixo);
     return t ? textoDaMeta(t, sentido) : undefined;
   };
 
+  // Semana do FSENSE lançada e não confirmada (rodada 2): sem confirmar, a reunião mostra "Sem dado". A mais recente; se
+  // ela está no período da tela, o aviso só desce até o bloco Equipe; senão, abre o período dela.
+  const semanaAConfirmar = semanasAConfirmar[0];
+  const naTela = !!semanaAConfirmar && semanaAConfirmar >= intervaloDaTela.de && semanaAConfirmar <= intervaloDaTela.ate;
   const atencao = [
+    semanaAConfirmar && {
+      texto: `Semana do FSENSE até ${diaCurto(semanaAConfirmar)} a confirmar`, cor: 'aviso',
+      para: naTela ? '#equipe-da-ti' : `/ti/indicadores?periodo=${PERSONALIZADO}&de=${somarDias(semanaAConfirmar, -6)}&ate=${semanaAConfirmar}`,
+    },
     violados.length > 0 && { texto: `${violados.length} ${violados.length === 1 ? 'chamado fora do prazo' : 'chamados fora do prazo'}`, cor: 'perigo', para: '/ti/chamados' },
     vencidas > 0 && { texto: `${vencidas} ${vencidas === 1 ? 'licença ou contrato vencido' : 'licenças e contratos vencidos'}`, cor: 'perigo', para: '/ti/licencas' },
     licencasVencendo.length > 0 && { texto: `${licencasVencendo.length} ${licencasVencendo.length === 1 ? 'licença vence' : 'licenças vencem'} em 30 dias`, cor: 'aviso', para: '/ti/licencas' },
@@ -227,13 +239,18 @@ export default function TIRelatorios() {
                     <AlertTriangle className="h-4 w-4 text-status-danger" />Atenção agora
                     <ExplicacaoDoIndicador id="chamados.o_que_pede_atencao" />
                   </span>
-                  {atencao.map(a => (
-                    <Link key={a.texto} to={tenantPath(a.para)} role="listitem"
-                      className={cn('rounded-md px-3 py-1.5 text-sm font-semibold hover:underline',
-                        a.cor === 'perigo' ? 'badge-danger' : a.cor === 'aviso' ? 'badge-warning' : 'badge-neutral')}>
-                      {a.texto}
-                    </Link>
-                  ))}
+                  {atencao.map(a => {
+                    const classe = cn('rounded-md px-3 py-1.5 text-sm font-semibold hover:underline',
+                      a.cor === 'perigo' ? 'badge-danger' : a.cor === 'aviso' ? 'badge-warning' : 'badge-neutral');
+                    return a.para.startsWith('#') ? (
+                      <button key={a.texto} type="button" role="listitem" className={classe}
+                        onClick={() => document.getElementById(a.para.slice(1))?.scrollIntoView({ behavior: 'smooth' })}>
+                        {a.texto}
+                      </button>
+                    ) : (
+                      <Link key={a.texto} to={tenantPath(a.para)} role="listitem" className={classe}>{a.texto}</Link>
+                    );
+                  })}
                 </div>
               )}
 
@@ -254,7 +271,11 @@ export default function TIRelatorios() {
                 </KPIGrid>
                 <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                   <span>A cor do número segue a meta: verde na meta, amarelo perto, vermelho fora.{!anterior && ' Sem chamados no período anterior para comparar.'}</span>
-                  {podeDefinirMetas && <DefinirMetasDosChamados metas={metas.data} />}
+                  {podeMudarMetas && (
+                    <Button asChild size="sm" variant="ghost" className="h-7 text-xs">
+                      <Link to={tenantPath('/ti/configuracoes?aba=metas')}><Target className="h-3.5 w-3.5 mr-1" />Metas</Link>
+                    </Button>
+                  )}
                 </div>
               </div>
 

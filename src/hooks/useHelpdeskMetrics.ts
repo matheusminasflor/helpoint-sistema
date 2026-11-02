@@ -535,7 +535,10 @@ export function useViolatedSlaTickets(filter?: MetricsFilter) {
         .lt('sla_due_at', now)
         // Pendente, Aguardando aprovação e Agendado são prazo pausado, não violado (dono, 2026-10-06/07):
         // a mesma lista do cartão (`SLA_PAUSED_STATUSES`), que antes faltava `waiting_parts` aqui.
-        .not('status', 'in', `(${[...SLA_PARADO, ...SLA_PAUSED_STATUSES].map(s => `"${s}"`).join(',')})`);
+        .not('status', 'in', `(${[...SLA_PARADO, ...SLA_PAUSED_STATUSES.filter(s => s !== 'scheduled')].map(s => `"${s}"`).join(',')})`)
+        // ...exceto o agendado com o prazo JÁ vencido, que continua atrasado (`slaDoChamado`). Faltava aqui: a
+        // contagem dava 4 e a lista "agora" 3 na mesma tela (2026-11-02, o #215).
+        .or('status.neq.scheduled,agendou_vencido.is.true');
 
       if (filter?.module) query = query.eq('module', filter.module);
       if (filter?.technicianId) query = query.or(await filtroDoAtendente(filter.technicianId));

@@ -2,7 +2,9 @@
 // filtro de período da tela e comparam com o período anterior do mesmo tamanho, como os outros indicadores.
 //
 //   Meta mensal: a de percentual vale para qualquer período; a de quantidade (interrupções) é proporcional aos dias.
-//   Farol: verde na meta · amarelo até 70% da meta (ou até 130% quando menor é melhor) · vermelho fora.
+//   Farol: verde na meta · amarelo perto · vermelho fora. "Perto", em percentual, é até 10 pontos da meta (rodada 2,
+//   2026-11-02: com a meta de SLA em 90%, os 70% da regra antiga deixavam 64% amarelo); em tempo e quantidade, até 70%
+//   da meta (ou até 130% quando menor é melhor), como a planilha.
 
 import { fromLocalISODate, toLocalISODate } from '@/lib/dates';
 import type { IntervaloDeDias } from '@/lib/period';
@@ -10,11 +12,14 @@ import type { IntervaloDeDias } from '@/lib/period';
 /** `ate` exclusivo. */
 export interface Periodo { de: string; ate: string }
 
-const somarDias = (iso: string, n: number) => {
+export const somarDias = (iso: string, n: number) => {
   const d = fromLocalISODate(iso);
   d.setDate(d.getDate() + n);
   return toLocalISODate(d);
 };
+
+/** O domingo que fecha a semana (segunda a domingo) do dia — o mesmo que `ti_fsense_lancar` grava. */
+export const domingoDaSemana = (iso: string) => somarDias(iso, (7 - fromLocalISODate(iso).getDay()) % 7);
 
 /** O intervalo da tela (último dia incluído) → período com `ate` exclusivo. */
 export const periodoDoIntervalo = ({ de, ate }: IntervaloDeDias): Periodo => ({ de, ate: somarDias(ate, 1) });
@@ -38,12 +43,20 @@ export function metaDoPeriodo(metaMensal: number | undefined, dias: number, prop
 export type Sentido = 'mais' | 'menos';
 export type Farol = 'no_alvo' | 'atencao' | 'fora' | 'sem_meta' | 'sem_dado';
 
-export function farol(realizado: number | null, meta: number | undefined, sentido: Sentido): Farol {
+export function farol(realizado: number | null, meta: number | undefined, sentido: Sentido, percentual = false): Farol {
   if (realizado === null) return 'sem_dado';
   if (meta === undefined || (meta === 0 && sentido === 'mais')) return 'sem_meta';
-  if (sentido === 'mais') return realizado >= meta ? 'no_alvo' : realizado >= 0.7 * meta ? 'atencao' : 'fora';
-  return realizado <= meta ? 'no_alvo' : realizado <= 1.3 * meta ? 'atencao' : 'fora';
+  if (sentido === 'mais') {
+    const perto = percentual ? meta - 10 : 0.7 * meta;
+    return realizado >= meta ? 'no_alvo' : realizado >= perto ? 'atencao' : 'fora';
+  }
+  const perto = percentual ? meta + 10 : 1.3 * meta;
+  return realizado <= meta ? 'no_alvo' : realizado <= perto ? 'atencao' : 'fora';
 }
+
+const GRAVIDADE: Farol[] = ['sem_dado', 'sem_meta', 'no_alvo', 'atencao', 'fora'];
+/** O pior de vários faróis: a pessoa com 3% de trabalho não fica verde só porque o ocioso dela é baixo (2026-11-02). */
+export const piorFarol = (...f: Farol[]): Farol => f.reduce((a, b) => (GRAVIDADE.indexOf(b) > GRAVIDADE.indexOf(a) ? b : a));
 
 export type Comparativo = 'acima' | 'abaixo' | 'igual';
 export function comparar(atual: number | null, anterior: number | null): Comparativo | null {
@@ -59,10 +72,22 @@ export interface LinhaFsense {
   horas: number;
   trabalho: number | null;
   ocioso: number | null;
+  bloqueada?: number | null;
+  suspenso?: number | null;
 }
-export interface DoColaborador { colaborador: string; horas: number; trabalho: number | null; ocioso: number | null }
+export interface DoColaborador {
+  colaborador: string;
+  horas: number;
+  trabalho: number | null;
+  ocioso: number | null;
+  /** As duas partes que completam a barra da pessoa (rodada 2): tela bloqueada e computador suspenso. */
+  bloqueada: number | null;
+  suspenso: number | null;
+}
 
 const media = (v: number[]) => (v.length ? v.reduce((a, b) => a + b, 0) / v.length : null);
+const mediaDo = (g: LinhaFsense[], campo: 'trabalho' | 'ocioso' | 'bloqueada' | 'suspenso') =>
+  media(g.flatMap((l) => (l[campo] === null || l[campo] === undefined ? [] : [l[campo]!])));
 
 /** Quem tem lançamento no período: horas somadas, percentuais pela média das linhas dela. */
 export function porColaborador(linhas: LinhaFsense[], p: Periodo): DoColaborador[] {
@@ -75,13 +100,17 @@ export function porColaborador(linhas: LinhaFsense[], p: Periodo): DoColaborador
   return [...grupos.values()].map((g) => ({
     colaborador: g[0].colaborador.trim(),
     horas: Math.round(g.reduce((a, l) => a + l.horas, 0) * 10) / 10,
-    trabalho: media(g.flatMap((l) => (l.trabalho === null ? [] : [l.trabalho]))),
-    ocioso: media(g.flatMap((l) => (l.ocioso === null ? [] : [l.ocioso]))),
+    trabalho: mediaDo(g, 'trabalho'),
+    ocioso: mediaDo(g, 'ocioso'),
+    bloqueada: mediaDo(g, 'bloqueada'),
+    suspenso: mediaDo(g, 'suspenso'),
   }));
 }
 
 /** Média da equipe como a planilha (AVERAGEIF > 0): quem está zerado ou sem número não entra. */
-export function mediaDaEquipe(lista: DoColaborador[], campo: 'trabalho' | 'ocioso'): number | null {
+type ParaMedia = Pick<DoColaborador, 'colaborador' | 'trabalho' | 'ocioso'>;
+
+export function mediaDaEquipe(lista: ParaMedia[], campo: 'trabalho' | 'ocioso'): number | null {
   return media(lista.flatMap((c) => (c[campo] && c[campo]! > 0 ? [c[campo]!] : [])));
 }
 
@@ -89,7 +118,7 @@ export function mediaDaEquipe(lista: DoColaborador[], campo: 'trabalho' | 'ocios
  * O "anterior" da equipe, como a planilha: a média do período anterior **só de quem está no período atual** (a
  * planilha tira a média da coluna "anterior" das pessoas listadas). Quem saiu não puxa a comparação.
  */
-export function mediaAnteriorDosMesmos(atual: DoColaborador[], anterior: DoColaborador[], campo: 'trabalho' | 'ocioso'): number | null {
+export function mediaAnteriorDosMesmos(atual: ParaMedia[], anterior: ParaMedia[], campo: 'trabalho' | 'ocioso'): number | null {
   const nomes = new Set(atual.map((c) => c.colaborador.toLowerCase()));
   return mediaDaEquipe(anterior.filter((c) => nomes.has(c.colaborador.toLowerCase())), campo);
 }

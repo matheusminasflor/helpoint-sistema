@@ -7,7 +7,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(15);
+select plan(20);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-ti-semanal', 'TI semanal', false) as a;
@@ -88,6 +88,34 @@ select is((select meta from public.dir_metas_dos_setores where setor = 'ti' and 
   'quem vê os Indicadores da TI lê a meta da TI');
 select is((select count(*)::int from public.dir_metas_dos_setores where setor <> 'ti'), 0,
   'e não lê a meta dos outros setores');
+
+-- ═══ 16-17. Rodada 2 (20270212180000): a semana vai para o domingo, e lançar de novo a mesma semana substitui ═══
+-- Quem tem "Somente leitura" não lança; o resto é com o Gestor.
+select tests.clear_authentication();
+select tests.authenticate_as('gest@tisemanal.test');
+select public.ti_fsense_lancar(date '2026-10-30', '[{"colaborador": "Gislene", "horas": 50, "trabalho": 40, "ocioso": 2}]'::jsonb);
+select is((select data from public.ti_fsense where colaborador = 'Gislene'), date '2026-11-01',
+  'lançada na sexta, a semana é gravada no domingo que a fecha');
+select public.ti_fsense_lancar(date '2026-10-28', '[{"colaborador": "gislene", "horas": 60, "trabalho": 41, "ocioso": 3}]'::jsonb);
+select is((select format('%s %s', count(*), max(horas)) from public.ti_fsense where lower(colaborador) = 'gislene'), '1 60.0',
+  'lançar de novo a mesma semana, com outro dia, substitui em vez de duplicar');
+
+-- ═══ 18-20. As metas da TI em Configurações de TI: quem altera a aba Chamados da TI muda a meta da TI, e só a da TI ═══
+select tests.clear_authentication();
+update public.access_profiles
+   set permissions = permissions || '{"config_chamados": {"view": true, "edit": true}}'::jsonb
+ where tenant_id = (select a from f) and department = 'ti' and name = 'Gestor';
+select tests.authenticate_as('gest@tisemanal.test');
+select lives_ok($$ insert into public.dir_metas_dos_setores (tenant_id, setor, indicador, meta)
+  select a, 'ti', 'sla_cumprido', 90 from f
+  on conflict (tenant_id, setor, indicador) do update set meta = excluded.meta returning id $$,
+  'quem configura a TI grava a meta da TI (como a tela: upsert com returning)');
+select throws_ok($$ insert into public.dir_metas_dos_setores (tenant_id, setor, indicador, meta)
+  select a, 'rh', 'turnover', 1 from f $$, '42501', null, 'e não grava meta de outro setor');
+select tests.clear_authentication();
+select tests.authenticate_as('leit@tisemanal.test');
+select throws_ok($$ insert into public.dir_metas_dos_setores (tenant_id, setor, indicador, meta)
+  select a, 'ti', 'primeira_resposta', 80 from f $$, '42501', null, 'quem só vê a configuração da TI não muda meta');
 select tests.clear_authentication();
 
 select * from finish();

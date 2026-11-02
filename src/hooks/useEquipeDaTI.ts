@@ -53,6 +53,23 @@ export function useUltimaSemanaDoFsense(antesDe: string) {
   });
 }
 
+/**
+ * As semanas lançadas e ainda a confirmar (o dia que fecha cada uma), para a faixa "Atenção agora" (rodada 2): sem
+ * confirmar, a reunião de segunda mostra "Sem dado". Quem não vê a produtividade por pessoa recebe lista vazia (RLS).
+ */
+export function useSemanasDoFsenseAConfirmar() {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['ti-fsense', tenantId, 'a-confirmar'],
+    enabled: !!tenantId,
+    queryFn: async () => {
+      const linhas = ((unwrap(await supabase.from('ti_fsense' as never)
+        .select('data').is('confirmado_em', null).order('data', { ascending: false }).limit(200))) ?? []) as unknown as { data: string }[];
+      return [...new Set(linhas.map((l) => l.data))];
+    },
+  });
+}
+
 export function useInterrupcoes({ de, ate }: Periodo) {
   const { tenantId } = useAuth();
   return useQuery({
