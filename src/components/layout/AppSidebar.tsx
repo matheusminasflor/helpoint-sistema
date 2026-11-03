@@ -9,7 +9,7 @@ import {
   CheckCircle2, Receipt, HeartPulse, FolderLock, Palette,
   Gift, FileSignature, Banknote, CalendarOff, PanelLeftClose, PanelLeftOpen, X, Wallet, TrendingUp, PiggyBank, FileBarChart,
   ShoppingCart, Package, Boxes, Handshake, GraduationCap, KanbanSquare, PackageCheck, Factory, Building2, Upload,
-  IdCard, ClipboardList, Gauge, Briefcase, Clock, BookMarked, Newspaper, Store, ListChecks } from 'lucide-react';
+  IdCard, ClipboardList, Gauge, Briefcase, Clock, BookMarked, Newspaper, Store, ListChecks, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useVisibleModules } from '@/hooks/useVisibleModules';
@@ -89,6 +89,7 @@ const mktMenuItems: MenuItem[] = [
   // Estoque com quantidade, entrada e saída no lugar do Inventário (dono, 2026-10-19).
   { to: '/mkt/estoque', icon: Boxes, label: 'Estoque', title: 'Estoque do Marketing', secao: DIA },
   { to: '/mkt/beneficio', icon: Gift, label: 'Benefício de sexta', title: 'Produtos que o colaborador leva na sexta e devolve segunda', secao: DIA },
+  { to: '/mkt/artistas', icon: Star, label: 'Artistas', title: 'Entregas dos artistas, reunião do mês e a bonificação', secao: DIA },
   { to: '/mkt/fornecedores', icon: Truck, label: 'Fornecedores', secao: CADASTROS },
   { to: '/mkt/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores de Marketing', secao: RELATORIOS },
   { to: '/mkt/diretrizes', icon: BookMarked, label: 'Diretrizes do Marketing', secao: DO_SETOR },

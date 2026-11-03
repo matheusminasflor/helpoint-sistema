@@ -169,6 +169,13 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
         { key: 'create', label: 'Registrar retirada e devolução' },
         { key: 'edit', label: 'Cadastrar produtos, lotes e linhas' },
       ]},
+      // Artistas (dono, 2026-11-03; 20270212210000): entregas, reunião do mês e a bonificação pela regra da planilha.
+      { key: 'artistas', label: 'Artistas', actions: [
+        { key: 'view', label: 'Ver' },
+        { key: 'create', label: 'Lançar entregas e reunião' },
+        { key: 'edit', label: 'Cadastrar artistas (teto e metas)' },
+        { key: 'delete', label: 'Apagar entrega', sensitive: true },
+      ]},
       { key: 'suppliers', label: 'Fornecedores', actions: CRUD },
       // Jornal da empresa (decisão do dono, 2026-10-04): o Marketing escreve; ler é de todos. Vale no
       // banco (`pode_no_setor('marketing', 'jornal', …)`, migrations 20261204020000 e 20261205070000).

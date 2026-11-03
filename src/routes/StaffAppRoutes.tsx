@@ -48,6 +48,7 @@ const MKTSocialCalendar = lazy(() => import('@/telas/MKTSocialCalendar'));
 const ComprasFornecedores = lazy(() => import('@/telas/compras/Fornecedores'));
 const MKTConfiguracoes = lazy(() => import('@/telas/MKTConfiguracoes'));
 const MKTEstoque = lazy(() => import('@/telas/MKTEstoque'));
+const MKTArtistas = lazy(() => import('@/telas/MKTArtistas'));
 const MKTBeneficioDeSexta = lazy(() => import('@/telas/MKTBeneficioDeSexta'));
 const TIRelatorios = lazy(() => import('@/telas/TIRelatorios'));
 const Agenda = lazy(() => import('@/telas/Agenda'));
@@ -226,6 +227,7 @@ export function StaffAppRoutes() {
       <Route path="mkt/social" element={S(<MKTSocialCalendar />)} />
       <Route path="mkt/estoque" element={S(<MKTEstoque />)} />
       <Route path="mkt/beneficio" element={S(<MKTBeneficioDeSexta />)} />
+      <Route path="mkt/artistas" element={S(<MKTArtistas />)} />
       <Route path="mkt/inventario" element={<Navigate to="../estoque" relative="path" replace />} />
       {/* O cadastro de fornecedor é UM (leva I): a mesma tela em dois
           endereços, porque quem procura fornecedor entra pelo módulo em que
