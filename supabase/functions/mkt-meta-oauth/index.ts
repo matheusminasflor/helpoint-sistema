@@ -108,14 +108,15 @@ async function ligarIndicadores(credencial: string, userId: string): Promise<Res
   if (papelErro) throw papelErro;
   if (!ehGestor) return json({ error: 'só gestor ou acima conecta a Meta' }, 403);
 
-  const lista = async (caminho: string) => {
+  const lista = async <T,>(caminho: string): Promise<T[]> => {
     const r = await fetch(`https://graph.facebook.com/${META_API_VERSION}/${caminho}&limit=100&access_token=${credencial}`);
     const d = await r.json();
     if (d.error) throw new Error(`a Meta recusou ${caminho.split('?')[0]}: ${d.error.message}`);
-    return (d.data ?? []) as Record<string, any>[];
+    return (d.data ?? []) as T[];
   };
-  const paginas = await lista('me/accounts?fields=id,name,instagram_business_account{id,username}');
-  const anuncios = await lista('me/adaccounts?fields=account_id,name');
+  const paginas = await lista<{ id: string; name?: string; instagram_business_account?: { id: string; username?: string } }>(
+    'me/accounts?fields=id,name,instagram_business_account{id,username}');
+  const anuncios = await lista<{ account_id: string; name?: string }>('me/adaccounts?fields=account_id,name');
   const contas = [
     ...paginas.map((p) => ({ tipo: 'pagina', id: String(p.id), nome: String(p.name ?? p.id) })),
     ...paginas.filter((p) => p.instagram_business_account).map((p) => ({
