@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { expectRows, unwrap } from '@/lib/supabase-result';
 import type { TipoDeEntrega } from '@/lib/bonificacao-dos-artistas';
 import type { LinhaDoResumo } from '@/lib/artistas-nos-indicadores';
+import type { EntregaComDia } from '@/lib/semanas-dos-artistas';
 
 export interface Artista {
   id: string;
@@ -182,5 +183,22 @@ export function useReunioesDosArtistas(ligado = true) {
         .select('artista_id, mes').eq('presente', true)) ?? []) as unknown as { artista_id: string; mes: string }[];
       return new Set(linhas.map((l) => `${l.artista_id}|${l.mes}`));
     },
+  });
+}
+
+/**
+ * As entregas de `de` a `ate`, para as semanas dos Indicadores (do início do anterior ao fim da semana escolhida).
+ * ponytail: lê as linhas, não um resumo; teto de 1000 linhas do PostgREST — dois meses dão ~200. Saída: somar por dia
+ * no banco quando a equipe passar de ~400 entregas por mês.
+ */
+export function useEntregasEntre(de: string, ate: string, ligado = true) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['artistas-mkt', 'entregas-entre', tenantId, de, ate],
+    enabled: !!tenantId && ligado,
+    queryFn: async (): Promise<EntregaComDia[]> =>
+      (unwrap(await supabase.from('mkt_artistas_entregas' as never)
+        .select('artista_id, data, tipo, quantidade, aprovado, na_campanha')
+        .gte('data', de).lte('data', ate).limit(1000)) ?? []) as unknown as EntregaComDia[],
   });
 }
