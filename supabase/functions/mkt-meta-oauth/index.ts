@@ -116,7 +116,21 @@ async function ligarIndicadores(credencial: string, userId: string): Promise<Res
   };
   const paginas = await lista<{ id: string; name?: string; instagram_business_account?: { id: string; username?: string } }>(
     'me/accounts?fields=id,name,instagram_business_account{id,username}');
-  const anuncios = await lista<{ account_id: string; name?: string }>('me/adaccounts?fields=account_id,name');
+  // A credencial de usuário do sistema lista as contas de anúncios atribuídas a ele, e nem sempre por `me/adaccounts`
+  // (a Meta respondeu "(#200) Missing Permissions" em 2026-11-03). Tenta os dois caminhos; se nenhum vier, conecta as
+  // páginas e o Instagram mesmo assim e guarda o motivo, para a tela dizer que os anúncios ficaram de fora.
+  type ContaDeAnuncio = { account_id: string; name?: string };
+  let anuncios: ContaDeAnuncio[] = [];
+  let avisoAnuncios: string | null = null;
+  try {
+    anuncios = await lista<ContaDeAnuncio>('me/adaccounts?fields=account_id,name');
+  } catch (primeiro) {
+    try {
+      anuncios = await lista<ContaDeAnuncio>('me/assigned_ad_accounts?fields=account_id,name');
+    } catch {
+      avisoAnuncios = `as contas de anúncios não vieram (${primeiro instanceof Error ? primeiro.message : String(primeiro)})`;
+    }
+  }
   const contas = [
     ...paginas.map((p) => ({ tipo: 'pagina', id: String(p.id), nome: String(p.name ?? p.id) })),
     ...paginas.filter((p) => p.instagram_business_account).map((p) => ({
@@ -133,10 +147,10 @@ async function ligarIndicadores(credencial: string, userId: string): Promise<Res
     .upsert({ tenant_id: tenantId, access_token: credencial }, { onConflict: 'tenant_id' });
   if (segredoErro) throw segredoErro;
   const { error: ligacaoErro } = await admin.from('mkt_meta_ligacao')
-    .upsert({ tenant_id: tenantId, contas, conectado_por: userId, conectado_em: new Date().toISOString(), ultimo_erro: null },
+    .upsert({ tenant_id: tenantId, contas, conectado_por: userId, conectado_em: new Date().toISOString(), ultimo_erro: avisoAnuncios },
       { onConflict: 'tenant_id' });
   if (ligacaoErro) throw ligacaoErro;
-  return json({ success: true, contas });
+  return json({ success: true, contas, aviso: avisoAnuncios });
 }
 
 serve(async (req) => {

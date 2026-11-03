@@ -25,6 +25,7 @@ import { PatternsAnalysis } from '@/components/ti/PatternsAnalysis';
 import { CategoriasDosChamados } from '@/components/ti/CategoriasDosChamados';
 import { LinhaAgendaEAjuda } from '@/components/dashboard/AjudaAOutrosSetoresKPI';
 import { OutrosIndicadoresDoMarketing } from '@/components/mkt/OutrosIndicadoresDoMarketing';
+import { RedesETrafegoManual } from '@/components/mkt/RedesETrafegoManual';
 import { useIndicadoresDoMarketing } from '@/hooks/useIndicadoresDoMarketing';
 import { ArtistasDoMes, ArtistasMesAMes, EsperandoAsLigacoes } from '@/components/mkt/ArtistasNosIndicadores';
 import { DicaDoGrafico } from '@/components/dashboard/DicaDoGrafico';
@@ -344,6 +345,8 @@ export default function MKTRelatorios() {
           <LinhaAgendaEAjuda metrics={metrics} modulo="marketing" filter={filter} />
 
           {artistasDoPeriodo}
+
+          <RedesETrafegoManual de={intervaloDaTela.de} ate={intervaloDaTela.ate} podeLancar={perfil.pode('marketing', 'reports', 'lancar')} />
 
           <EsperandoAsLigacoes meta={ligacaoMeta.data} podeConectarMeta={podeConectarMeta} onConectou={() => ligacaoMeta.refetch()} />
 

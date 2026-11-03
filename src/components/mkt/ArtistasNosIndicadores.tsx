@@ -233,7 +233,7 @@ export function EsperandoAsLigacoes({ meta, podeConectarMeta, onConectou }: {
             {meta.contas.map((c) => `${c.nome} (${NOME_DO_TIPO[c.tipo]})`).join(' · ')}
           </p>
           <p className="text-xs text-muted-foreground">
-            {meta.ultimo_erro ? `A última busca dos números falhou: ${meta.ultimo_erro}`
+            {meta.ultimo_erro ? `Atenção: ${meta.ultimo_erro}. Conecte de novo marcando a conta de anúncios.`
               : 'Tráfego pago e redes sociais entram aqui a partir da primeira busca dos números.'}
           </p>
         </div>
