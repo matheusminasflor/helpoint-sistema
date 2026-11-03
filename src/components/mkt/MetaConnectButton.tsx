@@ -1,12 +1,13 @@
 import { useState } from 'react';
-import { Instagram, Facebook, ExternalLink, Loader2 } from 'lucide-react';
+import { Instagram, Facebook, ExternalLink, Loader2, PlugZap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { invokeEdge } from '@/lib/edge-function';
 import { toast } from 'sonner';
 import type { SocialPlatform } from '@/types/mkt';
 
 interface MetaConnectButtonProps {
-  platform: 'instagram' | 'facebook';
+  /** `indicadores` (2026-11-03): a ligação dos Indicadores do Marketing, com todas as contas liberadas. */
+  platform: 'instagram' | 'facebook' | 'indicadores';
   onSuccess?: () => void;
 }
 
@@ -111,7 +112,7 @@ export function MetaConnectButton({ platform, onSuccess }: MetaConnectButtonProp
       });
 
       if (data?.success) {
-        toast.success(`${platform === 'instagram' ? 'Instagram' : 'Facebook'} conectado com sucesso`);
+        toast.success(platform === 'indicadores' ? 'Meta conectada. Os números começam a entrar nos Indicadores.' : `${platform === 'instagram' ? 'Instagram' : 'Facebook'} conectado com sucesso`);
         // Conectar dá permissão de ler a página; instalar o aplicativo é o que
         // faz ela **mandar** os leads de anúncio (CRM-4c). A segunda pode falhar
         // sozinha — e falhar em silêncio significaria configurar o Lead Ads
@@ -135,8 +136,8 @@ export function MetaConnectButton({ platform, onSuccess }: MetaConnectButtonProp
     }
   };
 
-  const Icon = platform === 'instagram' ? Instagram : Facebook;
-  const label = platform === 'instagram' ? 'Instagram' : 'Facebook';
+  const Icon = platform === 'indicadores' ? PlugZap : platform === 'instagram' ? Instagram : Facebook;
+  const label = platform === 'indicadores' ? 'Conectar com a Meta' : platform === 'instagram' ? 'Instagram' : 'Facebook';
   const bgColor = platform === 'instagram' 
     ? 'hover:bg-accent hover:text-accent-foreground' 
     : 'hover:bg-status-info hover:text-primary-foreground hover:border-transparent';

@@ -81,11 +81,61 @@ function isAllowedRedirect(uri: string): boolean {
 
 interface OAuthRequest {
   action: 'get_auth_url' | 'exchange_code' | 'refresh_token';
-  platform: 'instagram' | 'facebook';
+  // `indicadores` (2026-11-03): a ligação dos Indicadores do Marketing — todas as páginas, contas do Instagram e contas
+  // de anúncios liberadas, numa credencial de usuário do sistema que não vence. As outras duas são a publicação.
+  platform: 'instagram' | 'facebook' | 'indicadores';
   redirect_uri: string;
   code?: string;
   account_id?: string;
   state?: string;
+}
+
+const json = (corpo: unknown, status = 200) =>
+  new Response(JSON.stringify(corpo), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+
+/**
+ * A ligação dos Indicadores do Marketing: com a credencial que a Meta deu ao código (usuário do sistema, não vence),
+ * lista as páginas (com a conta do Instagram de cada uma) e as contas de anúncios liberadas, e grava a ligação da
+ * empresa de quem conectou. Só gestor ou acima; grava pela chave de serviço (a tabela não tem policy de escrita).
+ */
+async function ligarIndicadores(credencial: string, userId: string): Promise<Response> {
+  const admin = adminClient();
+  const { data: perfil, error: perfilErro } = await admin.from('profiles').select('tenant_id').eq('id', userId).maybeSingle();
+  if (perfilErro) throw perfilErro;
+  const tenantId = (perfil as { tenant_id: string } | null)?.tenant_id;
+  if (!tenantId) return json({ error: 'sua conta não está ligada a nenhuma empresa' }, 403);
+  const { data: ehGestor, error: papelErro } = await admin.rpc('is_supervisor_or_higher', { _user_id: userId });
+  if (papelErro) throw papelErro;
+  if (!ehGestor) return json({ error: 'só gestor ou acima conecta a Meta' }, 403);
+
+  const lista = async (caminho: string) => {
+    const r = await fetch(`https://graph.facebook.com/${META_API_VERSION}/${caminho}&limit=100&access_token=${credencial}`);
+    const d = await r.json();
+    if (d.error) throw new Error(`a Meta recusou ${caminho.split('?')[0]}: ${d.error.message}`);
+    return (d.data ?? []) as Record<string, any>[];
+  };
+  const paginas = await lista('me/accounts?fields=id,name,instagram_business_account{id,username}');
+  const anuncios = await lista('me/adaccounts?fields=account_id,name');
+  const contas = [
+    ...paginas.map((p) => ({ tipo: 'pagina', id: String(p.id), nome: String(p.name ?? p.id) })),
+    ...paginas.filter((p) => p.instagram_business_account).map((p) => ({
+      tipo: 'instagram', id: String(p.instagram_business_account.id), pagina_id: String(p.id),
+      nome: p.instagram_business_account.username ? `@${p.instagram_business_account.username}` : String(p.name),
+    })),
+    ...anuncios.map((a) => ({ tipo: 'anuncios', id: `act_${a.account_id}`, nome: String(a.name ?? a.account_id) })),
+  ];
+  if (contas.length === 0) {
+    return json({ error: 'a Meta não liberou nenhuma página, conta do Instagram ou conta de anúncios. Conecte de novo e marque as contas.' }, 400);
+  }
+
+  const { error: segredoErro } = await admin.from('mkt_meta_ligacao_segredo')
+    .upsert({ tenant_id: tenantId, access_token: credencial }, { onConflict: 'tenant_id' });
+  if (segredoErro) throw segredoErro;
+  const { error: ligacaoErro } = await admin.from('mkt_meta_ligacao')
+    .upsert({ tenant_id: tenantId, contas, conectado_por: userId, conectado_em: new Date().toISOString(), ultimo_erro: null },
+      { onConflict: 'tenant_id' });
+  if (ligacaoErro) throw ligacaoErro;
+  return json({ success: true, contas });
 }
 
 serve(async (req) => {
@@ -224,6 +274,9 @@ serve(async (req) => {
         }
 
         const shortLivedToken = tokenData.access_token;
+
+        // A credencial de usuário do sistema já não vence: não passa pela troca por uma de 60 dias.
+        if (platform === 'indicadores') return await ligarIndicadores(shortLivedToken, String(userId));
 
         // Exchange for long-lived token (60 days)
         const longLivedUrl = new URL(`https://graph.facebook.com/${META_API_VERSION}/oauth/access_token`);

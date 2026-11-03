@@ -13,6 +13,8 @@ import { Button } from '@/components/ui/button';
 import { DicaDoGrafico } from '@/components/dashboard/DicaDoGrafico';
 import { COR, EIXO } from '@/config/cores-dos-graficos';
 import { useTenantPath } from '@/hooks/useTenantPath';
+import type { LigacaoMeta } from '@/hooks/useLigacaoMeta';
+import { MetaConnectButton } from '@/components/mkt/MetaConnectButton';
 import { formatBRL } from '@/lib/crm';
 import { cn } from '@/lib/utils';
 import { STATUS_DO_ARTISTA, mesEAno, nomeDoMes, type MesDosArtistas } from '@/lib/artistas-nos-indicadores';
@@ -202,20 +204,51 @@ const LIGACOES = [
   { fonte: 'Bling', titulo: 'Vendas', texto: 'faturado pelas notas fiscais' },
 ];
 
-export function EsperandoAsLigacoes() {
+const NOME_DO_TIPO = { instagram: 'Instagram', pagina: 'Página', anuncios: 'Anúncios' } as const;
+
+/**
+ * As fontes de fora: o que ainda espera a ligação e, a Meta, o botão de conectar (2026-11-03: "o intuito é ter os
+ * indicadores do MKT após conectar") — aqui, e não no Cronograma Social. Conectar é de gestor para cima (a função confere).
+ */
+export function EsperandoAsLigacoes({ meta, podeConectarMeta, onConectou }: {
+  meta: LigacaoMeta | null | undefined;
+  podeConectarMeta: boolean;
+  onConectou: () => void;
+}) {
+  const esperando = LIGACOES.filter((l) => l.fonte !== 'Meta' || !meta);
   return (
     <Card className="p-5 space-y-3 border-dashed">
-      <h3 className="text-sm font-semibold flex items-center gap-2">
-        <PlugZap className="h-4 w-4 text-muted-foreground" aria-hidden="true" />Esperando a ligação com o Kommo, a Meta e o Bling
-      </h3>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-sm font-semibold flex items-center gap-2">
+          <PlugZap className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+          {meta ? 'Esperando a ligação com o Kommo e o Bling' : 'Esperando a ligação com o Kommo, a Meta e o Bling'}
+        </h3>
+        {!meta && podeConectarMeta && <MetaConnectButton platform="indicadores" onSuccess={onConectou} />}
+      </div>
+      {meta && (
+        <div className="rounded-lg border border-border bg-card p-3 text-sm space-y-1">
+          <p>
+            <span className="font-semibold">Meta conectada</span>
+            <span className="text-muted-foreground"> em {new Date(meta.conectado_em).toLocaleDateString('pt-BR')}: </span>
+            {meta.contas.map((c) => `${c.nome} (${NOME_DO_TIPO[c.tipo]})`).join(' · ')}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {meta.ultimo_erro ? `A última busca dos números falhou: ${meta.ultimo_erro}`
+              : 'Tráfego pago e redes sociais entram aqui a partir da primeira busca dos números.'}
+          </p>
+        </div>
+      )}
       <ul className="grid gap-x-6 gap-y-2 sm:grid-cols-2 text-sm">
-        {LIGACOES.map((l) => (
+        {esperando.map((l) => (
           <li key={l.titulo}>
             <span className="font-semibold">{l.titulo}</span> <span className="text-muted-foreground">({l.fonte}): {l.texto}.</span>
           </li>
         ))}
       </ul>
-      <p className="text-xs text-muted-foreground">Os números entram sozinhos quando as chaves forem cadastradas no Helpoint.</p>
+      <p className="text-xs text-muted-foreground">
+        {!meta && !podeConectarMeta ? 'Quem conecta a Meta é o gestor do Marketing ou a Diretoria. ' : ''}
+        Os números entram sozinhos depois de cada ligação.
+      </p>
     </Card>
   );
 }

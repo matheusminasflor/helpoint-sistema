@@ -36,6 +36,8 @@ import {
   getPreviousPeriodRange, intervaloDoFiltro, useSerieDosChamados,
 } from '@/hooks/useHelpdeskMetrics';
 import { useMKTSocialPosts } from '@/hooks/useMKTSocialPosts';
+import { useLigacaoMeta } from '@/hooks/useLigacaoMeta';
+import { useAuth } from '@/contexts/AuthContext';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { useQueryState } from '@/hooks/useQueryState';
 import { usePeriodoNaUrl } from '@/hooks/usePeriodoNaUrl';
@@ -113,6 +115,10 @@ export default function MKTRelatorios() {
   const podeMudarMetas = !perfil.isLoading
     && (perfil.alteraAba('marketing', 'chamados') || perfil.pode('diretoria', 'indicadores', 'definir_metas'));
   const outros = useIndicadoresDoMarketing(intervaloDaTela.de, intervaloDaTela.ate);
+  // A ligação com a Meta (2026-11-03): conecta quem a função aceita, gestor para cima (`is_supervisor_or_higher`).
+  const ligacaoMeta = useLigacaoMeta();
+  const { role } = useAuth();
+  const podeConectarMeta = role === 'owner' || role === 'admin' || role === 'manager';
   const { data: allPosts = [] } = useMKTSocialPosts();
 
   // Artistas pelas semanas do mês deles, como na planilha (dono, 2026-11-03): o período da tela escolhe o recorte
@@ -339,7 +345,7 @@ export default function MKTRelatorios() {
 
           {artistasDoPeriodo}
 
-          <EsperandoAsLigacoes />
+          <EsperandoAsLigacoes meta={ligacaoMeta.data} podeConectarMeta={podeConectarMeta} onConectou={() => ligacaoMeta.refetch()} />
 
           <OutrosIndicadoresDoMarketing r={outros} />
 
