@@ -195,6 +195,11 @@ async function coletarEmpresa(tenantId: string, semanas: Semana[], agora: number
   // Permissions", 2026-11-03). Sem a lista, vai direto às contas de `META_CONTAS_DE_ANUNCIO` (o número da conta, que não
   // é segredo): se a credencial lê anúncio, os números vêm; se não, o erro da Meta aparece na tela.
   const listadas = contas.filter((c) => c.tipo === 'anuncios');
+  // A chave que o "Conectar com a Meta" cria veio SEM ads_read (debug_token, 2026-11-03), embora a configuração do login
+  // peça. A de anúncios pode vir de um usuário do sistema criado à mão no Business Manager, guardada pelo dono no cofre
+  // das funções como `META_TOKEN_ANUNCIOS`. ponytail: uma chave só, porque o Helpoint é só da Minasflor; com outra empresa,
+  // a chave de anúncios passa para `mkt_meta_ligacao_segredo`.
+  const tokenDeAnuncios = Deno.env.get('META_TOKEN_ANUNCIOS') || token;
   const anuncios: Conta[] = listadas.length ? listadas : (Deno.env.get('META_CONTAS_DE_ANUNCIO') ?? '').split(',')
     .map((s) => s.trim()).filter(Boolean)
     .map((id) => ({ tipo: 'anuncios' as const, id: id.startsWith('act_') ? id : `act_${id}`, nome: `conta de anúncios ${id}` }));
@@ -222,7 +227,7 @@ async function coletarEmpresa(tenantId: string, semanas: Semana[], agora: number
     }
     for (const act of anuncios) {
       try {
-        const a = await dosAnuncios(token, act, s, doIg);
+        const a = await dosAnuncios(tokenDeAnuncios, act, s, doIg);
         const { error } = await admin.from('mkt_trafego_semana').upsert(semNulos({ tenant_id: tenantId, semana: s.domingo, ...a.total }),
           { onConflict: 'tenant_id,semana' });
         if (error) throw error;
@@ -238,7 +243,7 @@ async function coletarEmpresa(tenantId: string, semanas: Semana[], agora: number
         }
       } catch (e) {
         erros.push(`${act.nome}: ${emPortugues(e instanceof Error ? e.message : String(e))}`);
-        if (!erros.some((x) => x.startsWith('a chave ('))) erros.push(await permissoesDaChave(token));
+        if (!erros.some((x) => x.startsWith('a chave ('))) erros.push(await permissoesDaChave(tokenDeAnuncios));
       }
     }
   }
