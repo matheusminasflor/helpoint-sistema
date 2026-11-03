@@ -9,7 +9,7 @@
 import { COR, COR_ABERTOS, COR_DA_PRIORIDADE, COR_RESOLVIDOS, EIXO } from '@/config/cores-dos-graficos';
 import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { AlertTriangle, BarChart3, CheckCircle2, Clock, Download, Inbox, Plus, Presentation, Share2, ShieldCheck, Target, Timer } from 'lucide-react';
+import { AlertTriangle, BarChart3, CheckCircle2, Clock, Download, Inbox, Presentation, Share2, ShieldCheck, Target, Timer } from 'lucide-react';
 import { Bar, BarChart, CartesianGrid, Cell, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -132,9 +132,6 @@ export default function MKTRelatorios() {
   const grafico = semanaASemana(semanal.redes, semanal.trafego, ultimasSemanas(intervaloDaTela.ate, 5), painel.contas.map((c) => c.atual.conta));
   const podeLancar = perfil.pode('marketing', 'reports', 'lancar');
   const [lancando, setLancando] = useState(false);
-  const botaoDeLancar = podeLancar && (
-    <Button size="sm" variant="outline" onClick={() => setLancando(true)}><Plus className="h-3.5 w-3.5 mr-1" />Lançar semana</Button>
-  );
 
   // Artistas pelas semanas do mês deles, como na planilha (dono, 2026-11-03): o período da tela escolhe o recorte
   // (26/10 a 01/11 → outubro S4); o bloco troca de mês e de semana sem mexer no resto da tela.
@@ -371,7 +368,7 @@ export default function MKTRelatorios() {
               operação descem (posição serial). */}
           <LancamentoDaSemana redes={semanal.redes} trafego={semanal.trafego} ate={intervaloDaTela.ate} podeLancar={podeLancar} onLancar={() => setLancando(true)} />
           <NumerosDoTopo painel={painel} />
-          <RedesSociais painel={painel} grafico={grafico} acao={botaoDeLancar} />
+          <RedesSociais painel={painel} grafico={grafico} />
           <TrafegoPorConta painel={painel} />
           <LeadsEInvestimento painel={painel} grafico={grafico} />
 

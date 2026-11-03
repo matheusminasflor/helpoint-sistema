@@ -69,13 +69,10 @@ function Linha({ rotulo, valor, children }: { rotulo: string; valor: string; chi
   );
 }
 
-function Secao({ titulo, icone: Icone, acao, children }: { titulo: string; icone: typeof Share2; acao?: ReactNode; children: ReactNode }) {
+function Secao({ titulo, icone: Icone, children }: { titulo: string; icone: typeof Share2; children: ReactNode }) {
   return (
     <section className="space-y-3" aria-label={titulo}>
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-base font-semibold flex items-center gap-2"><Icone className="h-4 w-4 text-primary" aria-hidden="true" />{titulo}</h2>
-        {acao}
-      </div>
+      <h2 className="text-base font-semibold flex items-center gap-2"><Icone className="h-4 w-4 text-primary" aria-hidden="true" />{titulo}</h2>
       {children}
     </section>
   );
@@ -152,11 +149,11 @@ function CartaoDaRede({ a, b }: { a: NumerosDaConta; b: NumerosDaConta }) {
   );
 }
 
-export function RedesSociais({ painel, grafico, acao }: { painel: Painel; grafico: SemanaNoGrafico[]; acao?: ReactNode }) {
+export function RedesSociais({ painel, grafico }: { painel: Painel; grafico: SemanaNoGrafico[] }) {
   const contas = painel.contas.map((c) => c.atual.conta);
   const barras = grafico.map((s) => ({ rotulo: ddmm(s.semana), ...s.saldos }));
   return (
-    <Secao titulo="Redes sociais" icone={Share2} acao={acao}>
+    <Secao titulo="Redes sociais" icone={Share2}>
       <div className="grid gap-3 md:grid-cols-3">
         {painel.contas.map((c) => <CartaoDaRede key={c.atual.conta} a={c.atual} b={c.anterior} />)}
       </div>
@@ -219,7 +216,7 @@ function CartaoDoTrafego({ a, b }: { a: NumerosDaConta; b: NumerosDaConta }) {
 }
 
 /** O total da conta de anúncios e um cartão por conta de Instagram. */
-export function TrafegoPorConta({ painel, acao }: { painel: Painel; acao?: ReactNode }) {
+export function TrafegoPorConta({ painel }: { painel: Painel }) {
   const { atual: t, anterior: a } = painel.trafego;
   const total = [
     { rotulo: 'Investimento', v: brl(t.investimento), c: <Compara atual={t.investimento} anterior={a.investimento} melhor="neutro" formato={brl} porcento /> },
@@ -229,7 +226,7 @@ export function TrafegoPorConta({ painel, acao }: { painel: Painel; acao?: React
     { rotulo: 'Campanhas no ar', v: int(t.campanhasAtivas), c: <span className="text-muted-foreground">era {int(a.campanhasAtivas)}</span> },
   ];
   return (
-    <Secao titulo="Tráfego pago" icone={Megaphone} acao={acao}>
+    <Secao titulo="Tráfego pago" icone={Megaphone}>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         {total.map((x) => (
           <Card key={x.rotulo} className="p-3">
