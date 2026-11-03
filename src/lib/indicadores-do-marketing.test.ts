@@ -28,6 +28,14 @@ describe('indicadores do Marketing (R6)', () => {
     expect([r.pedidosNoPeriodo, r.entreguesNoPeriodo, r.abertos, r.atrasados]).toEqual([3, 1, 2, 1]);
   });
 
+  it('o dia é o local: pedido de 31/10 às 22h é de outubro, mesmo que em UTC já seja 1º de novembro', () => {
+    const r = indicadoresDoMarketing({ ...base, produtos: [], movimentos: [], retiradas: [], pedidos: [
+      { etapa: 'pedido', created_at: new Date(2026, 9, 31, 22, 0).toISOString(), atualizada_em: '2026-10-31', preciso_ate: null },
+      { etapa: 'pedido', created_at: new Date(2026, 9, 1, 0, 30).toISOString(), atualizada_em: '2026-10-01', preciso_ate: null },
+    ] });
+    expect(r.pedidosNoPeriodo).toBe(2);
+  });
+
   it('benefício: retiradas do período, devolvidas com atraso e as que passaram do prazo sem voltar', () => {
     const r = indicadoresDoMarketing({ ...base, produtos: [], movimentos: [], pedidos: [], retiradas: [
       { status: 'devolvida', retirado_em: '2026-10-02T12:00:00Z', prazo: '2026-10-05', devolvido_em: '2026-10-07', atraso: true },

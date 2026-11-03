@@ -54,4 +54,20 @@ describe('o PDF dos Indicadores da TI (rodada 2: leva o que a Visão Geral mostr
     generatePDFReport({ ...dados, selectedSections: ['cover', 'team'] });
     expect(escrito.paginas).toBe(2);
   });
+
+  it('o do Marketing (2026-11-03): capa do Marketing, as tabelas dos Artistas e só as seções marcadas', () => {
+    escrito.textos = [];
+    generatePDFReport({
+      ...dados, ti: { ...dados.ti!, equipe: [], pessoas: [], projetos: [] },
+      capa: { sigla: 'MKT', titulo: ['RELATÓRIO DE', 'MÉTRICAS DO MARKETING'] },
+      tabelas: [
+        { secao: 'artists', titulo: 'ARTISTAS NO PERÍODO', cabecalho: ['Artista', 'Stories'], linhas: [['Artista A', '7']], larguras: [0.6, 0.4] },
+        { secao: 'others', titulo: 'PEDIDOS DE ARTE, ESTOQUE E BENEFÍCIO DE SEXTA', cabecalho: ['Indicador', 'Valor'], linhas: [['Pedidos', '0']], larguras: [0.7, 0.3] },
+      ],
+      selectedSections: ['cover', 'executive_summary', 'artists'],
+    });
+    expect(escrito.textos).toEqual(expect.arrayContaining(['MKT', 'MÉTRICAS DO MARKETING', 'ARTISTAS NO PERÍODO', 'Artista A']));
+    expect(escrito.textos).not.toContain('PEDIDOS DE ARTE, ESTOQUE E BENEFÍCIO DE SEXTA');
+    expect(escrito.textos).not.toContain('MÉTRICAS TI');
+  });
 });

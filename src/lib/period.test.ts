@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  periodoAnterior,
   avisoDeMesesInteiros, calcularPeriodoComercial, erroDoIntervalo, intervaloDoPeriodoRapido, intervaloEmDatas,
   intervaloAnterior, mesesDoIntervalo, mesesInteirosDoIntervalo, rotuloDoIntervalo,
 } from './period';
@@ -147,5 +148,19 @@ describe('intervaloAnterior (2026-10-25)', () => {
   it('o mesmo número de dias, colado antes', () => {
     expect(intervaloAnterior({ de: '2026-03-10', ate: '2026-04-25' })).toEqual({ de: '2026-01-22', ate: '2026-03-09' });
     expect(intervaloAnterior({ de: '2026-01-01', ate: '2026-01-31' })).toEqual({ de: '2025-12-01', ate: '2025-12-31' });
+  });
+});
+
+describe('periodoAnterior', () => {
+  const dia = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  it('um mês inteiro compara com o mês inteiro anterior (outubro → setembro, não 31/08 a 30/09)', () => {
+    const p = periodoAnterior(new Date(2026, 9, 1), new Date(2026, 9, 31, 23, 59, 59, 999));
+    expect([dia(p.startDate), dia(p.endDate)]).toEqual(['2026-09-01', '2026-09-30']);
+    const mar = periodoAnterior(new Date(2026, 2, 1), new Date(2026, 2, 31, 23, 59, 59, 999));
+    expect([dia(mar.startDate), dia(mar.endDate)]).toEqual(['2026-02-01', '2026-02-28']);
+  });
+  it('uma semana volta sete dias', () => {
+    const p = periodoAnterior(new Date(2026, 9, 26), new Date(2026, 10, 1, 23, 59, 59, 999));
+    expect([dia(p.startDate), dia(p.endDate)]).toEqual(['2026-10-19', '2026-10-25']);
   });
 });

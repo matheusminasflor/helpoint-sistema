@@ -1,6 +1,7 @@
 // Os indicadores do Marketing além dos chamados (rodada 2, R6): o estoque abaixo do mínimo, os pedidos de arte e o
 // atraso do Benefício de sexta. Tudo do que as telas já leem (estoque, pedidos, retiradas); só a conta mora aqui.
 import { terminou, type EtapaDaSolicitacao } from '@/config/solicitacoes';
+import { toLocalISODate } from '@/lib/dates';
 
 export interface MovimentoDeEstoque { produto_id: string; tipo: 'entrada' | 'saida'; quantidade: number }
 
@@ -21,7 +22,9 @@ export interface IndicadoresDoMarketing {
   retiradasNoPeriodo: number; devolvidasComAtraso: number; foraDoPrazoAgora: number;
 }
 
-const dia = (iso: string | null) => (iso ?? '').slice(0, 10);
+// O dia LOCAL (regra 4): `created_at`, `retirado_em` e `prazo` são horários em UTC; cortar o texto punha um pedido de
+// sexta às 22h no sábado (revisão de 2026-11-03). Coluna `date` (só o dia) passa como está.
+const dia = (iso: string | null) => (!iso ? '' : iso.length > 10 ? toLocalISODate(new Date(iso)) : iso);
 
 /** `de`/`ate`/`hoje` em AAAA-MM-DD (dia local). Pedido entra no período pela data do pedido; retirada, pela da retirada. */
 export function indicadoresDoMarketing(a: {

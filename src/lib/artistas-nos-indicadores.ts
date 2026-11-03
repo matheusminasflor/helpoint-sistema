@@ -1,6 +1,7 @@
 // Os Artistas nos Indicadores do Marketing (dono, 2026-11-03): no período, quantos stories, reels e posts de feed cada
 // artista fez, quantas peças e quantas na campanha; a bonificação do último mês fechado; o histórico mês a mês.
 // Lê o resumo do banco (`mkt_artistas_resumo`: artista × mês × tipo × peso) e usa a regra de `bonificacao-dos-artistas`.
+import { MESES } from './competencia-comercial';
 import { bonificacaoDoMes, type ArtistaComMetas, type BonificacaoDoMes, type EntregaDoArtista, type StatusDaBonificacao, type TipoDeEntrega } from './bonificacao-dos-artistas';
 
 export interface LinhaDoResumo { artista_id: string; mes: string; tipo: TipoDeEntrega; aprovado: boolean; na_campanha: boolean; quantidade: number }
@@ -83,6 +84,7 @@ export const STATUS_DO_ARTISTA: Record<StatusDaBonificacao, { texto: string; cla
   fora: { texto: 'Fora', classe: 'badge-danger' },
 };
 
-const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
 /** "outubro", de `AAAA-MM-01`. */
 export const nomeDoMes = (mesISO: string) => MESES[Number(mesISO.slice(5, 7)) - 1];
+/** "Julho de 2026", de `AAAA-MM-01`. */
+export const mesEAno = (mesISO: string) => { const m = nomeDoMes(mesISO); return `${m[0].toUpperCase()}${m.slice(1)} de ${mesISO.slice(0, 4)}`; };

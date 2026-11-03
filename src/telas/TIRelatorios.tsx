@@ -175,7 +175,9 @@ export default function TIRelatorios() {
   const farolPrimeira = farol(metrics ? primeira : null, meta('primeira_resposta'), 'mais', true);
   const farolTempo = farol(metrics ? tempo : null, meta('tempo_medio_horas'), 'menos');
   // "meta de novembro: pelo menos 80% · em janeiro sobe para 85%".
-  const notaDoCartao = (chave: string, sufixo: string) => notaDaMeta(metas.data, chave, intervaloDaTela.ate, n1Meta(sufixo));
+  // O tempo na mesma unidade do número ("1 d 3 h" × "até 1 d"), sem conta de cabeça (revisão de 2026-11-03).
+  const notaDoCartao = (chave: string, sufixo: string) =>
+    notaDaMeta(metas.data, chave, intervaloDaTela.ate, sufixo === ' h' ? formatarHoras : n1Meta(sufixo));
 
   // Semana do FSENSE lançada e não confirmada (rodada 2): sem confirmar, a reunião mostra "Sem dado". A mais recente; se
   // ela está no período da tela, o aviso só desce até o bloco Equipe; senão, abre o período dela.

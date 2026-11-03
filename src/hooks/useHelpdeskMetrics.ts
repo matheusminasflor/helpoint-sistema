@@ -4,7 +4,7 @@ import { unwrap } from '@/lib/supabase-result';
 import { startOfDay, endOfDay, subDays } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import { toLocalISODate } from '@/lib/dates';
-import { intervaloEmDatas, type IntervaloDeDias } from '@/lib/period';
+import { intervaloEmDatas, periodoAnterior, type IntervaloDeDias } from '@/lib/period';
 import { contaComoResolvido, statusVisivel } from '@/lib/status-do-chamado';
 import { primeiraRespostaDoChamado } from '@/lib/primeira-resposta';
 import { SLA_PAUSED_STATUSES } from '@/types/helpdesk';
@@ -88,13 +88,8 @@ export interface MetricsFilter {
 }
 
 export function getPreviousPeriodRange(filter: MetricsFilter): { startDate: Date; endDate: Date } {
-  const currentRange = getDateRangeFromPeriod(filter);
-  const durationMs = currentRange.endDate.getTime() - currentRange.startDate.getTime();
-  
-  const previousEndDate = new Date(currentRange.startDate.getTime() - 1); // 1ms before current start
-  const previousStartDate = new Date(previousEndDate.getTime() - durationMs);
-  
-  return { startDate: previousStartDate, endDate: previousEndDate };
+  const { startDate, endDate } = getDateRangeFromPeriod(filter);
+  return periodoAnterior(startDate, endDate);
 }
 
 /**

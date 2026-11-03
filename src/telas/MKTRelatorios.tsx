@@ -129,7 +129,8 @@ export default function MKTRelatorios() {
   // A meta é a que vale no último dia do período (Configurações de Marketing › Metas; padrão em `config/metas-da-ti`).
   const meta = (chave: string) => metaNoDia(metas.data, chave, intervaloDaTela.ate);
   const notaDoCartao = (chave: string, sufixo: string) =>
-    notaDaMeta(metas.data, chave, intervaloDaTela.ate, (v) => `${v.toLocaleString('pt-BR')}${sufixo}`);
+    // O tempo na mesma unidade do número ("2 d 9 h" × "até 1 d"), sem conta de cabeça (revisão de 2026-11-03).
+    notaDaMeta(metas.data, chave, intervaloDaTela.ate, (v) => (sufixo === ' h' ? formatarHoras(v) : `${v.toLocaleString('pt-BR')}${sufixo}`));
   const sla = metrics?.slaCompliance ?? 0;
   const primeira = metrics?.firstResponseCompliance ?? 0;
   const tempo = metrics?.avgResolutionTime ?? 0;
@@ -149,7 +150,8 @@ export default function MKTRelatorios() {
     temArtistas ? fraseDosArtistas(doPeriodo.total) : '',
   ].filter(Boolean).join(' ');
 
-  const semEntrega = doPeriodo.linhas.filter((l) => l.pecas === 0).length;
+  // Só com o período encerrado: numa segunda, "esta semana" acusaria todos os artistas (revisão de 2026-11-03).
+  const semEntrega = intervaloDaTela.ate < hoje ? doPeriodo.linhas.filter((l) => l.pecas === 0).length : 0;
   const atencao = [
     violados.length > 0 && { texto: `${violados.length} ${violados.length === 1 ? 'chamado fora do prazo' : 'chamados fora do prazo'}`, cor: 'perigo', para: '/mkt/chamados' },
     outros.atrasados > 0 && { texto: `${outros.atrasados} ${outros.atrasados === 1 ? 'pedido de arte passou do prazo' : 'pedidos de arte passaram do prazo'}`, cor: 'aviso', para: '/mkt/pedidos-de-arte' },
@@ -182,7 +184,8 @@ export default function MKTRelatorios() {
       <KPICard value={metrics?.resolved ?? 0} label="Chamados resolvidos" icon={CheckCircle2} color="green"
         nota={metrics?.total ? `${Math.round((metrics.resolved / metrics.total) * 100)}% do total` : undefined}
         anterior={anterior?.resolved ?? null} melhorQuando="mais" explicacao="chamados.resolvidos"
-        serie={serie?.map((p) => p.resolvidos)} rotuloDaSerie={rotuloDaSerie} />
+        serie={serie?.map((p) => p.resolvidos)} rotuloDaSerie={rotuloDaSerie}
+        onClick={() => navigate(tenantPath('/mkt/chamados?status=resolved'))} />
       <KPICard value={`${sla}%`} numero={sla} label="SLA cumprido" icon={ShieldCheck} color={COR_DO_FAROL[farolSla]}
         anterior={anterior?.slaCompliance ?? null} melhorQuando="mais" formatarDiferenca={(n) => `${n} pontos`}
         nota={notaDoCartao('sla_cumprido', '%')} notaRuim={farolSla === 'fora'} explicacao="chamados.sla_cumprido"
@@ -223,7 +226,7 @@ export default function MKTRelatorios() {
 
   // O PDF leva o que a Visão Geral mostra, como na TI.
   const textoDaMeta = (v: number | undefined, sufixo: string, sentido: 'mais' | 'menos') =>
-    (v === undefined ? '—' : `${sentido === 'mais' ? 'pelo menos' : 'até'} ${v.toLocaleString('pt-BR')}${sufixo}`);
+    (v === undefined ? '—' : `${sentido === 'mais' ? 'pelo menos' : 'até'} ${sufixo === ' h' ? formatarHoras(v) : `${v.toLocaleString('pt-BR')}${sufixo}`}`);
   const achatar = (nos: No[], nivel = 0): DadosDaTINoPDF['categorias'] =>
     nos.flatMap((no) => [{ nome: no.nome, nivel, chamados: no.chamados.length }, ...achatar(no.filhos, nivel + 1)]);
   const dadosDoPdf: DadosDaTINoPDF = {

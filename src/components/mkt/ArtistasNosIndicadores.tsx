@@ -12,7 +12,7 @@ import { DicaDoGrafico } from '@/components/dashboard/DicaDoGrafico';
 import { COR, EIXO } from '@/config/cores-dos-graficos';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { formatBRL } from '@/lib/crm';
-import { STATUS_DO_ARTISTA, nomeDoMes, type ArtistaNoPeriodo, type BonificacaoDoArtista, type MesDosArtistas } from '@/lib/artistas-nos-indicadores';
+import { STATUS_DO_ARTISTA, mesEAno, nomeDoMes, type ArtistaNoPeriodo, type BonificacaoDoArtista, type MesDosArtistas } from '@/lib/artistas-nos-indicadores';
 
 const pct = (n: number) => `${Math.round(n * 100)}%`;
 const n = (v: number) => (v ? String(v) : '—');
@@ -70,7 +70,7 @@ export function ArtistasDoPeriodo({ linhas, total, mes, bonificacao }: {
                 <tr key={l.id} className="border-b border-border">
                   <td className="px-3 py-2 font-medium">{l.nome}</td>
                   <td className={td}>{n(l.stories)}</td><td className={td}>{n(l.reels)}</td><td className={td}>{n(l.feed)}</td>
-                  <td className={td}>{l.pecas}</td><td className={td}>{l.naCampanha}</td>
+                  <td className={td}>{n(l.pecas)}</td><td className={td}>{n(l.naCampanha)}</td>
                   <td className="px-3 py-2 whitespace-nowrap">
                     {b ? <><Badge className={STATUS_DO_ARTISTA[b.b.status].classe}>{STATUS_DO_ARTISTA[b.b.status].texto} · {pct(b.b.parteDoTeto)}</Badge>
                       <span className="ml-2 text-xs text-muted-foreground font-mono">{formatBRL(b.b.valor)}</span></> : '—'}
@@ -98,7 +98,7 @@ export function ArtistasMesAMes({ meses }: { meses: MesDosArtistas[] }) {
   const dados = meses.map((m) => ({ ...m, rotulo: nomeDoMes(m.mes).slice(0, 3), parte: Math.round(m.parteDoTeto * 100) }));
   return (
     <Card id="analitico-artistas" className="p-5 space-y-3 scroll-mt-20">
-      <h3 className="text-sm font-semibold flex items-center gap-2"><CalendarRange className="h-4 w-4 text-primary" aria-hidden="true" />Artistas mês a mês</h3>
+      <h3 className="text-sm font-semibold flex items-center gap-2"><CalendarRange className="h-4 w-4 text-primary" aria-hidden="true" />Artistas mês a mês<span className="text-xs font-normal text-muted-foreground">· últimos 12 meses, não segue o período</span></h3>
       {dados.length === 0 ? <p className="text-sm text-muted-foreground">Nenhuma entrega lançada.</p> : (
         <>
           <ResponsiveContainer width="100%" height={220}>
@@ -125,7 +125,7 @@ export function ArtistasMesAMes({ meses }: { meses: MesDosArtistas[] }) {
               <tbody>
                 {meses.map((m) => (
                   <tr key={m.mes} className="border-b border-border">
-                    <td className="px-3 py-2 capitalize">{nomeDoMes(m.mes)} de {m.mes.slice(0, 4)}</td>
+                    <td className="px-3 py-2">{mesEAno(m.mes)}</td>
                     <td className="px-3 py-2 text-right font-mono">{m.pecas}</td>
                     <td className="px-3 py-2 text-right font-mono">{m.naCampanha} <span className="text-muted-foreground">({m.pecas ? pct(m.naCampanha / m.pecas) : '—'})</span></td>
                     <td className="px-3 py-2 text-right font-mono whitespace-nowrap">{formatBRL(m.valor)} <span className="text-muted-foreground">de {formatBRL(m.teto)}</span></td>
@@ -140,41 +140,29 @@ export function ArtistasMesAMes({ meses }: { meses: MesDosArtistas[] }) {
   );
 }
 
+// Um cartão só enquanto as chaves não entram (revisão de UX de 2026-11-03): quatro blocos vazios no meio da Visão Geral
+// empurravam os números reais para baixo. Cada fonte diz o que vai mostrar; ligada, vira o bloco dela.
 const LIGACOES = [
-  { fonte: 'Kommo', titulo: 'Leads que chegaram', texto: 'Quantos leads chegaram no período em cada funil: Consumidor final, Salão, Distribuidor e Sem triagem (funil Entrada).',
-    campos: ['Consumidor final', 'Salão', 'Distribuidor', 'Sem triagem (Entrada)'] },
-  { fonte: 'Meta', titulo: 'Tráfego pago', texto: 'Investimento, pessoas alcançadas, visitas ao perfil, custo por visita e campanhas no ar.' },
-  { fonte: 'Meta', titulo: 'Redes sociais', texto: 'Por conta (@minasflor, @by.mf, @mf.professional): posts, reels, stories, seguidores e engajamento.' },
-  { fonte: 'Bling', titulo: 'Vendas', texto: 'Faturado pelas notas fiscais: e-commerce e vendas internas.' },
+  { fonte: 'Kommo', titulo: 'Leads que chegaram', texto: 'Consumidor final, Salão, Distribuidor e Sem triagem (funil Entrada)' },
+  { fonte: 'Meta', titulo: 'Tráfego pago', texto: 'investimento, pessoas alcançadas, visitas ao perfil, custo por visita' },
+  { fonte: 'Meta', titulo: 'Redes sociais', texto: '@minasflor, @by.mf e @mf.professional: posts, reels, stories, seguidores' },
+  { fonte: 'Bling', titulo: 'Vendas', texto: 'faturado pelas notas fiscais' },
 ];
 
-/** Os blocos das fontes de fora, enquanto as chaves não entram no cofre (docs/marketing-ligacoes-meta-kommo-bling.md). */
 export function EsperandoAsLigacoes() {
-  const [kommo, ...resto] = LIGACOES;
   return (
-    <div className="space-y-4">
-      <Card className="p-5 space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h3 className="text-sm font-semibold">{kommo.titulo}</h3>
-          <Badge className="badge-neutral"><PlugZap className="h-3 w-3 mr-1" aria-hidden="true" />Esperando a ligação com o {kommo.fonte}</Badge>
-        </div>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {kommo.campos?.map((c) => <Numero key={c} v="—" rotulo={c} />)}
-        </div>
-        <p className="text-xs text-muted-foreground">{kommo.texto}</p>
-      </Card>
-      <div className="grid gap-4 lg:grid-cols-3">
-        {resto.map((l) => (
-          <div key={l.titulo} className="rounded-xl border border-dashed border-border bg-muted/40 p-4 space-y-2">
-            <Badge className="badge-neutral"><PlugZap className="h-3 w-3 mr-1" aria-hidden="true" />Esperando a ligação com {l.fonte === 'Meta' ? 'a Meta' : 'o Bling'}</Badge>
-            <p className="text-sm font-semibold">{l.titulo}</p>
-            <p className="text-xs text-muted-foreground">{l.texto}</p>
-          </div>
+    <Card className="p-5 space-y-3 border-dashed">
+      <h3 className="text-sm font-semibold flex items-center gap-2">
+        <PlugZap className="h-4 w-4 text-muted-foreground" aria-hidden="true" />Esperando a ligação com o Kommo, a Meta e o Bling
+      </h3>
+      <ul className="grid gap-x-6 gap-y-2 sm:grid-cols-2 text-sm">
+        {LIGACOES.map((l) => (
+          <li key={l.titulo}>
+            <span className="font-semibold">{l.titulo}</span> <span className="text-muted-foreground">({l.fonte}): {l.texto}.</span>
+          </li>
         ))}
-      </div>
-      <p className="text-xs text-muted-foreground">
-        Estes números entram sozinhos quando as chaves do Kommo, da Meta e do Bling forem cadastradas no Helpoint.
-      </p>
-    </div>
+      </ul>
+      <p className="text-xs text-muted-foreground">Os números entram sozinhos quando as chaves forem cadastradas no Helpoint.</p>
+    </Card>
   );
 }

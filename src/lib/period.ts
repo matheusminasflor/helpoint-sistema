@@ -116,6 +116,21 @@ export function intervaloEmDatas({ de, ate }: IntervaloDeDias): { inicio: Date; 
   return { inicio: fromLocalISODate(de), fim: endOfDay(fromLocalISODate(ate)) };
 }
 
+/**
+ * O período anterior, para comparar. Um mês inteiro compara com o mês inteiro anterior (revisão de 2026-11-03: "Mês
+ * passado" de outubro comparava com 31/08 a 30/09, porque voltava 31 dias); o resto volta a mesma duração.
+ */
+export function periodoAnterior(inicio: Date, fim: Date): { startDate: Date; endDate: Date } {
+  const ultimoDia = new Date(inicio.getFullYear(), inicio.getMonth() + 1, 0).getDate();
+  const mesInteiro = inicio.getDate() === 1 && inicio.getHours() === 0 && inicio.getMinutes() === 0
+    && fim.getFullYear() === inicio.getFullYear() && fim.getMonth() === inicio.getMonth() && fim.getDate() === ultimoDia;
+  if (mesInteiro) {
+    return { startDate: new Date(inicio.getFullYear(), inicio.getMonth() - 1, 1), endDate: new Date(inicio.getTime() - 1) };
+  }
+  const fimAnterior = new Date(inicio.getTime() - 1);
+  return { startDate: new Date(fimAnterior.getTime() - (fim.getTime() - inicio.getTime())), endDate: fimAnterior };
+}
+
 /** `2026-03-10`–`2026-04-25` → "10/03/2026 a 25/04/2026". Texto puro, sem passar por `Date`. */
 export function rotuloDoIntervalo({ de, ate }: IntervaloDeDias): string {
   const curto = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}`;
