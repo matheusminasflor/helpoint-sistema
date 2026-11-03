@@ -10,7 +10,12 @@ alter table public.mkt_redes_semana
   add column if not exists visitas_pagas integer check (visitas_pagas >= 0),
   add column if not exists campanhas_ativas integer check (campanhas_ativas >= 0),
   -- As campanhas da conta na semana, [{nome, investimento, alcance, ativa}]: quem preenche é o coletor da Meta.
-  add column if not exists campanhas jsonb;
+  add column if not exists campanhas jsonb,
+  -- O estado do coletor da Meta na semana (os dias com stories já vistos: o story só vive 24 h).
+  add column if not exists coleta jsonb;
+
+-- Quando o coletor da Meta (edge function `mkt-meta-coletar`) buscou os números pela última vez.
+alter table public.mkt_meta_ligacao add column if not exists coletado_em timestamptz;
 
 -- Leads que ainda estão no funil Entrada do Kommo, sem segmento (proposta v2: "quantos ainda sem triagem").
 alter table public.mkt_trafego_semana

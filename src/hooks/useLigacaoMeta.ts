@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { unwrap } from '@/lib/supabase-result';
 
 export interface ContaDaMeta { tipo: 'pagina' | 'instagram' | 'anuncios'; id: string; nome: string }
-export interface LigacaoMeta { contas: ContaDaMeta[]; conectado_em: string; ultimo_erro: string | null; atualizado_em: string | null }
+export interface LigacaoMeta { contas: ContaDaMeta[]; conectado_em: string; ultimo_erro: string | null; atualizado_em: string | null; coletado_em: string | null }
 
 export function useLigacaoMeta() {
   const { tenantId } = useAuth();
@@ -15,6 +15,6 @@ export function useLigacaoMeta() {
     enabled: !!tenantId,
     queryFn: async (): Promise<LigacaoMeta | null> =>
       (unwrap(await supabase.from('mkt_meta_ligacao' as never)
-        .select('contas, conectado_em, ultimo_erro, atualizado_em').maybeSingle()) ?? null) as unknown as LigacaoMeta | null,
+        .select('contas, conectado_em, ultimo_erro, atualizado_em, coletado_em').maybeSingle()) ?? null) as unknown as LigacaoMeta | null,
   });
 }

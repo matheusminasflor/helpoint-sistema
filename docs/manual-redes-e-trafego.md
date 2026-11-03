@@ -5,8 +5,9 @@ vez por semana. É o mesmo que as abas "MKT - Redes" e "MKT - Tráfego e Comunid
 
 ## Onde
 
-**Marketing › Indicadores › Visão Geral**, blocos **Redes sociais** e **Tráfego pago e leads** › botão **Lançar
-semana**. Aparece para quem tem, no perfil do Marketing, **Indicadores › Lançar redes e tráfego** (dono e admin
+**Marketing › Indicadores › Visão Geral** › botão **Lançar semana** (no topo, ao lado de "Lançamento da semana", e no
+bloco Redes sociais). Um formulário só, com uma aba "Tráfego e leads" e uma aba por conta. Aparece para quem tem, no
+perfil do Marketing, **Indicadores › Lançar redes e tráfego** (dono e admin
 sempre).
 
 ## A semana
@@ -59,3 +60,17 @@ Outubro de 2026 (semanas de 04, 11, 18 e 25/10) foi importado da planilha em 202
 ## Quando a Meta e o Kommo estiverem ligados
 
 Estes números passam a vir sozinhos; o lançamento à mão continua possível para corrigir uma semana.
+
+## Versão 3 (2026-11-03)
+
+- **Um formulário só**: a aba **Tráfego e leads** (total da conta de anúncios e os leads de cada funil do Kommo,
+  inclusive **Sem triagem**) e uma aba por conta, com as redes **e o tráfego pago daquela conta** (investimento,
+  alcance, visitas ao perfil pelo anúncio, campanhas no ar). Em cinza, o número da semana anterior; o que já foi
+  lançado vem preenchido. Investimento total em branco vira a soma das contas.
+- **Novos e Deixaram de seguir** são lançados à mão (decisão do dono, 2026-11-03), até o coletor da Meta trazê-los.
+  O **saldo** (total de um domingo menos o do anterior) aparece sempre e é exato.
+- **Coletor da Meta** (`mkt-meta-coletar`): todo dia às 6h busca a semana em andamento; na segunda, fecha a que acabou.
+  Só grava número que a Meta deu — nunca apaga o lançado à mão. Corrigir a semana que acabou: depois da coleta de
+  segunda. Sem a conta de anúncios na ligação, só as redes chegam: conecte de novo marcando **MF INTERNO - Marketing**.
+- O tráfego de outubro e da semana de 26/10 a 01/11 por conta veio do Gerenciador de Anúncios (campanhas
+  "MINASFLOR – …", "MF.PRO – …" e "25 ANOS MINASFLOR"); o @by.mf não teve anúncio no período.

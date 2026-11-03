@@ -5,7 +5,11 @@
 //   · Artistas mês a mês no Analítico: a parte do teto paga em cada mês;
 //   · o cartão que espera as chaves do Kommo, da Meta e do Bling (dono: "esperar as chaves").
 import { Link } from 'react-router-dom';
-import { CalendarRange, ChevronLeft, ChevronRight, PlugZap, Star } from 'lucide-react';
+import { CalendarRange, ChevronLeft, ChevronRight, PlugZap, RefreshCw, Star } from 'lucide-react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { CHAVE_DAS_SEMANAS } from '@/hooks/useRedesETrafego';
 import { Bar, BarChart, CartesianGrid, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -210,6 +214,32 @@ const NOME_DO_TIPO = { instagram: 'Instagram', pagina: 'Página', anuncios: 'An�
  * As fontes de fora: o que ainda espera a ligação e, a Meta, o botão de conectar (2026-11-03: "o intuito é ter os
  * indicadores do MKT após conectar") — aqui, e não no Cronograma Social. Conectar é de gestor para cima (a função confere).
  */
+/** Chama o coletor da Meta (`mkt-meta-coletar`) para esta semana e a anterior, sem esperar as 6h. */
+function BuscarAgora({ onBuscou }: { onBuscou: () => void }) {
+  const qc = useQueryClient();
+  const buscar = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke('mkt-meta-coletar', { body: { source: 'botao' } });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data as { erros?: string[] };
+    },
+    onSuccess: (r) => {
+      qc.invalidateQueries({ queryKey: [CHAVE_DAS_SEMANAS] });
+      onBuscou();
+      if (r.erros?.length) toast.warning(`Buscou, com avisos: ${r.erros.join(' · ')}`);
+      else toast.success('Números da Meta atualizados.');
+    },
+    onError: (e: Error) => toast.error(`A busca falhou: ${e.message}`),
+  });
+  return (
+    <Button size="sm" onClick={() => buscar.mutate()} disabled={buscar.isPending}>
+      <RefreshCw className={cn('h-3.5 w-3.5 mr-1', buscar.isPending && 'animate-spin')} aria-hidden="true" />
+      {buscar.isPending ? 'Buscando…' : 'Buscar agora'}
+    </Button>
+  );
+}
+
 export function EsperandoAsLigacoes({ meta, podeConectarMeta, onConectou }: {
   meta: LigacaoMeta | null | undefined;
   podeConectarMeta: boolean;
@@ -226,16 +256,24 @@ export function EsperandoAsLigacoes({ meta, podeConectarMeta, onConectou }: {
         {!meta && podeConectarMeta && <MetaConnectButton platform="indicadores" onSuccess={onConectou} />}
       </div>
       {meta && (
-        <div className="rounded-lg border border-border bg-card p-3 text-sm space-y-1">
+        <div className="rounded-lg border border-border bg-card p-3 text-sm space-y-2">
           <p>
             <span className="font-semibold">Meta conectada</span>
             <span className="text-muted-foreground"> em {new Date(meta.conectado_em).toLocaleDateString('pt-BR')}: </span>
             {meta.contas.map((c) => `${c.nome} (${NOME_DO_TIPO[c.tipo]})`).join(' · ')}
           </p>
           <p className="text-xs text-muted-foreground">
-            {meta.ultimo_erro ? `Atenção: ${meta.ultimo_erro}. Conecte de novo marcando a conta de anúncios.`
-              : 'Tráfego pago e redes sociais entram aqui a partir da primeira busca dos números.'}
+            {meta.coletado_em
+              ? `Última busca dos números: ${new Date(meta.coletado_em).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}. O robô busca todo dia às 6h.`
+              : 'Os números ainda não foram buscados. O robô busca todo dia às 6h; "Buscar agora" não espera.'}
+            {meta.ultimo_erro && <span className="block text-aviso font-medium">Atenção: {meta.ultimo_erro}.</span>}
           </p>
+          {podeConectarMeta && (
+            <div className="flex flex-wrap gap-2">
+              <BuscarAgora onBuscou={onConectou} />
+              <MetaConnectButton platform="indicadores" onSuccess={onConectou} />
+            </div>
+          )}
         </div>
       )}
       <ul className="grid gap-x-6 gap-y-2 sm:grid-cols-2 text-sm">

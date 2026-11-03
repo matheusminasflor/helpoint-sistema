@@ -99,6 +99,8 @@ verify_enabled = true
     verify_jwt = false
   [functions.mkt-ai-creative]
     verify_jwt = false
+  [functions.mkt-meta-coletar]
+    verify_jwt = true
   [functions.mkt-meta-oauth]
     verify_jwt = false
   [functions.mkt-meta-publish]
