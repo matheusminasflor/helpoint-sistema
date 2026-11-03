@@ -28,7 +28,8 @@ interface LinhaTrafego {
   leads_distribuidor: number | null; leads_consumidor: number | null; leads_salao: number | null;
 }
 
-const CONTAS = ['@minasflor', '@mf.professional', '@by.mf'];
+// Os nomes da planilha (aba "MKT - Redes"), que é como o histórico de outubro entrou.
+const CONTAS = ['@minasflor', '@mf.pro', '@by.mf'];
 const CAMPOS_REDES: { k: keyof LinhaRedes; rotulo: string }[] = [
   { k: 'posts', rotulo: 'Posts no feed' }, { k: 'reels', rotulo: 'Reels' }, { k: 'stories', rotulo: 'Sequências de stories' },
   { k: 'engajamento', rotulo: 'Taxa de engajamento (%)' }, { k: 'novos_seguidores', rotulo: 'Novos seguidores' },
