@@ -31,6 +31,9 @@ https://helpoint.minasflor.com.br/mkt/social
    cofre como:
    - `META_APP_ID`: o ID;
    - `META_APP_SECRET`: a chave secreta.
+   - `META_LOGIN_CONFIG_ID`: o ID da **Configuração** do Login do Facebook para Empresas (não é segredo; aparece no
+     endereço do login). Feito em 2026-11-03: configuração "Helpoint Indicadores", variação Geral, token de acesso do
+     usuário, as 8 permissões acima, ID 2237502677107324, já no cofre.
 7. Deixe o app em **modo de desenvolvimento**. Como as contas são da própria Minasflor e quem conecta é administrador
    do app, não precisa da revisão da Meta.
 8. Me avise. Eu libero o botão, você clica em **Conectar com a Meta** no Helpoint e escolhe as 3 contas do Instagram,
