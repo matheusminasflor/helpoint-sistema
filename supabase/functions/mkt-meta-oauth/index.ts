@@ -146,17 +146,23 @@ serve(async (req) => {
     switch (action) {
       case 'get_auth_url': {
         // Build OAuth authorization URL
-        const scopes = platform === 'instagram' 
-          ? 'instagram_basic,instagram_content_publish,pages_show_list,pages_read_engagement'
+        // Os Indicadores do Marketing (2026-11-03) leem seguidores, alcance e anúncios: `instagram_manage_insights`,
+        // `read_insights`, `ads_read` e `business_management` além do que a publicação já pedia.
+        const scopes = platform === 'instagram'
+          ? 'instagram_basic,instagram_content_publish,instagram_manage_insights,pages_show_list,pages_read_engagement,read_insights,ads_read,business_management'
           // `leads_retrieval` é o que deixa buscar o conteúdo de um lead de
           // anúncio (CRM-4c). Sem ele o webhook chega e a Graph API recusa a
           // leitura — o lead fica registrado com o erro, sem se perder.
-          : 'pages_show_list,pages_read_engagement,pages_manage_posts,leads_retrieval';
-        
+          : 'pages_show_list,pages_read_engagement,pages_manage_posts,leads_retrieval,read_insights,ads_read,business_management';
+
         const authUrl = new URL(`https://www.facebook.com/${META_API_VERSION}/dialog/oauth`);
         authUrl.searchParams.set('client_id', META_APP_ID);
         authUrl.searchParams.set('redirect_uri', redirect_uri);
-        authUrl.searchParams.set('scope', scopes);
+        // App do tipo Empresa usa o Login do Facebook para Empresas: a Meta não aceita `scope` e pede a "Configuração"
+        // criada no app (com as permissões e os ativos). O ID dela fica no cofre como `META_LOGIN_CONFIG_ID`.
+        const configId = Deno.env.get('META_LOGIN_CONFIG_ID');
+        if (configId) authUrl.searchParams.set('config_id', configId);
+        else authUrl.searchParams.set('scope', scopes);
         authUrl.searchParams.set('response_type', 'code');
         const signedState = await signState({
           platform,
