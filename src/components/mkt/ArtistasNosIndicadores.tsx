@@ -20,7 +20,7 @@ const n = (v: number) => (v ? String(v) : '—');
 function Numero({ v, rotulo }: { v: string | number; rotulo: string }) {
   return (
     <div className="rounded-lg border border-border p-3">
-      <div className="text-2xl font-bold font-mono text-foreground tabular-nums">{v}</div>
+      <div className="text-xl sm:text-2xl font-bold font-mono text-foreground tabular-nums whitespace-nowrap">{v}</div>
       <div className="text-[12px] uppercase tracking-wider text-muted-foreground">{rotulo}</div>
     </div>
   );
