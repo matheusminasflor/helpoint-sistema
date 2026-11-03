@@ -56,6 +56,27 @@ function emPortugues(msg: string) {
   return msg;
 }
 
+/**
+ * O que a Meta diz que a chave tem (debug_token, com a chave do app): as permissões e, na de anúncios, para quais contas.
+ * Entra no aviso quando a leitura de anúncios falha, para a causa aparecer em vez de ser adivinhada (2026-11-03).
+ */
+async function permissoesDaChave(token: string): Promise<string> {
+  const app = `${Deno.env.get('META_APP_ID')}|${Deno.env.get('META_APP_SECRET')}`;
+  try {
+    const r = await fetch(`https://graph.facebook.com/v21.0/debug_token?input_token=${encodeURIComponent(token)}&access_token=${encodeURIComponent(app)}`);
+    const d = (await r.json()) as { data?: { type?: string; scopes?: string[]; granular_scopes?: { scope: string; target_ids?: string[] }[] } };
+    const info = d.data;
+    if (!info) return 'não consegui perguntar à Meta quais permissões a chave tem';
+    const anuncio = (info.granular_scopes ?? []).filter((g) => g.scope.startsWith('ads_'))
+      .map((g) => `${g.scope} para ${g.target_ids?.length ? g.target_ids.join(', ') : 'todas as contas'}`);
+    const temAds = (info.scopes ?? []).some((s) => s === 'ads_read' || s === 'ads_management');
+    return `a chave (${info.type === 'SYSTEM_USER' ? 'usuário do sistema' : info.type ?? 'tipo desconhecido'}) ${temAds ? 'tem' : 'NÃO tem'} permissão de anúncios`
+      + (anuncio.length ? ` (${anuncio.join('; ')})` : '') + `; permissões: ${(info.scopes ?? []).join(', ') || 'nenhuma'}`;
+  } catch (e) {
+    return `não consegui perguntar à Meta quais permissões a chave tem (${e instanceof Error ? e.message : String(e)})`;
+  }
+}
+
 const semNulos = (o: Record<string, unknown>) => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== null && v !== undefined));
 
 /** Os números de uma conta do Instagram numa semana. */
@@ -217,6 +238,7 @@ async function coletarEmpresa(tenantId: string, semanas: Semana[], agora: number
         }
       } catch (e) {
         erros.push(`${act.nome}: ${emPortugues(e instanceof Error ? e.message : String(e))}`);
+        if (!erros.some((x) => x.startsWith('a chave ('))) erros.push(await permissoesDaChave(token));
       }
     }
   }
