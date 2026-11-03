@@ -184,7 +184,8 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
         { key: 'publish', label: 'Publicar e despublicar', sensitive: true },
         { key: 'delete', label: 'Excluir', sensitive: true },
       ]},
-      { key: 'reports', label: 'Indicadores', actions: REPORT_ACTIONS },
+      // "Exportar" volta no Marketing com o PDF dos Indicadores (dono, 2026-11-03: "como na TI").
+      { key: 'reports', label: 'Indicadores', actions: [...REPORT_ACTIONS, { key: 'export', label: 'Exportar' }] },
     ],
   },
   rh: {

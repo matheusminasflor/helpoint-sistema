@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { expectRows, unwrap } from '@/lib/supabase-result';
 import type { TipoDeEntrega } from '@/lib/bonificacao-dos-artistas';
+import type { LinhaDoResumo } from '@/lib/artistas-nos-indicadores';
 
 export interface Artista {
   id: string;
@@ -131,13 +132,12 @@ export function useLancarEntrega() {
 }
 
 export function useApagarEntrega() {
-  const { tenantId } = useAuth();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
       expectRows(await supabase.from('mkt_artistas_entregas' as never).delete().eq('id', id).select('id'), 'a entrega');
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['artistas-mkt', 'entregas', tenantId] }); toast.success('Entrega apagada.'); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['artistas-mkt'] }); toast.success('Entrega apagada.'); },
     onError: (e: Error) => toast.error(e.message),
   });
 }
@@ -154,7 +154,33 @@ export function useMarcarReuniao() {
         'a reunião do mês',
       );
     },
-    onSuccess: (_d, r) => qc.invalidateQueries({ queryKey: ['artistas-mkt', 'reunioes', tenantId, r.mes] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['artistas-mkt', 'reunioes', tenantId] }),
     onError: (e: Error) => toast.error(e.message),
+  });
+}
+
+/** As entregas somadas por artista, mês, tipo e peso, de `de` até `ate` (`mkt_artistas_resumo`; Indicadores). */
+export function useResumoDosArtistas(de: string, ate: string, ligado = true) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['artistas-mkt', 'resumo', tenantId, de, ate],
+    enabled: !!tenantId && ligado,
+    queryFn: async (): Promise<LinhaDoResumo[]> =>
+      ((unwrap(await supabase.rpc('mkt_artistas_resumo' as never, { p_de: de, p_ate: ate } as never)) ?? []) as unknown as LinhaDoResumo[])
+        .map((l) => ({ ...l, quantidade: Number(l.quantidade) })),
+  });
+}
+
+/** Quem esteve na reunião, de todos os meses: "artista|AAAA-MM-01". */
+export function useReunioesDosArtistas(ligado = true) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['artistas-mkt', 'reunioes', tenantId, 'todas'],
+    enabled: !!tenantId && ligado,
+    queryFn: async (): Promise<Set<string>> => {
+      const linhas = (unwrap(await supabase.from('mkt_artistas_reunioes' as never)
+        .select('artista_id, mes').eq('presente', true)) ?? []) as unknown as { artista_id: string; mes: string }[];
+      return new Set(linhas.map((l) => `${l.artista_id}|${l.mes}`));
+    },
   });
 }

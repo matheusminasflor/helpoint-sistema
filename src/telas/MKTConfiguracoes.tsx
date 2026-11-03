@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Gift, Megaphone } from 'lucide-react';
+import { Gift, Megaphone, Target } from 'lucide-react';
+import { MetasDaTI } from '@/components/ti/MetasDaTI';
 import { ConfiguracaoDoSetor } from '@/components/configuracoes/ConfiguracaoDoSetor';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,6 +16,9 @@ export default function MKTConfiguracoes() {
         // `config_beneficio` na matriz: o Gestor tem, o Operador não.
         { valor: 'beneficio', permissao: 'beneficio', rotulo: 'Benefício de sexta', icone: Gift,
           conteudo: (pode: boolean) => <QuemLiberaOBeneficio podeEditar={pode} /> },
+        // As metas dos chamados nos Indicadores (dono, 2026-11-03: "como na TI"): abre e altera com a aba Chamados.
+        { valor: 'metas', permissao: 'chamados', rotulo: 'Metas', icone: Target,
+          conteudo: (pode: boolean) => <MetasDaTI podeAlterarAba={pode} setor="marketing" /> },
       ]} />
   );
 }

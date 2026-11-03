@@ -1,14 +1,10 @@
-// Estoque, pedidos de arte e Benefício de sexta nos Indicadores do Marketing (rodada 2, R6). Lê com os mesmos ganchos
-// das telas de cada um; a conta é `indicadoresDoMarketing`. Cada bloco leva à sua tela.
+// Estoque, pedidos de arte e Benefício de sexta nos Indicadores do Marketing (rodada 2, R6). Os números vêm de
+// `useIndicadoresDoMarketing` (a faixa "Atenção agora" usa os mesmos). Cada bloco leva à sua tela.
 import { Link } from 'react-router-dom';
 import { Boxes, Gift, Palette } from 'lucide-react';
 import { Card } from '@/components/ui/card';
-import { useMovimentosMkt, useProdutosMkt } from '@/hooks/useEstoqueMkt';
-import { useSolicitacoesDoSetor } from '@/hooks/useSolicitacoes';
-import { useRetiradas } from '@/hooks/useBeneficioDeSexta';
 import { useTenantPath } from '@/hooks/useTenantPath';
-import { indicadoresDoMarketing } from '@/lib/indicadores-do-marketing';
-import { todayISO } from '@/lib/dates';
+import type { IndicadoresDoMarketing } from '@/lib/indicadores-do-marketing';
 
 function Numero({ n, rotulo, ruim }: { n: number; rotulo: string; ruim?: boolean }) {
   return (
@@ -19,13 +15,8 @@ function Numero({ n, rotulo, ruim }: { n: number; rotulo: string; ruim?: boolean
   );
 }
 
-export function OutrosIndicadoresDoMarketing({ de, ate }: { de: string; ate: string }) {
+export function OutrosIndicadoresDoMarketing({ r }: { r: IndicadoresDoMarketing }) {
   const tenantPath = useTenantPath();
-  const { data: produtos = [] } = useProdutosMkt();
-  const { data: movimentos = [] } = useMovimentosMkt();
-  const { data: pedidos = [] } = useSolicitacoesDoSetor('marketing');
-  const { data: retiradas = [] } = useRetiradas();
-  const r = indicadoresDoMarketing({ produtos, movimentos, pedidos: pedidos.filter((p) => p.tipo === 'arte'), retiradas, de, ate, hoje: todayISO() });
   const titulo = (Icone: typeof Boxes, texto: string, para: string) => (
     <div className="flex items-center justify-between mb-3">
       <h3 className="text-sm font-semibold flex items-center gap-2"><Icone className="h-4 w-4 text-primary" aria-hidden="true" /> {texto}</h3>

@@ -21,6 +21,19 @@ export interface PDFReportData {
    * mostra"): a frase de resumo, a meta e o status de cada número, a Equipe, os Projetos e as categorias em níveis.
    */
   ti?: DadosDaTINoPDF;
+  /** A capa de outro setor (Marketing, 2026-11-03); sem ela, a da TI. */
+  capa?: { sigla: string; titulo: [string, string] };
+  /** Tabelas a mais, cada uma na seção que a liga no diálogo (os Artistas e os blocos do Marketing). */
+  tabelas?: TabelaDoPDF[];
+}
+
+export interface TabelaDoPDF {
+  secao: string;
+  titulo: string;
+  cabecalho: string[];
+  linhas: string[][];
+  /** A parte da largura de cada coluna (somam 1). */
+  larguras: number[];
 }
 
 export type StatusNoPDF = 'no_alvo' | 'atencao' | 'fora' | 'sem_meta' | 'sem_dado';
@@ -83,7 +96,7 @@ export function generatePDFReport(data: PDFReportData): void {
     doc.setFontSize(7);
     doc.setTextColor(...GRAY);
     doc.setFont('helvetica', 'normal');
-    doc.text('Relatório gerado automaticamente • Sistema de Gestão TI', MARGIN_X, ph - 7);
+    doc.text('Relatório gerado automaticamente • Helpoint', MARGIN_X, ph - 7);
     doc.text(`Página ${pageNum}`, pw - MARGIN_X, ph - 7, { align: 'right' });
   };
 
@@ -184,13 +197,14 @@ export function generatePDFReport(data: PDFReportData): void {
   doc.setFontSize(24);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...HEADER_BG);
-  doc.text('TI', MARGIN_X + 16, 72);
+  const capa = data.capa ?? { sigla: 'TI', titulo: ['RELATÓRIO DE', 'MÉTRICAS TI'] };
+  doc.text(capa.sigla, MARGIN_X + 25, 72, { align: 'center' });
 
   doc.setTextColor(...WHITE);
   doc.setFontSize(28);
   doc.setFont('helvetica', 'bold');
-  doc.text('RELATÓRIO DE', MARGIN_X, 130);
-  doc.text('MÉTRICAS TI', MARGIN_X, 145);
+  doc.text(capa.titulo[0], MARGIN_X, 130);
+  doc.text(capa.titulo[1], MARGIN_X, 145);
 
   doc.setFontSize(12);
   doc.setFont('helvetica', 'normal');
@@ -253,6 +267,13 @@ export function generatePDFReport(data: PDFReportData): void {
       ['Tempo Médio (horas)', `${metrics.avgResolutionTime}`, prevMetrics ? `${prevMetrics.avgResolutionTime}` : '—'],
     ];
     drawTable(['Indicador', 'Atual', 'Anterior'], summaryRows, [contentW * 0.5, contentW * 0.25, contentW * 0.25]);
+  }
+
+  // ── As tabelas a mais do setor (Marketing: Artistas; Pedidos de arte, Estoque e Benefício de sexta) ──
+  for (const t of data.tabelas ?? []) {
+    if (!hasSection(sections, t.secao) || t.linhas.length === 0) continue;
+    sectionTitle(t.titulo);
+    drawTable(t.cabecalho, t.linhas, t.larguras.map((f) => contentW * f));
   }
 
   // ── Equipe (FSENSE) e interrupções ── (rodada 2 da TI)

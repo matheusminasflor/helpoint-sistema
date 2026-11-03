@@ -157,14 +157,16 @@ export const TUTORIAIS = {
   },
   'mkt-indicadores': {
     titulo: 'Marketing › Indicadores',
-    oQueE: 'Os chamados do Marketing, os pedidos de arte, o estoque, o Benefício de sexta e o cronograma social.',
-    deOndeVem: 'A fila de chamados do Marketing, os pedidos de arte, o Estoque do Marketing, o Benefício de sexta e o Cronograma Social.',
+    oQueE: 'O relatório do Marketing para a reunião: chamados, artistas, pedidos de arte, estoque, Benefício de sexta e redes sociais. Leads (Kommo), tráfego e redes (Meta) e vendas (Bling) entram quando as chaves forem cadastradas.',
+    deOndeVem: 'A fila de chamados do Marketing, Marketing › Artistas, os pedidos de arte, o Estoque do Marketing, o Benefício de sexta e o Cronograma Social.',
     comoLer: [
-      'Escolha o período no topo.',
-      'Pedidos de arte: os pedidos do período e quantos foram entregues; os abertos agora e os que passaram do "preciso até".',
-      'Estoque: os produtos abaixo do mínimo. Benefício: as retiradas do período, as que voltaram com atraso e as que estão fora do prazo agora.',
-      'Visão Geral: os painéis — números, tendência, prioridade, categoria, redes sociais e padrões.',
-      'Análise Detalhada: a mesma da TI — a tabela de indicadores com a variação, categoria por status, o que pede atenção, o desempenho de cada atendente e quem mais pede.',
+      'Escolha o período no topo; abre na semana passada, comparada com a anterior.',
+      '"Atenção agora": o que precisa de alguém hoje. Clique para ir até lá.',
+      'Os cinco números de chamado têm meta (Configurações de Marketing › Metas): verde na meta, amarelo perto, vermelho fora.',
+      'Artistas: stories, reels e feed de cada artista no período, peças e quantas na campanha; a bonificação é a do último mês fechado.',
+      'Pedidos de arte, Estoque e Benefício: os mesmos números das telas de cada um, no período.',
+      'Analítico: o detalhe dos chamados, a prioridade, os artistas mês a mês, as redes sociais e os padrões.',
+      'Apresentar abre a reunião em tela cheia; Exportar PDF aparece para quem tem "Exportar" no perfil do Marketing.',
     ],
   },
   'rh-indicadores': {

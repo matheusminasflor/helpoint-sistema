@@ -81,6 +81,15 @@ export const OPCOES_DE_CALENDARIO: { value: PeriodoRapido | typeof PERSONALIZADO
   { value: PERSONALIZADO, label: 'Personalizado' },
 ];
 
+/** O filtro dos Indicadores da TI e do Marketing (dono, 2026-11-01 e 2026-11-03): o recorte da reunião de segunda primeiro. */
+export const PERIODOS_DA_REUNIAO: { value: string; label: string }[] = [
+  { value: 'semana_passada', label: 'Semana passada' },
+  { value: 'esta_semana', label: 'Esta semana' },
+  { value: 'mes_passado', label: 'Mês passado' },
+  { value: 'este_mes', label: 'Este mês' },
+  { value: PERSONALIZADO, label: 'Personalizado' },
+];
+
 export function ehPeriodoRapido(valor: string): valor is PeriodoRapido {
   return RAPIDOS.includes(valor);
 }

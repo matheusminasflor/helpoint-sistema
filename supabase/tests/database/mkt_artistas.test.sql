@@ -5,10 +5,11 @@
 --   4    nem apaga entrega sem "Apagar entrega"
 --   5    a reunião é do mês: dia que não é o 1º não entra
 --   6    quem não tem a seção não vê nada
+--   7-9  quem não vê os Artistas recebe o resumo vazio; o resumo do período soma por tipo e peso
 begin;
 \ir _helpers.psql
 
-select plan(6);
+select plan(9);
 
 create temporary table f on commit drop as select tests.create_tenant('pgtap-mkt-artistas', 'MKT Artistas') as a;
 create temporary table u on commit drop as
@@ -55,6 +56,17 @@ select throws_ok($$ insert into public.mkt_artistas_reunioes (tenant_id, artista
 select tests.authenticate_as('fora@mktart.test');
 select is((select count(*)::int from public.mkt_artistas) + (select count(*)::int from public.mkt_artistas_entregas), 0,
   'sem a secao Artistas nao ve nada');
+select is((select count(*)::int from public.mkt_artistas_resumo(date '2026-11-01', date '2026-11-30')), 0,
+  'nem o resumo do periodo');
+select tests.clear_authentication();
+
+-- ═══ 7 ═══
+select tests.authenticate_as('gestor@mktart.test');
+select lives_ok($$ insert into public.mkt_artistas_entregas (artista_id, data, tipo, quantidade, aprovado, na_campanha)
+  select id, date '2026-11-04', 'reels', 2, true, false from r where nome = 'artista' returning id $$, 'lanca um reels fora da campanha');
+select is((select string_agg(format('%s %s %s %s', tipo, na_campanha, aprovado, quantidade), ', ' order by tipo)
+             from public.mkt_artistas_resumo(date '2026-11-01', date '2026-11-30')),
+  'reels f t 2, stories t t 5', 'o resumo do periodo soma por tipo e peso');
 select tests.clear_authentication();
 
 select * from finish();

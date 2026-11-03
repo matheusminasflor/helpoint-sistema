@@ -30,6 +30,31 @@ https://claude.ai/artifact/Ff9HcAWjK5BWbxjhYsJjQb
 3. **Vendas (e-commerce e internas): pelo Bling, das notas fiscais faturadas.**
 4. **Comunidade MF Lovers: fora por enquanto.**
 
+## A tela dos Indicadores (projeto aprovado em 2026-11-03, versão 2)
+
+Desenho: https://claude.ai/artifact/QGkXebKXNYA4tPcfSC9XUR
+
+- **Formato da TI:** o mesmo filtro de período (abre na semana passada), "Visão Geral" e "Analítico", "Apresentar" e
+  "Exportar PDF". Tudo que a tela tinha antes continua; a tabela "Onde fica cada indicador de hoje" do desenho diz onde.
+- **Visão Geral:** atenção agora, frase de resumo, os cinco números de chamado com meta e cor, Artistas, os blocos das
+  fontes de fora, Pedidos de arte, Estoque e Benefício de sexta, categorias e abertos × resolvidos.
+- **Artistas:** quantos **stories, reels e feed** cada artista fez no período; peças e "na campanha" ficam ao lado.
+- **Kommo:** só quantos leads chegaram em cada funil: **Consumidor final, Salão, Distribuidor e Sem triagem** (funil
+  Entrada).
+- **Analítico:** o detalhe dos chamados, a prioridade, os Artistas mês a mês, as redes sociais e os padrões.
+
+Decisões do dono:
+
+1. **Leads, tráfego, redes e vendas esperam as chaves.** Até lá, os blocos dizem o que falta; nada é digitado nem
+   carregado à mão.
+2. **Período igual ao da TI.**
+3. **Histórico desde julho de 2026** (o início da planilha).
+4. **O relatório vira a Visão Geral.**
+5. **Os chamados do Marketing têm meta e cor**, como na TI: SLA 80%, 1ª resposta 85%, tempo médio até 24 h, mudadas em
+   Configurações de Marketing › Metas (`metas_degraus`, setor `marketing`).
+6. **Exportar PDF** para quem tem "Exportar" no perfil do Marketing.
+7. **A bonificação mostrada é a do último mês fechado** ("é o valor que se paga").
+
 ## A regra da bonificação (aba PAINEL MKT, nota da seção 1)
 
 - **Peso de cada peça:** na campanha vale 100%; aprovada fora da campanha, 50%; reprovada, 0%.

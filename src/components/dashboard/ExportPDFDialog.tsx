@@ -5,14 +5,14 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Download, FileText } from "lucide-react";
 import { generatePDFReport, PDFReportData } from "@/components/dashboard/PDFReportGenerator";
 
-interface SectionDef {
+export interface SectionDef {
   id: string;
   label: string;
   description: string;
   locked?: boolean;
 }
 
-const SECTIONS: SectionDef[] = [
+const SECOES_DA_TI: SectionDef[] = [
   { id: 'cover', label: 'Capa', description: 'Página de capa com título e período', locked: true },
   { id: 'executive_summary', label: 'Resumo', description: 'A frase de resumo e os números de chamado com meta, anterior e status' },
   // Rodada 2 da TI (2026-11-02): o PDF leva tudo o que a Visão Geral mostra. O "Comparativo" saiu: o anterior já está
@@ -31,9 +31,11 @@ interface ExportPDFDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   reportData: Omit<PDFReportData, 'selectedSections'>;
+  /** As seções de outro setor (Marketing, 2026-11-03); sem elas, as da TI. */
+  secoes?: SectionDef[];
 }
 
-export function ExportPDFDialog({ open, onOpenChange, reportData }: ExportPDFDialogProps) {
+export function ExportPDFDialog({ open, onOpenChange, reportData, secoes: SECTIONS = SECOES_DA_TI }: ExportPDFDialogProps) {
   const [selected, setSelected] = useState<Set<SectionId>>(
     new Set(SECTIONS.map(s => s.id))
   );

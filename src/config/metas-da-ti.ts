@@ -42,6 +42,15 @@ export const METAS_DA_TI: MetaDaTI[] = [
 
 export const META_DA_TI = Object.fromEntries(METAS_DA_TI.map((m) => [m.chave, m])) as Record<string, MetaDaTI>;
 
+// As metas dos chamados do Marketing (dono, 2026-11-03: "como na TI"): a mesma régua e o mesmo padrão dos chamados da
+// TI, gravadas à parte (`metas_degraus.setor = 'marketing'`). As funções abaixo servem às duas listas pela chave.
+export const METAS_DO_MARKETING: MetaDaTI[] = [
+  { ...META_DA_TI.sla_cumprido, mercado: 'Equipes de criação costumam combinar de 80% a 90% das demandas dentro do prazo.' },
+  { ...META_DA_TI.primeira_resposta, mercado: 'De 85% a 95%: quem pede quer saber logo que alguém pegou a demanda.' },
+  { ...META_DA_TI.tempo_medio_horas, rotulo: 'Tempo médio de entrega (no máximo)',
+    mercado: 'Conta horas corridas, com noite e fim de semana. Arte simples sai no dia; campanha leva mais.' },
+];
+
 /** As metas gravadas, por indicador, com o mês a partir do qual cada uma vale (o que `useMetasDaTI` devolve). */
 export type DegrausGravados = Map<string, Degrau[]>;
 

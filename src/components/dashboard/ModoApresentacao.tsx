@@ -8,7 +8,9 @@ import { Button } from '@/components/ui/button';
 
 export interface TelaDaApresentacao { titulo: string; conteudo: ReactNode }
 
-export function ModoApresentacao({ telas, subtitulo, onSair }: { telas: TelaDaApresentacao[]; subtitulo: string; onSair: () => void }) {
+export function ModoApresentacao({ telas, subtitulo, onSair, titulo = 'Indicadores da TI' }: {
+  telas: TelaDaApresentacao[]; subtitulo: string; onSair: () => void; titulo?: string;
+}) {
   const [i, setI] = useState(0);
   const raiz = useRef<HTMLDivElement>(null);
   const ir = useCallback((passo: number) => setI((atual) => Math.min(telas.length - 1, Math.max(0, atual + passo))), [telas.length]);
@@ -52,7 +54,7 @@ export function ModoApresentacao({ telas, subtitulo, onSair }: { telas: TelaDaAp
       className="fixed inset-0 z-[100] flex flex-col bg-background text-foreground">
       <header className="flex items-center justify-between gap-4 px-6 pt-5 pb-2 lg:px-12">
         <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Indicadores da TI · {subtitulo}</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">{titulo} · {subtitulo}</p>
           <h2 className="text-2xl font-bold lg:text-4xl">{tela.titulo}</h2>
         </div>
         <Button variant="ghost" size="icon" onClick={sair} aria-label="Sair da apresentação (Esc)"><X className="h-6 w-6" /></Button>

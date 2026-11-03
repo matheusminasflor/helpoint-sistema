@@ -1,38 +1,44 @@
 // Configurações de TI › Metas (dono, 2026-11-02): UMA meta por indicador, com o padrão de mercado ao lado. O gestor muda
 // quando quiser ("esse mês vou querer subir para tanto"); a nova vale a partir do mês da mudança e os meses anteriores
-// continuam com a que valia (`degrausAoMudar`; `ti_metas_degraus`, 20270212190000). Quem altera a aba Chamados da
-// configuração da TI, ou define metas na Diretoria, muda aqui; o banco confere o mesmo.
+// continuam com a que valia (`degrausAoMudar`; `metas_degraus`). Quem altera a aba Chamados da configuração do setor,
+// ou define metas na Diretoria, muda aqui; o banco confere o mesmo. O Marketing usa a mesma tela (2026-11-03).
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { METAS_DA_TI, degrausAoMudar, metaNoDia } from '@/config/metas-da-ti';
+import { METAS_DA_TI, METAS_DO_MARKETING, degrausAoMudar, metaNoDia } from '@/config/metas-da-ti';
 import { useConfiguracaoDosSetores } from '@/hooks/useAccessProfiles';
-import { useMetasDaTI, useSalvarEscadaDaTI } from '@/hooks/useMetasDaTI';
+import { useMetasDaTI, useSalvarEscadaDaTI, type SetorDasMetas } from '@/hooks/useMetasDaTI';
 import { todayISO } from '@/lib/dates';
 import { mensagemDeErro } from '@/lib/supabase-result';
 
 const texto = (v: number | undefined) => (v === undefined ? '' : String(v).replace('.', ','));
 
-export function MetasDaTI({ podeAlterarAba }: { podeAlterarAba: boolean }) {
-  const metas = useMetasDaTI();
+const DO_SETOR = {
+  ti: { lista: METAS_DA_TI, titulo: 'Metas dos Indicadores da TI', nome: 'da TI' },
+  marketing: { lista: METAS_DO_MARKETING, titulo: 'Metas dos Indicadores do Marketing', nome: 'do Marketing' },
+};
+
+export function MetasDaTI({ podeAlterarAba, setor = 'ti' }: { podeAlterarAba: boolean; setor?: SetorDasMetas }) {
+  const { lista, titulo, nome } = DO_SETOR[setor];
+  const metas = useMetasDaTI(setor);
   const perfil = useConfiguracaoDosSetores();
   const pode = podeAlterarAba || perfil.pode('diretoria', 'indicadores', 'definir_metas');
-  const salvar = useSalvarEscadaDaTI();
+  const salvar = useSalvarEscadaDaTI(setor);
   const hoje = todayISO();
   const [valores, setValores] = useState<Record<string, string>>({});
   const vigente = (chave: string) => metaNoDia(metas.data, chave, hoje);
 
   useEffect(() => {
-    if (metas.data) setValores(Object.fromEntries(METAS_DA_TI.map((m) => [m.chave, texto(metaNoDia(metas.data, m.chave, hoje))])));
-  }, [metas.data, hoje]);
+    if (metas.data) setValores(Object.fromEntries(lista.map((m) => [m.chave, texto(metaNoDia(metas.data, m.chave, hoje))])));
+  }, [metas.data, hoje, lista]);
 
   const enviar = async () => {
     try {
       let mudou = 0;
-      for (const m of METAS_DA_TI) {
+      for (const m of lista) {
         const t = (valores[m.chave] ?? '').trim();
         const nova = Number(t.replace(',', '.'));
         if (t === '' || Number.isNaN(nova) || nova < 0 || (m.percentual && nova > 100)) {
@@ -52,7 +58,7 @@ export function MetasDaTI({ podeAlterarAba }: { podeAlterarAba: boolean }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Metas dos Indicadores da TI</CardTitle>
+        <CardTitle className="text-base">{titulo}</CardTitle>
         <CardDescription>
           Uma meta por indicador. Quando mudar, a nova vale a partir deste mês; os meses anteriores continuam com a meta
           que valia, para o histórico não mudar de cor.
@@ -67,13 +73,13 @@ export function MetasDaTI({ podeAlterarAba }: { podeAlterarAba: boolean }) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {METAS_DA_TI.map((m) => (
+              {lista.map((m) => (
                 <TableRow key={m.chave}>
                   <TableCell className="font-medium align-top">{m.rotulo}</TableCell>
                   <TableCell className="text-sm text-muted-foreground align-top max-w-[420px]">{m.mercado}</TableCell>
                   <TableCell className="align-top">
                     <div className="flex items-center gap-1.5">
-                      <Input id={`meta-ti-${m.chave}`} inputMode="decimal" className="h-8 w-24 text-right tabular-nums"
+                      <Input id={`meta-${setor}-${m.chave}`} inputMode="decimal" className="h-8 w-24 text-right tabular-nums"
                         aria-label={`Meta: ${m.rotulo}`} disabled={!pode}
                         value={valores[m.chave] ?? ''} onChange={(e) => setValores({ ...valores, [m.chave]: e.target.value })} />
                       <span className="text-xs text-muted-foreground whitespace-nowrap">{m.unidade.trim()}</span>
@@ -87,7 +93,7 @@ export function MetasDaTI({ podeAlterarAba }: { podeAlterarAba: boolean }) {
         {pode ? (
           <div className="flex justify-end"><Button onClick={enviar} disabled={salvar.isPending || metas.isLoading}>Salvar metas</Button></div>
         ) : (
-          <p className="text-sm text-muted-foreground">Você pode ver as metas, mas não mudar. Quem muda é quem altera a configuração de Chamados da TI, ou a Diretoria.</p>
+          <p className="text-sm text-muted-foreground">Você pode ver as metas, mas não mudar. Quem muda é quem altera a configuração de Chamados {nome}, ou a Diretoria.</p>
         )}
         <p className="text-xs text-muted-foreground">
           Cor nos indicadores: verde na meta; amarelo perto dela (em percentual, até 10 pontos; em tempo e quantidade, até

@@ -14,7 +14,7 @@ import { ExplicacaoDoIndicador } from '@/components/ajuda/ExplicacaoDoIndicador'
 import { useState } from 'react';
 import { useQueryState } from '@/hooks/useQueryState';
 import { usePeriodoNaUrl } from '@/hooks/usePeriodoNaUrl';
-import { PERSONALIZADO, rotuloDoIntervalo, type IntervaloDeDias } from '@/lib/period';
+import { PERIODOS_DA_REUNIAO, PERSONALIZADO, rotuloDoIntervalo, type IntervaloDeDias } from '@/lib/period';
 import { diaCurto, fromLocalISODate, toLocalISODate, todayISO } from '@/lib/dates';
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -71,13 +71,7 @@ import { useProjetosDoSetor } from '@/hooks/useProjetos';
 import type { AssetCategory } from '@/types/helpdesk';
 
 // O recorte da reunião de segunda primeiro (dono, 2026-11-01). Links antigos (`?periodo=30d`) continuam abrindo.
-const PERIODOS = [
-  { value: 'semana_passada', label: 'Semana passada' },
-  { value: 'esta_semana', label: 'Esta semana' },
-  { value: 'mes_passado', label: 'Mês passado' },
-  { value: 'este_mes', label: 'Este mês' },
-  { value: PERSONALIZADO, label: 'Personalizado' },
-];
+const PERIODOS = PERIODOS_DA_REUNIAO;
 
 // O índice do Analítico: as âncoras moram nos cartões (`IndicatorsView`, `EquipeNoAnalitico`, `ProjetosDaTI`).
 const SECOES_DO_ANALITICO = [

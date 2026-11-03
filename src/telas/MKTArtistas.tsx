@@ -19,18 +19,14 @@ import {
   useApagarEntrega, useArtistas, useEntregasDoMes, useLancarEntrega, useMarcarReuniao, useProdutosLancados, useReunioesDoMes,
   useSalvarArtista, type Artista,
 } from '@/hooks/useArtistasMkt';
-import { bonificacaoDoMes, pesoDaPeca, type StatusDaBonificacao, type TipoDeEntrega } from '@/lib/bonificacao-dos-artistas';
+import { bonificacaoDoMes, pesoDaPeca, type TipoDeEntrega } from '@/lib/bonificacao-dos-artistas';
+import { STATUS_DO_ARTISTA as STATUS } from '@/lib/artistas-nos-indicadores';
 import { formatBRL } from '@/lib/crm';
 import { todayISO } from '@/lib/dates';
 import { cn } from '@/lib/utils';
 
 const campo = 'w-full rounded-lg border border-border bg-card px-3 py-2 text-sm';
 const NOME_DO_TIPO: Record<TipoDeEntrega, string> = { stories: 'Stories', reels: 'Reels', post: 'Post (feed)' };
-const STATUS: Record<StatusDaBonificacao, { texto: string; classe: string }> = {
-  no_alvo: { texto: 'No alvo', classe: 'badge-success' },
-  atencao: { texto: 'Atenção', classe: 'badge-warning' },
-  fora: { texto: 'Fora', classe: 'badge-danger' },
-};
 const dataCurta = (iso: string) => iso.split('-').reverse().slice(0, 2).join('/');
 const pct = (n: number) => `${Math.round(n * 100)}%`;
 
