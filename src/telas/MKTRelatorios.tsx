@@ -26,7 +26,7 @@ import { CategoriasDosChamados } from '@/components/ti/CategoriasDosChamados';
 import { LinhaAgendaEAjuda } from '@/components/dashboard/AjudaAOutrosSetoresKPI';
 import { OutrosIndicadoresDoMarketing } from '@/components/mkt/OutrosIndicadoresDoMarketing';
 import { useIndicadoresDoMarketing } from '@/hooks/useIndicadoresDoMarketing';
-import { ArtistasDoPeriodo, ArtistasMesAMes, EsperandoAsLigacoes } from '@/components/mkt/ArtistasNosIndicadores';
+import { ArtistasDoMes, ArtistasMesAMes, EsperandoAsLigacoes } from '@/components/mkt/ArtistasNosIndicadores';
 import { DicaDoGrafico } from '@/components/dashboard/DicaDoGrafico';
 import { ModoApresentacao } from '@/components/dashboard/ModoApresentacao';
 import { ExportPDFDialog, type SectionDef } from '@/components/dashboard/ExportPDFDialog';
@@ -41,7 +41,7 @@ import { useQueryState } from '@/hooks/useQueryState';
 import { usePeriodoNaUrl } from '@/hooks/usePeriodoNaUrl';
 import { useConfiguracaoDosSetores } from '@/hooks/useAccessProfiles';
 import { useMetasDaTI } from '@/hooks/useMetasDaTI';
-import { useArtistas, useResumoDosArtistas, useReunioesDosArtistas } from '@/hooks/useArtistasMkt';
+import { useArtistas, useEntregasEntre, useResumoDosArtistas, useReunioesDosArtistas } from '@/hooks/useArtistasMkt';
 import { META_DA_TI, metaNoDia, notaDaMeta } from '@/config/metas-da-ti';
 import { PERIODOS_DA_REUNIAO, rotuloDoIntervalo, type IntervaloDeDias } from '@/lib/period';
 import { toLocalISODate, todayISO } from '@/lib/dates';
@@ -50,7 +50,8 @@ import { fraseDoResumo } from '@/lib/resumo-da-ti';
 import { barrasDaTendencia } from '@/lib/tendencia';
 import { formatarHoras } from '@/lib/horas';
 import { arvoreDosChamados, type No } from '@/lib/arvore-de-categorias';
-import { STATUS_DO_ARTISTA, artistasMesAMes, artistasNoPeriodo, bonificacaoNoMes, fraseDosArtistas, nomeDoMes, ultimoMesFechado } from '@/lib/artistas-nos-indicadores';
+import { STATUS_DO_ARTISTA, artistasMesAMes } from '@/lib/artistas-nos-indicadores';
+import { artistasNoRecorte, periodosDoRecorte, recorteDoPeriodo, rotuloDoRecorte, type Recorte } from '@/lib/semanas-dos-artistas';
 import { formatBRL } from '@/lib/crm';
 import { cn } from '@/lib/utils';
 import { SOCIAL_PLATFORM_LABELS } from '@/types/mkt';
@@ -71,7 +72,7 @@ const SECOES_DO_ANALITICO = [
 const SECOES_DO_PDF: SectionDef[] = [
   { id: 'cover', label: 'Capa', description: 'Página de capa com título e período', locked: true },
   { id: 'executive_summary', label: 'Resumo', description: 'A frase de resumo e os números de chamado com meta, anterior e status' },
-  { id: 'artists', label: 'Artistas', description: 'Stories, reels e feed do período, e a bonificação do último mês fechado' },
+  { id: 'artists', label: 'Artistas', description: 'A semana do mês dos artistas (ou o mês inteiro), com a bonificação e o anterior' },
   { id: 'others', label: 'Pedidos de arte, estoque e Benefício de sexta', description: 'Os três blocos da Visão Geral' },
   { id: 'category', label: 'Chamados por categoria', description: 'Categorias e subcategorias, como na Visão Geral' },
   { id: 'trends', label: 'Abertos × resolvidos por dia', description: 'Os últimos 14 dias do período' },
@@ -114,17 +115,26 @@ export default function MKTRelatorios() {
   const outros = useIndicadoresDoMarketing(intervaloDaTela.de, intervaloDaTela.ate);
   const { data: allPosts = [] } = useMKTSocialPosts();
 
-  // Artistas: o período (stories, reels, feed), o último mês fechado (bonificação) e os 12 meses (Analítico).
+  // Artistas pelas semanas do mês deles, como na planilha (dono, 2026-11-03): o período da tela escolhe o recorte
+  // (26/10 a 01/11 → outubro S4); o bloco troca de mês e de semana sem mexer no resto da tela.
   const { data: artistas = [] } = useArtistas();
   const temArtistas = artistas.length > 0;
-  const mesFechado = ultimoMesFechado(intervaloDaTela.ate, hoje);
-  const inicioDoHistorico = `${Number(mesFechado.slice(0, 4)) - 1}-${mesFechado.slice(5, 7)}-01`;
-  const { data: resumoDoPeriodo = [] } = useResumoDosArtistas(intervaloDaTela.de, intervaloDaTela.ate, temArtistas);
+  const recorteDaTela = recorteDoPeriodo(intervaloDaTela);
+  const [recorteEscolhido, setRecorteEscolhido] = useState<{ daTela: string; r: Recorte } | null>(null);
+  const chaveDaTela = `${intervaloDaTela.de}|${intervaloDaTela.ate}`;
+  const recorte = recorteEscolhido?.daTela === chaveDaTela ? recorteEscolhido.r : recorteDaTela;
+  const doRecorte = periodosDoRecorte(recorte);
+  const { data: entregasDoRecorte = [] } = useEntregasEntre(doRecorte.anterior.de, doRecorte.acumulado.ate, temArtistas);
+  const inicioDoHistorico = `${Number(hoje.slice(0, 4)) - 1}-${hoje.slice(5, 7)}-01`;
   const { data: historico = [] } = useResumoDosArtistas(inicioDoHistorico, hoje, temArtistas);
   const { data: reunioes = new Set<string>() } = useReunioesDosArtistas(temArtistas);
-  const doPeriodo = useMemo(() => artistasNoPeriodo(artistas, resumoDoPeriodo), [artistas, resumoDoPeriodo]);
-  const bonificacao = useMemo(() => bonificacaoNoMes(artistas, historico, reunioes, mesFechado), [artistas, historico, reunioes, mesFechado]);
+  const noRecorte = useMemo(() => artistasNoRecorte(artistas, entregasDoRecorte, reunioes, recorte), [artistas, entregasDoRecorte, reunioes, recorte]);
   const mesAMes = useMemo(() => artistasMesAMes(artistas, historico, reunioes), [artistas, historico, reunioes]);
+  const rotulo = rotuloDoRecorte(recorte, hoje);
+  const tw = noRecorte.total;
+  const fraseDoRecorte = recorte.semana
+    ? `Artistas, ${rotulo.titulo}: ${tw.semana.stories} stories, ${tw.semana.reels} reels e ${tw.semana.feed} no feed na semana; a bonificação do mês até ela está em ${formatBRL(tw.valor)} (${tw.teto ? pct(tw.valor / tw.teto) : '—'} do teto).`
+    : `Artistas, ${rotulo.titulo}: ${tw.mes.stories} stories, ${tw.mes.reels} reels e ${tw.mes.feed} no feed; a bonificação ${rotulo.situacao === 'mês fechado' ? 'fechou' : 'está'} em ${formatBRL(tw.valor)} (${tw.teto ? pct(tw.valor / tw.teto) : '—'} do teto).`;
 
   // A meta é a que vale no último dia do período (Configurações de Marketing › Metas; padrão em `config/metas-da-ti`).
   const meta = (chave: string) => metaNoDia(metas.data, chave, intervaloDaTela.ate);
@@ -147,17 +157,17 @@ export default function MKTRelatorios() {
       tempo: metrics?.avgResolutionTime ?? null, tempoAnterior: anterior?.avgResolutionTime ?? null,
       trabalho: null, semanaAConfirmar: false, projetosAlemDoTermino: 0,
     }),
-    temArtistas ? fraseDosArtistas(doPeriodo.total) : '',
+    temArtistas ? fraseDoRecorte : '',
   ].filter(Boolean).join(' ');
 
-  // Só com o período encerrado: numa segunda, "esta semana" acusaria todos os artistas (revisão de 2026-11-03).
-  const semEntrega = intervaloDaTela.ate < hoje ? doPeriodo.linhas.filter((l) => l.pecas === 0).length : 0;
+  // Só com a semana dos artistas encerrada: com ela em andamento, acusaria todos (revisão de 2026-11-03).
+  const semEntrega = doRecorte.semana.ate < hoje ? noRecorte.linhas.filter((l) => (recorte.semana ? l.semana : l.mes).pecas === 0).length : 0;
   const atencao = [
     violados.length > 0 && { texto: `${violados.length} ${violados.length === 1 ? 'chamado fora do prazo' : 'chamados fora do prazo'}`, cor: 'perigo', para: '/mkt/chamados' },
     outros.atrasados > 0 && { texto: `${outros.atrasados} ${outros.atrasados === 1 ? 'pedido de arte passou do prazo' : 'pedidos de arte passaram do prazo'}`, cor: 'aviso', para: '/mkt/pedidos-de-arte' },
     outros.abaixoDoMinimo.length > 0 && { texto: `${outros.abaixoDoMinimo.length} ${outros.abaixoDoMinimo.length === 1 ? 'produto abaixo do mínimo' : 'produtos abaixo do mínimo'}`, cor: 'aviso', para: '/mkt/estoque' },
     outros.foraDoPrazoAgora > 0 && { texto: `${outros.foraDoPrazoAgora} ${outros.foraDoPrazoAgora === 1 ? 'retirada do Benefício fora do prazo' : 'retiradas do Benefício fora do prazo'}`, cor: 'aviso', para: '/mkt/beneficio' },
-    temArtistas && semEntrega > 0 && { texto: `${semEntrega} ${semEntrega === 1 ? 'artista sem entrega' : 'artistas sem entrega'} no período`, cor: 'aviso', para: '#artistas-do-marketing' },
+    temArtistas && semEntrega > 0 && { texto: `${semEntrega} ${semEntrega === 1 ? 'artista sem entrega' : 'artistas sem entrega'} ${recorte.semana ? `na S${recorte.semana}` : 'no mês'}`, cor: 'aviso', para: '#artistas-do-marketing' },
   ].filter(Boolean) as { texto: string; cor: 'perigo' | 'aviso'; para: string }[];
 
   const rotuloDoPeriodo = PERIODOS_DA_REUNIAO.find((p) => p.value === periodo)?.label;
@@ -201,7 +211,7 @@ export default function MKTRelatorios() {
     </KPIGrid>
   );
   const artistasDoPeriodo = temArtistas && (
-    <ArtistasDoPeriodo linhas={doPeriodo.linhas} total={doPeriodo.total} mes={mesFechado} bonificacao={bonificacao} />
+    <ArtistasDoMes recorte={recorte} onRecorte={(r) => setRecorteEscolhido({ daTela: chaveDaTela, r })} linhas={noRecorte.linhas} total={noRecorte.total} hoje={hoje} />
   );
   const categorias = <CategoriasDosChamados chamados={metrics?.chamados ?? []} modulo="marketing" />;
   const abertosResolvidos = (
@@ -242,12 +252,16 @@ export default function MKTRelatorios() {
     categorias: achatar(arvoreDosChamados(metrics?.chamados ?? [])),
   };
   const tabelasDoPdf: TabelaDoPDF[] = [
-    { secao: 'artists', titulo: 'ARTISTAS NO PERÍODO', cabecalho: ['Artista', 'Stories', 'Reels', 'Feed', 'Peças', 'Na campanha'],
-      linhas: [...doPeriodo.linhas, { nome: 'Total', ...doPeriodo.total }].map((l) => [l.nome, `${l.stories}`, `${l.reels}`, `${l.feed}`, `${l.pecas}`, `${l.naCampanha}`]),
-      larguras: [0.35, 0.13, 0.13, 0.13, 0.13, 0.13] },
-    { secao: 'artists', titulo: `BONIFICAÇÃO DE ${nomeDoMes(mesFechado).toUpperCase()}`, cabecalho: ['Artista', 'Bonificação', 'Teto', 'Situação'],
-      linhas: bonificacao.map((x) => [x.nome, formatBRL(x.b.valor), formatBRL(x.teto), `${STATUS_DO_ARTISTA[x.b.status].texto} · ${pct(x.b.parteDoTeto)}`]),
-      larguras: [0.35, 0.22, 0.2, 0.23] },
+    { secao: 'artists', titulo: `ARTISTAS · ${rotuloDoRecorte(recorte, hoje).titulo.toUpperCase()}`,
+      cabecalho: [...(recorte.semana ? ['Artista', 'Na semana (St/Re/Fe)'] : ['Artista']), 'No mês (St/Re/Fe)', 'Bonificação', 'Anterior', 'Situação'],
+      linhas: [...noRecorte.linhas.map((l) => [
+        l.nome, ...(recorte.semana ? [`${l.semana.stories} / ${l.semana.reels} / ${l.semana.feed}`] : []), `${l.mes.stories} / ${l.mes.reels} / ${l.mes.feed}`,
+        formatBRL(l.b.valor), l.anterior === null ? '—' : formatBRL(l.anterior), `${STATUS_DO_ARTISTA[l.b.status].texto} · ${pct(l.b.parteDoTeto)}`,
+      ]), ['Total', ...(recorte.semana ? [`${noRecorte.total.semana.stories} / ${noRecorte.total.semana.reels} / ${noRecorte.total.semana.feed}`] : []),
+        `${noRecorte.total.mes.stories} / ${noRecorte.total.mes.reels} / ${noRecorte.total.mes.feed}`, formatBRL(noRecorte.total.valor),
+        noRecorte.total.anterior === null ? '—' : formatBRL(noRecorte.total.anterior), noRecorte.total.teto ? `${pct(noRecorte.total.valor / noRecorte.total.teto)} do teto` : ''],
+      ],
+      larguras: recorte.semana ? [0.2, 0.17, 0.17, 0.15, 0.13, 0.18] : [0.24, 0.2, 0.18, 0.16, 0.22] },
     { secao: 'others', titulo: 'PEDIDOS DE ARTE, ESTOQUE E BENEFÍCIO DE SEXTA', cabecalho: ['Indicador', 'Valor'],
       linhas: [
         ['Pedidos de arte no período', `${outros.pedidosNoPeriodo}`], ['Pedidos de arte entregues', `${outros.entreguesNoPeriodo}`],

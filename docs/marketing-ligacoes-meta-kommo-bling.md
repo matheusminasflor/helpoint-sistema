@@ -8,26 +8,32 @@ das vendas vêm direto da fonte, sem digitar. Cada ligação é feita **uma vez*
 
 ## 1. Meta (Instagram, página do Facebook e anúncios)
 
-O Helpoint já tem o botão "Conectar com a Meta" (Marketing › Configurações). Falta o aplicativo da Minasflor na Meta.
+O Helpoint já tem o botão "Conectar com a Meta" (Marketing › Cronograma Social). Falta o aplicativo da Minasflor na Meta.
 
 1. Entre em **developers.facebook.com** com a conta que administra a página e a conta de anúncios da Minasflor.
 2. **Meus apps › Criar app** → tipo **Empresa** → nome `Helpoint Minasflor` → associe ao Gerenciador de Negócios
    da Minasflor.
 3. No painel do app, adicione os produtos **Login do Facebook para Empresas**, **API do Instagram** e **API de
-   Marketing**.
-4. Em **Login do Facebook › Configurações**, no campo **URIs de redirecionamento do OAuth válidos**, cole:
+   Marketing**. Em **Configurações do app › Básico › Domínios do app**, coloque `helpoint.minasflor.com.br`.
+4. Em **Login do Facebook para Empresas › Configurações**, no campo **URIs de redirecionamento do OAuth válidos**, cole
+   os dois (corrigido em 2026-11-03: a primeira versão deste documento trazia o endereço da função no Supabase, que não
+   é para onde o botão volta):
 
 ```
-https://joafqgmiirggohxkomrl.supabase.co/functions/v1/mkt-meta-oauth
+https://helpoint.minasflor.com.br/mkt/social?oauth_callback=true
+https://helpoint.minasflor.com.br/mkt/social
 ```
 
-5. Em **Configurações do app › Básico**, copie o **ID do aplicativo** e a **Chave secreta do aplicativo**, e grave no
+5. Em **Permissões e recursos** (ou nos **Casos de uso**), ative para ler os números: `instagram_basic`,
+   `instagram_manage_insights`, `pages_show_list`, `pages_read_engagement`, `read_insights`, `ads_read` e
+   `business_management`.
+6. Em **Configurações do app › Básico**, copie o **ID do aplicativo** e a **Chave secreta do aplicativo**, e grave no
    cofre como:
    - `META_APP_ID`: o ID;
    - `META_APP_SECRET`: a chave secreta.
-6. Deixe o app em **modo de desenvolvimento**. Como as contas são da própria Minasflor e quem conecta é administrador
+7. Deixe o app em **modo de desenvolvimento**. Como as contas são da própria Minasflor e quem conecta é administrador
    do app, não precisa da revisão da Meta.
-7. Me avise. Eu libero o botão, você clica em **Conectar com a Meta** no Helpoint e escolhe as 3 contas do Instagram,
+8. Me avise. Eu libero o botão, você clica em **Conectar com a Meta** no Helpoint e escolhe as 3 contas do Instagram,
    a página e a conta de anúncios.
 
 ## 2. Kommo (leads por segmento)
