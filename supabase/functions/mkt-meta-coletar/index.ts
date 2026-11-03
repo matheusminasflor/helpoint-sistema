@@ -160,6 +160,13 @@ async function coletarEmpresa(tenantId: string, semanas: Semana[], agora: number
   const instagrams = contas.filter((c) => c.tipo === 'instagram');
   const doIg = new Map(instagrams.map((c) => [c.id, nomeDaConta(c.nome)]));
   const erros: string[] = [];
+  // A Meta compartilhou a MF INTERNO com o app, mas recusou LISTAR as contas de anúncios na ligação ("(#200) Missing
+  // Permissions", 2026-11-03). Sem a lista, vai direto às contas de `META_CONTAS_DE_ANUNCIO` (o número da conta, que não
+  // é segredo): se a credencial lê anúncio, os números vêm; se não, o erro da Meta aparece na tela.
+  const listadas = contas.filter((c) => c.tipo === 'anuncios');
+  const anuncios: Conta[] = listadas.length ? listadas : (Deno.env.get('META_CONTAS_DE_ANUNCIO') ?? '').split(',')
+    .map((s) => s.trim()).filter(Boolean)
+    .map((id) => ({ tipo: 'anuncios' as const, id: id.startsWith('act_') ? id : `act_${id}`, nome: `conta de anúncios ${id}` }));
 
   for (const s of semanas) {
     for (const ig of instagrams) {
@@ -182,7 +189,7 @@ async function coletarEmpresa(tenantId: string, semanas: Semana[], agora: number
         erros.push(`${conta}: ${e instanceof Error ? e.message : String(e)}`);
       }
     }
-    for (const act of contas.filter((c) => c.tipo === 'anuncios')) {
+    for (const act of anuncios) {
       try {
         const a = await dosAnuncios(token, act, s, doIg);
         const { error } = await admin.from('mkt_trafego_semana').upsert(semNulos({ tenant_id: tenantId, semana: s.domingo, ...a.total }),
@@ -203,7 +210,7 @@ async function coletarEmpresa(tenantId: string, semanas: Semana[], agora: number
       }
     }
   }
-  const semAnuncios = contas.some((c) => c.tipo === 'anuncios') ? null : 'as contas de anúncios não vieram na ligação; conecte de novo marcando a MF INTERNO - Marketing';
+  const semAnuncios = anuncios.length ? null : 'as contas de anúncios não vieram na ligação; conecte de novo marcando a MF INTERNO - Marketing';
   const { error } = await admin.from('mkt_meta_ligacao').update({
     coletado_em: new Date(agora).toISOString(), ultimo_erro: [...erros, semAnuncios].filter(Boolean).join(' · ') || null,
   }).eq('tenant_id', tenantId);
