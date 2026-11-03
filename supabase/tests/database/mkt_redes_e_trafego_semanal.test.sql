@@ -1,11 +1,12 @@
 -- REDES E TRÁFEGO LANÇADOS À MÃO (migration 20270212250000).
 --   1  quem tem "Lançar redes e tráfego" lança a semana de uma conta (com returning)
 --   2  a semana é o domingo: outro dia não entra
---   3  quem só vê os Indicadores lê e não lança
+--   3  o tráfego da conta entra na linha dela, sem valor negativo (20270212260000)
+--   4  quem só vê os Indicadores lê e não lança
 begin;
 \ir _helpers.psql
 
-select plan(4);
+select plan(6);
 
 create temporary table f on commit drop as select tests.create_tenant('pgtap-mkt-redes', 'MKT Redes', false) as a;
 create temporary table u on commit drop as
@@ -24,6 +25,12 @@ select lives_ok($$ insert into public.mkt_redes_semana (semana, conta, posts, re
   values (date '2026-11-01', '@minasflor', 3, 2, 10000) returning id $$, 'quem lanca lanca a semana de uma conta');
 select throws_ok($$ insert into public.mkt_trafego_semana (semana, investimento) values (date '2026-11-02', 100) $$,
   '23514', null, 'a semana e o domingo');
+-- O tráfego da conta (20270212260000) vai na mesma linha da conta.
+with x as (update public.mkt_redes_semana set investimento = 201.08, alcance_pago = 17374, campanhas_ativas = 1
+             where conta = '@minasflor' returning id)
+select is((select count(*)::int from x), 1, 'o trafego da conta entra na linha da conta');
+select throws_ok($$ update public.mkt_redes_semana set investimento = -1 where conta = '@minasflor' $$,
+  '23514', null, 'investimento negativo nao entra');
 select tests.clear_authentication();
 
 select tests.authenticate_as('ve@mktredes.test');

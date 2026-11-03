@@ -9,7 +9,7 @@
 import { COR, COR_ABERTOS, COR_DA_PRIORIDADE, COR_RESOLVIDOS, EIXO } from '@/config/cores-dos-graficos';
 import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { AlertTriangle, BarChart3, CheckCircle2, Clock, Download, Inbox, Presentation, Share2, ShieldCheck, Target, Timer } from 'lucide-react';
+import { AlertTriangle, BarChart3, CheckCircle2, Clock, Download, Inbox, Plus, Presentation, Share2, ShieldCheck, Target, Timer } from 'lucide-react';
 import { Bar, BarChart, CartesianGrid, Cell, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,8 +25,10 @@ import { PatternsAnalysis } from '@/components/ti/PatternsAnalysis';
 import { CategoriasDosChamados } from '@/components/ti/CategoriasDosChamados';
 import { LinhaAgendaEAjuda } from '@/components/dashboard/AjudaAOutrosSetoresKPI';
 import { OutrosIndicadoresDoMarketing } from '@/components/mkt/OutrosIndicadoresDoMarketing';
-import { RedesETrafegoManual } from '@/components/mkt/RedesETrafegoManual';
+import { LancamentoDaSemana, LancarSemana, LeadsEInvestimento, NumerosDoTopo, RedesSociais, TrafegoPorConta } from '@/components/mkt/RedesETrafego';
 import { useIndicadoresDoMarketing } from '@/hooks/useIndicadoresDoMarketing';
+import { useRedesETrafego } from '@/hooks/useRedesETrafego';
+import { fraseDasRedes, painelDasRedes, semanaASemana, ultimasSemanas } from '@/lib/redes-e-trafego';
 import { ArtistasDoMes, ArtistasMesAMes, EsperandoAsLigacoes } from '@/components/mkt/ArtistasNosIndicadores';
 import { DicaDoGrafico } from '@/components/dashboard/DicaDoGrafico';
 import { ModoApresentacao } from '@/components/dashboard/ModoApresentacao';
@@ -75,6 +77,7 @@ const SECOES_DO_ANALITICO = [
 const SECOES_DO_PDF: SectionDef[] = [
   { id: 'cover', label: 'Capa', description: 'Página de capa com título e período', locked: true },
   { id: 'executive_summary', label: 'Resumo', description: 'A frase de resumo e os números de chamado com meta, anterior e status' },
+  { id: 'social', label: 'Redes sociais e tráfego pago', description: 'Cada conta com o período anterior, o tráfego por conta e os leads' },
   { id: 'artists', label: 'Artistas', description: 'A semana do mês dos artistas (ou o mês inteiro), com a bonificação e o anterior' },
   { id: 'others', label: 'Pedidos de arte, estoque e Benefício de sexta', description: 'Os três blocos da Visão Geral' },
   { id: 'category', label: 'Chamados por categoria', description: 'Categorias e subcategorias, como na Visão Geral' },
@@ -122,6 +125,17 @@ export default function MKTRelatorios() {
   const podeConectarMeta = role === 'owner' || role === 'admin' || role === 'manager';
   const { data: allPosts = [] } = useMKTSocialPosts();
 
+  // Redes sociais e Tráfego pago (proposta v3, 2026-11-03): o período ao lado do anterior, conta por conta.
+  const anteriorISO = { de: toLocalISODate(anteriorDaTela.startDate), ate: toLocalISODate(anteriorDaTela.endDate) };
+  const semanal = useRedesETrafego(intervaloDaTela, anteriorISO);
+  const painel = painelDasRedes(semanal.redes, semanal.trafego, intervaloDaTela, anteriorISO);
+  const grafico = semanaASemana(semanal.redes, semanal.trafego, ultimasSemanas(intervaloDaTela.ate, 5), painel.contas.map((c) => c.atual.conta));
+  const podeLancar = perfil.pode('marketing', 'reports', 'lancar');
+  const [lancando, setLancando] = useState(false);
+  const botaoDeLancar = podeLancar && (
+    <Button size="sm" variant="outline" onClick={() => setLancando(true)}><Plus className="h-3.5 w-3.5 mr-1" />Lançar semana</Button>
+  );
+
   // Artistas pelas semanas do mês deles, como na planilha (dono, 2026-11-03): o período da tela escolhe o recorte
   // (26/10 a 01/11 → outubro S4); o bloco troca de mês e de semana sem mexer no resto da tela.
   const { data: artistas = [] } = useArtistas();
@@ -158,6 +172,7 @@ export default function MKTRelatorios() {
   const rotuloDaSerie = diasDaTela === 7 ? 'as últimas 8 semanas' : `os últimos 8 períodos de ${diasDaTela} dias`;
 
   const frase = [
+    fraseDasRedes(painel),
     fraseDoResumo({
       periodo: `De ${rotuloDoIntervalo(intervaloDaTela)}`,
       total: metrics?.total ?? 0, resolvidos: metrics?.resolved ?? 0, sla: metrics ? sla : null, metaSla: meta('sla_cumprido'),
@@ -258,7 +273,28 @@ export default function MKTRelatorios() {
     equipe: [], pessoas: [], projetos: [],
     categorias: achatar(arvoreDosChamados(metrics?.chamados ?? [])),
   };
+  const n = (v: number | null) => (v === null ? '—' : Math.round(v).toLocaleString('pt-BR'));
+  const r$ = (v: number | null) => (v === null ? '—' : formatBRL(v));
+  const comAnterior = (a: string, b: string) => `${a} (era ${b})`;
   const tabelasDoPdf: TabelaDoPDF[] = [
+    { secao: 'social', titulo: 'REDES SOCIAIS', cabecalho: ['Conta', 'Seguidores', 'Saldo', 'Visitas', 'Engajamento', 'Feed/Reels/Stories'],
+      linhas: painel.contas.map(({ atual: a, anterior: b }) => [
+        a.conta, n(a.seguidores), a.saldo === null ? '—' : comAnterior(a.saldo > 0 ? `+${a.saldo}` : `${a.saldo}`, b.saldo === null ? '—' : `${b.saldo}`),
+        comAnterior(n(a.visitas), n(b.visitas)), a.engajamento === null ? '—' : `${a.engajamento.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%`,
+        `${n(a.feed)} / ${n(a.reels)} / ${n(a.stories)}`,
+      ]),
+      larguras: [0.16, 0.14, 0.18, 0.2, 0.14, 0.18] },
+    { secao: 'social', titulo: 'TRÁFEGO PAGO POR CONTA', cabecalho: ['Conta', 'Investimento', 'Alcance', 'Visitas', 'Custo por visita'],
+      linhas: [
+        ...painel.contas.map(({ atual: a, anterior: b }) => [a.conta, comAnterior(r$(a.investimento), r$(b.investimento)), n(a.alcancePago), n(a.visitasPagas), r$(a.custoPorVisita)]),
+        ['Total', comAnterior(r$(painel.trafego.atual.investimento), r$(painel.trafego.anterior.investimento)), n(painel.trafego.atual.alcance),
+          n(painel.trafego.atual.visitas), r$(painel.trafego.atual.custoPorVisita)],
+      ],
+      larguras: [0.18, 0.3, 0.16, 0.16, 0.2] },
+    { secao: 'social', titulo: 'LEADS POR FUNIL (KOMMO)', cabecalho: ['Funil', 'No período', 'Anterior'],
+      linhas: ([['Salão', 'salao'], ['Distribuidor', 'distribuidor'], ['Consumidor final', 'consumidor'], ['Sem triagem (Entrada)', 'semTriagem']] as const)
+        .map(([rotulo, k]) => [rotulo, n(painel.trafego.atual.leads[k]), n(painel.trafego.anterior.leads[k])]),
+      larguras: [0.5, 0.25, 0.25] },
     { secao: 'artists', titulo: `ARTISTAS · ${rotuloDoRecorte(recorte, hoje).titulo.toUpperCase()}`,
       cabecalho: [...(recorte.semana ? ['Artista', 'Na semana (St/Re/Fe)'] : ['Artista']), 'No mês (St/Re/Fe)', 'Bonificação', 'Anterior', 'Situação'],
       linhas: [...noRecorte.linhas.map((l) => [
@@ -331,7 +367,18 @@ export default function MKTRelatorios() {
 
           <p className="rounded-lg bg-muted/60 px-4 py-3 text-[15px] text-foreground" aria-label="Resumo do período">{frase}</p>
 
+          {/* Proposta v3 (2026-11-03): o que o diretor pergunta primeiro sobe — redes, tráfego e leads; chamados e a
+              operação descem (posição serial). */}
+          <LancamentoDaSemana redes={semanal.redes} trafego={semanal.trafego} ate={intervaloDaTela.ate} podeLancar={podeLancar} onLancar={() => setLancando(true)} />
+          <NumerosDoTopo painel={painel} />
+          <RedesSociais painel={painel} grafico={grafico} acao={botaoDeLancar} />
+          <TrafegoPorConta painel={painel} />
+          <LeadsEInvestimento painel={painel} grafico={grafico} />
+
+          {artistasDoPeriodo}
+
           <div className="space-y-2">
+            <h2 className="text-base font-semibold flex items-center gap-2"><Inbox className="h-4 w-4 text-primary" aria-hidden="true" />Chamados do Marketing</h2>
             {cartoesDosChamados}
             <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
               <span>A cor do número segue a meta: verde na meta, amarelo perto, vermelho fora. A linha embaixo mostra {rotuloDaSerie}.{!anterior && ' Sem chamados no período anterior para comparar.'}</span>
@@ -343,19 +390,18 @@ export default function MKTRelatorios() {
             </div>
           </div>
           <LinhaAgendaEAjuda metrics={metrics} modulo="marketing" filter={filter} />
-
-          {artistasDoPeriodo}
-
-          <RedesETrafegoManual de={intervaloDaTela.de} ate={intervaloDaTela.ate} podeLancar={perfil.pode('marketing', 'reports', 'lancar')} />
-
-          <EsperandoAsLigacoes meta={ligacaoMeta.data} podeConectarMeta={podeConectarMeta} onConectou={() => ligacaoMeta.refetch()} />
-
-          <OutrosIndicadoresDoMarketing r={outros} />
-
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
             {categorias}
             {abertosResolvidos}
           </div>
+
+          {/* A operação abre ao clicar; o que pede ação já está nos avisos do topo. */}
+          <details className="group rounded-lg border border-border">
+            <summary className="cursor-pointer px-4 py-3 text-base font-semibold">Operação: pedidos de arte, estoque e Benefício de sexta</summary>
+            <div className="px-4 pb-4"><OutrosIndicadoresDoMarketing r={outros} /></div>
+          </details>
+
+          <EsperandoAsLigacoes meta={ligacaoMeta.data} podeConectarMeta={podeConectarMeta} onConectou={() => ligacaoMeta.refetch()} />
         </TabsContent>
 
         <TabsContent value="detailed">
@@ -414,14 +460,21 @@ export default function MKTRelatorios() {
                   ))}
                 </div>
               )}
+              <NumerosDoTopo painel={painel} />
             </div>
           ) },
-          { titulo: 'Chamados', conteudo: <div className="[&_.faixa-de-numeros]:lg:grid-cols-3">{cartoesDosChamados}</div> },
+          // Os lançados à mão entram (dono, 2026-11-03: "em apresentação não aparece os indicadores lançados manualmente").
+          { titulo: 'Redes sociais', conteudo: <RedesSociais painel={painel} grafico={grafico} /> },
+          { titulo: 'Tráfego pago por conta', conteudo: <TrafegoPorConta painel={painel} /> },
+          { titulo: 'Leads e investimento', conteudo: <LeadsEInvestimento painel={painel} grafico={grafico} /> },
           ...(temArtistas ? [{ titulo: 'Artistas', conteudo: artistasDoPeriodo }] : []),
+          { titulo: 'Chamados', conteudo: <div className="[&_.faixa-de-numeros]:lg:grid-cols-3">{cartoesDosChamados}</div> },
           { titulo: 'Pedidos de arte, estoque e Benefício de sexta', conteudo: <OutrosIndicadoresDoMarketing r={outros} /> },
           { titulo: 'Chamados por categoria', conteudo: categorias },
         ]} />
       )}
+
+      {lancando && <LancarSemana onFechar={() => setLancando(false)} />}
 
       <ExportPDFDialog
         open={exportando}
