@@ -46,6 +46,16 @@ type Insight = { name: string; total_value?: { value?: number; breakdowns?: { re
 type Acao = { action_type: string; value: string };
 
 const seg = (ms: number) => Math.floor(ms / 1000);
+// A tela é lida pelo dono em português: os erros da Meta que já apareceram ganham tradução com o que fazer.
+function emPortugues(msg: string) {
+  if (/has NOT grant ads_management or ads_read/i.test(msg)) {
+    return 'a Meta não liberou a leitura de anúncios para o Helpoint. Conecte de novo com a Meta (botão ao lado), marcando a MF INTERNO - Marketing, e busque de novo';
+  }
+  if (/Missing Permissions/i.test(msg)) return 'a Meta recusou por falta de permissão. Conecte de novo com a Meta e aceite todas as permissões';
+  if (/Error validating access token|Session has expired/i.test(msg)) return 'a chave da Meta deixou de valer. Conecte de novo com a Meta';
+  return msg;
+}
+
 const semNulos = (o: Record<string, unknown>) => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== null && v !== undefined));
 
 /** Os números de uma conta do Instagram numa semana. */
@@ -186,7 +196,7 @@ async function coletarEmpresa(tenantId: string, semanas: Semana[], agora: number
         }), { onConflict: 'tenant_id,semana,conta' });
         if (e) throw e;
       } catch (e) {
-        erros.push(`${conta}: ${e instanceof Error ? e.message : String(e)}`);
+        erros.push(`${conta}: ${emPortugues(e instanceof Error ? e.message : String(e))}`);
       }
     }
     for (const act of anuncios) {
@@ -206,13 +216,14 @@ async function coletarEmpresa(tenantId: string, semanas: Semana[], agora: number
           if (e) throw e;
         }
       } catch (e) {
-        erros.push(`${act.nome}: ${e instanceof Error ? e.message : String(e)}`);
+        erros.push(`${act.nome}: ${emPortugues(e instanceof Error ? e.message : String(e))}`);
       }
     }
   }
   const semAnuncios = anuncios.length ? null : 'as contas de anúncios não vieram na ligação; conecte de novo marcando a MF INTERNO - Marketing';
   const { error } = await admin.from('mkt_meta_ligacao').update({
-    coletado_em: new Date(agora).toISOString(), ultimo_erro: [...erros, semAnuncios].filter(Boolean).join(' · ') || null,
+    // Uma semana e a anterior dão o mesmo erro: aparece uma vez só.
+    coletado_em: new Date(agora).toISOString(), ultimo_erro: [...new Set([...erros, semAnuncios].filter(Boolean))].join(' · ') || null,
   }).eq('tenant_id', tenantId);
   if (error) throw error;
   return { tenantId, semanas: semanas.map((s) => s.domingo), erros };
