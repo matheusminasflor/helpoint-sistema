@@ -95,6 +95,13 @@ export function ArtistasDoMes({ recorte, onRecorte, linhas, total, hoje }: {
         <Numero v={formatBRL(total.valor)} rotulo={comSemana && situacao !== 'mês fechado' ? `Bonificação até ${ddmm(p.acumulado.ate)}` : `Bonificação de ${nomeDoMes(recorte.mes)}`} />
         <Numero v={total.teto ? pct(total.valor / total.teto) : '—'} rotulo={`do teto (${formatBRL(total.teto)})`} />
       </div>
+      {/* Mês sem nenhuma entrega lançada (novembro no dia 03/11): sem isto a tabela só mostrava "— — —" e parecia quebrada. */}
+      {total.mes.pecas === 0 && (
+        <p className="rounded-lg badge-warning px-3 py-2 text-sm font-medium">
+          Nenhuma entrega de artista lançada em {nomeDoMes(recorte.mes)} até agora.{' '}
+          <Link to={tenantPath(`/mkt/artistas?mes=${recorte.mes.slice(0, 7)}`)} className="underline">Lançar em Artistas</Link>
+        </p>
+      )}
       <div className="overflow-x-auto">
         <table className="w-full text-[14px]">
           <thead>
