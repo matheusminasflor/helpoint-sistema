@@ -61,7 +61,8 @@ function Compara({ atual, anterior, melhor = 'mais', formato = int, porcento = f
 
 function Linha({ rotulo, valor, children }: { rotulo: string; valor: string; children?: ReactNode }) {
   return (
-    <div className="grid grid-cols-[1fr_auto] gap-x-3 py-1.5 border-b border-border/60 last:border-0 text-[13px]">
+    // O rótulo guarda a largura dele; o valor longo (cidades) quebra à direita em vez de passar por cima do rótulo.
+    <div className="grid grid-cols-[auto_1fr] gap-x-3 py-1.5 border-b border-border/60 last:border-0 text-[13px]">
       <span className="text-muted-foreground">{rotulo}</span>
       <span className="font-mono tabular-nums text-right text-foreground">{valor}</span>
       {children && <span className="col-span-2 text-right text-[12px]">{children}</span>}

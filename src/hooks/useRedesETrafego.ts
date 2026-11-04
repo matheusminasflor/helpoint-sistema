@@ -20,9 +20,9 @@ function useSemanas<T>(tabela: 'mkt_redes_semana' | 'mkt_trafego_semana', de: st
   });
 }
 
-export function useRedesETrafego(atual: Intervalo, anterior: Intervalo) {
-  // A semana antes do anterior dá a base do saldo; 6 semanas antes do fim cobrem os gráficos de 5 semanas.
-  const de = [somarDias(anterior.de, -7), somarDias(atual.ate, -42)].sort()[0];
+export function useRedesETrafego(atual: Intervalo, anterior: Intervalo, fimDoGrafico = atual.ate) {
+  // A semana antes do anterior dá a base do saldo; 6 semanas antes do fim do gráfico cobrem os 5 domingos dele.
+  const de = [somarDias(anterior.de, -7), somarDias(fimDoGrafico, -42)].sort()[0];
   const ate = somarDias(atual.ate, 6);
   const redes = useSemanas<LinhaRedes>('mkt_redes_semana', de, ate);
   const trafego = useSemanas<LinhaTrafego>('mkt_trafego_semana', de, ate);

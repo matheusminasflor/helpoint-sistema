@@ -84,7 +84,10 @@ async function vencimentoDaChave(token: string): Promise<number | null> {
   const app = `${Deno.env.get('META_APP_ID')}|${Deno.env.get('META_APP_SECRET')}`;
   try {
     const r = await fetch(`https://graph.facebook.com/v21.0/debug_token?input_token=${encodeURIComponent(token)}&access_token=${encodeURIComponent(app)}`);
-    const d = ((await r.json()) as { data?: { expires_at?: number; data_access_expires_at?: number } }).data;
+    const corpo = (await r.json()) as { data?: { expires_at?: number; data_access_expires_at?: number }; error?: { message?: string } };
+    // Sem `data` a Meta não respondeu o vencimento: fica no log (senão parece chave que nunca vence).
+    if (!corpo.data) console.warn('vencimento da chave:', corpo.error?.message ?? `HTTP ${r.status}`);
+    const d = corpo.data;
     const datas = [d?.expires_at, d?.data_access_expires_at].filter((x): x is number => !!x && x > 0);
     return datas.length ? Math.min(...datas) * 1000 : null;
   } catch (e) {

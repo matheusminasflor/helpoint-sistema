@@ -69,7 +69,7 @@ export default function MKTArtistas() {
       />
       <div className="p-4 lg:p-6 space-y-4">
         <div className="flex flex-wrap items-end gap-3">
-          <div className="space-y-1.5">
+          <div className="grid gap-1.5">
             <Label htmlFor="art-mes">Mês</Label>
             <input id="art-mes" type="month" className={cn(campo, 'w-auto')} value={mes} onChange={(e) => e.target.value && setMes(e.target.value)} />
           </div>

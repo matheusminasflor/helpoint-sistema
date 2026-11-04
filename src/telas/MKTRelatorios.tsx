@@ -131,9 +131,11 @@ export default function MKTRelatorios() {
   // Redes sociais e Tráfego pago (proposta v3, 2026-11-03): o período ao lado do anterior, conta por conta.
   const anteriorISO = { de: toLocalISODate(anteriorDaTela.startDate), ate: toLocalISODate(anteriorDaTela.endDate) };
   const dasSemanas = comASemanaEmAndamento(intervaloDaTela, hoje);
-  const semanal = useRedesETrafego(dasSemanas, anteriorISO);
+  // O gráfico termina na semana de hoje quando o período ainda não acabou: "Este mês" mostrava as semanas que não vieram.
+  const fimDoGrafico = [intervaloDaTela.ate, hoje].sort()[0];
+  const semanal = useRedesETrafego(dasSemanas, anteriorISO, fimDoGrafico);
   const painel = painelDasRedes(semanal.redes, semanal.trafego, dasSemanas, anteriorISO);
-  const grafico = semanaASemana(semanal.redes, semanal.trafego, ultimasSemanas(intervaloDaTela.ate, 5), painel.contas.map((c) => c.atual.conta));
+  const grafico = semanaASemana(semanal.redes, semanal.trafego, ultimasSemanas(fimDoGrafico, 5), painel.contas.map((c) => c.atual.conta));
   const { data: linhasDoPublico = [] } = usePublicoDoInstagram(intervaloDaTela.ate);
   const podeLancar = perfil.pode('marketing', 'reports', 'lancar');
   const [lancando, setLancando] = useState(false);

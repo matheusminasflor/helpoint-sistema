@@ -273,8 +273,8 @@ export function EsperandoAsLigacoes({ meta, podeConectarMeta, onConectou }: {
           </p>
           <p className="text-xs text-muted-foreground">
             {meta.coletado_em
-              ? `Última busca dos números: ${new Date(meta.coletado_em).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}. O robô busca todo dia às 6h.`
-              : 'Os números ainda não foram buscados. O robô busca todo dia às 6h; "Buscar agora" não espera.'}
+              ? `Última busca dos números: ${new Date(meta.coletado_em).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}. O robô busca a cada 3 horas.`
+              : 'Os números ainda não foram buscados. O robô busca a cada 3 horas; "Buscar agora" não espera.'}
             {meta.ultimo_erro && <span className="block text-aviso font-medium">Atenção: {meta.ultimo_erro}.</span>}
           </p>
           {podeConectarMeta && (
