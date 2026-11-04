@@ -2,6 +2,8 @@
 // coletor grava em `mkt_publico_ig`, uma linha por conta por mês, as contagens que a Meta dá (gênero, idade, país, cidade)
 // e os seguidores online por dia da semana e hora de Brasília. Aqui viram as porcentagens e os melhores horários da tela.
 
+import { pctTexto } from '@/lib/redes-e-trafego';
+
 type Contagem = Record<string, number>;
 
 export interface LinhaPublico {
@@ -64,11 +66,19 @@ export function resumoDoPublico(l: LinhaPublico): ResumoDoPublico {
   };
 }
 
-/** A linha mais nova de cada conta até o mês `ate` (aaaa-mm-dd), na ordem das contas pedidas. */
-export function publicoDoMes(linhas: LinhaPublico[], contas: string[], ate: string): ResumoDoPublico[] {
-  const mes = `${ate.slice(0, 7)}-01`;
+// Os textos que a tela e o PDF mostram.
+export const DIAS = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
+export const nomeDoPais = (codigo: string) => {
+  try { return new Intl.DisplayNames(['pt-BR'], { type: 'region' }).of(codigo) ?? codigo; } catch { return codigo; }
+};
+export const fatias = (fs: Fatia[], nome: (s: string) => string = (s) => s) =>
+  fs.length ? fs.map((f) => `${nome(f.nome)} ${pctTexto(f.pct)}`).join(' · ') : '—';
+export const horariosTexto = (hs: Horario[]) => hs.map((h) => `${DIAS[h.dia]} ${h.hora}h`).join(' · ');
+
+/** A primeira linha de cada conta (a consulta já vem do mês mais novo para o mais velho), na ordem das contas pedidas. */
+export function publicoDoMes(linhas: LinhaPublico[], contas: string[]): ResumoDoPublico[] {
   return contas.flatMap((c) => {
-    const l = linhas.filter((x) => x.conta === c && x.mes <= mes).sort((a, b) => b.mes.localeCompare(a.mes))[0];
+    const l = linhas.find((x) => x.conta === c);
     return l ? [resumoDoPublico(l)] : [];
   });
 }

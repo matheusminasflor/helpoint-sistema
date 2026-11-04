@@ -28,8 +28,10 @@ import { OutrosIndicadoresDoMarketing } from '@/components/mkt/OutrosIndicadores
 import { LancamentoDaSemana, LancarSemana, LeadsEInvestimento, NumerosDoTopo, QuemSegue, RedesSociais, TrafegoPorConta } from '@/components/mkt/RedesETrafego';
 import { useIndicadoresDoMarketing } from '@/hooks/useIndicadoresDoMarketing';
 import { usePublicoDoInstagram, useRedesETrafego } from '@/hooks/useRedesETrafego';
-import { publicoDoMes } from '@/lib/publico-do-instagram';
-import { comASemanaEmAndamento, fraseDasRedes, painelDasRedes, semanaASemana, ultimasSemanas } from '@/lib/redes-e-trafego';
+import { fatias, horariosTexto, nomeDoPais, publicoDoMes } from '@/lib/publico-do-instagram';
+import {
+  comASemanaEmAndamento, fraseDasRedes, NOME_DO_FORMATO, painelDasRedes, pctTexto, semanaASemana, ultimasSemanas,
+} from '@/lib/redes-e-trafego';
 import { ArtistasDoMes, ArtistasMesAMes, EsperandoAsLigacoes } from '@/components/mkt/ArtistasNosIndicadores';
 import { DicaDoGrafico } from '@/components/dashboard/DicaDoGrafico';
 import { ModoApresentacao } from '@/components/dashboard/ModoApresentacao';
@@ -133,7 +135,6 @@ export default function MKTRelatorios() {
   const painel = painelDasRedes(semanal.redes, semanal.trafego, dasSemanas, anteriorISO);
   const grafico = semanaASemana(semanal.redes, semanal.trafego, ultimasSemanas(intervaloDaTela.ate, 5), painel.contas.map((c) => c.atual.conta));
   const { data: linhasDoPublico = [] } = usePublicoDoInstagram(intervaloDaTela.ate);
-  const publico = publicoDoMes(linhasDoPublico, painel.contas.map((c) => c.atual.conta), intervaloDaTela.ate);
   const podeLancar = perfil.pode('marketing', 'reports', 'lancar');
   const [lancando, setLancando] = useState(false);
 
@@ -170,6 +171,8 @@ export default function MKTRelatorios() {
   const farolPrimeira = farol(metrics ? primeira : null, meta('primeira_resposta'), 'mais', true);
   const farolTempo = farol(metrics ? tempo : null, meta('tempo_medio_horas'), 'menos');
   const diasDaTela = diasDoPeriodo(periodoDoIntervalo(intervaloDaTela));
+  // Quem segue muda devagar: só no período de um mês ou mais (proposta de 2026-11-04, "uma vez por mês").
+  const publico = diasDaTela >= 28 ? publicoDoMes(linhasDoPublico, painel.contas.map((c) => c.atual.conta)) : [];
   const rotuloDaSerie = diasDaTela === 7 ? 'as últimas 8 semanas' : `os últimos 8 períodos de ${diasDaTela} dias`;
 
   const frase = [
@@ -287,17 +290,16 @@ export default function MKTRelatorios() {
       ]),
       larguras: [0.12, 0.11, 0.14, 0.15, 0.11, 0.12, 0.11, 0.14] },
     { secao: 'social', titulo: 'MELHORES POSTS (ALCANCE)', cabecalho: ['Conta', 'Post', 'Formato', 'Pessoas alcançadas'],
-      linhas: painel.contas.flatMap(({ atual: a }) => a.destaques.map((p) => [
-        a.conta, p.legenda ?? 'Sem legenda', p.tipo === 'REELS' ? 'Reels' : 'Feed', n(p.alcance),
-      ])),
+      linhas: painel.contas.flatMap(({ atual: a }) => a.destaques.map((p) => [a.conta, p.legenda ?? 'Sem legenda', NOME_DO_FORMATO[p.tipo], n(p.alcance)])),
       larguras: [0.14, 0.56, 0.12, 0.18] },
-    ...(publico.length ? [{ secao: 'social' as const, titulo: 'QUEM SEGUE', cabecalho: ['Conta', 'Mulheres', 'No Brasil', 'Idade', 'Mais online'],
+    { secao: 'social', titulo: 'ALCANCE MÉDIO POR PUBLICAÇÃO', cabecalho: ['Conta', 'Reels', 'Feed', 'Stories'],
+      linhas: painel.contas.map(({ atual: a }) => [a.conta, ...a.formatos.map((f) => `${n(f.media)} (${f.quantas})`)]),
+      larguras: [0.25, 0.25, 0.25, 0.25] },
+    ...(publico.length ? [{ secao: 'social' as const, titulo: 'QUEM SEGUE', cabecalho: ['Conta', 'Mulheres', 'No Brasil', 'Fora', 'Idade', 'Cidades', 'Mais online'],
       linhas: publico.map((p) => [
-        p.conta, p.mulheres === null ? '—' : `${p.mulheres.toLocaleString('pt-BR')}%`, p.brasil === null ? '—' : `${p.brasil.toLocaleString('pt-BR')}%`,
-        p.faixas.map((f) => `${f.nome}: ${f.pct.toLocaleString('pt-BR')}%`).join(' · ') || '—',
-        p.horarios.map((h) => `${['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'][h.dia]} ${h.hora}h`).join(' · ') || '—',
+        p.conta, pctTexto(p.mulheres), pctTexto(p.brasil), fatias(p.fora, nomeDoPais), fatias(p.faixas), fatias(p.cidades), horariosTexto(p.horarios) || '—',
       ]),
-      larguras: [0.14, 0.12, 0.12, 0.32, 0.3] }] : []),
+      larguras: [0.1, 0.09, 0.09, 0.2, 0.17, 0.2, 0.15] }] : []),
     { secao: 'social', titulo: 'TRÁFEGO PAGO POR CONTA', cabecalho: ['Conta', 'Investimento', 'Alcance', 'Visitas', 'Custo por visita'],
       linhas: [
         ...painel.contas.map(({ atual: a, anterior: b }) => [a.conta, comAnterior(r$(a.investimento), r$(b.investimento)), n(a.alcancePago), n(a.visitasPagas), r$(a.custoPorVisita)]),

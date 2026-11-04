@@ -29,7 +29,8 @@ export function useRedesETrafego(atual: Intervalo, anterior: Intervalo) {
   return { redes: redes.data ?? [], trafego: trafego.data ?? [], carregando: redes.isLoading || trafego.isLoading };
 }
 
-/** Quem segue cada conta (`mkt_publico_ig`): os últimos 12 meses até o do fim do período; a tela usa o mais novo. */
+/** Quem segue cada conta (`mkt_publico_ig`): até o mês do fim do período, do mais novo para o mais velho; a tela usa o
+ *  primeiro de cada conta (36 linhas = 12 meses das 3 contas, folga para um mês sem coleta). */
 export function usePublicoDoInstagram(ate: string) {
   const { tenantId } = useAuth();
   const mes = `${ate.slice(0, 7)}-01`;

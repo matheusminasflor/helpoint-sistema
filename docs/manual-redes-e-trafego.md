@@ -28,8 +28,8 @@ Insights**, com o período da semana (segunda a domingo).
 | Reels | reels publicados na semana | aba Reels do perfil |
 | Sequências de stories | dias em que houve stories | Insights › Conteúdo compartilhado › Stories |
 | Taxa de engajamento (%) | interações ÷ alcance × 100 | Insights › Interações e Alcance (faça a conta) ou o relatório que já usam |
-| Novos seguidores | seguidores ganhos na semana | Insights › Seguidores › Seguiram |
-| Quedas de seguidores | deixaram de seguir na semana | Insights › Seguidores › Deixaram de seguir |
+| Novos seguidores | seguidores ganhos na semana | Meta Business Suite › Insights › Público › Tendências › Seguidores |
+| Quedas de seguidores | deixaram de seguir na semana | Meta Business Suite › Insights › Público › Tendências › Deixaram de seguir |
 | Total de seguidores | número no fim da semana (domingo) | perfil |
 | Visitas ao perfil | visitas ao perfil na semana | Insights › Atividade do perfil |
 

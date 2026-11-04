@@ -28,13 +28,12 @@ import { cn } from '@/lib/utils';
 import { COR, EIXO, SERIES } from '@/config/cores-dos-graficos';
 import { CHAVE_DAS_SEMANAS, useSemanaParaLancar } from '@/hooks/useRedesETrafego';
 import {
-  CONTAS, faltaLancar, type LinhaRedes, type LinhaTrafego, type NumerosDaConta, type Painel, type SemanaNoGrafico,
+  CONTAS, faltaLancar, NOME_DO_FORMATO, pctTexto, type LinhaRedes, type LinhaTrafego, type NumerosDaConta, type Painel, type SemanaNoGrafico,
 } from '@/lib/redes-e-trafego';
-import type { Fatia, ResumoDoPublico } from '@/lib/publico-do-instagram';
+import { DIAS, fatias, horariosTexto, nomeDoPais, type ResumoDoPublico } from '@/lib/publico-do-instagram';
 
 const int = (v: number | null) => (v === null ? '—' : Math.round(v).toLocaleString('pt-BR'));
 const brl = (v: number | null) => (v === null ? '—' : formatBRL(v));
-const pctTexto = (v: number | null) => (v === null ? '—' : `${v.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%`);
 const ddmm = (d: string) => `${d.slice(8, 10)}/${d.slice(5, 7)}`;
 const sinal = (n: number) => (n > 0 ? `+${n.toLocaleString('pt-BR')}` : n.toLocaleString('pt-BR').replace('-', '−'));
 const corDaConta = (conta: string) => SERIES[Math.max(0, CONTAS.indexOf(conta)) % SERIES.length];
@@ -156,11 +155,14 @@ export function RedesSociais({ painel, grafico }: { painel: Painel; grafico: Sem
   const barras = grafico.map((s) => ({ rotulo: ddmm(s.semana), ...s.saldos }));
   return (
     <Secao titulo="Redes sociais" icone={Share2}>
+      {/* Cada conta numa coluna: no celular, os posts ficam logo abaixo do cartão da conta deles. */}
       <div className="grid gap-3 md:grid-cols-3">
-        {painel.contas.map((c) => <CartaoDaRede key={c.atual.conta} a={c.atual} b={c.anterior} />)}
-      </div>
-      <div className="grid gap-3 md:grid-cols-3">
-        {painel.contas.map((c) => <PostsDaConta key={c.atual.conta} a={c.atual} />)}
+        {painel.contas.map((c) => (
+          <div key={c.atual.conta} className="grid content-start gap-3 min-w-0">
+            <CartaoDaRede a={c.atual} b={c.anterior} />
+            <PostsDaConta a={c.atual} />
+          </div>
+        ))}
       </div>
       <Card className="p-4">
         <h3 className="text-sm font-semibold mb-2">Saldo de seguidores por semana · últimas {grafico.length}</h3>
@@ -177,7 +179,7 @@ export function RedesSociais({ painel, grafico }: { painel: Painel; grafico: Sem
       </Card>
       <p className="text-xs text-muted-foreground">
         O saldo é a diferença do total de seguidores de um domingo para o outro: é exato. Novos e perdidos vêm da Meta
-        (Insights › Público › Tendências) e não fecham com o saldo, porque o Instagram tira do total contas falsas e apagadas
+        (Meta Business Suite › Insights › Público › Tendências) e não fecham com o saldo, porque o Instagram tira do total contas falsas e apagadas
         sem contar como "deixou de seguir". O alcance de um período maior que uma semana é a soma das semanas: a mesma pessoa
         pode contar duas vezes.
       </p>
@@ -185,7 +187,6 @@ export function RedesSociais({ painel, grafico }: { painel: Painel; grafico: Sem
   );
 }
 
-const NOME_DO_FORMATO = { REELS: 'Reels', FEED: 'Feed', STORY: 'Stories' } as const;
 const dataCurta = (iso: string) => new Date(iso).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' });
 
 /** Os 3 posts que mais alcançaram e o alcance médio de cada formato (proposta de 2026-11-04). */
@@ -223,12 +224,6 @@ function PostsDaConta({ a }: { a: NumerosDaConta }) {
   );
 }
 
-const DIAS = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
-const nomeDoPais = (codigo: string) => {
-  try { return new Intl.DisplayNames(['pt-BR'], { type: 'region' }).of(codigo) ?? codigo; } catch { return codigo; }
-};
-const fatias = (fs: Fatia[], nome: (s: string) => string = (s) => s) =>
-  fs.length ? fs.map((f) => `${nome(f.nome)} ${f.pct.toLocaleString('pt-BR')}%`).join(' · ') : '—';
 
 /** Quem segue cada conta e quando fica online (proposta de 2026-11-04): o mês mais novo até o fim do período. */
 export function QuemSegue({ resumos }: { resumos: ResumoDoPublico[] }) {
@@ -241,13 +236,13 @@ export function QuemSegue({ resumos }: { resumos: ResumoDoPublico[] }) {
           <Card key={r.conta} className="p-4 space-y-2" style={{ borderTop: `3px solid ${corDaConta(r.conta)}` }}>
             <h3 className="text-[15px] font-semibold">{r.conta}</h3>
             <div>
-              <Linha rotulo="Mulheres" valor={r.mulheres === null ? '—' : `${r.mulheres.toLocaleString('pt-BR')}%`} />
+              <Linha rotulo="Mulheres" valor={pctTexto(r.mulheres)} />
               <Linha rotulo="Idade" valor={fatias(r.faixas)} />
-              <Linha rotulo="No Brasil" valor={r.brasil === null ? '—' : `${r.brasil.toLocaleString('pt-BR')}%`}>
+              <Linha rotulo="No Brasil" valor={pctTexto(r.brasil)}>
                 {r.fora.length > 0 && <span className="text-muted-foreground">fora: {fatias(r.fora, nomeDoPais)}</span>}
               </Linha>
               <Linha rotulo="Cidades" valor={fatias(r.cidades)} />
-              <Linha rotulo="Mais online" valor={r.horarios.length ? r.horarios.map((h) => `${DIAS[h.dia]} ${h.hora}h`).join(' · ') : 'a Meta não entregou'} />
+              <Linha rotulo="Mais online" valor={horariosTexto(r.horarios) || 'a Meta não entregou'} />
             </div>
             {r.grade && (
               <div className="grid grid-cols-[28px_repeat(8,minmax(0,1fr))] gap-0.5 text-[10px] text-muted-foreground" aria-label="Seguidores online por dia e faixa de 3 horas">

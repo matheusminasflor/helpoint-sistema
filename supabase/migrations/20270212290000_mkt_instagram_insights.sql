@@ -28,35 +28,14 @@ create table if not exists public.mkt_publico_ig (
 );
 
 alter table public.mkt_publico_ig enable row level security;
-revoke all on public.mkt_publico_ig from anon;
--- O padrão do schema dá tudo a `authenticated`; aqui a tela só lê (sem isso, gravar dava zero linhas em vez de erro).
-revoke insert, update, delete on public.mkt_publico_ig from authenticated;
+-- O padrão do schema dá tudo a `authenticated`; aqui a tela só lê (sem o revoke, gravar dava zero linhas em vez de erro).
+revoke all on public.mkt_publico_ig from public, anon, authenticated;
 grant select on public.mkt_publico_ig to authenticated;
 -- Só o coletor (chave de serviço) grava; quem vê os Indicadores do Marketing ou a Diretoria lê.
 create policy mkt_publico_ig_le on public.mkt_publico_ig for select to authenticated
   using (tenant_id = (select public.get_user_tenant_id())
          and ((select public.pode_no_setor('marketing', 'reports', 'view')) or (select public.dir_pode_ver('indicadores'))));
 
--- O coletor passa a cada 3 horas (era uma vez, às 06h): é o que pega o alcance de cada story antes de ele sumir.
-do $$
-begin
-  if exists (select 1 from cron.job where jobname = 'mkt-meta-coletar') then
-    perform cron.unschedule('mkt-meta-coletar');
-  end if;
-end $$;
-
-select cron.schedule(
-  'mkt-meta-coletar',
-  '0 */3 * * *',
-  $job$
-  select net.http_post(
-    url := (select decrypted_secret from vault.decrypted_secrets where name = 'functions_base_url') || '/mkt-meta-coletar',
-    headers := jsonb_build_object(
-      'Content-Type', 'application/json',
-      'Authorization', 'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name = 'email_queue_service_role_key')
-    ),
-    body := jsonb_build_object('source', 'cron'),
-    timeout_milliseconds := 60000
-  ) as request_id;
-  $job$
-);
+-- O coletor passa a cada 3 horas (era uma vez, às 06h): é o que pega o alcance de cada story antes de ele sumir. O job
+-- nasce na 20270212270000; aqui só muda o horário.
+select cron.alter_job(jobid, schedule := '0 */3 * * *') from cron.job where jobname = 'mkt-meta-coletar';

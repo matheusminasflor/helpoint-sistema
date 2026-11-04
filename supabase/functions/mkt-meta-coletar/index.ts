@@ -97,7 +97,7 @@ async function numerosDoPost(token: string, m: Midia, tipo: Tipo): Promise<Publi
     legenda: m.caption ? m.caption.split('\n')[0].slice(0, 90) : null, alcance: null, visualizacoes: null, interacoes: null,
   };
   // Se a Meta recusar visualizações nesse tipo de publicação, a segunda tentativa salva o alcance.
-  for (const metricas of ['reach,views,total_interactions', 'reach,total_interactions']) {
+  for (const metricas of ['reach,views,total_interactions', 'reach,total_interactions', 'reach']) {
     try {
       const r = await graphFetch<{ data: InsightDoPost[] }>(token, `${m.id}/insights?metric=${metricas}`);
       const v = new Map((r.data ?? []).map((i) => [i.name, i.values?.[0]?.value ?? i.total_value?.value ?? null]));
@@ -119,7 +119,7 @@ function juntarPublicacoes(antes: Publicacao[], agora: Publicacao[]): Publicacao
     const v = porId.get(p.id);
     const maior = (a: number | null, b: number | null) => (a === null ? b : b === null ? a : Math.max(a, b));
     porId.set(p.id, v && p.tipo === 'STORY'
-      ? { ...p, alcance: maior(v.alcance, p.alcance), visualizacoes: maior(v.visualizacoes, p.visualizacoes) }
+      ? { ...p, alcance: maior(v.alcance, p.alcance), visualizacoes: maior(v.visualizacoes, p.visualizacoes), interacoes: maior(v.interacoes, p.interacoes) }
       : { ...p, alcance: p.alcance ?? v?.alcance ?? null, visualizacoes: p.visualizacoes ?? v?.visualizacoes ?? null, interacoes: p.interacoes ?? v?.interacoes ?? null });
   }
   return [...porId.values()].sort((a, b) => a.data.localeCompare(b.data));
@@ -193,6 +193,8 @@ async function demografia(token: string, ig: Conta, quebra: string): Promise<Con
  * Quando os seguidores ficam online, na média dos últimos 30 dias: { dia da semana (0 = domingo): { hora: seguidores } },
  * em horário de Brasília. A Meta conta o dia e a hora no fuso do Pacífico; `end_time` é a meia-noite (em UTC) que fecha o
  * dia, e é dela que sai o deslocamento (7 h no horário de verão de lá, 8 h fora dele).
+ * ponytail: se a Meta marcar o INÍCIO do dia em `end_time`, o dia da semana sai deslocado em um; conferir o primeiro mês
+ * contra Meta Business Suite › Insights › Público e, se for o caso, tirar o `- 24 * HORA`.
  */
 async function online(token: string, ig: Conta, agora: number): Promise<Record<string, Contagem> | null> {
   const r = await graphFetch<{ data: { values?: { value?: Contagem; end_time: string }[] }[] }>(token,
@@ -216,7 +218,12 @@ async function online(token: string, ig: Conta, agora: number): Promise<Record<s
 
 /** Quem segue a conta no mês. O que a Meta recusar fica nulo; só o "online" falha calado (saiu da documentação dela). */
 async function doPublico(token: string, ig: Conta, agora: number) {
-  const [genero, idade, paises, cidades] = await Promise.all(['gender', 'age', 'country', 'city'].map((q) => demografia(token, ig, q)));
+  // Cada quebra por si: se a Meta recusar só as cidades, gênero, idade e país ainda entram.
+  const [genero, idade, paises, cidades] = await Promise.all(['gender', 'age', 'country', 'city'].map((q) =>
+    demografia(token, ig, q).catch((e) => {
+      console.warn(`follower_demographics ${q} de ${ig.nome}:`, e instanceof Error ? e.message : e);
+      return null;
+    })));
   let quando: Record<string, Contagem> | null = null;
   try {
     quando = await online(token, ig, agora);
@@ -400,8 +407,9 @@ serve(async (req) => {
       const segunda = new Date(`${hoje}T12:00:00Z`).getUTCDay() === 1;
       const horaBR = new Date(agora - 3 * HORA).getUTCHours();
       // Na segunda, a semana que acabou é buscada de novo o dia todo (a Meta fecha os números com atraso), mas o total de
-      // seguidores dela só sai da passada da meia-noite, que é o do domingo.
-      const semanas = [semana(domingo, agora, false), ...(segunda ? [semana(anterior, agora, horaBR < 3)] : [])];
+      // seguidores dela só sai das passadas da madrugada, 0h e 3h. ponytail: a das 3h cobre a da meia-noite se ela falhar,
+      // ao custo de o total levar 3 h de segunda-feira; se as duas falharem, a semana fica sem total (lançar à mão).
+      const semanas = [semana(domingo, agora, false), ...(segunda ? [semana(anterior, agora, horaBR < 6)] : [])];
       const comPublico = horaBR >= 6 && horaBR < 9;
       const { data: ligacoes, error } = await admin.from('mkt_meta_ligacao').select('tenant_id');
       if (error) throw error;

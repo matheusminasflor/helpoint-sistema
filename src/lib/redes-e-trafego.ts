@@ -3,7 +3,7 @@
 // A semana é o domingo que a fecha; entra no período a semana cujo domingo está nele. Campo em branco não vira zero:
 // sem nenhuma semana com o número, o resultado é `null` ("—" na tela).
 import { formatBRL } from '@/lib/crm';
-import { somarDias } from '@/lib/ti-equipe';
+import { domingoDaSemana, somarDias } from '@/lib/ti-equipe';
 
 export interface Campanha { nome: string; investimento: number; alcance: number | null; ativa: boolean }
 
@@ -29,6 +29,10 @@ export interface LinhaTrafego {
 }
 
 export interface Intervalo { de: string; ate: string }
+
+/** "94,7%"; sem número, "—". A tela e o PDF usam o mesmo texto. */
+export const pctTexto = (v: number | null) => (v === null ? '—' : `${v.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%`);
+export const NOME_DO_FORMATO: Record<Publicacao['tipo'], string> = { REELS: 'Reels', FEED: 'Feed', STORY: 'Stories' };
 
 // Os nomes da planilha (aba "MKT - Redes"), que é como o histórico de outubro entrou.
 export const CONTAS = ['@minasflor', '@mf.pro', '@by.mf'];
@@ -77,10 +81,10 @@ function publicacoesDas(linhas: LinhaRedes[]): Publicacao[] {
   return [...new Map(linhas.flatMap((l) => l.publicacoes ?? []).map((p) => [p.id, p])).values()];
 }
 
-export function melhoresPosts(pubs: Publicacao[], n = 3): Publicacao[] {
+export function melhoresPosts(pubs: Publicacao[]): Publicacao[] {
   return pubs.filter((p) => p.tipo !== 'STORY' && p.alcance !== null)
     .sort((a, b) => (b.alcance ?? 0) - (a.alcance ?? 0) || (b.interacoes ?? 0) - (a.interacoes ?? 0))
-    .slice(0, n);
+    .slice(0, 3);
 }
 
 export function alcancePorFormato(pubs: Publicacao[]): NumerosDaConta['formatos'] {
@@ -98,6 +102,7 @@ export function numerosDaConta(linhas: LinhaRedes[], conta: string, p: Intervalo
   const engs = no.map((l) => l.engajamento).filter((x): x is number => x !== null);
   const investimento = somaOuNada(no, 'investimento');
   const visitasPagas = somaOuNada(no, 'visitas_pagas');
+  const pubs = publicacoesDas(no);
   // A mesma campanha em várias semanas vira uma linha só, somada.
   const campanhas = new Map<string, Campanha>();
   for (const c of no.flatMap((l) => l.campanhas ?? [])) {
@@ -111,7 +116,7 @@ export function numerosDaConta(linhas: LinhaRedes[], conta: string, p: Intervalo
     engajamento: engs.length ? engs.reduce((s, x) => s + Number(x), 0) / engs.length : null,
     feed: somaOuNada(no, 'posts'), reels: somaOuNada(no, 'reels'), stories: somaOuNada(no, 'stories'),
     alcance: somaOuNada(no, 'alcance'), visualizacoes: somaOuNada(no, 'visualizacoes'),
-    destaques: melhoresPosts(publicacoesDas(no)), formatos: alcancePorFormato(publicacoesDas(no)),
+    destaques: melhoresPosts(pubs), formatos: alcancePorFormato(pubs),
     investimento, alcancePago: somaOuNada(no, 'alcance_pago'), visitasPagas, custoPorVisita: dividir(investimento, visitasPagas),
     campanhasAtivas: ultimo(no, 'campanhas_ativas'),
     campanhas: [...campanhas.values()].sort((a, b) => b.investimento - a.investimento),
@@ -157,7 +162,7 @@ export function ultimasSemanas(ate: string, n: number): string[] {
  */
 export function comASemanaEmAndamento(p: Intervalo, hoje: string): Intervalo {
   if (hoje < p.de || hoje > p.ate) return p;
-  const [domingo] = ultimasSemanas(hoje, 1);
+  const domingo = domingoDaSemana(hoje);
   return domingo > p.ate ? { ...p, ate: domingo } : p;
 }
 

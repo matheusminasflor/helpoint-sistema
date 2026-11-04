@@ -35,9 +35,8 @@ describe('resumoDoPublico', () => {
 });
 
 describe('publicoDoMes', () => {
-  it('a linha mais nova de cada conta até o mês do fim do período', () => {
+  it('a primeira linha de cada conta (a mais nova), só das contas que têm', () => {
     const outubro = { ...MINASFLOR, mes: '2026-10-01', genero: { F: 1 } };
-    expect(publicoDoMes([outubro, MINASFLOR], ['@minasflor', '@mf.pro'], '2026-10-31').map((x) => x.mulheres)).toEqual([100]);
-    expect(publicoDoMes([outubro, MINASFLOR], ['@minasflor'], '2026-11-04')[0].mulheres).toBe(94.7);
+    expect(publicoDoMes([MINASFLOR, outubro], ['@minasflor', '@mf.pro']).map((x) => x.mulheres)).toEqual([94.7]);
   });
 });

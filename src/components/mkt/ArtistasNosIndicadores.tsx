@@ -234,7 +234,8 @@ function BuscarAgora({ onBuscou }: { onBuscou: () => void }) {
     onSuccess: (r) => {
       qc.invalidateQueries({ queryKey: [CHAVE_DAS_SEMANAS] });
       onBuscou();
-      // A busca leva uns 20 s; o aviso fica 10 s para não passar despercebido (dono, 2026-11-04: "não notificou").
+      // A busca leva uns 20 s; o aviso fica 10 s (15 s quando há aviso ou erro) para não passar despercebido (dono,
+      // 2026-11-04: "não notificou").
       if (r.erros?.length) toast.warning(`Buscou, com avisos: ${r.erros.join(' · ')}`, { duration: 15000 });
       else toast.success('Números da Meta atualizados: veja Redes sociais e Tráfego pago, no alto da tela.', { duration: 10000 });
     },
