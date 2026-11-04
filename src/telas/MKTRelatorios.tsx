@@ -407,7 +407,7 @@ export default function MKTRelatorios() {
 
           <nav aria-label="Seções da Visão Geral"
             className="sticky top-0 z-20 -mx-1 flex flex-wrap gap-1.5 bg-background/95 px-1 py-2 backdrop-blur">
-            {SECOES_DA_VISAO.filter((s) => s.id !== 'mkt-artistas' || temArtistas).map((s) => (
+            {SECOES_DA_VISAO.filter((s) => (s.id !== 'mkt-artistas' || temArtistas) && (s.id !== 'mkt-publico' || publico.length > 0)).map((s) => (
               <button key={s.id} type="button" className="rounded-full border px-3 py-1 text-xs font-medium hover:bg-muted"
                 onClick={() => document.getElementById(s.id)?.scrollIntoView({ behavior: 'smooth' })}>{s.rotulo}</button>
             ))}
