@@ -16,10 +16,8 @@ import {
   Sparkles, Store, UserPlus, Users, Zap, ClipboardList,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { LyraAvatar } from '@/components/ai/LyraAvatar';
 import { useMeusConvites, useResponderConvite, type MeuConvite } from '@/hooks/useAtenderJunto';
 import { VerConvite } from '@/components/helpdesk/VerConvite';
-import { useAssistantName, useIALigada } from '@/hooks/useAssistantName';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { useTelasEmBreve } from '@/hooks/useMeuRHLigado';
 import { useVisibleModules } from '@/hooks/useVisibleModules';
@@ -80,13 +78,11 @@ const PEDE_ACAO = new Set<NotificationType>([
   'ferias_repassar', 'projeto_setor_chamado', 'projeto_atividade', 'projeto_prazo', 'projeto_saida', 'distribuidor', 'solicitacao',
 ]);
 
-const MOSTRA = 8;
+const MOSTRA = 3;
 
 export function LyraAvisa() {
   const navigate = useNavigate();
   const tenantPath = useTenantPath();
-  const assistantName = useAssistantName();
-  const iaLigada = useIALigada();
   const { notifications = [] } = useNotifications();
   const marcarLido = useMarkNotificationRead();
   const marcarTodos = useMarkAllNotificationsRead();
@@ -112,12 +108,11 @@ export function LyraAvisa() {
   };
 
   // Com a IA desligada o painel continua (são os avisos do sistema), mas sem a assistente (2026-10-26).
-  const titulo = iaLigada ? `${assistantName} avisa` : 'Avisos';
+  const titulo = 'Pede você agora';
 
   return (
     <section className="panel px-4 sm:px-8 py-6" aria-label={titulo}>
       <div className="flex flex-wrap items-center gap-2 mb-4">
-        {iaLigada && <LyraAvatar size="sm" />}
         <h3 className="text-[24px] font-bold text-foreground flex-1 min-w-[160px]">
           {titulo} <span className="text-[16px] font-semibold text-muted-foreground">· {naoLidos.length} não lido{naoLidos.length === 1 ? '' : 's'}</span>
         </h3>

@@ -29,6 +29,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useAISecretary } from '@/hooks/useAISecretary';
 import { LyraAvisa } from '@/components/dashboard/LyraAvisa';
 import { JornalNaHome } from '@/components/jornal/JornalNaHome';
+import { NoticiaNovaNaHome } from '@/components/jornal/NoticiaNovaNaHome';
 import { RotinasDeHoje } from '@/components/rotinas/RotinasDeHoje';
 import { useVisibleModules } from '@/hooks/useVisibleModules';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
@@ -37,7 +38,6 @@ import { usePersonalPerformance } from '@/hooks/usePersonalPerformance';
 import type { Task } from '@/types/database';
 import { MODULE_LABELS } from '@/lib/automation-flow';
 import { ChipDoSetor } from '@/components/ui/ChipDoSetor';
-import { KPICard } from '@/components/glpi/KPICard';
 import { setorDoModulo } from '@/lib/setores';
 import { estaPausada } from '@/config/telas-pausadas';
 import { nivelDaChama, type Periodo } from '@/lib/chama-da-performance';
@@ -551,6 +551,9 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-[24px] sm:text-[32px] font-bold leading-tight tracking-[-0.11px] text-foreground">
           {getGreeting()}, <span className="text-primary">{firstName}</span>
+          <span className="block text-[14px] font-semibold tracking-normal text-muted-foreground first-letter:uppercase">
+            {format(new Date(), "EEEE, d 'de' MMMM", { locale: ptBR })}
+          </span>
         </h1>
         <Button variant="outline" onClick={atualizar} disabled={atualizando} className="gap-2 shrink-0">
           <RefreshCw className={`h-4 w-4 ${atualizando ? 'animate-spin' : ''}`} strokeWidth={2} />
@@ -558,29 +561,26 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
         </Button>
       </div>
 
-      {/* "Meu dia": três números (proposta aprovada, 2026-10-28), cada um num cartão da DashStack com o ícone colorido. */}
-      <div className="grid grid-cols-3 gap-3 sm:gap-6">
-        {/* Passar o mouse mostra QUAIS demandas estão no número, cada uma clicável (dono, 2026-10-15). */}
+      {/* Três selos numa linha (proposta de 2026-11-04, Parte 1): o trabalho sobe. Passar o mouse mostra QUAIS demandas
+          estão no número, cada uma clicável (dono, 2026-10-15). */}
+      <div className="flex flex-wrap items-center gap-2">
         <DemandasNoHover titulo="Atrasados" demandas={unifiedDemands.filter(d => d.urgencyGroup === 'overdue')}>
-          <KPICard value={overdueCount} label={overdueCount === 1 ? 'Atrasado' : 'Atrasados'} color="red" icon={AlertTriangle}
-            className="h-full max-sm:px-3" />
+          <span className={cn('estado cursor-default', overdueCount > 0 ? 'estado-atraso' : 'estado-recebido')}>
+            {overdueCount} {overdueCount === 1 ? 'atrasado' : 'atrasados'}
+          </span>
         </DemandasNoHover>
         <DemandasNoHover titulo="Para hoje" demandas={unifiedDemands.filter(d => d.urgencyGroup === 'today')}>
-          <KPICard value={todayCount} label="Para hoje" color="yellow" icon={Clock} className="h-full max-sm:px-3" />
+          <span className={cn('estado cursor-default', todayCount > 0 ? 'estado-espera' : 'estado-recebido')}>{todayCount} para hoje</span>
         </DemandasNoHover>
-        <KPICard value={perf.resolvedToday} label="Feitos hoje" color="green" icon={CheckCircle2} className="h-full max-sm:px-3" />
+        <span className="estado badge-success">{perf.resolvedToday} {perf.resolvedToday === 1 ? 'feito' : 'feitos'} hoje</span>
       </div>
 
-      {/* A régua das horas, num cartão, só no computador (proposta aprovada, 2026-10-28: no celular ocupava sem dizer nada). */}
-      <section className="hidden lg:block panel px-8 pt-6 pb-4">
-        <h2 className="text-[24px] font-bold">Seu dia</h2>
-        <ReguaDoDia prazos={unifiedDemands.filter((d) => d.dueDate).map((d) => ({ id: d.id, rotulo: d.title, quando: d.dueDate! }))} />
-      </section>
+      <NoticiaNovaNaHome />
 
       <div className="grid grid-cols-12 gap-6 lg:gap-7 items-start">
-        <div className="col-span-12 lg:col-span-8 xl:col-span-9 flex flex-col gap-6 lg:gap-7 min-w-0">
-          {/* As rotinas de manhã, tarde e fim do dia vêm antes dos chamados (dono, 2026-10-30). */}
-          <RotinasDeHoje />
+        <div className="col-span-12 lg:col-span-7 xl:col-span-8 flex flex-col gap-6 lg:gap-7 min-w-0">
+          {/* O que depende de você vem antes da lista (proposta de 2026-11-04, Parte 1; substitui a de 2026-10-28). */}
+          <LyraAvisa />
           {/* "Para fazer": UMA lista, na ordem do prazo (proposta aprovada, 2026-10-28), no cartão "Deals Details" da
               DashStack: título, a faixa do cabeçalho e uma linha por demanda. No celular cada linha tem duas linhas. */}
           {unifiedDemands.length > 0 ? (
@@ -677,96 +677,13 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
               </div>
             </section>
           )}
-          {/* Os avisos (as movimentações não vistas) vêm DEPOIS do que fazer (proposta aprovada, 2026-10-28). */}
-          <LyraAvisa />
-          {/* As Notícias descem para o fim (proposta "Helpoint no dia a dia", Início, 2026-10-24): o trabalho vem primeiro.
-              A notícia nova continua com o número no item "Notícias" do menu. Some sem notícia. */}
-          <JornalNaHome />
         </div>
 
         {/* ── Right Panel ── */}
         {/* Rodada 3 (achado C4): no celular a Agenda e a Sua Performance vêm abaixo da lista — antes sumiam abaixo de 1024 px. */}
-        <div className="col-span-12 lg:col-span-4 xl:col-span-3 flex flex-col gap-6 lg:gap-7 min-w-0">
-
-          {/* Lyra Chat: o painel inteiro é IA (resumo, chat, voz) e some com a IA desligada (2026-10-26). */}
-          {/* No celular o painel da Lyra sai (proposta aprovada, 2026-10-28); fica no computador. */}
-          {iaLigada && (
-          <section className="hidden lg:block panel overflow-hidden">
-            <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border">
-              <LyraAvatar size="sm" animated={isLoadingAI || isChatTyping} />
-              <span className="text-[14px] font-semibold text-foreground">{assistantName}</span>
-              <span className="text-[12px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded uppercase">IA</span>
-            </div>
-
-            <div ref={chatScrollRef} className="px-4 py-3 max-h-[180px] overflow-y-auto space-y-3" onWheel={(e) => e.stopPropagation()}>
-              {isLoadingAI && !summary ? (
-                <div className="flex items-center gap-2 text-muted-foreground py-2">
-                  <span className="text-[14px]">Analisando…</span>
-                  <div className="flex gap-1">
-                    <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                    <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                  </div>
-                </div>
-              ) : (
-                <LyraBriefing content={summary || 'Nenhuma pendência.'} tickets={ticketsDoResumo} kanbanCards={kanbanCards} tasks={tasks} onFocusTask={onOpenTask} />
-              )}
-
-              {chatMessages.map((msg, idx) => (
-                <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  {msg.role === 'user' ? (
-                    <div className="bg-primary text-primary-foreground rounded-2xl rounded-br-md px-3 py-2 max-w-[85%]">
-                      <p className="text-[14px]">{msg.content}</p>
-                    </div>
-                  ) : (
-                    <div className="bg-surface-2 rounded-2xl rounded-bl-md px-3 py-2 max-w-[90%]">
-                      <MarkdownRenderer content={msg.content} className="text-[14px] text-foreground" />
-                    </div>
-                  )}
-                </div>
-              ))}
-
-              {isChatTyping && chatMessages[chatMessages.length - 1]?.role !== 'assistant' && (
-                <div className="flex gap-1 text-muted-foreground py-1">
-                  <span className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-bounce" />
-                  <span className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                  <span className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                </div>
-              )}
-              <div ref={scrollAnchorRef} />
-            </div>
-
-            {aiError && <p className="text-[13px] text-monday-red px-4 pb-1">{aiError}</p>}
-
-            {!isLoadingAI && (
-              <div className="px-4 pb-3 pt-1">
-                {recorderState !== 'idle' ? (
-                  <VoiceRecorderBar recorderState={recorderState} duration={duration} interimText={interimText} audioUrl={audioUrl} audioLevels={audioLevels} isSending={isSending} onStop={stopRecording} onSend={sendRecording} onCancel={cancelRecording} />
-                ) : (
-                  <div className="border border-border rounded-full flex items-center px-3 py-1.5 bg-surface-2">
-                    <input
-                      type="text" value={chatInput}
-                      onChange={(e) => setChatInput(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendChat()}
-                      aria-label={`Pergunte à ${assistantName}`}
-                      placeholder={`Pergunte à ${assistantName}…`}
-                      disabled={isChatTyping}
-                      className="bg-transparent border-0 focus:outline-none focus:ring-0 text-[14px] text-foreground placeholder:text-muted-foreground flex-1"
-                    />
-                    {isSupported && (
-                      <button type="button" aria-label="Gravar mensagem de voz" onClick={startRecording} disabled={isChatTyping} className="ml-1.5 p-1.5 text-muted-foreground hover:text-primary transition-colors">
-                        <Mic className="w-4 h-4" strokeWidth={2} aria-hidden="true" />
-                      </button>
-                    )}
-                    <button type="button" aria-label="Enviar pergunta" onClick={handleSendChat} disabled={!chatInput.trim() || isChatTyping} className="ml-1.5 p-1.5 text-primary hover:text-primary/80 disabled:text-muted-foreground disabled:opacity-50 transition-colors">
-                      <Send className="w-4 h-4" strokeWidth={2} aria-hidden="true" />
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-          </section>
-          )}
+        <div className="col-span-12 lg:col-span-5 xl:col-span-4 flex flex-col gap-6 lg:gap-7 min-w-0">
+          {/* As rotinas do dia saem da frente dos chamados (proposta de 2026-11-04; substitui a de 2026-10-30). */}
+          <RotinasDeHoje />
 
           {/* Agenda Timeline */}
           <Collapsible open={agendaOpen} onOpenChange={setAgendaOpen}>
@@ -782,6 +699,10 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
                 </button>
               </div>
               <CollapsibleContent>
+                {/* Só no computador (proposta aprovada, 2026-10-28: no celular ocupava sem dizer nada). */}
+                <div className="hidden lg:block px-4">
+                  <ReguaDoDia prazos={unifiedDemands.filter((d) => d.dueDate).map((d) => ({ id: d.id, rotulo: d.title, quando: d.dueDate! }))} />
+                </div>
                 <div className="px-4 pb-3 space-y-1">
                   {agendaItems.length > 0 ? agendaItems.map((item, i) => (
                     <HoverCard key={i} openDelay={200} closeDelay={100}>
@@ -1044,8 +965,91 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
               </div>
             )}
           </section>
+
+          {/* Lyra Chat: o painel inteiro é IA (resumo, chat, voz) e some com a IA desligada (2026-10-26). */}
+          {/* No celular o painel da Lyra sai (proposta aprovada, 2026-10-28); fica no computador. */}
+          {iaLigada && (
+          <section className="hidden lg:block panel overflow-hidden">
+            <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border">
+              <LyraAvatar size="sm" animated={isLoadingAI || isChatTyping} />
+              <span className="text-[14px] font-semibold text-foreground">{assistantName}</span>
+              <span className="text-[12px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded uppercase">IA</span>
+            </div>
+
+            <div ref={chatScrollRef} className="px-4 py-3 max-h-[180px] overflow-y-auto space-y-3" onWheel={(e) => e.stopPropagation()}>
+              {isLoadingAI && !summary ? (
+                <div className="flex items-center gap-2 text-muted-foreground py-2">
+                  <span className="text-[14px]">Analisando…</span>
+                  <div className="flex gap-1">
+                    <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                  </div>
+                </div>
+              ) : (
+                <LyraBriefing content={summary || 'Nenhuma pendência.'} tickets={ticketsDoResumo} kanbanCards={kanbanCards} tasks={tasks} onFocusTask={onOpenTask} />
+              )}
+
+              {chatMessages.map((msg, idx) => (
+                <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  {msg.role === 'user' ? (
+                    <div className="bg-primary text-primary-foreground rounded-2xl rounded-br-md px-3 py-2 max-w-[85%]">
+                      <p className="text-[14px]">{msg.content}</p>
+                    </div>
+                  ) : (
+                    <div className="bg-surface-2 rounded-2xl rounded-bl-md px-3 py-2 max-w-[90%]">
+                      <MarkdownRenderer content={msg.content} className="text-[14px] text-foreground" />
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              {isChatTyping && chatMessages[chatMessages.length - 1]?.role !== 'assistant' && (
+                <div className="flex gap-1 text-muted-foreground py-1">
+                  <span className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-bounce" />
+                  <span className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <span className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                </div>
+              )}
+              <div ref={scrollAnchorRef} />
+            </div>
+
+            {aiError && <p className="text-[13px] text-monday-red px-4 pb-1">{aiError}</p>}
+
+            {!isLoadingAI && (
+              <div className="px-4 pb-3 pt-1">
+                {recorderState !== 'idle' ? (
+                  <VoiceRecorderBar recorderState={recorderState} duration={duration} interimText={interimText} audioUrl={audioUrl} audioLevels={audioLevels} isSending={isSending} onStop={stopRecording} onSend={sendRecording} onCancel={cancelRecording} />
+                ) : (
+                  <div className="border border-border rounded-full flex items-center px-3 py-1.5 bg-surface-2">
+                    <input
+                      type="text" value={chatInput}
+                      onChange={(e) => setChatInput(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendChat()}
+                      aria-label={`Pergunte à ${assistantName}`}
+                      placeholder={`Pergunte à ${assistantName}…`}
+                      disabled={isChatTyping}
+                      className="bg-transparent border-0 focus:outline-none focus:ring-0 text-[14px] text-foreground placeholder:text-muted-foreground flex-1"
+                    />
+                    {isSupported && (
+                      <button type="button" aria-label="Gravar mensagem de voz" onClick={startRecording} disabled={isChatTyping} className="ml-1.5 p-1.5 text-muted-foreground hover:text-primary transition-colors">
+                        <Mic className="w-4 h-4" strokeWidth={2} aria-hidden="true" />
+                      </button>
+                    )}
+                    <button type="button" aria-label="Enviar pergunta" onClick={handleSendChat} disabled={!chatInput.trim() || isChatTyping} className="ml-1.5 p-1.5 text-primary hover:text-primary/80 disabled:text-muted-foreground disabled:opacity-50 transition-colors">
+                      <Send className="w-4 h-4" strokeWidth={2} aria-hidden="true" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </section>
+          )}
         </div>
       </div>
+
+      {/* Notícias no fim, as já lidas e as mais antigas; a nova está na faixa do topo. Some sem notícia. */}
+      <JornalNaHome />
     </div>
   );
 }
