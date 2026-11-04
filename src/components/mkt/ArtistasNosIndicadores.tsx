@@ -234,15 +234,16 @@ function BuscarAgora({ onBuscou }: { onBuscou: () => void }) {
     onSuccess: (r) => {
       qc.invalidateQueries({ queryKey: [CHAVE_DAS_SEMANAS] });
       onBuscou();
-      if (r.erros?.length) toast.warning(`Buscou, com avisos: ${r.erros.join(' · ')}`);
-      else toast.success('Números da Meta atualizados.');
+      // A busca leva uns 20 s; o aviso fica 10 s para não passar despercebido (dono, 2026-11-04: "não notificou").
+      if (r.erros?.length) toast.warning(`Buscou, com avisos: ${r.erros.join(' · ')}`, { duration: 15000 });
+      else toast.success('Números da Meta atualizados: veja Redes sociais e Tráfego pago, no alto da tela.', { duration: 10000 });
     },
-    onError: (e: Error) => toast.error(`A busca falhou: ${e.message}`),
+    onError: (e: Error) => toast.error(`A busca falhou: ${e.message}`, { duration: 15000 }),
   });
   return (
     <Button size="sm" onClick={() => buscar.mutate()} disabled={buscar.isPending}>
       <RefreshCw className={cn('h-3.5 w-3.5 mr-1', buscar.isPending && 'animate-spin')} aria-hidden="true" />
-      {buscar.isPending ? 'Buscando…' : 'Buscar agora'}
+      {buscar.isPending ? 'Buscando… (uns 20 segundos)' : 'Buscar agora'}
     </Button>
   );
 }

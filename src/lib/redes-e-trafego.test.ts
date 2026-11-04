@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { faltaLancar, fraseDasRedes, numerosDaConta, numerosDoTrafego, painelDasRedes, ultimasSemanas, type LinhaRedes, type LinhaTrafego } from './redes-e-trafego';
+import { comASemanaEmAndamento, faltaLancar, fraseDasRedes, numerosDaConta, numerosDoTrafego, painelDasRedes, ultimasSemanas, type LinhaRedes, type LinhaTrafego } from './redes-e-trafego';
 
 const vazia: Omit<LinhaRedes, 'semana' | 'conta'> = {
   posts: null, reels: null, stories: null, engajamento: null, novos_seguidores: null, quedas_seguidores: null, total_seguidores: null,
@@ -67,6 +67,19 @@ describe('ultimasSemanas', () => {
   it('termina no domingo da semana do fim do período', () => {
     expect(ultimasSemanas('2026-11-01', 3)).toEqual(['2026-10-18', '2026-10-25', '2026-11-01']);
     expect(ultimasSemanas('2026-11-03', 2)).toEqual(['2026-11-01', '2026-11-08']);
+  });
+});
+
+describe('comASemanaEmAndamento', () => {
+  it('"Esta semana" de quarta inclui o domingo que ainda vai chegar, e o painel mostra a semana', () => {
+    const p = comASemanaEmAndamento({ de: '2026-11-02', ate: '2026-11-04' }, '2026-11-04');
+    expect(p).toEqual({ de: '2026-11-02', ate: '2026-11-08' });
+    const painel = painelDasRedes([r('2026-11-08', '@mf.pro', { novos_seguidores: 3 })], [], p, { de: '2026-10-30', ate: '2026-11-01' });
+    expect(painel.temDados).toBe(true);
+  });
+  it('período que não contém hoje, ou que já vai até o domingo, fica como está', () => {
+    expect(comASemanaEmAndamento({ de: '2026-10-01', ate: '2026-10-31' }, '2026-11-04')).toEqual({ de: '2026-10-01', ate: '2026-10-31' });
+    expect(comASemanaEmAndamento({ de: '2026-11-01', ate: '2026-11-30' }, '2026-11-04')).toEqual({ de: '2026-11-01', ate: '2026-11-30' });
   });
 });
 

@@ -118,6 +118,17 @@ export function ultimasSemanas(ate: string, n: number): string[] {
   return Array.from({ length: n }, (_, i) => somarDias(domingo, -7 * (n - 1 - i)));
 }
 
+/**
+ * A semana em andamento entra no período que contém hoje antes de o domingo dela chegar (dono, 2026-11-04: "Esta
+ * semana" vinha vazia com os números da Meta já buscados, porque o domingo 08/11 ainda não estava no período).
+ * ponytail: na semana que atravessa o fim do mês, ela conta no mês de hoje até fechar; depois vale a regra do domingo.
+ */
+export function comASemanaEmAndamento(p: Intervalo, hoje: string): Intervalo {
+  if (hoje < p.de || hoje > p.ate) return p;
+  const [domingo] = ultimasSemanas(hoje, 1);
+  return domingo > p.ate ? { ...p, ate: domingo } : p;
+}
+
 export interface SemanaNoGrafico { semana: string; saldos: Record<string, number | null>; investimento: number | null; visitas: number | null }
 
 /** Semana a semana: o saldo de seguidores de cada conta, o investimento e as visitas do tráfego. */

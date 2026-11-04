@@ -28,7 +28,7 @@ import { OutrosIndicadoresDoMarketing } from '@/components/mkt/OutrosIndicadores
 import { LancamentoDaSemana, LancarSemana, LeadsEInvestimento, NumerosDoTopo, RedesSociais, TrafegoPorConta } from '@/components/mkt/RedesETrafego';
 import { useIndicadoresDoMarketing } from '@/hooks/useIndicadoresDoMarketing';
 import { useRedesETrafego } from '@/hooks/useRedesETrafego';
-import { fraseDasRedes, painelDasRedes, semanaASemana, ultimasSemanas } from '@/lib/redes-e-trafego';
+import { comASemanaEmAndamento, fraseDasRedes, painelDasRedes, semanaASemana, ultimasSemanas } from '@/lib/redes-e-trafego';
 import { ArtistasDoMes, ArtistasMesAMes, EsperandoAsLigacoes } from '@/components/mkt/ArtistasNosIndicadores';
 import { DicaDoGrafico } from '@/components/dashboard/DicaDoGrafico';
 import { ModoApresentacao } from '@/components/dashboard/ModoApresentacao';
@@ -127,8 +127,9 @@ export default function MKTRelatorios() {
 
   // Redes sociais e Tráfego pago (proposta v3, 2026-11-03): o período ao lado do anterior, conta por conta.
   const anteriorISO = { de: toLocalISODate(anteriorDaTela.startDate), ate: toLocalISODate(anteriorDaTela.endDate) };
-  const semanal = useRedesETrafego(intervaloDaTela, anteriorISO);
-  const painel = painelDasRedes(semanal.redes, semanal.trafego, intervaloDaTela, anteriorISO);
+  const dasSemanas = comASemanaEmAndamento(intervaloDaTela, hoje);
+  const semanal = useRedesETrafego(dasSemanas, anteriorISO);
+  const painel = painelDasRedes(semanal.redes, semanal.trafego, dasSemanas, anteriorISO);
   const grafico = semanaASemana(semanal.redes, semanal.trafego, ultimasSemanas(intervaloDaTela.ate, 5), painel.contas.map((c) => c.atual.conta));
   const podeLancar = perfil.pode('marketing', 'reports', 'lancar');
   const [lancando, setLancando] = useState(false);
