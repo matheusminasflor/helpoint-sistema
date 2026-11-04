@@ -156,7 +156,8 @@ async function dosAnuncios(token: string, act: Conta, s: Semana, instagrams: Map
   let ativas = 0;
   for (const c of campanhas) {
     const investimento = Number(c.spend ?? 0);
-    if (!investimento) continue;
+    // Alcance sem gasto também é entrega (2026-11-04: MF.PRO alcançou 3 pessoas por R$ 0,00 e o total da conta contava).
+    if (!investimento && !Number(c.reach ?? 0)) continue;
     const ativa = estados.get(c.campaign_id) === 'ACTIVE';
     if (ativa) ativas++;
     const conta = doCriativo.get(c.campaign_id) ?? pelaNome(c.campaign_name);
