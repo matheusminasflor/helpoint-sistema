@@ -95,3 +95,9 @@ A conferência é sempre direto na Meta (Meta Business Suite › Insights), não
   sai só da passada da meia-noite.
 - Ficaram de fora, a pedido do dono: **mensagens no Direct** e **cliques no link da bio** — a Meta não entrega esses
   números a sistemas de fora (2026-11-04).
+- **Quando a ligação cai** (20270212300000; proposta https://claude.ai/artifact/TkNdvQJSmuor8FAUsHaaWM): a Meta recusou
+  a chave, ou 12 h sem uma busca que deu certo, abre UMA queda — aviso para o setor de TI, chamado na fila da TI (em nome
+  de quem conectou a Meta, categoria Sistemas, prioridade Alta) e interrupção "Sistema" nos Indicadores da TI. Quando o
+  robô volta a buscar, a interrupção fecha, o chamado ganha a nota interna "a ligação voltou" (a TI resolve) e sai o
+  aviso. A chave vencendo avisa 7 dias antes. Tudo ajustável em **TI › Configurações › Alertas › Ligações com sistemas
+  de fora**.

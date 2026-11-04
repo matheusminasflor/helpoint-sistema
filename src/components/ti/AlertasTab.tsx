@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { mensagemDeErro, unwrap } from '@/lib/supabase-result';
 import { useTenantSettings, type TenantSettings } from '@/hooks/useTenantSettings';
+import { LigacoesComSistemasDeFora } from '@/components/ti/LigacoesComSistemasDeFora';
 
 type ChaveDeAlerta = keyof NonNullable<TenantSettings['alerts']>;
 
@@ -50,57 +51,60 @@ export function AlertasTab() {
   }, [tenantSettings?.alerts]);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base flex items-center gap-2"><Bell className="h-4 w-4" />Alertas e notificações</CardTitle>
-        <CardDescription>Quando o sistema avisa sobre prazo de chamado, contrato e licença.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <div className="space-y-4">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 w-full" />)}</div>
-        ) : (
-          <div className="space-y-6">
-            {/* "Notificações por e-mail" saiu (rodada 2, decisão 6): a função dos alertas (check-alerts) nunca lia a caixa. */}
-
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <Label>Alerta de prazo do chamado</Label>
-                <span className="text-sm font-medium">{slaPct}% do tempo</span>
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2"><Bell className="h-4 w-4" />Alertas e notificações</CardTitle>
+          <CardDescription>Quando o sistema avisa sobre prazo de chamado, contrato e licença.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="space-y-4">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 w-full" />)}</div>
+          ) : (
+            <div className="space-y-6">
+              {/* "Notificações por e-mail" saiu (rodada 2, decisão 6): a função dos alertas (check-alerts) nunca lia a caixa. */}
+  
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label>Alerta de prazo do chamado</Label>
+                  <span className="text-sm font-medium">{slaPct}% do tempo</span>
+                </div>
+                <Slider value={[slaPct]} onValueChange={([v]) => setSlaPct(v)}
+                  onValueCommit={([v]) => mudar('slaWarningPercentage', v)} min={50} max={95} step={5} />
+                <p className="text-xs text-muted-foreground">Alertar quando o chamado atingir este percentual do prazo</p>
               </div>
-              <Slider value={[slaPct]} onValueChange={([v]) => setSlaPct(v)}
-                onValueCommit={([v]) => mudar('slaWarningPercentage', v)} min={50} max={95} step={5} />
-              <p className="text-xs text-muted-foreground">Alertar quando o chamado atingir este percentual do prazo</p>
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <Label>Alerta de contratos</Label>
-                <span className="text-sm font-medium">{contratoDias} dias antes</span>
+  
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label>Alerta de contratos</Label>
+                  <span className="text-sm font-medium">{contratoDias} dias antes</span>
+                </div>
+                <Slider value={[contratoDias]} onValueChange={([v]) => setContratoDias(v)}
+                  onValueCommit={([v]) => mudar('contractAlertDays', v)} min={7} max={90} step={7} />
+                <p className="text-xs text-muted-foreground">Alertar sobre contratos vencendo com esta antecedência</p>
               </div>
-              <Slider value={[contratoDias]} onValueChange={([v]) => setContratoDias(v)}
-                onValueCommit={([v]) => mudar('contractAlertDays', v)} min={7} max={90} step={7} />
-              <p className="text-xs text-muted-foreground">Alertar sobre contratos vencendo com esta antecedência</p>
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <Label>Alerta de licenças</Label>
-                <span className="text-sm font-medium">{licencaDias} dias antes</span>
+  
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label>Alerta de licenças</Label>
+                  <span className="text-sm font-medium">{licencaDias} dias antes</span>
+                </div>
+                <Slider value={[licencaDias]} onValueChange={([v]) => setLicencaDias(v)}
+                  onValueCommit={([v]) => mudar('licenseAlertDays', v)} min={7} max={90} step={7} />
+                <p className="text-xs text-muted-foreground">Alertar sobre licenças vencendo com esta antecedência</p>
               </div>
-              <Slider value={[licencaDias]} onValueChange={([v]) => setLicencaDias(v)}
-                onValueCommit={([v]) => mudar('licenseAlertDays', v)} min={7} max={90} step={7} />
-              <p className="text-xs text-muted-foreground">Alertar sobre licenças vencendo com esta antecedência</p>
+  
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 text-sm">
+                <Info className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <p className="text-muted-foreground">
+                  Os alertas são verificados automaticamente e as notificações vão para supervisores e diretores.
+                </p>
+              </div>
             </div>
-
-            <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 text-sm">
-              <Info className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              <p className="text-muted-foreground">
-                Os alertas são verificados automaticamente e as notificações vão para supervisores e diretores.
-              </p>
-            </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+          )}
+        </CardContent>
+      </Card>
+      <LigacoesComSistemasDeFora />
+    </div>
   );
 }

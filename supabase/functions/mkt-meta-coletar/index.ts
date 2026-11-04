@@ -79,6 +79,23 @@ async function permissoesDaChave(token: string): Promise<string> {
   }
 }
 
+/** Quando a chave para de valer (debug_token: `expires_at` e `data_access_expires_at`, 0 = nunca), em ms; null se nunca. */
+async function vencimentoDaChave(token: string): Promise<number | null> {
+  const app = `${Deno.env.get('META_APP_ID')}|${Deno.env.get('META_APP_SECRET')}`;
+  try {
+    const r = await fetch(`https://graph.facebook.com/v21.0/debug_token?input_token=${encodeURIComponent(token)}&access_token=${encodeURIComponent(app)}`);
+    const d = ((await r.json()) as { data?: { expires_at?: number; data_access_expires_at?: number } }).data;
+    const datas = [d?.expires_at, d?.data_access_expires_at].filter((x): x is number => !!x && x > 0);
+    return datas.length ? Math.min(...datas) * 1000 : null;
+  } catch (e) {
+    console.warn('vencimento da chave:', e instanceof Error ? e.message : e);
+    return null;
+  }
+}
+
+// A Meta recusou a chave (venceu, foi revogada ou perdeu permissão): é a queda que avisa a TI na hora (20270212300000).
+const CHAVE_RECUSADA = /#190|Error validating access token|Session has expired|has NOT grant|Missing Permissions|OAuthException|has not authorized application/i;
+
 const semNulos = (o: Record<string, unknown>) => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== null && v !== undefined));
 
 type Tipo = 'FEED' | 'REELS' | 'STORY';
@@ -294,6 +311,15 @@ async function dosAnuncios(token: string, act: Conta, s: Semana, instagrams: Map
   };
 }
 
+/** Conta ao banco como foi a passada: é ele que abre e fecha a queda (aviso, chamado e interrupção, 20270212300000). */
+async function resultado(tenantId: string, ok: boolean, recusada: string | null, venceEm: number | null) {
+  const { error } = await adminClient().rpc('ligacao_meta_resultado', {
+    p_tenant: tenantId, p_ok: ok, p_desconectou: recusada !== null, p_motivo: recusada,
+    p_vence_em: venceEm === null ? null : new Date(venceEm).toISOString(),
+  });
+  if (error) console.error('ligacao_meta_resultado:', error.message);
+}
+
 async function coletarEmpresa(tenantId: string, semanas: Semana[], agora: number, comPublico: boolean) {
   const admin = adminClient();
   const { data: lig, error: e1 } = await admin.from('mkt_meta_ligacao').select('contas').eq('tenant_id', tenantId).maybeSingle();
@@ -301,11 +327,22 @@ async function coletarEmpresa(tenantId: string, semanas: Semana[], agora: number
   const { data: segredo, error: e2 } = await admin.from('mkt_meta_ligacao_segredo').select('access_token').eq('tenant_id', tenantId).maybeSingle();
   if (e2) throw e2;
   const token = (segredo as { access_token: string } | null)?.access_token;
-  if (!lig || !token) return { tenantId, erro: 'sem ligação com a Meta' };
+  if (!lig) return { tenantId, erro: 'sem ligação com a Meta' };
+  if (!token) {
+    await resultado(tenantId, false, 'a ligação com a Meta está sem chave', null);
+    return { tenantId, erro: 'a ligação com a Meta está sem chave' };
+  }
   const contas = ((lig as { contas: Conta[] }).contas ?? []);
   const instagrams = contas.filter((c) => c.tipo === 'instagram');
   const doIg = new Map(instagrams.map((c) => [c.id, nomeDaConta(c.nome)]));
   const erros: string[] = [];
+  // As recusas de chave à parte: são elas que derrubam a ligação na hora (o resto espera a conferência de hora em hora).
+  const recusas: string[] = [];
+  const anotar = (quem: string, e: unknown) => {
+    const msg = e instanceof Error ? e.message : String(e);
+    erros.push(`${quem}: ${emPortugues(msg)}`);
+    if (CHAVE_RECUSADA.test(msg)) recusas.push(`${quem}: ${emPortugues(msg)}`);
+  };
   // A Meta compartilhou a MF INTERNO com o app, mas recusou LISTAR as contas de anúncios na ligação ("(#200) Missing
   // Permissions", 2026-11-03). Sem a lista, vai direto às contas de `META_CONTAS_DE_ANUNCIO` (o número da conta, que não
   // é segredo): se a credencial lê anúncio, os números vêm; se não, o erro da Meta aparece na tela.
@@ -339,7 +376,7 @@ async function coletarEmpresa(tenantId: string, semanas: Semana[], agora: number
         }), { onConflict: 'tenant_id,semana,conta' });
         if (e) throw e;
       } catch (e) {
-        erros.push(`${conta}: ${emPortugues(e instanceof Error ? e.message : String(e))}`);
+        anotar(conta, e);
       }
     }
     for (const act of anuncios) {
@@ -359,7 +396,7 @@ async function coletarEmpresa(tenantId: string, semanas: Semana[], agora: number
           if (e) throw e;
         }
       } catch (e) {
-        erros.push(`${act.nome}: ${emPortugues(e instanceof Error ? e.message : String(e))}`);
+        anotar(act.nome, e);
         if (!erros.some((x) => x.startsWith('a chave ('))) erros.push(await permissoesDaChave(tokenDeAnuncios));
       }
     }
@@ -375,7 +412,7 @@ async function coletarEmpresa(tenantId: string, semanas: Semana[], agora: number
         }), { onConflict: 'tenant_id,conta,mes' });
         if (error) throw error;
       } catch (e) {
-        erros.push(`${conta} (público): ${emPortugues(e instanceof Error ? e.message : String(e))}`);
+        anotar(`${conta} (público)`, e);
       }
     }
   }
@@ -385,6 +422,12 @@ async function coletarEmpresa(tenantId: string, semanas: Semana[], agora: number
     coletado_em: new Date(agora).toISOString(), ultimo_erro: [...new Set([...erros, semAnuncios].filter(Boolean))].join(' · ') || null,
   }).eq('tenant_id', tenantId);
   if (error) throw error;
+  // O vencimento da chave uma vez por dia (passada das 6h e "Buscar agora"): vale o que vencer primeiro.
+  const vencimentos = comPublico
+    ? (await Promise.all([...new Set([token, tokenDeAnuncios])].map(vencimentoDaChave))).filter((x): x is number => x !== null)
+    : [];
+  await resultado(tenantId, erros.length === 0, recusas.length ? [...new Set(recusas)].join(' · ') : null,
+    vencimentos.length ? Math.min(...vencimentos) : null);
   return { tenantId, semanas: semanas.map((s) => s.domingo), erros };
 }
 

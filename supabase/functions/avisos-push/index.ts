@@ -37,6 +37,8 @@ function destino(p: Pendente): string {
   if (p.reference_type === 'jornal') return '/jornal?aba=atualizacoes'
   if (p.reference_type === 'distribuidor') return '/ti/distribuidores'
   if (p.reference_type === 'rh_aprovacao') return '/rh/aprovacoes'
+  // Ligação com a Meta sem chamado (vencimento da chave, ou queda com o chamado desligado): os Alertas da TI.
+  if (p.reference_type === 'ligacao_meta') return '/ti/configuracoes?aba=alertas'
   return '/avisos'
 }
 

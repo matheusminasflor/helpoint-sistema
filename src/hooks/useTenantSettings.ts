@@ -37,6 +37,12 @@ export interface ComercialSettings {
   cadastroCategoriaId?: string;
 }
 
+/** Sem valor, vale o padrão aprovado (o mesmo de `ligacao_meta_config` no banco). */
+export interface ConfigDaLigacao {
+  ligado?: boolean; setor?: string; chamado?: boolean; categoria?: string; prioridade?: string;
+  interrupcao?: boolean; tipo?: string; horas?: number; dias?: number;
+}
+
 export interface TenantSettings {
   modules?: {
     inventory?: boolean;
@@ -50,6 +56,8 @@ export interface TenantSettings {
     contractAlertDays?: number;
     licenseAlertDays?: number;
     emailNotifications?: boolean;
+    /** O que fazer quando a ligação com um sistema de fora cai (TI › Alertas, 20270212300000). */
+    ligacoes?: { meta?: ConfigDaLigacao };
   };
   lyra?: LyraSettings;
   helpdesk?: HelpdeskSettings;
