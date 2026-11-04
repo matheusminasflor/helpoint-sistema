@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Newspaper } from 'lucide-react';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { todayISO } from '@/lib/dates';
-import { capaDaHome } from '@/lib/jornal';
+import { maisRecentePrimeiro, noAr } from '@/lib/jornal';
 import { useLeituraDaNoticia, useNoticias } from '@/hooks/useJornal';
 
 /** A faixa roxa do topo do Início (proposta de 2026-11-04, Parte 1): a notícia que falta ler. Lida, some e fica nas Notícias do fim. */
@@ -11,8 +11,8 @@ export function NoticiaNovaNaHome() {
   const tenantPath = useTenantPath();
   const { data: noticias = [] } = useNoticias();
   const { nova } = useLeituraDaNoticia();
-  const { principal, seguintes } = capaDaHome(noticias, todayISO());
-  const novas = (principal ? [principal, ...seguintes] : seguintes).filter(nova);
+  // Inclui as Atualizações do sistema, que não entram na capa das Notícias: é aqui que quem não abre o Jornal as vê.
+  const novas = noticias.filter((n) => noAr(n, todayISO()) && nova(n)).sort(maisRecentePrimeiro);
   if (novas.length === 0) return null;
   const [n] = novas;
   return (

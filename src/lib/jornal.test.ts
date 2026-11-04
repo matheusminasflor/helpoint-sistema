@@ -1,9 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { capaDaHome, quandoFoi, trecho } from './jornal';
+import { ATUALIZACAO_DO_SISTEMA, capaDaHome, noAr, quandoFoi, trecho } from './jornal';
 
 const n = (id: string, extra: Partial<{ tipo: string; status: string; destaque: boolean; data_noticia: string; publicada_em: string; exibir_de: string; exibir_ate: string }> = {}) => ({
   id, status: 'publicada', destaque: false, data_noticia: '2026-10-01', publicada_em: '2026-10-01T10:00:00Z',
   exibir_de: null as string | null, exibir_ate: null as string | null, ...extra,
+});
+
+describe('noAr', () => {
+  const base = { id: 'x', tipo: ATUALIZACAO_DO_SISTEMA, data_noticia: '2026-10-01', exibir_de: null, exibir_ate: null, destaque: false, publicada_em: null };
+  it('a atualização do sistema publicada conta; rascunho e fora da janela não', () => {
+    expect(noAr({ ...base, status: 'publicada' }, '2026-10-05')).toBe(true);
+    expect(noAr({ ...base, status: 'rascunho' }, '2026-10-05')).toBe(false);
+    expect(noAr({ ...base, status: 'publicada', exibir_ate: '2026-10-04' }, '2026-10-05')).toBe(false);
+  });
 });
 
 describe('capaDaHome', () => {

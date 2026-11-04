@@ -56,8 +56,10 @@ export interface NoticiaParaHome {
 }
 
 /** `hoje` no formato AAAA-MM-DD (use `todayISO()`), para comparar com as datas do banco. */
-export const naHome = (n: NoticiaParaHome, hoje: string) =>
-  n.status === 'publicada' && n.tipo !== ATUALIZACAO_DO_SISTEMA && (!n.exibir_de || n.exibir_de <= hoje) && (!n.exibir_ate || n.exibir_ate >= hoje);
+export const noAr = (n: NoticiaParaHome, hoje: string) =>
+  n.status === 'publicada' && (!n.exibir_de || n.exibir_de <= hoje) && (!n.exibir_ate || n.exibir_ate >= hoje);
+
+export const naHome = (n: NoticiaParaHome, hoje: string) => noAr(n, hoje) && n.tipo !== ATUALIZACAO_DO_SISTEMA;
 
 /** Mais recente primeiro: o dia da notícia, e no mesmo dia a publicada por último. */
 export const maisRecentePrimeiro = (a: NoticiaParaHome, b: NoticiaParaHome) =>
