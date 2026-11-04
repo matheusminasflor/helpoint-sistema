@@ -7,12 +7,20 @@ import { somarDias } from '@/lib/ti-equipe';
 
 export interface Campanha { nome: string; investimento: number; alcance: number | null; ativa: boolean }
 
+/** Um post, reels ou story da semana com os números da Meta (o coletor grava; proposta de 2026-11-04). */
+export interface Publicacao {
+  id: string; tipo: 'FEED' | 'REELS' | 'STORY'; data: string; link: string | null; legenda: string | null;
+  alcance: number | null; visualizacoes: number | null; interacoes: number | null;
+}
+
 export interface LinhaRedes {
   semana: string; conta: string; posts: number | null; reels: number | null; stories: number | null; engajamento: number | null;
   novos_seguidores: number | null; quedas_seguidores: number | null; total_seguidores: number | null; visitas_perfil: number | null;
   // O tráfego pago da conta (20270212260000).
   investimento: number | null; alcance_pago: number | null; visitas_pagas: number | null; campanhas_ativas: number | null;
   campanhas: Campanha[] | null;
+  // Alcance, visualizações e cada publicação da semana (20270212290000).
+  alcance: number | null; visualizacoes: number | null; publicacoes: Publicacao[] | null;
 }
 
 export interface LinhaTrafego {
@@ -54,8 +62,32 @@ export interface NumerosDaConta {
   saldo: number | null;
   novos: number | null; perdidos: number | null; visitas: number | null; engajamento: number | null;
   feed: number | null; reels: number | null; stories: number | null;
+  /** Soma das semanas: a mesma pessoa alcançada em duas semanas conta duas vezes. */
+  alcance: number | null; visualizacoes: number | null;
+  /** Os 3 posts ou reels que mais alcançaram no período (empate: mais interações). */
+  destaques: Publicacao[];
+  /** Pessoas alcançadas por publicação, em média, em cada formato (só as publicações com número). */
+  formatos: { tipo: Publicacao['tipo']; quantas: number; media: number | null }[];
   investimento: number | null; alcancePago: number | null; visitasPagas: number | null; custoPorVisita: number | null;
   campanhasAtivas: number | null; campanhas: Campanha[];
+}
+
+/** As publicações das semanas, cada uma uma vez (a mesma pode vir em duas buscas). */
+function publicacoesDas(linhas: LinhaRedes[]): Publicacao[] {
+  return [...new Map(linhas.flatMap((l) => l.publicacoes ?? []).map((p) => [p.id, p])).values()];
+}
+
+export function melhoresPosts(pubs: Publicacao[], n = 3): Publicacao[] {
+  return pubs.filter((p) => p.tipo !== 'STORY' && p.alcance !== null)
+    .sort((a, b) => (b.alcance ?? 0) - (a.alcance ?? 0) || (b.interacoes ?? 0) - (a.interacoes ?? 0))
+    .slice(0, n);
+}
+
+export function alcancePorFormato(pubs: Publicacao[]): NumerosDaConta['formatos'] {
+  return (['REELS', 'FEED', 'STORY'] as const).map((tipo) => {
+    const com = pubs.filter((p) => p.tipo === tipo && p.alcance !== null);
+    return { tipo, quantas: com.length, media: com.length ? Math.round(com.reduce((s, p) => s + (p.alcance ?? 0), 0) / com.length) : null };
+  });
 }
 
 export function numerosDaConta(linhas: LinhaRedes[], conta: string, p: Intervalo): NumerosDaConta {
@@ -78,6 +110,8 @@ export function numerosDaConta(linhas: LinhaRedes[], conta: string, p: Intervalo
     visitas: somaOuNada(no, 'visitas_perfil'),
     engajamento: engs.length ? engs.reduce((s, x) => s + Number(x), 0) / engs.length : null,
     feed: somaOuNada(no, 'posts'), reels: somaOuNada(no, 'reels'), stories: somaOuNada(no, 'stories'),
+    alcance: somaOuNada(no, 'alcance'), visualizacoes: somaOuNada(no, 'visualizacoes'),
+    destaques: melhoresPosts(publicacoesDas(no)), formatos: alcancePorFormato(publicacoesDas(no)),
     investimento, alcancePago: somaOuNada(no, 'alcance_pago'), visitasPagas, custoPorVisita: dividir(investimento, visitasPagas),
     campanhasAtivas: ultimo(no, 'campanhas_ativas'),
     campanhas: [...campanhas.values()].sort((a, b) => b.investimento - a.investimento),

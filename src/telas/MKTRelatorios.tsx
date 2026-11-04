@@ -25,9 +25,10 @@ import { PatternsAnalysis } from '@/components/ti/PatternsAnalysis';
 import { CategoriasDosChamados } from '@/components/ti/CategoriasDosChamados';
 import { LinhaAgendaEAjuda } from '@/components/dashboard/AjudaAOutrosSetoresKPI';
 import { OutrosIndicadoresDoMarketing } from '@/components/mkt/OutrosIndicadoresDoMarketing';
-import { LancamentoDaSemana, LancarSemana, LeadsEInvestimento, NumerosDoTopo, RedesSociais, TrafegoPorConta } from '@/components/mkt/RedesETrafego';
+import { LancamentoDaSemana, LancarSemana, LeadsEInvestimento, NumerosDoTopo, QuemSegue, RedesSociais, TrafegoPorConta } from '@/components/mkt/RedesETrafego';
 import { useIndicadoresDoMarketing } from '@/hooks/useIndicadoresDoMarketing';
-import { useRedesETrafego } from '@/hooks/useRedesETrafego';
+import { usePublicoDoInstagram, useRedesETrafego } from '@/hooks/useRedesETrafego';
+import { publicoDoMes } from '@/lib/publico-do-instagram';
 import { comASemanaEmAndamento, fraseDasRedes, painelDasRedes, semanaASemana, ultimasSemanas } from '@/lib/redes-e-trafego';
 import { ArtistasDoMes, ArtistasMesAMes, EsperandoAsLigacoes } from '@/components/mkt/ArtistasNosIndicadores';
 import { DicaDoGrafico } from '@/components/dashboard/DicaDoGrafico';
@@ -131,6 +132,8 @@ export default function MKTRelatorios() {
   const semanal = useRedesETrafego(dasSemanas, anteriorISO);
   const painel = painelDasRedes(semanal.redes, semanal.trafego, dasSemanas, anteriorISO);
   const grafico = semanaASemana(semanal.redes, semanal.trafego, ultimasSemanas(intervaloDaTela.ate, 5), painel.contas.map((c) => c.atual.conta));
+  const { data: linhasDoPublico = [] } = usePublicoDoInstagram(intervaloDaTela.ate);
+  const publico = publicoDoMes(linhasDoPublico, painel.contas.map((c) => c.atual.conta), intervaloDaTela.ate);
   const podeLancar = perfil.pode('marketing', 'reports', 'lancar');
   const [lancando, setLancando] = useState(false);
 
@@ -275,13 +278,26 @@ export default function MKTRelatorios() {
   const r$ = (v: number | null) => (v === null ? '—' : formatBRL(v));
   const comAnterior = (a: string, b: string) => `${a} (era ${b})`;
   const tabelasDoPdf: TabelaDoPDF[] = [
-    { secao: 'social', titulo: 'REDES SOCIAIS', cabecalho: ['Conta', 'Seguidores', 'Saldo', 'Visitas', 'Engajamento', 'Feed/Reels/Stories'],
+    { secao: 'social', titulo: 'REDES SOCIAIS', cabecalho: ['Conta', 'Seguidores', 'Saldo', 'Visitas', 'Alcance', 'Visualizações', 'Engajamento', 'Feed/Reels/Stories'],
       linhas: painel.contas.map(({ atual: a, anterior: b }) => [
         a.conta, n(a.seguidores), a.saldo === null ? '—' : comAnterior(a.saldo > 0 ? `+${a.saldo}` : `${a.saldo}`, b.saldo === null ? '—' : `${b.saldo}`),
-        comAnterior(n(a.visitas), n(b.visitas)), a.engajamento === null ? '—' : `${a.engajamento.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%`,
+        comAnterior(n(a.visitas), n(b.visitas)), n(a.alcance), n(a.visualizacoes),
+        a.engajamento === null ? '—' : `${a.engajamento.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%`,
         `${n(a.feed)} / ${n(a.reels)} / ${n(a.stories)}`,
       ]),
-      larguras: [0.16, 0.14, 0.18, 0.2, 0.14, 0.18] },
+      larguras: [0.12, 0.11, 0.14, 0.15, 0.11, 0.12, 0.11, 0.14] },
+    { secao: 'social', titulo: 'MELHORES POSTS (ALCANCE)', cabecalho: ['Conta', 'Post', 'Formato', 'Pessoas alcançadas'],
+      linhas: painel.contas.flatMap(({ atual: a }) => a.destaques.map((p) => [
+        a.conta, p.legenda ?? 'Sem legenda', p.tipo === 'REELS' ? 'Reels' : 'Feed', n(p.alcance),
+      ])),
+      larguras: [0.14, 0.56, 0.12, 0.18] },
+    ...(publico.length ? [{ secao: 'social' as const, titulo: 'QUEM SEGUE', cabecalho: ['Conta', 'Mulheres', 'No Brasil', 'Idade', 'Mais online'],
+      linhas: publico.map((p) => [
+        p.conta, p.mulheres === null ? '—' : `${p.mulheres.toLocaleString('pt-BR')}%`, p.brasil === null ? '—' : `${p.brasil.toLocaleString('pt-BR')}%`,
+        p.faixas.map((f) => `${f.nome}: ${f.pct.toLocaleString('pt-BR')}%`).join(' · ') || '—',
+        p.horarios.map((h) => `${['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'][h.dia]} ${h.hora}h`).join(' · ') || '—',
+      ]),
+      larguras: [0.14, 0.12, 0.12, 0.32, 0.3] }] : []),
     { secao: 'social', titulo: 'TRÁFEGO PAGO POR CONTA', cabecalho: ['Conta', 'Investimento', 'Alcance', 'Visitas', 'Custo por visita'],
       linhas: [
         ...painel.contas.map(({ atual: a, anterior: b }) => [a.conta, comAnterior(r$(a.investimento), r$(b.investimento)), n(a.alcancePago), n(a.visitasPagas), r$(a.custoPorVisita)]),
@@ -370,6 +386,7 @@ export default function MKTRelatorios() {
           <LancamentoDaSemana redes={semanal.redes} trafego={semanal.trafego} ate={intervaloDaTela.ate} podeLancar={podeLancar} onLancar={() => setLancando(true)} />
           <NumerosDoTopo painel={painel} />
           <RedesSociais painel={painel} grafico={grafico} />
+          <QuemSegue resumos={publico} />
           <TrafegoPorConta painel={painel} />
           <LeadsEInvestimento painel={painel} grafico={grafico} />
 
@@ -463,6 +480,7 @@ export default function MKTRelatorios() {
           ) },
           // Os lançados à mão entram (dono, 2026-11-03: "em apresentação não aparece os indicadores lançados manualmente").
           { titulo: 'Redes sociais', conteudo: <RedesSociais painel={painel} grafico={grafico} /> },
+          ...(publico.length ? [{ titulo: 'Quem segue', conteudo: <QuemSegue resumos={publico} /> }] : []),
           { titulo: 'Tráfego pago por conta', conteudo: <TrafegoPorConta painel={painel} /> },
           { titulo: 'Leads e investimento', conteudo: <LeadsEInvestimento painel={painel} grafico={grafico} /> },
           ...(temArtistas ? [{ titulo: 'Artistas', conteudo: artistasDoPeriodo }] : []),

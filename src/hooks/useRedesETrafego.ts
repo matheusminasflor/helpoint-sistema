@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { unwrap } from '@/lib/supabase-result';
 import { somarDias } from '@/lib/ti-equipe';
 import type { Intervalo, LinhaRedes, LinhaTrafego } from '@/lib/redes-e-trafego';
+import type { LinhaPublico } from '@/lib/publico-do-instagram';
 
 export const CHAVE_DAS_SEMANAS = 'mkt-semanal';
 
@@ -26,6 +27,19 @@ export function useRedesETrafego(atual: Intervalo, anterior: Intervalo) {
   const redes = useSemanas<LinhaRedes>('mkt_redes_semana', de, ate);
   const trafego = useSemanas<LinhaTrafego>('mkt_trafego_semana', de, ate);
   return { redes: redes.data ?? [], trafego: trafego.data ?? [], carregando: redes.isLoading || trafego.isLoading };
+}
+
+/** Quem segue cada conta (`mkt_publico_ig`): os últimos 12 meses até o do fim do período; a tela usa o mais novo. */
+export function usePublicoDoInstagram(ate: string) {
+  const { tenantId } = useAuth();
+  const mes = `${ate.slice(0, 7)}-01`;
+  return useQuery({
+    queryKey: [CHAVE_DAS_SEMANAS, 'mkt_publico_ig', tenantId, mes],
+    enabled: !!tenantId && !!ate,
+    queryFn: async (): Promise<LinhaPublico[]> =>
+      (unwrap(await supabase.from('mkt_publico_ig' as never).select('conta, mes, genero, idade, paises, cidades, online, coletado_em')
+        .lte('mes', mes).order('mes', { ascending: false }).limit(36)) ?? []) as unknown as LinhaPublico[],
+  });
 }
 
 /** As linhas de uma semana e da anterior a ela, para o formulário de lançamento. */

@@ -4,14 +4,16 @@
 // grava em `mkt_redes_semana` / `mkt_trafego_semana`, as mesmas tabelas do lançamento à mão.
 //
 // Quem chama:
-//   · o pg_cron, todo dia às 06h (Brasília), com a chave de serviço: todas as empresas ligadas; a semana em andamento,
-//     e na segunda-feira também a que acabou (é quando ela fecha);
+//   · o pg_cron, a cada 3 horas (20270212290000; era às 06h), com a chave de serviço: todas as empresas ligadas; a semana
+//     em andamento, e na segunda-feira também a que acabou (a da meia-noite fecha o total de seguidores do domingo);
+//     o público do mês (quem segue, quando fica online) só na passada das 06h;
 //   · o botão "Buscar agora" dos Indicadores (gestor ou acima): a empresa de quem clicou, esta semana e a anterior.
 //
 // Regras:
 //   · o coletor só grava número que a Meta deu: nunca apaga o que foi lançado à mão (campo nulo não sobrescreve);
 //   · seguidores (total) só na semana em andamento, e na anterior só na coleta de segunda (é o total do domingo);
-//   · stories: a Meta só mostra os das últimas 24 h, então a coleta diária guarda os dias vistos em `coleta`;
+//   · stories: a Meta só mostra os das últimas 24 h, então cada coleta guarda os dias vistos em `coleta` e, em
+//     `publicacoes`, o maior alcance que viu de cada story (proposta de 2026-11-04);
 //   · novos e perdidos vêm de `follows_and_unfollows`, quando a Meta entrega (contas com 100+ seguidores).
 // ponytail: Brasília é UTC−3 fixo (sem horário de verão desde 2019); se voltar, trocar por Intl com o fuso.
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
@@ -79,12 +81,64 @@ async function permissoesDaChave(token: string): Promise<string> {
 
 const semNulos = (o: Record<string, unknown>) => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== null && v !== undefined));
 
+type Tipo = 'FEED' | 'REELS' | 'STORY';
+/** Uma publicação da semana com os números da Meta (`mkt_redes_semana.publicacoes`). */
+interface Publicacao {
+  id: string; tipo: Tipo; data: string; link: string | null; legenda: string | null;
+  alcance: number | null; visualizacoes: number | null; interacoes: number | null;
+}
+type Midia = { id: string; media_product_type?: string; timestamp: string; permalink?: string; caption?: string };
+type InsightDoPost = { name: string; values?: { value?: number }[]; total_value?: { value?: number } };
+
+/** Alcance, visualizações e interações de um post, reels ou story; o que a Meta recusar fica nulo. */
+async function numerosDoPost(token: string, m: Midia, tipo: Tipo): Promise<Publicacao> {
+  const base: Publicacao = {
+    id: m.id, tipo, data: m.timestamp, link: m.permalink ?? null,
+    legenda: m.caption ? m.caption.split('\n')[0].slice(0, 90) : null, alcance: null, visualizacoes: null, interacoes: null,
+  };
+  // Se a Meta recusar visualizações nesse tipo de publicação, a segunda tentativa salva o alcance.
+  for (const metricas of ['reach,views,total_interactions', 'reach,total_interactions']) {
+    try {
+      const r = await graphFetch<{ data: InsightDoPost[] }>(token, `${m.id}/insights?metric=${metricas}`);
+      const v = new Map((r.data ?? []).map((i) => [i.name, i.values?.[0]?.value ?? i.total_value?.value ?? null]));
+      return { ...base, alcance: v.get('reach') ?? null, visualizacoes: v.get('views') ?? null, interacoes: v.get('total_interactions') ?? null };
+    } catch (e) {
+      console.warn(`insights do post ${m.id} (${metricas}):`, e instanceof Error ? e.message : e);
+    }
+  }
+  return base;
+}
+
+/**
+ * As publicações já guardadas e as de agora: o story que saiu do ar fica como estava, e de cada story vale o maior alcance
+ * visto (a Meta só mostra o número enquanto ele está no ar); post e reels ficam com o número mais novo.
+ */
+function juntarPublicacoes(antes: Publicacao[], agora: Publicacao[]): Publicacao[] {
+  const porId = new Map(antes.map((p) => [p.id, p]));
+  for (const p of agora) {
+    const v = porId.get(p.id);
+    const maior = (a: number | null, b: number | null) => (a === null ? b : b === null ? a : Math.max(a, b));
+    porId.set(p.id, v && p.tipo === 'STORY'
+      ? { ...p, alcance: maior(v.alcance, p.alcance), visualizacoes: maior(v.visualizacoes, p.visualizacoes) }
+      : { ...p, alcance: p.alcance ?? v?.alcance ?? null, visualizacoes: p.visualizacoes ?? v?.visualizacoes ?? null, interacoes: p.interacoes ?? v?.interacoes ?? null });
+  }
+  return [...porId.values()].sort((a, b) => a.data.localeCompare(b.data));
+}
+
 /** Os números de uma conta do Instagram numa semana. */
 async function doInstagram(token: string, ig: Conta, s: Semana, agora: number) {
   const tempo = `period=day&metric_type=total_value&since=${seg(s.desde)}&until=${seg(s.ate)}`;
   const valores = new Map<string, number>();
   const ins = await graphFetch<{ data: Insight[] }>(token, `${ig.id}/insights?metric=profile_views,total_interactions,reach&${tempo}`);
   for (const i of ins.data ?? []) if (typeof i.total_value?.value === 'number') valores.set(i.name, i.total_value.value);
+  // Visualizações à parte: a Meta marca a métrica como "em desenvolvimento" e, se recusar, o resto não pode cair junto.
+  try {
+    const v = await graphFetch<{ data: Insight[] }>(token, `${ig.id}/insights?metric=views&${tempo}`);
+    const n = v.data?.[0]?.total_value?.value;
+    if (typeof n === 'number') valores.set('views', n);
+  } catch (e) {
+    console.warn(`views de ${ig.nome}:`, e instanceof Error ? e.message : e);
+  }
 
   let novos: number | null = null, perdidos: number | null = null;
   try {
@@ -98,10 +152,17 @@ async function doInstagram(token: string, ig: Conta, s: Semana, agora: number) {
   }
 
   // Os posts da semana: os 50 mais recentes cobrem uma semana com folga.
-  const midia = await graphFetch<{ data: { media_product_type?: string; timestamp: string }[] }>(token, `${ig.id}/media?fields=media_product_type,timestamp&limit=50`);
-  const daSemana = (midia.data ?? []).filter((m) => { const t = Date.parse(m.timestamp); return t >= s.desde && t < s.ate; });
-  const stories = await graphFetch<{ data: { timestamp: string }[] }>(token, `${ig.id}/stories?fields=timestamp&limit=100`);
+  const campos = 'id,media_product_type,timestamp,permalink,caption';
+  const midia = await graphFetch<{ data: Midia[] }>(token, `${ig.id}/media?fields=${campos}&limit=50`);
+  const naSemana = (m: Midia) => { const t = Date.parse(m.timestamp); return t >= s.desde && t < s.ate; };
+  const daSemana = (midia.data ?? []).filter(naSemana);
+  const stories = await graphFetch<{ data: Midia[] }>(token, `${ig.id}/stories?fields=${campos}&limit=100`);
   const diasDeStories = [...new Set((stories.data ?? []).map((x) => diaBR(Date.parse(x.timestamp))))];
+  const publicacoes = await Promise.all([
+    ...daSemana.filter((m) => m.media_product_type === 'FEED' || m.media_product_type === 'REELS')
+      .map((m) => numerosDoPost(token, m, m.media_product_type as Tipo)),
+    ...(stories.data ?? []).filter(naSemana).map((m) => numerosDoPost(token, m, 'STORY')),
+  ]);
 
   const perfil = await graphFetch<{ followers_count?: number }>(token, `${ig.id}?fields=followers_count`);
   const alcance = valores.get('reach') ?? null;
@@ -110,12 +171,59 @@ async function doInstagram(token: string, ig: Conta, s: Semana, agora: number) {
     posts: daSemana.filter((m) => m.media_product_type === 'FEED').length,
     reels: daSemana.filter((m) => m.media_product_type === 'REELS').length,
     visitas_perfil: valores.get('profile_views') ?? null,
+    alcance, visualizacoes: valores.get('views') ?? null,
     engajamento: alcance && interacoes !== null ? Math.round((interacoes / alcance) * 10000) / 100 : null,
     novos_seguidores: novos, quedas_seguidores: perdidos,
     // O total de agora é o do fim da semana em andamento — ou o do domingo, na coleta de segunda.
     total_seguidores: (s.ate >= agora || s.fechando) ? perfil.followers_count ?? null : null,
-    diasDeStories,
+    diasDeStories, publicacoes,
   };
+}
+
+type Contagem = Record<string, number>;
+/** Uma quebra de `follower_demographics` (gênero, idade, país ou cidade) do mês: { valor: seguidores }. */
+async function demografia(token: string, ig: Conta, quebra: string): Promise<Contagem | null> {
+  const r = await graphFetch<{ data: Insight[] }>(token,
+    `${ig.id}/insights?metric=follower_demographics&period=lifetime&timeframe=this_month&metric_type=total_value&breakdown=${quebra}`);
+  const linhas = r.data?.[0]?.total_value?.breakdowns?.[0]?.results ?? [];
+  return linhas.length ? Object.fromEntries(linhas.map((l) => [l.dimension_values[0], l.value])) : null;
+}
+
+/**
+ * Quando os seguidores ficam online, na média dos últimos 30 dias: { dia da semana (0 = domingo): { hora: seguidores } },
+ * em horário de Brasília. A Meta conta o dia e a hora no fuso do Pacífico; `end_time` é a meia-noite (em UTC) que fecha o
+ * dia, e é dela que sai o deslocamento (7 h no horário de verão de lá, 8 h fora dele).
+ */
+async function online(token: string, ig: Conta, agora: number): Promise<Record<string, Contagem> | null> {
+  const r = await graphFetch<{ data: { values?: { value?: Contagem; end_time: string }[] }[] }>(token,
+    `${ig.id}/insights?metric=online_followers&period=lifetime&since=${seg(agora - 29 * 24 * HORA)}&until=${seg(agora)}`);
+  const soma: Record<string, Record<string, { total: number; n: number }>> = {};
+  for (const dia of r.data?.[0]?.values ?? []) {
+    if (!dia.value) continue;
+    const inicioDoDia = Date.parse(dia.end_time) - 24 * HORA;
+    for (const [h, n] of Object.entries(dia.value)) {
+      const br = new Date(inicioDoDia + Number(h) * HORA - 3 * HORA);
+      const d = String(br.getUTCDay()), hora = String(br.getUTCHours());
+      const c = ((soma[d] ??= {})[hora] ??= { total: 0, n: 0 });
+      c.total += n; c.n++;
+    }
+  }
+  const dias = Object.entries(soma);
+  return dias.length
+    ? Object.fromEntries(dias.map(([d, hs]) => [d, Object.fromEntries(Object.entries(hs).map(([h, c]) => [h, Math.round(c.total / c.n)]))]))
+    : null;
+}
+
+/** Quem segue a conta no mês. O que a Meta recusar fica nulo; só o "online" falha calado (saiu da documentação dela). */
+async function doPublico(token: string, ig: Conta, agora: number) {
+  const [genero, idade, paises, cidades] = await Promise.all(['gender', 'age', 'country', 'city'].map((q) => demografia(token, ig, q)));
+  let quando: Record<string, Contagem> | null = null;
+  try {
+    quando = await online(token, ig, agora);
+  } catch (e) {
+    console.warn(`online_followers de ${ig.nome}:`, e instanceof Error ? e.message : e);
+  }
+  return { genero, idade, paises, cidades, online: quando };
 }
 
 const visitasDasAcoes = (acoes: Acao[] | undefined) => {
@@ -179,7 +287,7 @@ async function dosAnuncios(token: string, act: Conta, s: Semana, instagrams: Map
   };
 }
 
-async function coletarEmpresa(tenantId: string, semanas: Semana[], agora: number) {
+async function coletarEmpresa(tenantId: string, semanas: Semana[], agora: number, comPublico: boolean) {
   const admin = adminClient();
   const { data: lig, error: e1 } = await admin.from('mkt_meta_ligacao').select('contas').eq('tenant_id', tenantId).maybeSingle();
   if (e1) throw e1;
@@ -209,15 +317,17 @@ async function coletarEmpresa(tenantId: string, semanas: Semana[], agora: number
       const conta = nomeDaConta(ig.nome);
       try {
         const n = await doInstagram(token, ig, s, agora);
-        const { data: atual, error } = await admin.from('mkt_redes_semana').select('coleta')
+        const { data: atual, error } = await admin.from('mkt_redes_semana').select('coleta, publicacoes')
           .eq('tenant_id', tenantId).eq('semana', s.domingo).eq('conta', conta).maybeSingle();
         if (error) throw error;
-        const vistos = new Set<string>(((atual as { coleta?: { stories_dias?: string[] } } | null)?.coleta?.stories_dias) ?? []);
+        const antes = atual as { coleta?: { stories_dias?: string[] }; publicacoes?: Publicacao[] | null } | null;
+        const vistos = new Set<string>(antes?.coleta?.stories_dias ?? []);
         const inicio = somarDias(s.domingo, -6);
-        const { diasDeStories, ...numeros } = n;
+        const { diasDeStories, publicacoes, ...numeros } = n;
         for (const d of diasDeStories) if (d >= inicio && d <= s.domingo) vistos.add(d);
         const { error: e } = await admin.from('mkt_redes_semana').upsert(semNulos({
           tenant_id: tenantId, semana: s.domingo, conta, ...numeros,
+          publicacoes: juntarPublicacoes(antes?.publicacoes ?? [], publicacoes),
           stories: vistos.size || null, coleta: { stories_dias: [...vistos].sort(), em: new Date(agora).toISOString() },
         }), { onConflict: 'tenant_id,semana,conta' });
         if (e) throw e;
@@ -247,6 +357,21 @@ async function coletarEmpresa(tenantId: string, semanas: Semana[], agora: number
       }
     }
   }
+  if (comPublico) {
+    const mes = `${diaBR(agora).slice(0, 7)}-01`;
+    for (const ig of instagrams) {
+      const conta = nomeDaConta(ig.nome);
+      try {
+        const p = await doPublico(token, ig, agora);
+        const { error } = await admin.from('mkt_publico_ig').upsert(semNulos({
+          tenant_id: tenantId, conta, mes, ...p, coletado_em: new Date(agora).toISOString(),
+        }), { onConflict: 'tenant_id,conta,mes' });
+        if (error) throw error;
+      } catch (e) {
+        erros.push(`${conta} (público): ${emPortugues(e instanceof Error ? e.message : String(e))}`);
+      }
+    }
+  }
   const semAnuncios = anuncios.length ? null : 'as contas de anúncios não vieram na ligação; conecte de novo marcando a MF INTERNO - Marketing';
   const { error } = await admin.from('mkt_meta_ligacao').update({
     // Uma semana e a anterior dão o mesmo erro: aparece uma vez só.
@@ -273,12 +398,16 @@ serve(async (req) => {
 
     if (papel === 'service_role') {
       const segunda = new Date(`${hoje}T12:00:00Z`).getUTCDay() === 1;
-      const semanas = [semana(domingo, agora, false), ...(segunda ? [semana(anterior, agora, true)] : [])];
+      const horaBR = new Date(agora - 3 * HORA).getUTCHours();
+      // Na segunda, a semana que acabou é buscada de novo o dia todo (a Meta fecha os números com atraso), mas o total de
+      // seguidores dela só sai da passada da meia-noite, que é o do domingo.
+      const semanas = [semana(domingo, agora, false), ...(segunda ? [semana(anterior, agora, horaBR < 3)] : [])];
+      const comPublico = horaBR >= 6 && horaBR < 9;
       const { data: ligacoes, error } = await admin.from('mkt_meta_ligacao').select('tenant_id');
       if (error) throw error;
       const resultados = [];
       for (const l of (ligacoes ?? []) as { tenant_id: string }[]) {
-        try { resultados.push(await coletarEmpresa(l.tenant_id, semanas, agora)); } catch (e) { resultados.push({ tenantId: l.tenant_id, erro: String(e) }); }
+        try { resultados.push(await coletarEmpresa(l.tenant_id, semanas, agora, comPublico)); } catch (e) { resultados.push({ tenantId: l.tenant_id, erro: String(e) }); }
       }
       return json({ ok: true, resultados });
     }
@@ -296,7 +425,7 @@ serve(async (req) => {
     const tenantId = (perfil as { tenant_id: string } | null)?.tenant_id;
     if (!tenantId) return json({ error: 'sua conta não está ligada a nenhuma empresa' }, 403);
     // A semana anterior entra sem o total de seguidores (o de agora não é o do domingo dela).
-    return json(await coletarEmpresa(tenantId, [semana(domingo, agora, false), semana(anterior, agora, false)], agora));
+    return json(await coletarEmpresa(tenantId, [semana(domingo, agora, false), semana(anterior, agora, false)], agora, true));
   } catch (e) {
     console.error('mkt-meta-coletar:', e);
     return json({ error: e instanceof Error ? e.message : String(e) }, 500);

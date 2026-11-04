@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { comASemanaEmAndamento, faltaLancar, fraseDasRedes, numerosDaConta, numerosDoTrafego, painelDasRedes, ultimasSemanas, type LinhaRedes, type LinhaTrafego } from './redes-e-trafego';
+import { alcancePorFormato, comASemanaEmAndamento, faltaLancar, fraseDasRedes, melhoresPosts, type Publicacao, numerosDaConta, numerosDoTrafego, painelDasRedes, ultimasSemanas, type LinhaRedes, type LinhaTrafego } from './redes-e-trafego';
 
 const vazia: Omit<LinhaRedes, 'semana' | 'conta'> = {
   posts: null, reels: null, stories: null, engajamento: null, novos_seguidores: null, quedas_seguidores: null, total_seguidores: null,
-  visitas_perfil: null, investimento: null, alcance_pago: null, visitas_pagas: null, campanhas_ativas: null, campanhas: null,
+  visitas_perfil: null, alcance: null, visualizacoes: null, publicacoes: null, investimento: null, alcance_pago: null, visitas_pagas: null, campanhas_ativas: null, campanhas: null,
 };
 const r = (semana: string, conta: string, x: Partial<LinhaRedes>): LinhaRedes => ({ ...vazia, semana, conta, ...x });
 const t = (semana: string, x: Partial<LinhaTrafego>): LinhaTrafego => ({
@@ -67,6 +67,35 @@ describe('ultimasSemanas', () => {
   it('termina no domingo da semana do fim do período', () => {
     expect(ultimasSemanas('2026-11-01', 3)).toEqual(['2026-10-18', '2026-10-25', '2026-11-01']);
     expect(ultimasSemanas('2026-11-03', 2)).toEqual(['2026-11-01', '2026-11-08']);
+  });
+});
+
+// A semana de 26/10 a 01/11 da @minasflor, como o Meta Business Suite mostra (alcance de cada post).
+const pub = (id: string, tipo: Publicacao['tipo'], alcance: number | null, interacoes: number | null = null): Publicacao =>
+  ({ id, tipo, data: '2026-10-30T13:00:00+0000', link: null, legenda: id, alcance, visualizacoes: null, interacoes });
+const SEMANA_IG = [
+  pub('resultado', 'FEED', 415, 34), pub('ojon', 'REELS', 354, 5), pub('tonalizante', 'FEED', 261, 7),
+  pub('keratin', 'FEED', null), pub('story1', 'STORY', 120), pub('story2', 'STORY', 130), pub('empate', 'FEED', 261, 20),
+];
+
+describe('melhores posts e formatos', () => {
+  it('os 3 que mais alcançaram, sem story nem post sem número; empate vai para quem interagiu mais', () => {
+    expect(melhoresPosts(SEMANA_IG).map((p) => p.id)).toEqual(['resultado', 'ojon', 'empate']);
+  });
+  it('alcance médio por formato conta só as publicações com número', () => {
+    expect(alcancePorFormato(SEMANA_IG)).toEqual([
+      { tipo: 'REELS', quantas: 1, media: 354 }, { tipo: 'FEED', quantas: 3, media: 312 }, { tipo: 'STORY', quantas: 2, media: 125 },
+    ]);
+  });
+  it('a mesma publicação em duas semanas do período conta uma vez', () => {
+    const linhas = [
+      r('2026-10-25', '@minasflor', { publicacoes: [pub('a', 'FEED', 100)] }),
+      r('2026-11-01', '@minasflor', { publicacoes: [pub('a', 'FEED', 100), pub('b', 'REELS', 50)], alcance: 19200, visualizacoes: 43900 }),
+    ];
+    const n = numerosDaConta(linhas, '@minasflor', { de: '2026-10-19', ate: '2026-11-01' });
+    expect(n.destaques.map((p) => p.id)).toEqual(['a', 'b']);
+    expect(n.formatos.find((f) => f.tipo === 'FEED')).toEqual({ tipo: 'FEED', quantas: 1, media: 100 });
+    expect([n.alcance, n.visualizacoes]).toEqual([19200, 43900]);
   });
 });
 

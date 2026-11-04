@@ -75,3 +75,23 @@ Estes números passam a vir sozinhos; o lançamento à mão continua possível p
   segunda. Sem a conta de anúncios na ligação, só as redes chegam: conecte de novo marcando **MF INTERNO - Marketing**.
 - O tráfego de outubro e da semana de 26/10 a 01/11 por conta veio do Gerenciador de Anúncios (campanhas
   "MINASFLOR – …", "MF.PRO – …" e "25 ANOS MINASFLOR"); o @by.mf não teve anúncio no período.
+
+## Versão 4 (2026-11-04) — mais do Instagram
+
+Proposta aprovada em https://claude.ai/artifact/38uLvZFcbX9kXD2efuQxqZ. Tudo vem do coletor; nada novo se lança à mão.
+A conferência é sempre direto na Meta (Meta Business Suite › Insights), não no Reportei.
+
+| Na tela | De onde vem | Onde conferir |
+|---|---|---|
+| Alcance e Visualizações (cartão da conta) | insights da conta, `reach` e `views` | Insights › Resultados |
+| Melhores posts (3 por conta, pelo alcance) | insights de cada post e reels | Insights › Conteúdo, coluna Alcance |
+| Alcance médio por publicação (reels, feed, stories) | idem; stories com o maior alcance visto enquanto no ar | Insights › Conteúdo |
+| Quem segue (gênero, idade, Brasil, cidades) | `follower_demographics` do mês, em `mkt_publico_ig` | Insights › Público › Dados demográficos |
+| Mais online (dia e hora, Brasília) | `online_followers`, últimos 30 dias, se a Meta entregar | Insights › Público |
+
+- O coletor passa **a cada 3 horas** (era às 6h): é o que pega o alcance de cada story antes de ele sair do ar. O
+  público do mês é buscado uma vez por dia (passada das 6h) e no "Buscar agora".
+- Na segunda, a semana que acabou é buscada o dia todo (a Meta fecha os números com atraso); o total de seguidores dela
+  sai só da passada da meia-noite.
+- Ficaram de fora, a pedido do dono: **mensagens no Direct** e **cliques no link da bio** — a Meta não entrega esses
+  números a sistemas de fora (2026-11-04).
