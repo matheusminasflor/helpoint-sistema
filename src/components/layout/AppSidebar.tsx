@@ -2,14 +2,14 @@ import { useState, useEffect } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   Ticket, BookOpen, HardDrive, Monitor,
-  BarChart3, Settings, LogOut, Plus, PieChart,
+  BarChart3, Settings, Plus, PieChart,
   Inbox, FileText, Key, Wrench, Lightbulb, Megaphone,
   Calendar, Share2, Sparkles, Truck, Home, Target, FolderKanban,
   ShieldCheck, MessageSquare, ChevronDown, ChevronRight, Search, Users,
   CheckCircle2, Receipt, HeartPulse, FolderLock, Palette,
   Gift, FileSignature, Banknote, CalendarOff, PanelLeftClose, PanelLeftOpen, X, Wallet, TrendingUp, PiggyBank, FileBarChart,
   ShoppingCart, Package, Boxes, Handshake, GraduationCap, KanbanSquare, PackageCheck, Factory, Building2, Upload,
-  IdCard, ClipboardList, Gauge, Briefcase, Clock, BookMarked, Newspaper, Store, ListChecks, Star, PlugZap } from 'lucide-react';
+  IdCard, ClipboardList, Gauge, Briefcase, Clock, BookMarked, Newspaper, Store, ListChecks, Star, PlugZap, Building } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useVisibleModules } from '@/hooks/useVisibleModules';
@@ -37,7 +37,6 @@ import { estaPausada } from '@/config/telas-pausadas';
 import { useTelasEmBreve } from '@/hooks/useMeuRHLigado';
 import { useMeusSetores } from '@/hooks/useMeusSetores';
 import { separarOMenu } from '@/lib/menu-dos-meus-setores';
-import { toast } from 'sonner';
 
 
 /* ── Menu definitions ── */
@@ -268,19 +267,22 @@ const inicioMenuItems = (showPortal: boolean): MenuItem[] => ([
   { to: '/meus', icon: Inbox, label: 'Minhas solicitações', title: 'Tudo o que você pediu, com quem está e o que falta' },
   // Rotinas do dia (dono, 2026-10-30): o cadastro; marcar é no próprio Início.
   { to: '/rotinas', icon: ListChecks, label: 'Rotinas', title: 'O que se repete no seu dia: manhã, tarde e fim do dia' },
-  { to: '/meu-rh', icon: Users, label: 'Meu RH' },
   { to: '/agenda', icon: Calendar, label: 'Agenda' },
-  { to: '/meus-treinamentos', icon: GraduationCap, label: 'Meus treinamentos', title: 'As turmas em que você está inscrito e as horas que já concluiu' },
   { to: '/metas', icon: Target, label: 'Metas', title: 'Objetivos da empresa e o que se mede embaixo deles' },
   { to: '/projetos', icon: FolderKanban, label: 'Projetos', title: 'Projetos por setor: briefing, cronograma e as suas tarefas' },
-  { to: '/chat', icon: MessageSquare, label: 'Chat', title: 'Conversa da equipe, por canal' },
-  { to: '/diretrizes', icon: BookMarked, label: 'Diretrizes', title: 'As diretrizes de todos os setores que você pode ler' },
+  { to: '/meus-treinamentos', icon: GraduationCap, label: 'Treinamentos', title: 'As turmas em que você está inscrito e as horas que já concluiu' },
+  { to: '/meu-rh', icon: Users, label: 'Meu RH' },
   // "Jornal" → "Notícias" (dono, 2026-10-28); a rota continua /jornal.
   { to: '/jornal', icon: Newspaper, label: 'Notícias', title: 'Notícias da empresa: avisos, novos colaboradores, feriados e festas' },
+  { to: '/chat', icon: MessageSquare, label: 'Chat', title: 'Conversa da equipe, por canal' },
+  { to: '/diretrizes', icon: BookMarked, label: 'Diretrizes', title: 'As diretrizes de todos os setores que você pode ler' },
   ...(showPortal
-    ? [{ to: '/base-conhecimento', icon: BookOpen, label: 'Consultar tutoriais', title: 'Base de conhecimento: consultar tutoriais publicados' }]
+    ? [{ to: '/base-conhecimento', icon: BookOpen, label: 'Tutoriais', title: 'Base de conhecimento: consultar tutoriais publicados' }]
     : []),
 ] as MenuItem[]).filter((i) => !estaPausada(i.to));
+
+/** O bloco Empresa: o que é de todos. O resto de `inicioMenuItems` é o Meu trabalho (proposta de 2026-11-04, Parte 6). */
+const DA_EMPRESA = ['/jornal', '/chat', '/diretrizes', '/base-conhecimento'];
 
 const allMenuItems = () => [
   ...tiMenuItems, ...mktMenuItems, ...qualidadeMenuItems, ...rhMenuItems, ...financeiroMenuItems, ...comprasMenuItems,
@@ -408,14 +410,19 @@ function getActiveGroupId(pathname: string): string {
   if (p.startsWith('/comercial')) return 'comercial';
   if (p.startsWith('/educacional')) return 'educacional';
   if (p.startsWith('/diretoria')) return 'diretoria';
-  return 'inicio';
+  if (p.startsWith('/compras')) return 'compras';
+  if (p === '/' || p.startsWith('/inicio')) return 'inicio';
+  if (DA_EMPRESA.some((r) => p.startsWith(r))) return 'empresa';
+  return 'trabalho';
 }
 
 const COLLAPSE_KEY = 'helpoint.sidebar.collapsed';
 const OPEN_GROUP_KEY = 'helpoint.sidebar.openGroup';
 const TODOS_KEY = 'helpoint.sidebar.todosOsSetores';
-/** A linha "Todos os setores" entre os grupos do menu do celular. */
+/** A linha "Outros setores" entre os grupos do menu. */
 const TODOS_OS_SETORES = 'todos-os-setores' as const;
+/** O título do bloco dos setores. */
+const TITULO_DOS_SETORES = 'titulo-dos-setores' as const;
 
 interface AppSidebarProps {
   /** Em telas pequenas a sidebar vira gaveta sobreposta. */
@@ -425,7 +432,7 @@ interface AppSidebarProps {
 }
 
 export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer }: AppSidebarProps) {
-  const { profile, signOut } = useAuth();
+  const { profile } = useAuth();
   const modules = useVisibleModules();
   const { data: caixinhas = [] } = useCaixinhas();
   const emBreve = useTelasEmBreve();
@@ -520,14 +527,17 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
   const caixinhaNoInicio = responsavelDeCaixinha
     && !abreTela('/financeiro/caixinha');
   const groups: MenuGroup[] = [
-    { id: 'inicio',    label: 'Início',       icon: Home,
-      // "Meus treinamentos" só para quem tem turma (dono, 2026-10-28).
-      items: [...inicioMenuItems(modules.showPortal).filter((i) => i.to !== '/meus-treinamentos' || temTurma),
+    // Início é um link só: sem lista, não abre nada.
+    { id: 'inicio',    label: 'Início',       icon: Home, items: [], show: true, home: '/inicio' },
+    { id: 'trabalho',  label: 'Meu trabalho', icon: Briefcase,
+      // "Treinamentos" só para quem tem turma (dono, 2026-10-28).
+      items: [...inicioMenuItems(modules.showPortal).filter((i) => !DA_EMPRESA.includes(i.to) && (i.to !== '/meus-treinamentos' || temTurma)),
         ...(caixinhaNoInicio ? [{ to: '/caixinha', icon: PiggyBank, label: 'Caixinha', title: 'A Caixinha que você cuida' }] : []),
         // O estoque que a Caixinha abastece, para o responsável sem o Estoque de Compras (etapa 0b, 2026-10-25).
         ...(responsavelDeCaixinha && !abreTela('/compras/estoque')
           ? [{ to: '/estoque-de-suprimentos', icon: Boxes, label: 'Estoque de suprimentos', title: 'O que a Caixinha comprou e o que foi retirado' }] : [])],
-      show: true, home: '/inicio' },
+      show: true, home: '/meus' },
+    { id: 'empresa',   label: 'Empresa',      icon: Building, items: inicioMenuItems(modules.showPortal).filter((i) => DA_EMPRESA.includes(i.to)), show: true, home: '/jornal' },
     { id: 'ti',        label: 'TI',           icon: Monitor,     items: withoutConfig(tiMenuItems, 'ti'),        show: modules.showTI,        home: '/ti/chamados' },
     { id: 'qualidade', label: 'Qualidade',    icon: ShieldCheck, items: withoutConfig(qualidadeMenuItems, 'qualidade'), show: modules.showQuality,   home: '/qualidade/chamados' },
     { id: 'rh',        label: 'RH',           icon: Users,       items: withoutConfig(rhMenuItems, 'rh'),        show: modules.showRH,        home: '/rh/chamados' },
@@ -615,6 +625,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
     // O item com sub-itens (Insights) fica enquanto algum sub-item abre, e leva ao primeiro deles: as abas da
     // Diretoria têm "Ver" cada uma desde 2026-10-24 (decisão 5).
     .map(g => ({ ...g, items: g.items
+      .filter(i => !emBreve[i.to])
       .map(i => {
         if (!i.children) return i;
         const children = i.children.filter(c => abreTela(c.to));
@@ -630,10 +641,10 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
       items: g.items.filter(i => ficaNoCelular(i.to))
         .map(i => (i.to === '/diretoria' ? { ...i, label: 'Resumo do diretor', children: undefined } : i)),
     }))
-    .filter(g => !noCelular || g.items.length > 0)
+    .filter(g => !noCelular || g.items.length > 0 || g.id === 'inicio')
     .map(g => ({ ...g, home: abreTela(g.home) && (!noCelular || ficaNoCelular(g.home)) ? g.home : g.items[0]?.to ?? g.home }))
     .map(g => {
-      if (!isFiltering) return g;
+      if (!isFiltering || g.id === 'inicio') return g;
       const q = normalize(menuQuery);
       if (normalize(g.label).includes(q)) return g;
       // Um item fica quando o nome dele casa OU quando um sub-item casa —
@@ -646,13 +657,14 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
           (i.children ?? []).some(f => normalize(f.label).includes(q))),
       };
     })
-    .filter(g => !isFiltering || g.items.length > 0);
+    .filter(g => !isFiltering || g.items.length > 0 || (g.id === 'inicio' && normalize(g.label).includes(normalize(menuQuery))));
 
 
   // Contador do grupo (decisão do dono, 2026-10-02): no Início, todos os avisos não lidos (os do
   // "Lyra avisa"); no setor, os avisos de chamados dele. Aparece em qualquer tela.
   const grupoBadge = (grupo: string) => {
     if (grupo === 'inicio') return avisos.total;
+    if (grupo === 'empresa') return (jornalNaoLidas?.size ?? 0) + (chatNaoLidas ?? []).reduce((soma, n) => soma + n.qtd, 0);
     return Object.entries(avisos.porModulo)
       .filter(([modulo]) => lugarNoMenuDoModulo(modulo).grupo === grupo)
       .reduce((soma, [, qtd]) => soma + qtd, 0);
@@ -725,12 +737,12 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
 
   // "Fixados" e "Usados por último" saíram do menu, no computador e no celular (dono, 2026-10-28: "não ficou legal").
 
-  // Celular e tablet (o menu que desliza): os setores da pessoa em cima e "Todos os setores" recolhido (rodada 2, decisão
-  // 3). Abre sozinho quando a tela atual é de um setor de fora, e quando a pessoa procura um menu.
+  // Os setores da pessoa em cima e "Outros setores" recolhido (rodada 2, decisão 3; no computador desde 2026-11-04). Abre
+  // sozinho quando a tela atual é de um setor de fora, e quando a pessoa procura um menu. Recolhido, só os ícones.
   const { data: meusSetores } = useMeusSetores();
-  const separado = isDrawer && !isFiltering
+  const separado = !isFiltering && !collapsed
     ? separarOMenu(visibleGroups, meusSetores)
-    : { meus: visibleGroups, outros: [] as typeof visibleGroups, fim: [] as typeof visibleGroups };
+    : { topo: visibleGroups, meus: [] as typeof visibleGroups, outros: [] as typeof visibleGroups, fim: [] as typeof visibleGroups };
   const [todosAbertos, setTodosAbertos] = useState(() => {
     try { return localStorage.getItem(TODOS_KEY) === '1'; } catch { return false; }
   });
@@ -739,11 +751,16 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
     try { localStorage.setItem(TODOS_KEY, abrir ? '1' : '0'); } catch { /* sem armazenamento: só não lembra */ }
   };
   const todosVisiveis = todosAbertos || separado.outros.some((g) => g.id === activeGroupId);
-  const linhasDoMenu: Array<(typeof visibleGroups)[number] | typeof TODOS_OS_SETORES> = [
-    ...separado.meus,
+  // A engrenagem fica no rodapé: o grupo Configurações só entra na lista com a pessoa dentro dele, ou procurando um menu.
+  const comConfig = isFiltering || (activeGroupId === 'config' && !collapsed);
+  const semConfig = (l: typeof visibleGroups) => l.filter((g) => g.id !== 'config' || comConfig);
+  const linhasDoMenu: Array<(typeof visibleGroups)[number] | typeof TODOS_OS_SETORES | typeof TITULO_DOS_SETORES> = [
+    ...semConfig(separado.topo),
+    ...(separado.meus.length ? [TITULO_DOS_SETORES, ...separado.meus] : []),
     ...(separado.outros.length ? [TODOS_OS_SETORES, ...(todosVisiveis ? separado.outros : [])] : []),
-    ...separado.fim,
+    ...semConfig(separado.fim),
   ];
+  const grupoDaEngrenagem = visibleGroups.find((g) => g.id === 'config');
 
   const aside = (
     <aside
@@ -887,12 +904,15 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
       {/* Groups */}
       <nav className={cn('flex-1 overflow-y-auto py-2', collapsed ? 'px-2' : 'px-2')} aria-label="Navegação principal">
         {linhasDoMenu.map(group => {
+          if (group === TITULO_DOS_SETORES) {
+            return <p key={group} className="mt-3 px-4 pb-1 text-[12px] font-bold [text-transform:uppercase] tracking-[0.3px] text-sidebar-foreground/60">Meus setores</p>;
+          }
           if (group === TODOS_OS_SETORES) {
             return (
               <button key="todos-os-setores" type="button" aria-expanded={todosVisiveis}
                 onClick={() => alternarTodos(!todosVisiveis)}
                 className="w-full flex items-center gap-3.5 h-11 mt-1 px-4 rounded-md text-[12px] font-bold [text-transform:uppercase] tracking-[0.3px] text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-muted">
-                <span className="flex-1 text-left">Todos os setores ({separado.outros.length})</span>
+                <span className="flex-1 text-left">Outros setores ({separado.outros.length})</span>
                 <ChevronDown className={cn('w-3.5 h-3.5 transition-transform duration-200', todosVisiveis ? 'rotate-0' : '-rotate-90')} aria-hidden="true" />
               </button>
             );
@@ -923,15 +943,16 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
             );
           }
 
-          const isOpen = isFiltering ? true : openGroup === group.id;
+          const semLista = group.items.length === 0;
+          const isOpen = !semLista && (isFiltering || openGroup === group.id);
           const panelId = `sidebar-group-${group.id}`;
           return (
             <div key={group.id} className="mb-0.5">
               <button
                 type="button"
-                onClick={() => handleGroupClick(group)}
-                aria-expanded={isOpen}
-                aria-controls={panelId}
+                onClick={() => (semLista ? go(group.home) : handleGroupClick(group))}
+                aria-expanded={semLista ? undefined : isOpen}
+                aria-controls={semLista ? undefined : panelId}
                 className={cn(
                   'w-full flex items-center gap-3.5 h-[46px] px-4 rounded-md transition-colors duration-150 tracking-[0.3px]',
                   isActiveGroup ? 'text-primary' : 'text-sidebar-foreground hover:bg-muted'
@@ -947,11 +968,13 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
                     {naoLidos > 99 ? '99+' : naoLidos}
                   </span>
                 )}
-                <ChevronDown
-                  className={cn('w-3.5 h-3.5 transition-transform duration-200', isOpen ? 'rotate-0' : '-rotate-90')}
-                  strokeWidth={2}
-                  aria-hidden="true"
-                />
+                {!semLista && (
+                  <ChevronDown
+                    className={cn('w-3.5 h-3.5 transition-transform duration-200', isOpen ? 'rotate-0' : '-rotate-90')}
+                    strokeWidth={2}
+                    aria-hidden="true"
+                  />
+                )}
               </button>
               {isOpen && (
                 <ul id={panelId} className="mt-1 mb-2 pl-4 space-y-1">
@@ -976,21 +999,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
                             <ChevronDown className={cn('w-3 h-3 transition-transform duration-200', secaoAberta ? 'rotate-0' : '-rotate-90')} aria-hidden="true" />
                           </button>
                         )}
-                        {!secaoAberta ? null : emBreve[item.to] ? (
-                          // Em breve: aparece apagado, com o motivo (dono, 2026-10-03). No celular não há "passar o mouse":
-                          // tocar mostra o motivo (rodada 2, R3).
-                          <button
-                            type="button"
-                            aria-disabled="true"
-                            title={emBreve[item.to]}
-                            onClick={() => toast.info(`${item.label}: em breve`, { description: emBreve[item.to] })}
-                            className="w-full text-left flex items-center gap-3 min-h-[44px] px-4 rounded-md text-[14px] font-semibold text-muted-foreground/50 select-none"
-                          >
-                            <SubIcon className="w-3.5 h-3.5 shrink-0" strokeWidth={1.8} aria-hidden="true" />
-                            <span className="truncate">{item.label}</span>
-                            <span className="ml-auto shrink-0 text-[12px] uppercase tracking-wide">em breve</span>
-                          </button>
-                        ) : (
+                        {secaoAberta && (
                         <NavLink
                           to={tenantPath(item.to)}
                           onClick={() => onCloseDrawer?.()}
@@ -1087,15 +1096,19 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
         })}
       </nav>
 
-      {/* Pé do menu como na DashStack (2026-10-28): "Sair". A pessoa e o "Meu perfil" foram para o topo (ContaNoTopo). */}
-      <div className={cn('shrink-0 py-3', collapsed ? 'px-2' : 'px-6')} style={{ borderTop: '1px solid hsl(var(--sidebar-border))' }}>
-        <button type="button" onClick={() => signOut()} title="Sair" aria-label="Sair"
-          className={cn('w-full h-11 flex items-center rounded-md text-[14px] font-semibold tracking-[0.3px] text-sidebar-foreground hover:bg-muted transition-colors',
-            collapsed ? 'justify-center' : 'gap-3.5 px-4')}>
-          <LogOut className="w-[18px] h-[18px] shrink-0" aria-hidden="true" />
-          {!collapsed && <span>Sair</span>}
-        </button>
-      </div>
+      {/* A engrenagem no pé do menu (proposta de 2026-11-04, Parte 6). Sair ficou só no menu da foto (ContaNoTopo). */}
+      {grupoDaEngrenagem && (
+        <div className={cn('shrink-0 py-3', collapsed ? 'px-2' : 'px-6')} style={{ borderTop: '1px solid hsl(var(--sidebar-border))' }}>
+          <button type="button" onClick={() => go(grupoDaEngrenagem.home)} title="Configurações" aria-label="Configurações"
+            aria-current={activeGroupId === 'config' ? 'page' : undefined}
+            className={cn('w-full h-11 flex items-center rounded-md text-[14px] font-semibold tracking-[0.3px] transition-colors',
+              activeGroupId === 'config' ? 'text-primary' : 'text-sidebar-foreground hover:bg-muted',
+              collapsed ? 'justify-center' : 'gap-3.5 px-4')}>
+            <Settings className="w-[18px] h-[18px] shrink-0" aria-hidden="true" />
+            {!collapsed && <span>Configurações</span>}
+          </button>
+        </div>
+      )}
     </aside>
   );
 
