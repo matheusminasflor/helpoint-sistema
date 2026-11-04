@@ -10,7 +10,6 @@ export interface Campanha { nome: string; investimento: number; alcance: number 
 export interface LinhaRedes {
   semana: string; conta: string; posts: number | null; reels: number | null; stories: number | null; engajamento: number | null;
   novos_seguidores: number | null; quedas_seguidores: number | null; total_seguidores: number | null; visitas_perfil: number | null;
-  compartilhamentos: number | null;
   // O tráfego pago da conta (20270212260000).
   investimento: number | null; alcance_pago: number | null; visitas_pagas: number | null; campanhas_ativas: number | null;
   campanhas: Campanha[] | null;
@@ -54,7 +53,7 @@ export interface NumerosDaConta {
   /** O total no fim do período menos o total no fim do anterior: exato, ao contrário de novos − perdidos. */
   saldo: number | null;
   novos: number | null; perdidos: number | null; visitas: number | null; engajamento: number | null;
-  compartilhamentos: number | null; feed: number | null; reels: number | null; stories: number | null;
+  feed: number | null; reels: number | null; stories: number | null;
   investimento: number | null; alcancePago: number | null; visitasPagas: number | null; custoPorVisita: number | null;
   campanhasAtivas: number | null; campanhas: Campanha[];
 }
@@ -78,7 +77,6 @@ export function numerosDaConta(linhas: LinhaRedes[], conta: string, p: Intervalo
     novos: somaOuNada(no, 'novos_seguidores'), perdidos: somaOuNada(no, 'quedas_seguidores'),
     visitas: somaOuNada(no, 'visitas_perfil'),
     engajamento: engs.length ? engs.reduce((s, x) => s + Number(x), 0) / engs.length : null,
-    compartilhamentos: somaOuNada(no, 'compartilhamentos'),
     feed: somaOuNada(no, 'posts'), reels: somaOuNada(no, 'reels'), stories: somaOuNada(no, 'stories'),
     investimento, alcancePago: somaOuNada(no, 'alcance_pago'), visitasPagas, custoPorVisita: dividir(investimento, visitasPagas),
     campanhasAtivas: ultimo(no, 'campanhas_ativas'),

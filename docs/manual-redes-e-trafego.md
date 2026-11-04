@@ -32,7 +32,8 @@ Insights**, com o período da semana (segunda a domingo).
 | Quedas de seguidores | deixaram de seguir na semana | Insights › Seguidores › Deixaram de seguir |
 | Total de seguidores | número no fim da semana (domingo) | perfil |
 | Visitas ao perfil | visitas ao perfil na semana | Insights › Atividade do perfil |
-| Compartilhamentos | compartilhamentos dos posts da semana | Insights › Interações |
+
+Compartilhamentos saíram em 2026-11-04 (dono): o Insights da Meta não mostra o número, então não havia como conferir.
 
 Na tela, cada conta mostra a **soma** das semanas do período; **seguidores** é o total da última semana e
 **engajamento** é a média das semanas.

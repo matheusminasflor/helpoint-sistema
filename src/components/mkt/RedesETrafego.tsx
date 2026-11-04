@@ -140,7 +140,6 @@ function CartaoDaRede({ a, b }: { a: NumerosDaConta; b: NumerosDaConta }) {
         <Linha rotulo="Engajamento" valor={pctTexto(a.engajamento)}>
           <Compara atual={a.engajamento} anterior={b.engajamento} formato={(v) => (v === null ? '—' : `${v.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}`)} />
         </Linha>
-        <Linha rotulo="Compartilhamentos" valor={int(a.compartilhamentos)}><Compara atual={a.compartilhamentos} anterior={b.compartilhamentos} /></Linha>
         <Linha rotulo="Feed · Reels · Stories" valor={`${int(a.feed)} · ${int(a.reels)} · ${int(a.stories)}`}>
           <span className="text-muted-foreground">era {int(b.feed)} · {int(b.reels)} · {int(b.stories)}</span>
         </Linha>
@@ -301,7 +300,7 @@ const CAMPOS_DA_CONTA: Campo[] = [
   { k: 'posts', rotulo: 'Posts no feed' }, { k: 'reels', rotulo: 'Reels' }, { k: 'stories', rotulo: 'Sequências de stories' },
   { k: 'engajamento', rotulo: 'Taxa de engajamento (%)' }, { k: 'total_seguidores', rotulo: 'Total de seguidores (domingo)' },
   { k: 'novos_seguidores', rotulo: 'Novos seguidores' }, { k: 'quedas_seguidores', rotulo: 'Deixaram de seguir' },
-  { k: 'visitas_perfil', rotulo: 'Visitas ao perfil' }, { k: 'compartilhamentos', rotulo: 'Compartilhamentos' },
+  { k: 'visitas_perfil', rotulo: 'Visitas ao perfil' },
 ];
 const CAMPOS_DO_TRAFEGO_DA_CONTA: Campo[] = [
   { k: 'investimento', rotulo: 'Investimento (R$)' }, { k: 'alcance_pago', rotulo: 'Alcance' },

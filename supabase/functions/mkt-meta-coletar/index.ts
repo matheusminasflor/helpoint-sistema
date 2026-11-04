@@ -83,7 +83,7 @@ const semNulos = (o: Record<string, unknown>) => Object.fromEntries(Object.entri
 async function doInstagram(token: string, ig: Conta, s: Semana, agora: number) {
   const tempo = `period=day&metric_type=total_value&since=${seg(s.desde)}&until=${seg(s.ate)}`;
   const valores = new Map<string, number>();
-  const ins = await graphFetch<{ data: Insight[] }>(token, `${ig.id}/insights?metric=profile_views,total_interactions,reach,shares&${tempo}`);
+  const ins = await graphFetch<{ data: Insight[] }>(token, `${ig.id}/insights?metric=profile_views,total_interactions,reach&${tempo}`);
   for (const i of ins.data ?? []) if (typeof i.total_value?.value === 'number') valores.set(i.name, i.total_value.value);
 
   let novos: number | null = null, perdidos: number | null = null;
@@ -110,7 +110,6 @@ async function doInstagram(token: string, ig: Conta, s: Semana, agora: number) {
     posts: daSemana.filter((m) => m.media_product_type === 'FEED').length,
     reels: daSemana.filter((m) => m.media_product_type === 'REELS').length,
     visitas_perfil: valores.get('profile_views') ?? null,
-    compartilhamentos: valores.get('shares') ?? null,
     engajamento: alcance && interacoes !== null ? Math.round((interacoes / alcance) * 10000) / 100 : null,
     novos_seguidores: novos, quedas_seguidores: perdidos,
     // O total de agora é o do fim da semana em andamento — ou o do domingo, na coleta de segunda.

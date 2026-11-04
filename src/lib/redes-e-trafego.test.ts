@@ -3,7 +3,7 @@ import { comASemanaEmAndamento, faltaLancar, fraseDasRedes, numerosDaConta, nume
 
 const vazia: Omit<LinhaRedes, 'semana' | 'conta'> = {
   posts: null, reels: null, stories: null, engajamento: null, novos_seguidores: null, quedas_seguidores: null, total_seguidores: null,
-  visitas_perfil: null, compartilhamentos: null, investimento: null, alcance_pago: null, visitas_pagas: null, campanhas_ativas: null, campanhas: null,
+  visitas_perfil: null, investimento: null, alcance_pago: null, visitas_pagas: null, campanhas_ativas: null, campanhas: null,
 };
 const r = (semana: string, conta: string, x: Partial<LinhaRedes>): LinhaRedes => ({ ...vazia, semana, conta, ...x });
 const t = (semana: string, x: Partial<LinhaTrafego>): LinhaTrafego => ({
