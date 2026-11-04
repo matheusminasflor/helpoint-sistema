@@ -32,6 +32,8 @@ export interface InterrupcaoDoBanco {
   fim: string | null;
   sem_horario: boolean;
   observacao: string | null;
+  /** Os chamados desta queda (vazio nas registradas antes de vir do chamado). */
+  chamados?: { id: string; ticket_number: number; module: string }[];
 }
 
 /** Tudo de `de` até `ate` (o painel pede do começo do período anterior ao fim do atual). */
@@ -85,7 +87,7 @@ export function useInterrupcoes({ de, ate }: Periodo) {
     enabled: !!tenantId,
     // O fim do dia é local: o período vem em datas do Brasil.
     queryFn: async () => ((unwrap(await supabase.from('ti_interrupcoes' as never)
-      .select('id, tipo, inicio, fim, sem_horario, observacao')
+      .select('id, tipo, inicio, fim, sem_horario, observacao, chamados:tickets(id, ticket_number, module)')
       .gte('inicio', new Date(`${de}T00:00:00`).toISOString()).lt('inicio', new Date(`${ate}T00:00:00`).toISOString())
       .order('inicio', { ascending: false }))) ?? []) as unknown as InterrupcaoDoBanco[],
   });
@@ -144,15 +146,10 @@ export function useApagarFsense() {
 }
 
 export function useSalvarInterrupcao() {
-  const { tenantId } = useAuth();
   const invalidar = useInvalidar('ti-interrupcoes');
   return useMutation({
-    mutationFn: async (i: Omit<InterrupcaoDoBanco, 'sem_horario' | 'id'> & { id?: string }) => {
-      const { id, ...campos } = i;
-      const tabela = supabase.from('ti_interrupcoes' as never);
-      expectRows(await (id
-        ? tabela.update(campos as never).eq('id', id)
-        : tabela.insert({ ...campos, tenant_id: tenantId } as never)).select('id'), 'a interrupção');
+    mutationFn: async ({ id, ...campos }: Omit<InterrupcaoDoBanco, 'sem_horario' | 'chamados'>) => {
+      expectRows(await supabase.from('ti_interrupcoes' as never).update(campos as never).eq('id', id).select('id'), 'a interrupção');
     },
     onSuccess: invalidar,
   });

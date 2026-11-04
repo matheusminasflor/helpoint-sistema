@@ -21,6 +21,8 @@ export interface TICategory {
   is_purchase: boolean;
   /** Compra paga pela Caixinha (20270104010000): quem pede escolhe INBRAS ou MF (20270129010000). */
   caixinha?: boolean;
+  /** Chamado desta categoria conta como interrupção deste tipo; a subcategoria herda (20270212320000). */
+  interrupcao_tipo?: string | null;
   sort_order: number;
   created_at: string;
   updated_at: string;
@@ -94,6 +96,7 @@ export function useTICategories(module?: TIModule) {
       parent_id?: string | null;
       sort_order?: number;
       is_purchase?: boolean;
+      interrupcao_tipo?: string | null;
     }) => {
       // Usamos rpc ou query direta já que o tipo ainda não foi regenerado
       const { data: result, error } = await (supabase
@@ -104,6 +107,7 @@ export function useTICategories(module?: TIModule) {
           parent_id: data.parent_id || null,
           sort_order: data.sort_order || 0,
           is_purchase: data.is_purchase ?? false,
+          interrupcao_tipo: data.interrupcao_tipo ?? null,
         } as never)
         .select()
         .single() as unknown as Promise<{ data: TICategory | null; error: Error | null }>);

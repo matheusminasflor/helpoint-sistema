@@ -56,6 +56,9 @@ export interface Ticket {
   /** Foi agendado com o prazo já vencido: o atraso continua contando. */
   agendou_vencido?: boolean;
   agendado_motivo?: string | null;
+  /** A interrupção (queda) em que este chamado entrou (20270212320000). */
+  interrupcao_tipo?: string | null;
+  interrupcao_id?: string | null;
   minutos_agendados?: number;
   resolved_at: string | null;
   closed_at: string | null;

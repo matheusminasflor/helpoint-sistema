@@ -31,6 +31,7 @@ import {
   type InterrupcaoDoBanco, type LinhaFsenseDoBanco, type NumeroDaEquipe, type TipoDeInterrupcao,
 } from '@/hooks/useEquipeDaTI';
 import { useTenantPath } from '@/hooks/useTenantPath';
+import { ticketDetailPath } from '@/lib/ticket-route';
 import { dataHora, diaCurto, fromLocalDateTimeInput, toLocalDateTimeInput, toLocalISODate } from '@/lib/dates';
 import type { IntervaloDeDias } from '@/lib/period';
 import { mensagemDeErro } from '@/lib/supabase-result';
@@ -90,7 +91,7 @@ export function EquipeDaTI({ intervalo }: { intervalo: IntervaloDeDias }) {
     <Card id="equipe-da-ti" className="p-5 space-y-5 scroll-mt-4">
       <div className="space-y-1">
         <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Users className="h-4 w-4 text-primary" />Equipe · produtividade (FSENSE) e interrupções</h3>
-        <p className="text-xs text-muted-foreground">O FSENSE conta só semana confirmada. Lançar, corrigir e registrar interrupção ficam no Analítico.</p>
+        <p className="text-xs text-muted-foreground">O FSENSE conta só semana confirmada. Lançar e corrigir ficam no Analítico; as interrupções vêm dos chamados.</p>
       </div>
 
       <CartoesDaEquipe numeros={equipe.numeros} />
@@ -106,7 +107,7 @@ export function EquipeDaTI({ intervalo }: { intervalo: IntervaloDeDias }) {
 
 /**
  * O Analítico da Equipe (rodada 3): a eficiência de cada pessoa NO PERÍODO DO FILTRO (no lugar da "Equipe por semana"),
- * e a gestão — lançar e corrigir o FSENSE, registrar e editar interrupções.
+ * e a gestão — lançar e corrigir o FSENSE, ajustar interrupções (elas nascem do chamado).
  */
 export function EquipeNoAnalitico({ intervalo }: { intervalo: IntervaloDeDias }) {
   const tenantPath = useTenantPath();
@@ -116,7 +117,6 @@ export function EquipeNoAnalitico({ intervalo }: { intervalo: IntervaloDeDias })
   const podeMudarMetas = !perfil.isLoading
     && (perfil.alteraAba('ti', 'chamados') || perfil.pode('diretoria', 'indicadores', 'definir_metas'));
   const [lancando, setLancando] = useState(false);
-  const [registrando, setRegistrando] = useState(false);
   const equipe = useEquipeDoPeriodo(intervalo, podeVerEquipe);
 
   return (
@@ -128,7 +128,6 @@ export function EquipeNoAnalitico({ intervalo }: { intervalo: IntervaloDeDias })
             <Button asChild size="sm" variant="ghost"><Link to={tenantPath('/ti/configuracoes?aba=metas')}><Target className="h-4 w-4 mr-1.5" />Metas</Link></Button>
           )}
           {podeLancar && podeVerEquipe && <Button size="sm" onClick={() => setLancando(true)}><ClipboardPaste className="h-4 w-4 mr-1.5" />Lançar semana do FSENSE</Button>}
-          {podeLancar && <Button size="sm" variant="outline" onClick={() => setRegistrando(true)}><Plus className="h-4 w-4 mr-1.5" />Registrar interrupção</Button>}
         </div>
       </div>
 
@@ -137,7 +136,6 @@ export function EquipeNoAnalitico({ intervalo }: { intervalo: IntervaloDeDias })
       <ListaDeInterrupcoes lista={equipe.interrupcoesDoPeriodo} podeLancar={podeLancar} />
 
       {lancando && <DialogoDaGrade onFechar={() => setLancando(false)} />}
-      {registrando && <DialogoDaInterrupcao inicial={null} onFechar={() => setRegistrando(false)} />}
     </Card>
   );
 }
@@ -573,12 +571,13 @@ function ListaDeInterrupcoes({ lista, podeLancar }: { lista: InterrupcaoDoBanco[
   const [editando, setEditando] = useState<InterrupcaoDoBanco | null>(null);
   const [apagando, setApagando] = useState<string | null>(null);
   const apagar = useApagarInterrupcao();
+  const tenantPath = useTenantPath();
   const parada = lista.some((i) => !i.fim && !i.sem_horario);
 
   return (
     <Secao titulo={`Interrupções no período (${lista.length})`} aberta={parada}
       acao={parada ? <Badge variant="outline" className="badge-danger border-0">Ainda parado</Badge> : undefined}>
-      {lista.length === 0 ? <p className="text-sm text-muted-foreground">Nenhuma interrupção registrada neste período.</p> : (
+      {lista.length === 0 ? <p className="text-sm text-muted-foreground">Nenhuma interrupção neste período. Elas nascem dos chamados das categorias marcadas como interrupção.</p> : (
         <ul className="divide-y">
           {lista.map((i) => (
             <li key={i.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2">
@@ -589,6 +588,9 @@ function ListaDeInterrupcoes({ lista, podeLancar }: { lista: InterrupcaoDoBanco[
                   : `${dataHora(i.inicio)} → ${i.fim ? dataHora(i.fim) : 'ainda parado'}`}
               </span>
               {i.observacao && <span className="text-sm min-w-0 break-words">{i.observacao}</span>}
+              {i.chamados?.map((c) => (
+                <Link key={c.id} className="text-sm underline" to={tenantPath(ticketDetailPath(c.module, c.id))}>#{c.ticket_number}</Link>
+              ))}
               {podeLancar && (
                 <span className="ml-auto flex gap-1">
                   <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Editar a interrupção" onClick={() => setEditando(i)}><Pencil className="h-3.5 w-3.5" /></Button>
@@ -607,18 +609,18 @@ function ListaDeInterrupcoes({ lista, podeLancar }: { lista: InterrupcaoDoBanco[
   );
 }
 
-function DialogoDaInterrupcao({ inicial, onFechar }: { inicial: InterrupcaoDoBanco | null; onFechar: () => void }) {
-  const [tipo, setTipo] = useState<TipoDeInterrupcao>(inicial?.tipo ?? 'internet');
-  const [inicio, setInicio] = useState(toLocalDateTimeInput(inicial?.inicio ?? new Date().toISOString()));
-  const [fim, setFim] = useState(inicial?.fim ? toLocalDateTimeInput(inicial.fim) : '');
-  const [observacao, setObservacao] = useState(inicial?.observacao ?? '');
+function DialogoDaInterrupcao({ inicial, onFechar }: { inicial: InterrupcaoDoBanco; onFechar: () => void }) {
+  const [tipo, setTipo] = useState<TipoDeInterrupcao>(inicial.tipo);
+  const [inicio, setInicio] = useState(toLocalDateTimeInput(inicial.inicio));
+  const [fim, setFim] = useState(inicial.fim ? toLocalDateTimeInput(inicial.fim) : '');
+  const [observacao, setObservacao] = useState(inicial.observacao ?? '');
   const salvar = useSalvarInterrupcao();
   const enviar = () => {
     try {
       const i = fromLocalDateTimeInput(inicio);
       const f = fim ? fromLocalDateTimeInput(fim) : null;
       if (f && f < i) { toast.error('O fim tem que ser depois do início.'); return; }
-      salvar.mutate({ id: inicial?.id, tipo, inicio: i, fim: f, observacao: observacao.trim() || null }, {
+      salvar.mutate({ id: inicial.id, tipo, inicio: i, fim: f, observacao: observacao.trim() || null }, {
         onSuccess: () => { toast.success('Interrupção salva.'); onFechar(); },
         onError: (e) => toast.error(mensagemDeErro(e)),
       });
@@ -630,7 +632,7 @@ function DialogoDaInterrupcao({ inicial, onFechar }: { inicial: InterrupcaoDoBan
     <Dialog open onOpenChange={(o) => !o && onFechar()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{inicial ? 'Editar interrupção' : 'Registrar interrupção'}</DialogTitle>
+          <DialogTitle>Editar interrupção</DialogTitle>
           <DialogDescription>Deixe o fim vazio se ainda está parado; volte aqui para preencher quando voltar.</DialogDescription>
         </DialogHeader>
         <div className="space-y-3">

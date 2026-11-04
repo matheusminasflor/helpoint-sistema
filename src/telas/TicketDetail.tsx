@@ -13,6 +13,7 @@ import { TicketStatusBadge } from '@/components/helpdesk/TicketStatusBadge';
 import { TicketActionsBar } from '@/components/helpdesk/TicketActionsBar';
 import { TicketComplianceChecklist } from '@/components/helpdesk/TicketComplianceChecklist';
 import { TicketFormAnswers } from '@/components/helpdesk/TicketFormAnswers';
+import { InterrupcaoDoChamado } from '@/components/helpdesk/InterrupcaoDoChamado';
 import { useTicketDetail } from '@/hooks/useTicketComments';
 import { useMaintenancesByTicket } from '@/hooks/useLinkedMaintenances';
 import { useAuth } from '@/contexts/AuthContext';
@@ -259,6 +260,9 @@ export default function TicketDetail() {
               <dt className="text-muted-foreground shrink-0">Categoria</dt>
               <dd className="font-medium text-right">{categoriaDoChamado(ticket)}</dd>
             </div>
+          )}
+          {ticket.module === 'tickets' && isTechnician && (
+            <InterrupcaoDoChamado ticket={ticket} podeCorrigir={pode('change_category')} onMudou={refetch} />
           )}
           <div className="flex justify-between items-center gap-3">
             <dt className="text-muted-foreground flex items-center gap-1.5 shrink-0">

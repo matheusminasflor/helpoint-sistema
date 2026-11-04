@@ -133,6 +133,8 @@ export function useTicketActions() {
     reason: string,
     /** Resolver o chamado de outra pessoa e ficar com ele (dono, 2026-10-13): no mesmo comando, para o prazo não recomeçar. */
     assumir = false,
+    /** "Voltou às": fecha a interrupção do chamado nesta hora (20270212320000). */
+    voltouEm?: string,
   ) => {
     if (!user) throw new Error('User not authenticated');
     
@@ -146,6 +148,7 @@ export function useTicketActions() {
         updateData.resolved_at = new Date().toISOString();
         updateData.resolution_notes = reason;
         if (assumir) updateData.assigned_to = user.id;
+        if (voltouEm) updateData.interrupcao_voltou_em = voltouEm;
       }
       
       // Não há mais "Fechar" (dono, 2026-10-04): nenhuma tela pede `closed`, e o ramo que cuidava
@@ -212,8 +215,8 @@ export function useTicketActions() {
     }
   };
 
-  const resolveTicket = async (ticketId: string, resolutionNotes: string, assumir = false) => {
-    await changeStatus(ticketId, 'resolved', resolutionNotes, assumir);
+  const resolveTicket = async (ticketId: string, resolutionNotes: string, assumir = false, voltouEm?: string) => {
+    await changeStatus(ticketId, 'resolved', resolutionNotes, assumir, voltouEm);
   };
 
   const mentionTechnician = async (

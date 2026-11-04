@@ -14,6 +14,8 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { TIPOS_DE_INTERRUPCAO } from '@/hooks/useEquipeDaTI';
 import { FormBuilderDialog } from '@/components/ti/FormBuilderDialog';
 import { useTICategories, type TIModule, type TICategory, type CategoryWithChildren } from '@/hooks/useTICategories';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -64,6 +66,7 @@ export function CategoryManager({ module, allowForms = false, readOnly = false, 
   const [parentId, setParentId] = useState<string | null>(null);
   const [categoryName, setCategoryName] = useState('');
   const [isPurchase, setIsPurchase] = useState(false);
+  const [interrupcao, setInterrupcao] = useState('nao');
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [formBuilderCategory, setFormBuilderCategory] = useState<TICategory | null>(null);
 
@@ -74,6 +77,8 @@ export function CategoryManager({ module, allowForms = false, readOnly = false, 
    * a marcação era oferecida onde não ligava nada, e escondida onde ligava.
    */
   const ofereceCompra = module === 'compras';
+  // Interrupção é indicador da TI: a categoria diz o tipo e o chamado abre a queda (20270212320000).
+  const ofereceInterrupcao = module === 'tickets';
 
   const [tipoNoDialogo, setTipoNoDialogo] = useState<'categoria' | 'subcategoria' | 'item'>('categoria');
   const openDialog = (parent: string | null = null, category?: TICategory, tipo?: 'subcategoria' | 'item') => {
@@ -82,6 +87,7 @@ export function CategoryManager({ module, allowForms = false, readOnly = false, 
     setEditingCategory(category || null);
     setCategoryName(category?.name || '');
     setIsPurchase(category?.is_purchase ?? false);
+    setInterrupcao(category?.interrupcao_tipo ?? 'nao');
     setResponsaveis(category ? idsDe(category.id) : []);
     setDialogOpen(true);
   };
@@ -92,6 +98,7 @@ export function CategoryManager({ module, allowForms = false, readOnly = false, 
     setParentId(null);
     setCategoryName('');
     setIsPurchase(false);
+    setInterrupcao('nao');
   };
 
   const handleSave = async () => {
@@ -102,11 +109,13 @@ export function CategoryManager({ module, allowForms = false, readOnly = false, 
         id: editingCategory.id,
         name: categoryName.trim(),
         ...(ofereceCompra ? { is_purchase: isPurchase } : {}),
+        ...(ofereceInterrupcao ? { interrupcao_tipo: interrupcao === 'nao' ? null : interrupcao } : {}),
       });
     } else {
       const criada = await createCategory.mutateAsync({
         module, name: categoryName.trim(), parent_id: parentId,
         is_purchase: ofereceCompra && isPurchase,
+        interrupcao_tipo: ofereceInterrupcao && interrupcao !== 'nao' ? interrupcao : null,
       });
       categoryId = criada?.id;
     }
@@ -141,6 +150,7 @@ export function CategoryManager({ module, allowForms = false, readOnly = false, 
     <div className="flex flex-wrap items-center gap-2 py-2 px-3 rounded-md hover:bg-muted/30 transition-colors">
       <span className={`flex-1 min-w-[120px] ${!c.is_active ? 'text-muted-foreground line-through' : ''}`}>{c.name}</span>
       {c.is_purchase && <Badge variant="secondary" className="text-xs">compra</Badge>}
+      {c.interrupcao_tipo && <Badge variant="secondary" className="text-xs">interrupção</Badge>}
       {comResponsaveis && (nomesDe(c.id) ? (
         <Badge variant="outline" className="text-xs" title={`Quem sempre atende este ${tipo === 'item' ? 'item' : 'subcategoria'}`}>→ {nomesDe(c.id)}</Badge>
       ) : herdado ? (
@@ -198,6 +208,7 @@ export function CategoryManager({ module, allowForms = false, readOnly = false, 
               {category.name}
             </span>
             {category.is_purchase && <Badge variant="secondary" className="text-xs">compra</Badge>}
+            {category.interrupcao_tipo && <Badge variant="secondary" className="text-xs">interrupção</Badge>}
             {comResponsaveis && nomesDe(category.id) && (
               <Badge className="text-xs" title="Quem sempre atende esta categoria">→ {nomesDe(category.id)}</Badge>
             )}
@@ -349,6 +360,23 @@ export function CategoryManager({ module, allowForms = false, readOnly = false, 
                   ))}
                 </div>
               )}
+            </div>
+          )}
+
+          {ofereceInterrupcao && (
+            <div className="space-y-2 rounded-md border p-3">
+              <Label>Conta como interrupção</Label>
+              <p className="text-xs text-muted-foreground">
+                Chamado aqui abre uma interrupção nos Indicadores. Chamados do mesmo tipo com uma queda aberta entram nela.
+                {parentId ? ' Sem escolher, vale o nível de cima.' : ''}
+              </p>
+              <Select value={interrupcao} onValueChange={setInterrupcao}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="nao">Não conta</SelectItem>
+                  {Object.entries(TIPOS_DE_INTERRUPCAO).map(([v, t]) => <SelectItem key={v} value={v}>{t}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
           )}
 

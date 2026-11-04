@@ -12,6 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { useTicketActions } from '@/hooks/useTicketActions';
 import { useAISuggestReply } from '@/hooks/useAISuggestReply';
 import { useIALigada } from '@/hooks/useAssistantName';
@@ -19,6 +20,8 @@ import { AIRefineButton } from '@/components/ai/AIRefineButton';
 import { toast } from 'sonner';
 import { Loader2, CheckCircle2, Sparkles } from 'lucide-react';
 import type { TicketWithDetails } from '@/types/helpdesk';
+import { fromLocalDateTimeInput, toLocalDateTimeInput } from '@/lib/dates';
+import { outrosAbertos, useChamadosDaQueda } from '@/hooks/useChamadosDaQueda';
 import { QuemResolve, prepararParaResolver, usePrecisaPerguntarQuemResolve, type ModoDeResolver } from './QuemResolve';
 
 interface ResolveTicketDialogProps {
@@ -44,6 +47,11 @@ export function ResolveTicketDialog({
   const [resolutionNotes, setResolutionNotes] = useState('');
   const perguntar = usePrecisaPerguntarQuemResolve(ticket);
   const [modo, setModo] = useState<ModoDeResolver>('assumir');
+  // A queda fecha no último chamado dela: é esse que responde "voltou às".
+  const { data: daQueda = [] } = useChamadosDaQueda(open ? ticket.interrupcao_id : null);
+  const abertos = outrosAbertos(daQueda, ticket.id).length;
+  const perguntaVolta = !!ticket.interrupcao_id && abertos === 0;
+  const [voltou, setVoltou] = useState(() => toLocalDateTimeInput(new Date().toISOString()));
   // "Transformar em tutorial" ao resolver (etapa 4 · Chamados, 2026-10-24): o que resolveu um chamado vira
   // tutorial para o próximo, já com o problema e a solução escritos. Só para quem escreve tutoriais.
   const navigate = useNavigate();
@@ -68,7 +76,8 @@ export function ResolveTicketDialog({
 
     try {
       if (perguntar) await prepararParaResolver(ticket.id, modo);
-      await resolveTicket(ticket.id, resolutionNotes, perguntar && modo === 'assumir');
+      await resolveTicket(ticket.id, resolutionNotes, perguntar && modo === 'assumir',
+        perguntaVolta && voltou ? fromLocalDateTimeInput(voltou) : undefined);
       const notas = resolutionNotes;
       toast.success('Chamado resolvido com sucesso', escreveTutorial ? {
         duration: 10000,
@@ -117,6 +126,17 @@ ${notas}`,
 
           {perguntar && (
             <QuemResolve dono={ticket.assignee?.full_name || 'outra pessoa'} modo={modo} onChange={setModo} />
+          )}
+
+          {perguntaVolta && (
+            <div className="space-y-2">
+              <Label htmlFor="voltou-as">Voltou às</Label>
+              <Input id="voltou-as" type="datetime-local" value={voltou} onChange={(e) => setVoltou(e.target.value)} />
+              <p className="text-xs text-muted-foreground">É a hora que fecha a interrupção nos Indicadores.</p>
+            </div>
+          )}
+          {!!ticket.interrupcao_id && abertos > 0 && (
+            <p className="text-xs text-muted-foreground">A interrupção continua aberta: há mais {abertos} chamado{abertos === 1 ? '' : 's'} nesta queda.</p>
           )}
 
           <div className="p-3 bg-status-success/10 border border-status-success/30 rounded-lg">
