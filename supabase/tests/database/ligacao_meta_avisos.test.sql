@@ -31,8 +31,10 @@ create temporary view avisos as
 select public.ligacao_meta_resultado((select a from f), false, true, 'a chave da Meta deixou de valer', null);
 select is((select count(*)::int from chamados), 1, 'caiu: chamado na TI');
 select is((select priority::text || ' / ' || status::text from chamados), 'high / open', 'aberto, prioridade alta');
-select is((select category_id from chamados), (select id from public.ti_categories where tenant_id = (select a from f) and name = 'Sistemas'),
-          'na categoria Sistemas');
+-- "Sistemas Internos" quando a empresa tem (a semente cria), senão "Sistemas" (o nome na produção).
+select is((select c.name from chamados t join public.ti_categories c on c.id = t.category_id),
+          coalesce((select name from public.ti_categories where tenant_id = (select a from f) and name = 'Sistemas Internos' and is_active limit 1), 'Sistemas'),
+          'na categoria Sistemas Internos, ou Sistemas');
 select is((select count(*)::int from public.ti_interrupcoes where tenant_id = (select a from f) and fim is null and tipo = 'sistema'),
           1, 'caiu: interrupcao Sistema aberta');
 select is((select count(*)::int from avisos where user_id = (select ti from u)), 1, 'caiu: aviso para quem e da TI');
