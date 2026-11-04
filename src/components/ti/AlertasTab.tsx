@@ -13,7 +13,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { mensagemDeErro, unwrap } from '@/lib/supabase-result';
 import { useTenantSettings, type TenantSettings } from '@/hooks/useTenantSettings';
-import { LigacoesComSistemasDeFora } from '@/components/ti/LigacoesComSistemasDeFora';
 
 type ChaveDeAlerta = keyof NonNullable<TenantSettings['alerts']>;
 
@@ -104,7 +103,6 @@ export function AlertasTab() {
           )}
         </CardContent>
       </Card>
-      <LigacoesComSistemasDeFora />
     </div>
   );
 }

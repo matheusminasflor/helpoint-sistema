@@ -17,13 +17,17 @@ select tests.grant_role((select ti from u), 'owner');
 select tests.grant_role((select pessoa from u), 'member');
 grant select on f, u to authenticated;
 
-create temporary table c on commit drop as select gen_random_uuid() as rede, gen_random_uuid() as queda, gen_random_uuid() as luz, gen_random_uuid() as comum;
-insert into public.ti_categories (id, tenant_id, module, name, is_active, interrupcao_tipo) values
-  ((select rede from c), (select a from f), 'tickets', 'Rede', true, 'internet'),
-  ((select luz from c), (select a from f), 'tickets', 'Energia', true, 'luz'),
-  ((select comum from c), (select a from f), 'tickets', 'Outros', true, null);
+-- A empresa nova já nasce com Rede, Hardware e Outros: marca duas delas.
+create temporary table c on commit drop as
+select (select id from public.ti_categories where tenant_id = f.a and module = 'tickets' and parent_id is null and name = 'Rede') as rede,
+       (select id from public.ti_categories where tenant_id = f.a and module = 'tickets' and parent_id is null and name = 'Hardware') as luz,
+       (select id from public.ti_categories where tenant_id = f.a and module = 'tickets' and parent_id is null and name = 'Outros') as comum,
+       gen_random_uuid() as queda
+  from f;
+update public.ti_categories set interrupcao_tipo = 'internet' where id = (select rede from c);
+update public.ti_categories set interrupcao_tipo = 'luz' where id = (select luz from c);
 insert into public.ti_categories (id, tenant_id, module, name, parent_id, is_active)
-values ((select queda from c), (select a from f), 'tickets', 'Queda', (select rede from c), true);
+values ((select queda from c), (select a from f), 'tickets', 'Queda de teste', (select rede from c), true);
 
 create temporary table t on commit drop as select gen_random_uuid() as c1, gen_random_uuid() as c2, gen_random_uuid() as c3, gen_random_uuid() as c4, gen_random_uuid() as c5;
 grant select on t, c to authenticated;

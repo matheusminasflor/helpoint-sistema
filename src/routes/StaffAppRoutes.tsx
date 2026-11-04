@@ -118,6 +118,7 @@ const CRMConfiguracoes = lazy(() => import('@/telas/crm/CRMConfiguracoes'));
 const ComercialConfiguracoes = lazy(() => import('@/telas/comercial/ComercialConfiguracoes'));
 const ComercialInsights = lazy(() => import('@/telas/comercial/ComercialInsights'));
 const ConfiguracoesClientes = lazy(() => import('@/telas/ConfiguracoesClientes'));
+const ConfiguracoesIntegracoes = lazy(() => import('@/telas/ConfiguracoesIntegracoes'));
 const ComercialPainel = lazy(() => import('@/telas/comercial/ComercialPainel').then((m) => ({ default: m.ComercialPainel })));
 const DistribuidoresDoComercial = lazy(() => import('@/telas/comercial/Distribuidores').then((m) => ({ default: m.DistribuidoresDoComercial })));
 const FichaDoDistribuidor = lazy(() => import('@/telas/comercial/Distribuidores').then((m) => ({ default: m.FichaDoDistribuidor })));
@@ -200,6 +201,7 @@ export function StaffAppRoutes() {
       <Route path="configuracoes/sistema" element={S(<RequireOwnerOrAdmin><SystemSettings /></RequireOwnerOrAdmin>)} />
       <Route path="configuracoes/identidade-visual" element={S(<RequireOwnerOrAdmin><BrandingSettings /></RequireOwnerOrAdmin>)} />
       <Route path="configuracoes/lyra" element={S(<RequireOwnerOrAdmin><LyraSettings /></RequireOwnerOrAdmin>)} />
+      <Route path="configuracoes/integracoes" element={S(<RequireOwnerOrAdmin><ConfiguracoesIntegracoes /></RequireOwnerOrAdmin>)} />
       {/* LEVA P (2026-09-29): uma grade dos setores, como a de Nova solicitação. Sem tranca própria:
           cada cartão diz se a pessoa entra, e cada rota de setor tem `RequireConfigDoSetor`. */}
       <Route path="configuracoes/setores" element={S(<ConfiguracoesDosSetores />)} />

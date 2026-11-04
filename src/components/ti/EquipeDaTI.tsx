@@ -7,6 +7,7 @@
 // partes do tempo e a linha da meta, e o status dela é o pior entre trabalho e ocioso.
 import { useEffect, useState, type ClipboardEvent, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Briefcase, Check, ChevronDown, ClipboardPaste, Coffee, Pencil, Plus, Target, Trash2, Users, Zap, type LucideIcon } from 'lucide-react';
 import { KPIGrid } from '@/components/dashboard/KPIGrid';
 import { KPICard } from '@/components/glpi/KPICard';
@@ -26,13 +27,13 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { META_DA_TI } from '@/config/metas-da-ti';
 import { useConfiguracaoDosSetores, usePodeVerEquipe } from '@/hooks/useAccessProfiles';
 import {
-  TIPOS_DE_INTERRUPCAO, useApagarFsense, useApagarInterrupcao, useConfirmarFsense, useEditarFsense, useEquipeDoPeriodo,
+  TIPOS_DE_INTERRUPCAO, useFsense, useApagarFsense, useApagarInterrupcao, useConfirmarFsense, useEditarFsense, useEquipeDoPeriodo,
   useLancarFsense, useSalvarInterrupcao, useUltimaSemanaDoFsense,
   type InterrupcaoDoBanco, type LinhaFsenseDoBanco, type NumeroDaEquipe, type TipoDeInterrupcao,
 } from '@/hooks/useEquipeDaTI';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { ticketDetailPath } from '@/lib/ticket-route';
-import { dataHora, diaCurto, fromLocalDateTimeInput, toLocalDateTimeInput, toLocalISODate } from '@/lib/dates';
+import { dataHora, diaCurto, fromLocalDateTimeInput, todayISO, toLocalDateTimeInput, toLocalISODate } from '@/lib/dates';
 import type { IntervaloDeDias } from '@/lib/period';
 import { mensagemDeErro } from '@/lib/supabase-result';
 import {
@@ -83,31 +84,25 @@ export function CartoesDaEquipe({ numeros }: { numeros: NumeroDaEquipe[] }) {
  */
 export function EquipeDaTI({ intervalo }: { intervalo: IntervaloDeDias }) {
   const podeVerEquipe = usePodeVerEquipe('tickets');
-  const perfil = useConfiguracaoDosSetores();
-  const podeLancar = perfil.pode('ti', 'reports', 'lancar');
   const equipe = useEquipeDoPeriodo(intervalo, podeVerEquipe);
 
   return (
     <Card id="equipe-da-ti" className="p-5 space-y-5 scroll-mt-4">
       <div className="space-y-1">
         <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Users className="h-4 w-4 text-primary" />Equipe · produtividade (FSENSE) e interrupções</h3>
-        <p className="text-xs text-muted-foreground">O FSENSE conta só semana confirmada. Lançar e corrigir ficam no Analítico; as interrupções vêm dos chamados.</p>
+        <p className="text-xs text-muted-foreground">O FSENSE conta só semana confirmada. As interrupções vêm dos chamados.</p>
       </div>
 
       <CartoesDaEquipe numeros={equipe.numeros} />
 
       {podeVerEquipe && <BarrasDaEquipe equipe={equipe} />}
-
-      {podeVerEquipe && equipe.aConfirmar && (
-        <LancamentosDoFsense linhas={equipe.lancamentos.filter((l) => !l.confirmado_em)} podeLancar={podeLancar} />
-      )}
     </Card>
   );
 }
 
 /**
  * O Analítico da Equipe (rodada 3): a eficiência de cada pessoa NO PERÍODO DO FILTRO (no lugar da "Equipe por semana"),
- * e a gestão — lançar e corrigir o FSENSE, ajustar interrupções (elas nascem do chamado).
+ * e o ajuste das interrupções (elas nascem do chamado). Lançar e corrigir o FSENSE é no painel Lançamentos.
  */
 export function EquipeNoAnalitico({ intervalo }: { intervalo: IntervaloDeDias }) {
   const tenantPath = useTenantPath();
@@ -116,26 +111,22 @@ export function EquipeNoAnalitico({ intervalo }: { intervalo: IntervaloDeDias })
   const podeLancar = perfil.pode('ti', 'reports', 'lancar');
   const podeMudarMetas = !perfil.isLoading
     && (perfil.alteraAba('ti', 'chamados') || perfil.pode('diretoria', 'indicadores', 'definir_metas'));
-  const [lancando, setLancando] = useState(false);
   const equipe = useEquipeDoPeriodo(intervalo, podeVerEquipe);
 
   return (
     <Card id="analitico-equipe" className="p-5 space-y-5 scroll-mt-20">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Users className="h-4 w-4 text-primary" />Equipe: eficiência por pessoa, lançamentos e interrupções</h3>
+        <h3 className="text-sm font-semibold text-foreground flex items-center gap-2"><Users className="h-4 w-4 text-primary" />Equipe: eficiência por pessoa e interrupções</h3>
         <div className="flex flex-wrap gap-2">
           {podeMudarMetas && (
             <Button asChild size="sm" variant="ghost"><Link to={tenantPath('/ti/configuracoes?aba=metas')}><Target className="h-4 w-4 mr-1.5" />Metas</Link></Button>
           )}
-          {podeLancar && podeVerEquipe && <Button size="sm" onClick={() => setLancando(true)}><ClipboardPaste className="h-4 w-4 mr-1.5" />Lançar semana do FSENSE</Button>}
         </div>
       </div>
 
       {podeVerEquipe && <EficienciaPorPessoa equipe={equipe} />}
-      {podeVerEquipe && <LancamentosDoFsense linhas={equipe.lancamentos} podeLancar={podeLancar} />}
       <ListaDeInterrupcoes lista={equipe.interrupcoesDoPeriodo} podeLancar={podeLancar} />
 
-      {lancando && <DialogoDaGrade onFechar={() => setLancando(false)} />}
     </Card>
   );
 }
@@ -280,24 +271,45 @@ function Secao({ titulo, aberta, children, acao }: { titulo: string; aberta: boo
 
 // ─── FSENSE: conferir, confirmar e corrigir ──────────────────────────────────────────────────────────
 
+/**
+ * O painel Lançamentos da TI (proposta aprovada em 2026-11-04, Parte 3): abre por cima do relatório, nas últimas 8 semanas,
+ * sem depender do período da tela. Semana a confirmar vem aberta; a confirmada abre para corrigir.
+ */
+export function LancamentosDaTI({ onFechar }: { onFechar: () => void }) {
+  const hoje = todayISO();
+  const { data: linhas = [], isLoading } = useFsense({ de: somarDias(hoje, -56), ate: somarDias(hoje, 1) });
+  const [lancando, setLancando] = useState(false);
+  return (
+    <Sheet open onOpenChange={(o) => !o && onFechar()}>
+      <SheetContent className="w-full sm:max-w-3xl overflow-y-auto space-y-4">
+        <SheetHeader>
+          <SheetTitle>Lançamentos da TI · FSENSE</SheetTitle>
+          <SheetDescription>As últimas 8 semanas, independente do período da tela.</SheetDescription>
+        </SheetHeader>
+        <Button onClick={() => setLancando(true)}><ClipboardPaste className="h-4 w-4 mr-1.5" />Lançar semana</Button>
+        {isLoading ? <p className="text-sm text-muted-foreground">Carregando…</p> : <LancamentosDoFsense linhas={linhas} podeLancar />}
+        {lancando && <DialogoDaGrade onFechar={() => setLancando(false)} />}
+      </SheetContent>
+    </Sheet>
+  );
+}
+
 function LancamentosDoFsense({ linhas, podeLancar }: { linhas: LinhaFsenseDoBanco[]; podeLancar: boolean }) {
   const [apagando, setApagando] = useState<string | null>(null);
   const [corrigindo, setCorrigindo] = useState<LinhaFsenseDoBanco | null>(null);
   const confirmar = useConfirmarFsense();
   const apagar = useApagarFsense();
   const semanas = [...new Set(linhas.map((l) => l.data))].sort().reverse();
-  const algumaPendente = linhas.some((l) => !l.confirmado_em);
 
   return (
-    <Secao titulo={`Lançamentos do FSENSE no período (${semanas.length})`} aberta={algumaPendente}
-      acao={algumaPendente ? <Badge variant="outline" className="badge-warning border-0">Semana a confirmar</Badge> : undefined}>
-      {semanas.length === 0 && <p className="text-sm text-muted-foreground">Nenhuma semana lançada neste período.</p>}
+    <div className="space-y-3">
+      {semanas.length === 0 && <p className="text-sm text-muted-foreground">Nenhuma semana lançada nas últimas 8 semanas.</p>}
       {semanas.map((d) => {
         const daSemana = linhas.filter((l) => l.data === d);
         const pendente = daSemana.some((l) => !l.confirmado_em);
         return (
-          <div key={d} className="rounded-md border">
-            <div className="flex flex-wrap items-center gap-3 px-3 py-2">
+          <details key={d} open={pendente} className="rounded-md border">
+            <summary className="flex cursor-pointer flex-wrap items-center gap-3 px-3 py-2">
               <span className="font-medium">Semana até {diaCurto(d)} · {daSemana.length} {daSemana.length === 1 ? 'pessoa' : 'pessoas'}</span>
               <Badge variant="outline" className={`${pendente ? 'badge-warning' : 'badge-success'} border-0`}>{pendente ? 'A confirmar' : 'Confirmada'}</Badge>
               {pendente && podeLancar && (
@@ -306,7 +318,7 @@ function LancamentosDoFsense({ linhas, podeLancar }: { linhas: LinhaFsenseDoBanc
                   <Check className="h-4 w-4 mr-1.5" />Confirmar semana
                 </Button>
               )}
-            </div>
+            </summary>
             <div className="border-t overflow-x-auto">
               <Table>
                 <TableBody>
@@ -335,14 +347,14 @@ function LancamentosDoFsense({ linhas, podeLancar }: { linhas: LinhaFsenseDoBanc
                 </TableBody>
               </Table>
             </div>
-          </div>
+          </details>
         );
       })}
       {corrigindo && <DialogoDeCorrigir linha={corrigindo} onFechar={() => setCorrigindo(null)} />}
       <ConfirmarExclusao aberto={!!apagando} titulo="Apagar esta linha?" descricao="A pessoa sai desta semana do FSENSE."
         enviando={apagar.isPending} onCancelar={() => setApagando(null)}
         onConfirmar={() => apagar.mutate(apagando!, { onSuccess: () => setApagando(null), onError: (e) => toast.error(mensagemDeErro(e)) })} />
-    </Secao>
+    </div>
   );
 }
 

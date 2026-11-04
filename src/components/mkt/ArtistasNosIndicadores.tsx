@@ -5,11 +5,7 @@
 //   · Artistas mês a mês no Analítico: a parte do teto paga em cada mês;
 //   · o cartão que espera as chaves do Kommo, da Meta e do Bling (dono: "esperar as chaves").
 import { Link } from 'react-router-dom';
-import { CalendarRange, ChevronLeft, ChevronRight, PlugZap, RefreshCw, Star } from 'lucide-react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
-import { CHAVE_DAS_SEMANAS } from '@/hooks/useRedesETrafego';
+import { CalendarRange, ChevronLeft, ChevronRight, Star } from 'lucide-react';
 import { Bar, BarChart, CartesianGrid, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -17,8 +13,6 @@ import { Button } from '@/components/ui/button';
 import { DicaDoGrafico } from '@/components/dashboard/DicaDoGrafico';
 import { COR, EIXO } from '@/config/cores-dos-graficos';
 import { useTenantPath } from '@/hooks/useTenantPath';
-import type { LigacaoMeta } from '@/hooks/useLigacaoMeta';
-import { MetaConnectButton } from '@/components/mkt/MetaConnectButton';
 import { formatBRL } from '@/lib/crm';
 import { cn } from '@/lib/utils';
 import { STATUS_DO_ARTISTA, mesEAno, nomeDoMes, type MesDosArtistas } from '@/lib/artistas-nos-indicadores';
@@ -202,100 +196,6 @@ export function ArtistasMesAMes({ meses }: { meses: MesDosArtistas[] }) {
           </div>
         </>
       )}
-    </Card>
-  );
-}
-
-// Um cartão só enquanto as chaves não entram (revisão de UX de 2026-11-03): quatro blocos vazios no meio da Visão Geral
-// empurravam os números reais para baixo. Cada fonte diz o que vai mostrar; ligada, vira o bloco dela.
-const LIGACOES = [
-  { fonte: 'Kommo', titulo: 'Leads que chegaram', texto: 'Consumidor final, Salão, Distribuidor e Sem triagem (funil Entrada)' },
-  { fonte: 'Meta', titulo: 'Tráfego pago', texto: 'investimento, pessoas alcançadas, visitas ao perfil, custo por visita' },
-  { fonte: 'Meta', titulo: 'Redes sociais', texto: '@minasflor, @by.mf e @mf.professional: posts, reels, stories, seguidores' },
-  { fonte: 'Bling', titulo: 'Vendas', texto: 'faturado pelas notas fiscais' },
-];
-
-const NOME_DO_TIPO = { instagram: 'Instagram', pagina: 'Página', anuncios: 'Anúncios' } as const;
-
-/**
- * As fontes de fora: o que ainda espera a ligação e, a Meta, o botão de conectar (2026-11-03: "o intuito é ter os
- * indicadores do MKT após conectar") — aqui, e não no Cronograma Social. Conectar é de gestor para cima (a função confere).
- */
-/** Chama o coletor da Meta (`mkt-meta-coletar`) para esta semana e a anterior, sem esperar as 6h. */
-function BuscarAgora({ onBuscou }: { onBuscou: () => void }) {
-  const qc = useQueryClient();
-  const buscar = useMutation({
-    mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke('mkt-meta-coletar', { body: { source: 'botao' } });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      return data as { erros?: string[] };
-    },
-    onSuccess: (r) => {
-      qc.invalidateQueries({ queryKey: [CHAVE_DAS_SEMANAS] });
-      onBuscou();
-      // A busca leva uns 20 s; o aviso fica 10 s (15 s quando há aviso ou erro) para não passar despercebido (dono,
-      // 2026-11-04: "não notificou").
-      if (r.erros?.length) toast.warning(`Buscou, com avisos: ${r.erros.join(' · ')}`, { duration: 15000 });
-      else toast.success('Números da Meta atualizados: veja Redes sociais e Tráfego pago, no alto da tela.', { duration: 10000 });
-    },
-    onError: (e: Error) => toast.error(`A busca falhou: ${e.message}`, { duration: 15000 }),
-  });
-  return (
-    <Button size="sm" onClick={() => buscar.mutate()} disabled={buscar.isPending}>
-      <RefreshCw className={cn('h-3.5 w-3.5 mr-1', buscar.isPending && 'animate-spin')} aria-hidden="true" />
-      {buscar.isPending ? 'Buscando… (uns 20 segundos)' : 'Buscar agora'}
-    </Button>
-  );
-}
-
-export function EsperandoAsLigacoes({ meta, podeConectarMeta, onConectou }: {
-  meta: LigacaoMeta | null | undefined;
-  podeConectarMeta: boolean;
-  onConectou: () => void;
-}) {
-  const esperando = LIGACOES.filter((l) => l.fonte !== 'Meta' || !meta);
-  return (
-    <Card className="p-5 space-y-3 border-dashed">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold flex items-center gap-2">
-          <PlugZap className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-          {meta ? 'Esperando a ligação com o Kommo e o Bling' : 'Esperando a ligação com o Kommo, a Meta e o Bling'}
-        </h3>
-        {!meta && podeConectarMeta && <MetaConnectButton platform="indicadores" onSuccess={onConectou} />}
-      </div>
-      {meta && (
-        <div className="rounded-lg border border-border bg-card p-3 text-sm space-y-2">
-          <p>
-            <span className="font-semibold">Meta conectada</span>
-            <span className="text-muted-foreground"> em {new Date(meta.conectado_em).toLocaleDateString('pt-BR')}: </span>
-            {meta.contas.map((c) => `${c.nome} (${NOME_DO_TIPO[c.tipo]})`).join(' · ')}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            {meta.coletado_em
-              ? `Última busca dos números: ${new Date(meta.coletado_em).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}. O robô busca a cada 3 horas.`
-              : 'Os números ainda não foram buscados. O robô busca a cada 3 horas; "Buscar agora" não espera.'}
-            {meta.ultimo_erro && <span className="block text-aviso font-medium">Atenção: {meta.ultimo_erro}.</span>}
-          </p>
-          {podeConectarMeta && (
-            <div className="flex flex-wrap gap-2">
-              <BuscarAgora onBuscou={onConectou} />
-              <MetaConnectButton platform="indicadores" onSuccess={onConectou} />
-            </div>
-          )}
-        </div>
-      )}
-      <ul className="grid gap-x-6 gap-y-2 sm:grid-cols-2 text-sm">
-        {esperando.map((l) => (
-          <li key={l.titulo}>
-            <span className="font-semibold">{l.titulo}</span> <span className="text-muted-foreground">({l.fonte}): {l.texto}.</span>
-          </li>
-        ))}
-      </ul>
-      <p className="text-xs text-muted-foreground">
-        {!meta && !podeConectarMeta ? 'Quem conecta a Meta é o gestor do Marketing ou a Diretoria. ' : ''}
-        Os números entram sozinhos depois de cada ligação.
-      </p>
     </Card>
   );
 }

@@ -30,6 +30,12 @@ export interface LinhaTrafego {
 
 export interface Intervalo { de: string; ate: string }
 
+/** Os leads ainda são à mão (até o Kommo ligar): a semana sem nenhum funil preenchido é a pendência do Marketing. */
+export const faltamLeads = (trafego: LinhaTrafego[], semana: string) => {
+  const t = trafego.find((l) => l.semana === semana);
+  return !t || [t.leads_consumidor, t.leads_salao, t.leads_distribuidor, t.leads_sem_triagem].every((v) => v === null);
+};
+
 /** "94,7%"; sem número, "—". A tela e o PDF usam o mesmo texto. */
 export const pctTexto = (v: number | null) => (v === null ? '—' : `${v.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%`);
 export const NOME_DO_FORMATO: Record<Publicacao['tipo'], string> = { REELS: 'Reels', FEED: 'Feed', STORY: 'Stories' };
@@ -231,18 +237,3 @@ export function fraseDasRedes(p: Painel): string {
 }
 
 /** O que falta lançar na semana (efeito Zeigarnik, na proposta): conta sem linha ou sem os números principais. */
-export function faltaLancar(redes: LinhaRedes[], trafego: LinhaTrafego[], semana: string): { rotulo: string; ok: boolean }[] {
-  const CAMPOS: [keyof LinhaRedes, string][] = [
-    ['posts', 'feed'], ['reels', 'reels'], ['stories', 'stories'], ['total_seguidores', 'seguidores'], ['visitas_perfil', 'visitas'],
-  ];
-  const t = trafego.find((l) => l.semana === semana);
-  return [
-    { rotulo: t ? 'Tráfego' : 'Tráfego: nada lançado', ok: !!t },
-    ...CONTAS.map((c) => {
-      const l = redes.find((r) => r.semana === semana && r.conta === c);
-      if (!l) return { rotulo: `${c}: nada lançado`, ok: false };
-      const faltam = CAMPOS.filter(([k]) => l[k] === null).map(([, r]) => r);
-      return { rotulo: faltam.length ? `${c}: falta ${faltam.join(', ')}` : c, ok: faltam.length === 0 };
-    }),
-  ];
-}

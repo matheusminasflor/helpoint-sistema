@@ -9,7 +9,7 @@ import {
   CheckCircle2, Receipt, HeartPulse, FolderLock, Palette,
   Gift, FileSignature, Banknote, CalendarOff, PanelLeftClose, PanelLeftOpen, X, Wallet, TrendingUp, PiggyBank, FileBarChart,
   ShoppingCart, Package, Boxes, Handshake, GraduationCap, KanbanSquare, PackageCheck, Factory, Building2, Upload,
-  IdCard, ClipboardList, Gauge, Briefcase, Clock, BookMarked, Newspaper, Store, ListChecks, Star } from 'lucide-react';
+  IdCard, ClipboardList, Gauge, Briefcase, Clock, BookMarked, Newspaper, Store, ListChecks, Star, PlugZap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useVisibleModules } from '@/hooks/useVisibleModules';
@@ -146,6 +146,7 @@ const comprasMenuItems: MenuItem[] = [
   { to: '/compras/relatorios/economia-na-cotacao', icon: FileBarChart, label: 'Economia na cotação', title: 'Quanto se economizou escolhendo entre os orçamentos', secao: RELATORIOS },
   { to: '/compras/relatorios/consumo-do-estoque', icon: FileBarChart, label: 'Consumo do estoque', title: 'O que saiu do estoque de suprimentos, por produto e por pessoa', secao: RELATORIOS },
   { to: '/compras/diretrizes', icon: BookMarked, label: 'Diretrizes de Compras', secao: DO_SETOR },
+  { to: '/compras/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações de Compras', secao: DO_SETOR },
 ];
 
 // O Financeiro (dono, 2026-10-28): "Solicitações" no topo é a fila onde chega TUDO o que os setores pedem ao Financeiro
@@ -256,7 +257,8 @@ const educacionalMenuItems: MenuItem[] = [
 const configMenuItems: MenuItem[] = [
   { to: '/configuracoes/sistema', icon: Users, label: 'Pessoas e acessos', title: 'Quem entra no sistema, em quais setores, e com qual perfil', secao: 'Empresa' },
   { to: '/configuracoes/identidade-visual', icon: Palette, label: 'Identidade Visual', secao: 'Empresa' },
-  { to: '/configuracoes/lyra', icon: Sparkles, label: 'IA / Lyra', secao: 'Empresa' }, // label ajustado em runtime com o nome do assistente
+  { to: '/configuracoes/integracoes', icon: PlugZap, label: 'Sistemas de fora', title: 'Meta, Google, Kommo, Bling e Conecta: o que está ligado', secao: 'Integrações' },
+  { to: '/configuracoes/lyra', icon: Sparkles, label: 'IA / Lyra', secao: 'Integrações' }, // label ajustado em runtime com o nome do assistente
 ];
 
 
@@ -533,7 +535,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
     { id: 'financeiro', label: 'Financeiro',   icon: Banknote,    items: withoutConfig(financeiroMenuItems, 'financeiro'), show: modules.showFinanceiro, home: '/financeiro/contas-a-pagar' },
     // Compras, grupo próprio desde 2026-09-27 (leva N). A configuração dele (LEVA P) mora em
     // Configurações › Setores, como a dos outros.
-    { id: 'compras',   label: 'Compras',       icon: ShoppingCart,  items: comprasMenuItems,                  show: modules.showCompras,   home: '/compras' },
+    { id: 'compras',   label: 'Compras',       icon: ShoppingCart,  items: withoutConfig(comprasMenuItems, 'compras'), show: modules.showCompras,   home: '/compras' },
     { id: 'crm',       label: 'CRM',           icon: KanbanSquare,   items: withoutConfig(crmMenuItems),       show: modules.showCRM,       home: '/crm/funil' },
     { id: 'expedicao', label: 'Expedição',     icon: PackageCheck,   items: withoutConfig(expedicaoMenuItems, 'expedicao'), show: modules.showExpedicao, home: '/expedicao/chamados' },
     { id: 'producao',  label: 'Produção',      icon: Factory,        items: withoutConfig(producaoMenuItems, 'producao'),  show: modules.showProducao,  home: '/producao/chamados' },

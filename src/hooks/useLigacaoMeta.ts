@@ -8,6 +8,12 @@ import { unwrap } from '@/lib/supabase-result';
 export interface ContaDaMeta { tipo: 'pagina' | 'instagram' | 'anuncios'; id: string; nome: string }
 export interface LigacaoMeta { contas: ContaDaMeta[]; conectado_em: string; ultimo_erro: string | null; atualizado_em: string | null; coletado_em: string | null }
 
+/** O robô busca a cada 3 horas: dois ciclos perdidos e meio já é ligação parada. */
+const HORAS_PARA_PARADA = 8;
+
+export const metaParada = (meta: LigacaoMeta | null | undefined) =>
+  !!meta && (!!meta.ultimo_erro || !meta.coletado_em || Date.now() - Date.parse(meta.coletado_em) > HORAS_PARA_PARADA * 3_600_000);
+
 export function useLigacaoMeta() {
   const { tenantId } = useAuth();
   return useQuery({

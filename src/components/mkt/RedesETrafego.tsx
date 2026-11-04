@@ -9,7 +9,7 @@ import { useState, type ReactNode } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Bar, BarChart, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { CheckCircle2, Eye, Megaphone, MousePointerClick, Plus, Share2, UserPlus, Users, Wallet } from 'lucide-react';
+import { Eye, Megaphone, MousePointerClick, Share2, UserPlus, Users, Wallet } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,7 +28,7 @@ import { cn } from '@/lib/utils';
 import { COR, EIXO, SERIES } from '@/config/cores-dos-graficos';
 import { CHAVE_DAS_SEMANAS, useSemanaParaLancar } from '@/hooks/useRedesETrafego';
 import {
-  CONTAS, faltaLancar, NOME_DO_FORMATO, pctTexto, type LinhaRedes, type LinhaTrafego, type NumerosDaConta, type Painel, type SemanaNoGrafico,
+  CONTAS, NOME_DO_FORMATO, pctTexto, type LinhaRedes, type LinhaTrafego, type NumerosDaConta, type Painel, type SemanaNoGrafico,
 } from '@/lib/redes-e-trafego';
 import { DIAS, fatias, horariosTexto, nomeDoPais, type ResumoDoPublico } from '@/lib/publico-do-instagram';
 
@@ -95,26 +95,6 @@ export function NumerosDoTopo({ painel }: { painel: Painel }) {
       <KPICard value={int(t.atual.leadsClassificados)} numero={t.atual.leadsClassificados} label="Leads classificados" icon={UserPlus} color="green"
         anterior={t.anterior.leadsClassificados} melhorQuando="mais" formatarDiferenca={(n) => n.toLocaleString('pt-BR')} />
     </KPIGrid>
-  );
-}
-
-/** O que falta lançar na última semana do período. */
-export function LancamentoDaSemana({ redes, trafego, ate, podeLancar, onLancar }: {
-  redes: LinhaRedes[]; trafego: LinhaTrafego[]; ate: string; podeLancar: boolean; onLancar: () => void;
-}) {
-  // A última semana fechada do período (o domingo até o fim dele).
-  const semana = somarDias(domingoDaSemana(ate), domingoDaSemana(ate) > ate ? -7 : 0);
-  const itens = faltaLancar(redes, trafego, semana);
-  return (
-    <div className="flex flex-wrap items-center gap-2" role="list" aria-label={`Lançamento da semana até ${ddmm(semana)}`}>
-      <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Lançamento da semana até {ddmm(semana)}</span>
-      {itens.map((i) => (
-        <span key={i.rotulo} role="listitem" className={cn('rounded-md px-2.5 py-1 text-[13px] font-semibold', i.ok ? 'badge-success' : 'badge-warning')}>
-          {i.ok && <CheckCircle2 className="mr-1 inline h-3.5 w-3.5 align-[-2px]" aria-hidden="true" />}{i.rotulo}
-        </span>
-      ))}
-      {podeLancar && <Button size="sm" variant="outline" className="h-7" onClick={onLancar}><Plus className="h-3.5 w-3.5 mr-1" />Lançar semana</Button>}
-    </div>
   );
 }
 

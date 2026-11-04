@@ -32,7 +32,7 @@ import { ExportPDFDialog } from '@/components/dashboard/ExportPDFDialog';
 import { CategoriasDosChamados } from '@/components/ti/CategoriasDosChamados';
 import { arvoreDosChamados, type No } from '@/lib/arvore-de-categorias';
 import type { DadosDaTINoPDF } from '@/components/dashboard/PDFReportGenerator';
-import { BarrasDaEquipe, CartoesDaEquipe, EquipeDaTI, EquipeNoAnalitico } from '@/components/ti/EquipeDaTI';
+import { BarrasDaEquipe, CartoesDaEquipe, EquipeDaTI, EquipeNoAnalitico, LancamentosDaTI } from '@/components/ti/EquipeDaTI';
 import { ModoApresentacao } from '@/components/dashboard/ModoApresentacao';
 import { ProjetosDaTI } from '@/components/ti/ProjetosDaTI';
 import { META_DA_TI, metaNoDia, notaDaMeta } from '@/config/metas-da-ti';
@@ -52,7 +52,7 @@ import { useKanbanReportMetrics, ReportFilter } from '@/hooks/useReportMetrics';
 import { useLyraChat } from '@/hooks/useLyraChat';
 import { useAISecretary } from '@/hooks/useAISecretary';
 import { useIALigada } from '@/hooks/useAssistantName';
-import { AlertTriangle, BarChart3, BrainCircuit, CheckCircle2, ChevronDown, Clock, Download, FileKey, Inbox, Monitor, Presentation, ShieldCheck, Target, Timer, Wrench } from 'lucide-react';
+import { AlertTriangle, BarChart3, BrainCircuit, CheckCircle2, ChevronDown, ClipboardPaste, Clock, Download, FileKey, Inbox, Monitor, Presentation, ShieldCheck, Target, Timer, Wrench } from 'lucide-react';
 import { AIIndicatorAnalysis } from '@/components/dashboard/AIIndicatorAnalysis';
 import { Link, useNavigate } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
@@ -199,13 +199,16 @@ export default function TIRelatorios() {
     projetosAlemDoTermino: projetosAlem,
   });
 
+  const podeLancarFsense = perfil.pode('ti', 'reports', 'lancar') && podeVerEquipe;
+  const [lancamentos, setLancamentos] = useState(false);
+
   const atencao = [
     projetosAlem > 0 && {
       texto: `${projetosAlem} ${projetosAlem === 1 ? 'projeto passou' : 'projetos passaram'} do término`, cor: 'perigo', para: '#projetos-da-ti',
     },
     semanaAConfirmar && {
       texto: `Semana do FSENSE até ${diaCurto(semanaAConfirmar)} a confirmar`, cor: 'aviso',
-      para: naTela ? '#equipe-da-ti' : `/ti/indicadores?periodo=${PERSONALIZADO}&de=${somarDias(semanaAConfirmar, -6)}&ate=${semanaAConfirmar}`,
+      para: podeLancarFsense ? '#lancamentos' : naTela ? '#equipe-da-ti' : `/ti/indicadores?periodo=${PERSONALIZADO}&de=${somarDias(semanaAConfirmar, -6)}&ate=${semanaAConfirmar}`,
     },
     violados.length > 0 && { texto: `${violados.length} ${violados.length === 1 ? 'chamado fora do prazo' : 'chamados fora do prazo'}`, cor: 'perigo', para: '/ti/chamados' },
     vencidas > 0 && { texto: `${vencidas} ${vencidas === 1 ? 'licença ou contrato vencido' : 'licenças e contratos vencidos'}`, cor: 'perigo', para: '/ti/licencas' },
@@ -302,6 +305,11 @@ export default function TIRelatorios() {
                 </SelectContent>
               </Select>
             )}
+            {podeLancarFsense && (
+              <Button size="sm" variant="outline" onClick={() => setLancamentos(true)}>
+                <ClipboardPaste className="w-3.5 h-3.5 mr-1" />Lançamentos
+              </Button>
+            )}
             <Button size="sm" variant="default" className="max-[860px]:hidden" onClick={() => setApresentando(true)}>
               <Presentation className="w-3.5 h-3.5 mr-1" />Apresentar
             </Button>
@@ -318,6 +326,8 @@ export default function TIRelatorios() {
           </>
         }
       />
+
+      {lancamentos && <LancamentosDaTI onFechar={() => setLancamentos(false)} />}
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
@@ -339,7 +349,7 @@ export default function TIRelatorios() {
                       a.cor === 'perigo' ? 'badge-danger' : a.cor === 'aviso' ? 'badge-warning' : 'badge-neutral');
                     return a.para.startsWith('#') ? (
                       <button key={a.texto} type="button" role="listitem" className={classe}
-                        onClick={() => document.getElementById(a.para.slice(1))?.scrollIntoView({ behavior: 'smooth' })}>
+                        onClick={() => (a.para === '#lancamentos' ? setLancamentos(true) : document.getElementById(a.para.slice(1))?.scrollIntoView({ behavior: 'smooth' }))}>
                         {a.texto}
                       </button>
                     ) : (

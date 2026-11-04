@@ -30,7 +30,7 @@ const TELA_DO_TIPO: Record<string, string> = {
   // Benefício de sexta (20270129070000): liberar a retirada de quem atrasa, e a decisão.
   beneficio: '/mkt/beneficio',
   // Ligação com a Meta sem chamado (20270212300000): vencimento da chave, ou queda com o chamado desligado.
-  ligacao_meta: '/ti/configuracoes?aba=alertas',
+  ligacao_meta: '/configuracoes/integracoes',
 };
 
 /** Avisos com id: a tela do próprio registro. */

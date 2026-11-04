@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { alcancePorFormato, comASemanaEmAndamento, faltaLancar, fraseDasRedes, melhoresPosts, type Publicacao, numerosDaConta, numerosDoTrafego, painelDasRedes, ultimasSemanas, type LinhaRedes, type LinhaTrafego } from './redes-e-trafego';
+import { alcancePorFormato, comASemanaEmAndamento, faltamLeads, fraseDasRedes, melhoresPosts, type Publicacao, numerosDaConta, numerosDoTrafego, painelDasRedes, ultimasSemanas, type LinhaRedes, type LinhaTrafego } from './redes-e-trafego';
 
 const vazia: Omit<LinhaRedes, 'semana' | 'conta'> = {
   posts: null, reels: null, stories: null, engajamento: null, novos_seguidores: null, quedas_seguidores: null, total_seguidores: null,
@@ -134,17 +134,12 @@ describe('painel e frase', () => {
   });
 });
 
-describe('faltaLancar', () => {
-  it('aponta a conta sem linha e o número que falta', () => {
-    const redes = [
-      r('2026-11-01', '@minasflor', { posts: 3, reels: 2, stories: 4, total_seguidores: 1, visitas_perfil: 1 }),
-      r('2026-11-01', '@by.mf', { reels: 1, stories: 0, total_seguidores: 1, visitas_perfil: 1 }),
-    ];
-    expect(faltaLancar(redes, [], '2026-11-01')).toEqual([
-      { rotulo: 'Tráfego: nada lançado', ok: false },
-      { rotulo: '@minasflor', ok: true },
-      { rotulo: '@mf.pro: nada lançado', ok: false },
-      { rotulo: '@by.mf: falta feed', ok: false },
-    ]);
+describe('faltamLeads', () => {
+  const t = (leads: number | null) => ({ semana: '2026-11-01', investimento: 10, alcance: null, visitas_perfil: null, campanhas_ativas: null,
+    leads_distribuidor: null, leads_consumidor: leads, leads_salao: null, leads_sem_triagem: null });
+  it('pede os leads quando a semana não tem nenhum funil, mesmo com o robô tendo lançado o resto', () => {
+    expect(faltamLeads([], '2026-11-01')).toBe(true);
+    expect(faltamLeads([t(null)], '2026-11-01')).toBe(true);
+    expect(faltamLeads([t(4)], '2026-11-01')).toBe(false);
   });
 });

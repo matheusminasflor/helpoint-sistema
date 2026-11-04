@@ -9,7 +9,7 @@
 import { COR, COR_ABERTOS, COR_DA_PRIORIDADE, COR_RESOLVIDOS, EIXO } from '@/config/cores-dos-graficos';
 import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { AlertTriangle, BarChart3, CheckCircle2, Clock, Download, Inbox, Presentation, Share2, ShieldCheck, Target, Timer } from 'lucide-react';
+import { AlertTriangle, BarChart3, CheckCircle2, ClipboardPaste, Clock, Download, Inbox, Presentation, Share2, ShieldCheck, Target, Timer } from 'lucide-react';
 import { Bar, BarChart, CartesianGrid, Cell, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,14 +25,16 @@ import { PatternsAnalysis } from '@/components/ti/PatternsAnalysis';
 import { CategoriasDosChamados } from '@/components/ti/CategoriasDosChamados';
 import { LinhaAgendaEAjuda } from '@/components/dashboard/AjudaAOutrosSetoresKPI';
 import { OutrosIndicadoresDoMarketing } from '@/components/mkt/OutrosIndicadoresDoMarketing';
-import { LancamentoDaSemana, LancarSemana, LeadsEInvestimento, NumerosDoTopo, QuemSegue, RedesSociais, TrafegoPorConta } from '@/components/mkt/RedesETrafego';
+import { LancarSemana, LeadsEInvestimento, NumerosDoTopo, QuemSegue, RedesSociais, TrafegoPorConta } from '@/components/mkt/RedesETrafego';
 import { useIndicadoresDoMarketing } from '@/hooks/useIndicadoresDoMarketing';
 import { usePublicoDoInstagram, useRedesETrafego } from '@/hooks/useRedesETrafego';
 import { fatias, horariosTexto, nomeDoPais, publicoDoMes } from '@/lib/publico-do-instagram';
 import {
   comASemanaEmAndamento, fraseDasRedes, NOME_DO_FORMATO, painelDasRedes, pctTexto, semanaASemana, ultimasSemanas,
+  faltamLeads,
 } from '@/lib/redes-e-trafego';
-import { ArtistasDoMes, ArtistasMesAMes, EsperandoAsLigacoes } from '@/components/mkt/ArtistasNosIndicadores';
+import { ArtistasDoMes, ArtistasMesAMes } from '@/components/mkt/ArtistasNosIndicadores';
+import { SeloDaMeta } from '@/components/mkt/SeloDaMeta';
 import { DicaDoGrafico } from '@/components/dashboard/DicaDoGrafico';
 import { ModoApresentacao } from '@/components/dashboard/ModoApresentacao';
 import { ExportPDFDialog, type SectionDef } from '@/components/dashboard/ExportPDFDialog';
@@ -42,7 +44,7 @@ import {
   getPreviousPeriodRange, intervaloDoFiltro, useSerieDosChamados,
 } from '@/hooks/useHelpdeskMetrics';
 import { useMKTSocialPosts } from '@/hooks/useMKTSocialPosts';
-import { useLigacaoMeta } from '@/hooks/useLigacaoMeta';
+import { metaParada, useLigacaoMeta } from '@/hooks/useLigacaoMeta';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { useQueryState } from '@/hooks/useQueryState';
@@ -53,7 +55,7 @@ import { useArtistas, useEntregasEntre, useResumoDosArtistas, useReunioesDosArti
 import { META_DA_TI, metaNoDia, notaDaMeta } from '@/config/metas-da-ti';
 import { PERIODOS_DA_REUNIAO, rotuloDoIntervalo, type IntervaloDeDias } from '@/lib/period';
 import { toLocalISODate, todayISO } from '@/lib/dates';
-import { COR_DO_FAROL, diasDoPeriodo, farol, periodoDoIntervalo } from '@/lib/ti-equipe';
+import { COR_DO_FAROL, diasDoPeriodo, domingoDaSemana, farol, periodoDoIntervalo, somarDias } from '@/lib/ti-equipe';
 import { fraseDoResumo } from '@/lib/resumo-da-ti';
 import { barrasDaTendencia } from '@/lib/tendencia';
 import { formatarHoras } from '@/lib/horas';
@@ -65,6 +67,16 @@ import { cn } from '@/lib/utils';
 import { SOCIAL_PLATFORM_LABELS } from '@/types/mkt';
 
 const PRIORITY_LABEL: Record<string, string> = { critical: 'Crítica', high: 'Alta', medium: 'Média', low: 'Baixa' };
+
+const SECOES_DA_VISAO = [
+  { id: 'mkt-resumo', rotulo: 'Resumo' },
+  { id: 'mkt-redes', rotulo: 'Redes' },
+  { id: 'mkt-publico', rotulo: 'Quem segue' },
+  { id: 'mkt-trafego', rotulo: 'Tráfego' },
+  { id: 'mkt-leads', rotulo: 'Leads' },
+  { id: 'mkt-artistas', rotulo: 'Artistas' },
+  { id: 'mkt-chamados', rotulo: 'Chamados' },
+];
 
 const SECOES_DO_ANALITICO = [
   { id: 'analitico-chamados', rotulo: 'Chamados' },
@@ -122,7 +134,7 @@ export default function MKTRelatorios() {
   const podeMudarMetas = !perfil.isLoading
     && (perfil.alteraAba('marketing', 'chamados') || perfil.pode('diretoria', 'indicadores', 'definir_metas'));
   const outros = useIndicadoresDoMarketing(intervaloDaTela.de, intervaloDaTela.ate);
-  // A ligação com a Meta (2026-11-03): conecta quem a função aceita, gestor para cima (`is_supervisor_or_higher`).
+  // O selo da Meta: o ↻ aparece para quem a função aceita, gestor para cima (`is_supervisor_or_higher`).
   const ligacaoMeta = useLigacaoMeta();
   const { role } = useAuth();
   const podeConectarMeta = role === 'owner' || role === 'admin' || role === 'manager';
@@ -190,7 +202,11 @@ export default function MKTRelatorios() {
 
   // Só com a semana dos artistas encerrada: com ela em andamento, acusaria todos (revisão de 2026-11-03).
   const semEntrega = doRecorte.semana.ate < hoje ? noRecorte.linhas.filter((l) => (recorte.semana ? l.semana : l.mes).pecas === 0).length : 0;
+  // A última semana fechada do período: a que a reunião de segunda olha.
+  const semanaFechada = somarDias(domingoDaSemana(intervaloDaTela.ate), domingoDaSemana(intervaloDaTela.ate) > intervaloDaTela.ate ? -7 : 0);
   const atencao = [
+    metaParada(ligacaoMeta.data) && { texto: 'A ligação com a Meta parou', cor: 'perigo', para: '/configuracoes/integracoes' },
+    podeLancar && faltamLeads(semanal.trafego, semanaFechada) && { texto: `Leads da semana até ${ddmm(new Date(`${semanaFechada}T12:00:00`))} não lançados`, cor: 'aviso', para: '#lancamentos' },
     violados.length > 0 && { texto: `${violados.length} ${violados.length === 1 ? 'chamado fora do prazo' : 'chamados fora do prazo'}`, cor: 'perigo', para: '/mkt/chamados' },
     outros.atrasados > 0 && { texto: `${outros.atrasados} ${outros.atrasados === 1 ? 'pedido de arte passou do prazo' : 'pedidos de arte passaram do prazo'}`, cor: 'aviso', para: '/mkt/pedidos-de-arte' },
     outros.abaixoDoMinimo.length > 0 && { texto: `${outros.abaixoDoMinimo.length} ${outros.abaixoDoMinimo.length === 1 ? 'produto abaixo do mínimo' : 'produtos abaixo do mínimo'}`, cor: 'aviso', para: '/mkt/estoque' },
@@ -346,7 +362,13 @@ export default function MKTRelatorios() {
         periodOptions={PERIODOS_DA_REUNIAO}
         actions={
           <>
+            <SeloDaMeta meta={ligacaoMeta.data} podeBuscar={podeConectarMeta} />
             <TutorialDoRelatorio id="mkt-indicadores" />
+            {podeLancar && (
+              <Button size="sm" variant="outline" onClick={() => setLancando(true)}>
+                <ClipboardPaste className="w-3.5 h-3.5 mr-1" />Lançamentos
+              </Button>
+            )}
             <Button size="sm" variant="default" className="max-[860px]:hidden" onClick={() => setApresentando(true)}>
               <Presentation className="w-3.5 h-3.5 mr-1" />Apresentar
             </Button>
@@ -375,7 +397,7 @@ export default function MKTRelatorios() {
                 const classe = cn('rounded-md px-3 py-1.5 text-sm font-semibold hover:underline', a.cor === 'perigo' ? 'badge-danger' : 'badge-warning');
                 return a.para.startsWith('#') ? (
                   <button key={a.texto} type="button" role="listitem" className={classe}
-                    onClick={() => document.getElementById(a.para.slice(1))?.scrollIntoView({ behavior: 'smooth' })}>{a.texto}</button>
+                    onClick={() => (a.para === '#lancamentos' ? setLancando(true) : document.getElementById(a.para.slice(1))?.scrollIntoView({ behavior: 'smooth' }))}>{a.texto}</button>
                 ) : (
                   <Link key={a.texto} to={tenantPath(a.para)} role="listitem" className={classe}>{a.texto}</Link>
                 );
@@ -383,20 +405,27 @@ export default function MKTRelatorios() {
             </div>
           )}
 
-          <p className="rounded-lg bg-muted/60 px-4 py-3 text-[15px] text-foreground" aria-label="Resumo do período">{frase}</p>
+          <nav aria-label="Seções da Visão Geral"
+            className="sticky top-0 z-20 -mx-1 flex flex-wrap gap-1.5 bg-background/95 px-1 py-2 backdrop-blur">
+            {SECOES_DA_VISAO.filter((s) => s.id !== 'mkt-artistas' || temArtistas).map((s) => (
+              <button key={s.id} type="button" className="rounded-full border px-3 py-1 text-xs font-medium hover:bg-muted"
+                onClick={() => document.getElementById(s.id)?.scrollIntoView({ behavior: 'smooth' })}>{s.rotulo}</button>
+            ))}
+          </nav>
+
+          <p id="mkt-resumo" className="scroll-mt-14 rounded-lg bg-muted/60 px-4 py-3 text-[15px] text-foreground" aria-label="Resumo do período">{frase}</p>
 
           {/* Proposta v3 (2026-11-03): o que o diretor pergunta primeiro sobe — redes, tráfego e leads; chamados e a
               operação descem (posição serial). */}
-          <LancamentoDaSemana redes={semanal.redes} trafego={semanal.trafego} ate={intervaloDaTela.ate} podeLancar={podeLancar} onLancar={() => setLancando(true)} />
           <NumerosDoTopo painel={painel} />
-          <RedesSociais painel={painel} grafico={grafico} />
-          <QuemSegue resumos={publico} />
-          <TrafegoPorConta painel={painel} />
-          <LeadsEInvestimento painel={painel} grafico={grafico} />
+          <div id="mkt-redes" className="scroll-mt-14"><RedesSociais painel={painel} grafico={grafico} /></div>
+          <div id="mkt-publico" className="scroll-mt-14"><QuemSegue resumos={publico} /></div>
+          <div id="mkt-trafego" className="scroll-mt-14"><TrafegoPorConta painel={painel} /></div>
+          <div id="mkt-leads" className="scroll-mt-14"><LeadsEInvestimento painel={painel} grafico={grafico} /></div>
 
-          {artistasDoPeriodo}
+          <div id="mkt-artistas" className="scroll-mt-14">{artistasDoPeriodo}</div>
 
-          <div className="space-y-2">
+          <div id="mkt-chamados" className="scroll-mt-14 space-y-2">
             <h2 className="text-base font-semibold flex items-center gap-2"><Inbox className="h-4 w-4 text-primary" aria-hidden="true" />Chamados do Marketing</h2>
             {cartoesDosChamados}
             <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
@@ -420,7 +449,6 @@ export default function MKTRelatorios() {
             <div className="px-4 pb-4"><OutrosIndicadoresDoMarketing r={outros} /></div>
           </details>
 
-          <EsperandoAsLigacoes meta={ligacaoMeta.data} podeConectarMeta={podeConectarMeta} onConectou={() => ligacaoMeta.refetch()} />
         </TabsContent>
 
         <TabsContent value="detailed">

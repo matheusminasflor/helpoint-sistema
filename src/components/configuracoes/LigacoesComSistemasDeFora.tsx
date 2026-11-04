@@ -1,4 +1,4 @@
-// TI › Configurações › Alertas › "Ligações com sistemas de fora" (proposta aprovada em 2026-11-04,
+// Configurações › Integrações › Meta (proposta aprovada em 2026-11-04,
 // https://claude.ai/artifact/TkNdvQJSmuor8FAUsHaaWM). O que acontece quando a ligação com a Meta cai: quem recebe o
 // aviso, se abre chamado (categoria e prioridade), se entra nas Interrupções (tipo), depois de quantas horas sem busca
 // conta como caída e com quantos dias de antecedência avisa o vencimento da chave. Quem faz é o banco
