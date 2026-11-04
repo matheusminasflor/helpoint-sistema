@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   farolDaAtividade, faseAtual, hojeNaJanela, iniciais, janelaDoCronograma, mesesDaJanela, numerarCronograma,
-  andamentoDaSituacao, diasAlemDoTermino, percentualMedio, posicaoNaJanela, resumoDosProjetos, seloDoConjunto, setoresSemPlano,
+  andamentoDaSituacao, diasAlemDoTermino, percentualMedio, posicaoNaJanela, resumoDosProjetos, seloDoConjunto, seloDoProjeto, setoresSemPlano,
   situacaoDaTarefa, type AtividadeBase,
 } from './projetos';
 
@@ -67,6 +67,16 @@ describe('o visual do desenho (2026-10-09)', () => {
     expect(seloDoConjunto([at('a', 'f', { status: 'completed', percentual: 100 })], hoje).texto).toBe('Concluída');
     expect(seloDoConjunto([at('a', 'f', { percentual: 10 }), at('b', 'f')], hoje).texto).toBe('Em andamento');
     expect(seloDoConjunto([], hoje, false).texto).toBe('Não começou');
+  });
+
+  it('o selo do projeto respeita a situação escolhida, mesmo sem tarefas ou com tarefa atrasada', () => {
+    const hoje = '2026-10-09';
+    const atrasada = at('a', 'f', { termino: '2026-10-01' });
+    expect(seloDoProjeto('done', [], hoje)).toEqual({ texto: 'Concluído', tom: 'finalizado' });
+    expect(seloDoProjeto('done', [atrasada], hoje)).toEqual({ texto: 'Concluído', tom: 'finalizado' });
+    expect(seloDoProjeto('cancelled', [atrasada], hoje).texto).toBe('Cancelado');
+    expect(seloDoProjeto('active', [atrasada], hoje).texto).toBe('1 atrasada');
+    expect(seloDoProjeto('planned', [], hoje).texto).toBe('Não começou');
   });
 
   it('a fase atual é a primeira com atividade aberta', () => {

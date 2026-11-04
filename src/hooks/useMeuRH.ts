@@ -9,7 +9,6 @@ import { unwrap } from '@/lib/supabase-result';
 export type VacationType = 'ferias' | 'abono' | 'banco_horas';
 export type VacationStatus = 'pendente' | 'aprovada' | 'recusada' | 'cancelada';
 export type CertificateStatus = 'recebido' | 'validado' | 'rejeitado';
-export type PayslipType = 'mensal' | '13o' | 'ferias' | 'rescisao';
 
 export interface RHEmployeeProfile {
   id: string;
@@ -60,7 +59,8 @@ export interface Payslip {
   id: string;
   user_id: string;
   reference_month: string;
-  type: PayslipType;
+  /** O código do tipo (rh_tipos_holerite); o nome vem de useTiposDeHolerite. */
+  type: string;
   file_path: string;
   uploaded_at: string;
   viewed_at: string | null;

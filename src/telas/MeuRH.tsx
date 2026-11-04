@@ -11,9 +11,10 @@ import {
   useMyRHProfile, useMyVacationRequests, useCancelVacationRequest,
   useMyCertificates, useMyPayslips, useDownloadRHFile, useMarkPayslipViewed,
   useMyBenefits, useMyDocuments,
-  type VacationStatus, type CertificateStatus, type PayslipType,
+  type VacationStatus, type CertificateStatus,
   type BenefitCategory, type RHDocumentType,
 } from '@/hooks/useMeuRH';
+import { nomeDoTipo, useTiposDeHolerite } from '@/hooks/useTiposDeHolerite';
 import { useNavigate } from 'react-router-dom';
 import { useTenantPath } from '@/hooks/useTenantPath';
 
@@ -46,9 +47,6 @@ const CERT_STATUS_COLOR: Record<CertificateStatus, string> = {
   validado: 'badge-success text-status-success border-border',
   rejeitado: 'badge-danger text-status-danger border-status-danger',
 };
-const PAYSLIP_TYPE_LABEL: Record<PayslipType, string> = {
-  mensal: 'Mensal', '13o': '13º Salário', ferias: 'Férias', rescisao: 'Rescisão',
-};
 
 
 export default function MeuRH() {
@@ -57,6 +55,7 @@ export default function MeuRH() {
   const { data: vacations = [] } = useMyVacationRequests();
   const { data: certificates = [] } = useMyCertificates();
   const { data: payslips = [] } = useMyPayslips();
+  const { data: tiposDeHolerite = [] } = useTiposDeHolerite();
   const { data: benefits = [] } = useMyBenefits();
   const { data: documents = [] } = useMyDocuments();
   const download = useDownloadRHFile();
@@ -228,7 +227,7 @@ export default function MeuRH() {
                             {format(parseISO(p.reference_month), "MMMM 'de' yyyy", { locale: ptBR })}
                             {!p.viewed_at && <Badge className="h-4 px-1.5 text-[12px] badge-success text-status-success border-0">novo</Badge>}
                           </div>
-                          <div className="text-xs text-muted-foreground">{PAYSLIP_TYPE_LABEL[p.type]}</div>
+                          <div className="text-xs text-muted-foreground">{nomeDoTipo(tiposDeHolerite, p.type)}</div>
                         </div>
                       </div>
                       <Button size="sm" variant="outline" onClick={() => handleDownload(p.file_path, p.id)}>

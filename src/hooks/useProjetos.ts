@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { unwrap, expectRows, mensagemDeErro } from '@/lib/supabase-result';
 import { useAuth } from '@/contexts/AuthContext';
 import { todayISO } from '@/lib/dates';
-import { faseAtual, farolDaAtividade, percentualMedio, seloDoConjunto } from '@/lib/projetos';
+import { faseAtual, farolDaAtividade, percentualMedio, seloDoProjeto } from '@/lib/projetos';
 import { enviarAnexo, tirarDoBalde } from '@/lib/anexos-no-storage';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -35,7 +35,7 @@ export interface Projeto extends ProjetoRow {
   /** "fase 2 de 6": a primeira fase com atividade aberta. */
   fase: { numero: number; total: number } | null;
   /** O selo do projeto: "2 atrasadas", "Em andamento", "Não iniciado"… */
-  selo: ReturnType<typeof seloDoConjunto>;
+  selo: ReturnType<typeof seloDoProjeto>;
 }
 
 const nomeDe = (p: { full_name: string | null; email: string }) => p.full_name || p.email;
@@ -80,7 +80,7 @@ export function useProjetos() {
           equipe: equipe.length,
           nomesDaEquipe: equipe,
           fase: faseAtual(fases.filter((f) => f.project_id === p.id), doProjeto),
-          selo: seloDoConjunto(doProjeto, hoje, false),
+          selo: seloDoProjeto(p.status, doProjeto, hoje),
         };
       });
     },

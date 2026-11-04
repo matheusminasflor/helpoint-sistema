@@ -14,17 +14,16 @@ import { useAuth } from '@/contexts/AuthContext';
 import { usePodeNoRH } from '@/hooks/useAccessProfiles';
 import { conferirTamanhoDoArquivoRH, pastaDoColaborador } from '@/lib/rh-arquivo';
 import { useRHEmployees, type RHEmployee } from '@/hooks/useRH';
+import { nomeDoTipo, useTiposDeHolerite, type TipoDeHolerite } from '@/hooks/useTiposDeHolerite';
 import { toast } from 'sonner';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-
-type TipoDeHolerite = 'mensal' | '13o' | 'ferias' | 'rescisao';
 
 /**
  * Sobe o PDF e registra o holerite do COLABORADOR (rodada 2, R4: a lista do RH, com ou sem login — o login vem dele, no
  * banco). A escrita prova que gravou (regra 2).
  */
-async function enviarHolerite(tenantId: string, colaborador: Pick<RHEmployee, 'id' | 'user_id'>, referenceMonth: string, type: TipoDeHolerite, file: File) {
+async function enviarHolerite(tenantId: string, colaborador: Pick<RHEmployee, 'id' | 'user_id'>, referenceMonth: string, type: string, file: File) {
   const refDate = referenceMonth + '-01';
   const year = referenceMonth.slice(0, 4);
   const ext = file.name.split('.').pop() || 'pdf';
@@ -44,7 +43,10 @@ export default function RHHolerites() {
   const qc = useQueryClient();
   const [colaboradorId, setColaboradorId] = useState('');
   const [referenceMonth, setReferenceMonth] = useState('');
-  const [type, setType] = useState<'mensal' | '13o' | 'ferias' | 'rescisao'>('mensal');
+  const [escolhido, setType] = useState('');
+  const { data: tipos = [] } = useTiposDeHolerite();
+  const ativos = tipos.filter((t) => t.ativo);
+  const type = escolhido || ativos[0]?.codigo || '';
   const [file, setFile] = useState<File | null>(null);
 
   // A lista do RH (com ou sem login), não os logins do sistema (rodada 2, R4).
@@ -68,7 +70,7 @@ export default function RHHolerites() {
   const upload = useMutation({
     mutationFn: async () => {
       const colaborador = users.find((u) => u.id === colaboradorId);
-      if (!file || !colaborador || !referenceMonth || !tenantId) throw new Error('Preencha tudo');
+      if (!file || !colaborador || !referenceMonth || !tenantId || !type) throw new Error('Preencha tudo');
       await enviarHolerite(tenantId, colaborador, referenceMonth, type, file);
     },
     onSuccess: () => {
@@ -111,13 +113,10 @@ export default function RHHolerites() {
             </div>
             <div>
               <Label>Tipo</Label>
-              <Select value={type} onValueChange={(v) => setType(v as any)}>
+              <Select value={type} onValueChange={setType}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="mensal">Mensal</SelectItem>
-                  <SelectItem value="13o">13º Salário</SelectItem>
-                  <SelectItem value="ferias">Férias</SelectItem>
-                  <SelectItem value="rescisao">Rescisão</SelectItem>
+                  {ativos.map((t) => <SelectItem key={t.codigo} value={t.codigo}>{t.nome}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -130,14 +129,14 @@ export default function RHHolerites() {
               <Input type="file" accept="application/pdf" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
             </div>
           </div>
-          <Button onClick={() => upload.mutate()} disabled={!file || !colaboradorId || !referenceMonth || upload.isPending}>
+          <Button onClick={() => upload.mutate()} disabled={!file || !colaboradorId || !referenceMonth || !type || upload.isPending}>
             <Upload className="w-3.5 h-3.5 mr-1.5" /> {upload.isPending ? 'Enviando…' : 'Enviar holerite'}
           </Button>
         </CardContent>
       </Card>}
 
       {podeEnviar && tenantId && (
-        <EnviarEmLote tenantId={tenantId} colaboradores={users}
+        <EnviarEmLote tenantId={tenantId} colaboradores={users} tipos={ativos}
           aoTerminar={() => qc.invalidateQueries({ queryKey: ['rh-payslips-recent'] })} />
       )}
 
@@ -152,7 +151,7 @@ export default function RHHolerites() {
             <div key={p.id} className="flex items-center justify-between text-sm border-b last:border-0 py-2">
               <div>
                 <span className="font-medium">{p.employee?.full_name ?? '—'}</span>
-                <span className="text-muted-foreground"> · {format(parseISO(p.reference_month), "MMM 'de' yyyy", { locale: ptBR })} · {p.type}</span>
+                <span className="text-muted-foreground"> · {format(parseISO(p.reference_month), "MMM 'de' yyyy", { locale: ptBR })} · {nomeDoTipo(tipos, p.type)}</span>
               </div>
               <span className="text-xs text-muted-foreground">
                 {p.viewed_at ? `Visto em ${format(new Date(p.viewed_at), 'dd/MM HH:mm')}` : 'Não lido'}
@@ -170,11 +169,12 @@ export default function RHHolerites() {
  * Vários holerites de uma vez (etapa 4 · RH, 2026-10-25): escolhe o mês e o tipo, solta os PDFs, e cada um vai para
  * a pessoa cujo nome está no nome do arquivo (`quemEhDoArquivo`). O que não casou, o RH escolhe na lista antes de enviar.
  */
-function EnviarEmLote({ tenantId, colaboradores, aoTerminar }: { tenantId: string; colaboradores: RHEmployee[]; aoTerminar: () => void }) {
+function EnviarEmLote({ tenantId, colaboradores, tipos, aoTerminar }: { tenantId: string; colaboradores: RHEmployee[]; tipos: TipoDeHolerite[]; aoTerminar: () => void }) {
   // Os colaboradores da lista do RH; o e-mail é o de acesso (o do login, quando tem).
   const pessoas: PessoaDoLote[] = colaboradores.map((c) => ({ id: c.id, full_name: c.full_name, email: c.access_email }));
   const [mes, setMes] = useState('');
-  const [tipo, setTipo] = useState<TipoDeHolerite>('mensal');
+  const [escolhido, setTipo] = useState('');
+  const tipo = escolhido || tipos[0]?.codigo || '';
   const [linhas, setLinhas] = useState<{ file: File; colaboradorId: string; situacao?: 'enviado' | string }[]>([]);
   const [enviando, setEnviando] = useState(false);
   const escolher = (files: FileList | null) =>
@@ -216,13 +216,10 @@ function EnviarEmLote({ tenantId, colaboradores, aoTerminar }: { tenantId: strin
           </div>
           <div>
             <Label>Tipo</Label>
-            <Select value={tipo} onValueChange={(v) => setTipo(v as TipoDeHolerite)}>
+            <Select value={tipo} onValueChange={setTipo}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="mensal">Mensal</SelectItem>
-                <SelectItem value="13o">13º Salário</SelectItem>
-                <SelectItem value="ferias">Férias</SelectItem>
-                <SelectItem value="rescisao">Rescisão</SelectItem>
+                {tipos.map((t) => <SelectItem key={t.codigo} value={t.codigo}>{t.nome}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -250,7 +247,7 @@ function EnviarEmLote({ tenantId, colaboradores, aoTerminar }: { tenantId: strin
             ))}
           </div>
         )}
-        <Button variant="outline" onClick={enviar} disabled={!mes || prontos.length === 0 || enviando}>
+        <Button variant="outline" onClick={enviar} disabled={!mes || !tipo || prontos.length === 0 || enviando}>
           <Upload className="w-3.5 h-3.5 mr-1.5" />
           {enviando ? 'Enviando…' : `Enviar ${prontos.length} holerite${prontos.length === 1 ? '' : 's'}`}
         </Button>

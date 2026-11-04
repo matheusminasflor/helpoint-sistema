@@ -38,6 +38,7 @@ export const ABAS_DE_CONFIGURACAO: Record<Department, AbaDeConfiguracao[]> = {
     { aba: 'folha', rotulo: 'Parâmetros da folha' },
     // 2026-10-04 (correção do dono): "quem define os feriados é o RH". Param o prazo dos chamados.
     { aba: 'feriados', rotulo: 'Feriados' },
+    { aba: 'holerites', rotulo: 'Holerites' },
   ],
   // 2026-10-20 (dono): quem libera a retirada de quem atrasou — só o Gestor do Marketing e os administradores.
   marketing: [CHAMADOS, { aba: 'beneficio', rotulo: 'Benefício de sexta (quem libera)' }],

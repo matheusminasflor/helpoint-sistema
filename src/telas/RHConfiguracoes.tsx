@@ -6,11 +6,12 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
-import { Users, Plus, Trash2, Edit3, Building2, Layers, Calculator, Info, RotateCcw, CalendarOff, UserCheck } from 'lucide-react';
+import { Users, Plus, Trash2, Edit3, Building2, Layers, Calculator, Info, RotateCcw, CalendarOff, UserCheck, Receipt } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { useLigarMeuRH, useMeuRHLigado } from '@/hooks/useMeuRHLigado';
 import { ConfiguracaoDoSetor } from '@/components/configuracoes/ConfiguracaoDoSetor';
 import { FeriadosDaEmpresa } from '@/components/configuracoes/FeriadosDaEmpresa';
+import { TiposDeHolerite } from '@/components/rh/TiposDeHolerite';
 import { useRHCompanies, useRHDepartments, useRHPayrollSettings } from '@/hooks/useRH';
 
 // Tabelas oficiais 2025 — rates armazenados como DECIMAL (0.075 = 7,5%)
@@ -135,6 +136,8 @@ export default function RHConfiguracoes() {
           { valor: 'empresas', permissao: 'empresas', rotulo: 'Empresas', icone: Building2, conteudo: <CompaniesTab /> },
           { valor: 'departamentos', permissao: 'departamentos', rotulo: 'Departamentos', icone: Layers, conteudo: <DepartmentsTab /> },
           { valor: 'folha', permissao: 'folha', rotulo: 'Parâmetros da folha', icone: Calculator, conteudo: <PayrollSettingsTab /> },
+          { valor: 'holerites', permissao: 'holerites', rotulo: 'Holerites', icone: Receipt,
+            conteudo: (podeAlterar: boolean) => <TiposDeHolerite podeAlterar={podeAlterar} /> },
           // Quem define os feriados é o RH (correção do dono, 2026-10-04). Eles param o prazo dos chamados.
           { valor: 'feriados', permissao: 'feriados', rotulo: 'Feriados', icone: CalendarOff,
             conteudo: (podeAlterar: boolean) => <FeriadosDaEmpresa podeEditar={podeAlterar} /> },

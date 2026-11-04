@@ -176,6 +176,17 @@ export function seloDoConjunto(
   return { texto: 'Não começou', tom: 'nao_iniciado' };
 }
 
+/** O selo do projeto: a situação escolhida na mão manda (dono, 2026-11-02: "coloquei concluído, mas ele está como não começou"). */
+export function seloDoProjeto(
+  status: string | null,
+  atividades: Pick<AtividadeBase, 'status' | 'percentual' | 'termino'>[],
+  hojeISO: string,
+): { texto: string; tom: TomDoSelo } {
+  if (status === 'done') return { texto: 'Concluído', tom: 'finalizado' };
+  if (status === 'cancelled') return { texto: 'Cancelado', tom: 'nao_iniciado' };
+  return seloDoConjunto(atividades, hojeISO, false);
+}
+
 /** A fase em que o projeto está: a primeira (na ordem) que ainda tem atividade sem terminar. */
 export function faseAtual(
   fases: Pick<FaseBase, 'id' | 'ordem'>[],
