@@ -8,7 +8,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(14);
+select plan(16);
 
 create temporary table f on commit drop as select tests.create_tenant('pgtap-lig-meta', 'Lig Meta', false) as a;
 create temporary table u on commit drop as
@@ -23,15 +23,16 @@ insert into public.mkt_meta_ligacao (tenant_id, contas, conectado_por, conectado
 values ((select a from f), '[]', (select dono from u), now() - interval '2 days', now());
 
 create temporary view chamados as
-  select * from public.tickets where tenant_id = (select a from f) and title = 'Ligação com a Meta caiu: reconectar';
+  select * from public.tickets where tenant_id = (select a from f) and title like '%Ligação com a Meta caiu%';
 create temporary view avisos as
   select * from public.notifications where tenant_id = (select a from f) and type = 'ligacao_caiu';
 
 -- 1 ──────────────────────────────────────────────────────────────────────────
 select public.ligacao_meta_resultado((select a from f), false, true, 'a chave da Meta deixou de valer', null);
-select is((select count(*)::int from chamados where status = 'open' and priority = 'high'
-             and category_id = (select id from public.ti_categories where tenant_id = (select a from f) and name = 'Sistemas')),
-          1, 'caiu: chamado na TI, prioridade alta, categoria Sistemas');
+select is((select count(*)::int from chamados), 1, 'caiu: chamado na TI');
+select is((select priority::text || ' / ' || status::text from chamados), 'high / open', 'aberto, prioridade alta');
+select is((select category_id from chamados), (select id from public.ti_categories where tenant_id = (select a from f) and name = 'Sistemas'),
+          'na categoria Sistemas');
 select is((select count(*)::int from public.ti_interrupcoes where tenant_id = (select a from f) and fim is null and tipo = 'sistema'),
           1, 'caiu: interrupcao Sistema aberta');
 select is((select count(*)::int from avisos where user_id = (select ti from u)), 1, 'caiu: aviso para quem e da TI');

@@ -116,7 +116,7 @@ begin
   perform public.ligacao_meta_avisar(p_tenant, coalesce(nullif(c ->> 'setor', ''), 'ti'), 'A ligação com a Meta caiu',
     format('%s (%s). Os Indicadores do Marketing param de atualizar.%s', p_motivo, v_hora,
            case when v_chamado is not null then ' Chamado aberto na TI.' else '' end),
-    case when v_chamado is not null then 'ticket' else 'ligacao_meta' end, v_chamado);
+    case when v_chamado is not null then 'ticket' else 'ligacao_meta' end, coalesce(v_chamado, p_tenant));
 end;
 $$;
 
@@ -148,7 +148,7 @@ begin
   if coalesce((c ->> 'ligado')::boolean, true) then
     perform public.ligacao_meta_avisar(p_tenant, coalesce(nullif(c ->> 'setor', ''), 'ti'), 'A ligação com a Meta voltou',
       format('O robô voltou a buscar os números (%s).', v_hora),
-      case when l.queda_chamado is not null then 'ticket' else 'ligacao_meta' end, l.queda_chamado);
+      case when l.queda_chamado is not null then 'ticket' else 'ligacao_meta' end, coalesce(l.queda_chamado, p_tenant));
   end if;
 end;
 $$;
@@ -185,7 +185,7 @@ begin
     perform public.ligacao_meta_avisar(p_tenant, coalesce(nullif(c ->> 'setor', ''), 'ti'), 'A chave da Meta vai vencer',
       format('A chave que liga o Helpoint à Meta vence em %s. Reconecte antes (Marketing › Indicadores › "Conectar com a Meta") para os números não pararem.',
              to_char(l.chave_vence_em at time zone 'America/Sao_Paulo', 'DD/MM/YYYY')),
-      'ligacao_meta', null);
+      'ligacao_meta', p_tenant);
     update public.mkt_meta_ligacao set vencimento_avisado = l.chave_vence_em where tenant_id = p_tenant;
   end if;
 end;
