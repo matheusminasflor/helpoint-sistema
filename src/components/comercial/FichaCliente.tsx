@@ -29,7 +29,7 @@
 // SEGUNDA leitura dos MESMOS dados (`com_ficha_cliente` continua sendo uma
 // ida só ao banco): nada aqui pede nada a mais, exceto o cashback, que é uma
 // consulta nova por ser conta de outra função.
-import { useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { ArrowDownRight, ArrowUpRight, Minus, X } from 'lucide-react';
@@ -76,6 +76,14 @@ export function FichaClienteSecao({
   // Abas Vendas e Relacionamento (etapa 4 · Comercial, 2026-10-24): os números do cliente e os contatos com ele.
   const [aba, setAba] = useQueryState<'vendas' | 'relacionamento' | 'raio-x'>('aba-ficha', 'vendas');
   const { data: ficha, isLoading } = useFichaCliente(codigo, de, ate, filial, criterio);
+  // Quem chega pelo link do Raio-X vai direto para a aba, que fica abaixo do cadastro.
+  const abas = useRef<HTMLDivElement>(null);
+  const chegouNoRaioX = useRef(aba === 'raio-x');
+  useEffect(() => {
+    if (!ficha || !chegouNoRaioX.current) return;
+    chegouNoRaioX.current = false;
+    abas.current?.scrollIntoView({ block: 'start' });
+  }, [ficha]);
   // O cashback é apurado por ANO (a faixa é mensal, dentro do ano) — é o
   // ano do fim do período, o mesmo que o título da ficha mostra.
   const ano = Number(ate.slice(0, 4));
@@ -141,7 +149,7 @@ export function FichaClienteSecao({
           porque é o "quem é" antes do "quanto". */}
       <CadastroDoCliente codigo={codigo} de={de} ate={ate} filial={filial} />
 
-      <div className="inline-flex rounded-md border border-border p-0.5" role="tablist" aria-label="Partes da ficha">
+      <div ref={abas} className="inline-flex rounded-md border border-border p-0.5 scroll-mt-20" role="tablist" aria-label="Partes da ficha">
         {(['vendas', 'relacionamento', 'raio-x'] as const).map((a) => (
           <button key={a} type="button" role="tab" aria-selected={aba === a} onClick={() => setAba(a)}
             className={`px-3 min-h-9 rounded text-[13px] ${aba === a ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>
