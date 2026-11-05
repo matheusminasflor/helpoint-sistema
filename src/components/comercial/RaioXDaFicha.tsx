@@ -115,7 +115,7 @@ function CartaoDaDor({ dor }: { dor: DorDoCliente }) {
         <div key={p.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-muted/50 px-2 py-1.5 text-[13px]">
           <span><strong>{rotuloDoTipoDeProposta(p.tipo)}:</strong> {p.proposta} <span className="text-[12px] text-muted-foreground">{p.autor ?? ''}</span></span>
           <Select value={p.resultado} onValueChange={(v) => mudarProposta.mutate({ id: p.id, resultado: v as ResultadoDaProposta })}>
-            <SelectTrigger className="w-44 h-8" aria-label="Resultado da proposta"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-52 h-8" aria-label="Resultado da proposta"><SelectValue /></SelectTrigger>
             <SelectContent>{RESULTADOS_DA_PROPOSTA.map((r) => <SelectItem key={r.valor} value={r.valor}>{r.rotulo}</SelectItem>)}</SelectContent>
           </Select>
         </div>
