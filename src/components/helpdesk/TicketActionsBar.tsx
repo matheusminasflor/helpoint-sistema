@@ -25,7 +25,11 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useTicketActions } from '@/hooks/useTicketActions';
-import { usePodeNoChamado } from '@/hooks/useAccessProfiles';
+import { useDepartmentPermissions, usePodeNoChamado } from '@/hooks/useAccessProfiles';
+import { useIALigada } from '@/hooks/useAssistantName';
+import { useTenantPath } from '@/hooks/useTenantPath';
+import { invokeEdge } from '@/lib/edge-function';
+import { mensagemDeErro } from '@/lib/supabase-result';
 import { useEuAtendoJunto } from '@/hooks/useAtenderJunto';
 import { useTicketChecklist } from '@/hooks/useComplianceChecklists';
 import { TransferTicketDialog } from './TransferTicketDialog';
@@ -47,7 +51,8 @@ import {
   XCircle,
   Trash2,
   Tags,
-  CalendarClock
+  CalendarClock,
+  Wand2
 } from 'lucide-react';
 import type { TicketWithDetails, TicketStatus } from '@/types/helpdesk';
 import { CreateMaintenanceDialog } from './CreateMaintenanceDialog';
@@ -76,6 +81,7 @@ export function TicketActionsBar({
   const { pode, atende } = usePodeNoChamado(ticket.module, euAtendoJunto);
   const { guardrail } = useTicketChecklist(ticket.id);
   const navigate = useNavigate();
+  const tenantPath = useTenantPath();
   
   const [transferOpen, setTransferOpen] = useState(false);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
@@ -148,13 +154,27 @@ export function TicketActionsBar({
   const podeTransferir = pode('transfer') && (!!ticket.assigned_to || !isFinalState);
   const podeReabrir = pode('reopen') && isFinalState;
   const podeResolver = pode('close') && !isResolved;
+  // Rascunho de tutorial a partir do chamado resolvido (mapa de IA, 2026-11-04): a pessoa revisa no editor.
+  const iaLigada = useIALigada();
+  const escreveTutorial = useDepartmentPermissions('ti').can('knowledge', 'create');
+  const podeCriarTutorial = isResolved && iaLigada && escreveTutorial;
+  const tutorialComIA = async () => {
+    const aviso = toast.loading('Montando o rascunho do tutorial…');
+    try {
+      const rascunho = await invokeEdge<{ title: string; content: string; keywords: string[] }>('ai-rascunho-tutorial', { ticket_id: ticket.id });
+      toast.dismiss(aviso);
+      navigate(tenantPath('/ti/pops/novo'), { state: rascunho });
+    } catch (e) {
+      toast.error(mensagemDeErro(e), { id: aviso });
+    }
+  };
   const principal: 'assumir' | 'reabrir' | 'resolver' | null =
     podeAssumir ? 'assumir' : podeReabrir ? 'reabrir' : podeResolver ? 'resolver' : null;
   const resolver = () => {
     if (isChecklistBlocking) { toast.warning(CHECKLIST_BLOCK_MESSAGE); return; }
     setResolveOpen(true);
   };
-  const temMais = (podeResolver && principal !== 'resolver') || podeTransferir || pode('delete')
+  const temMais = podeCriarTutorial || (podeResolver && principal !== 'resolver') || podeTransferir || pode('delete')
     || (!isFinalState && (pode('change_status') || pode('schedule') || pode('change_category') || pode('close')));
 
   return (
@@ -193,6 +213,11 @@ export function TicketActionsBar({
                 {podeResolver && principal !== 'resolver' && (
                   <DropdownMenuItem onClick={resolver} disabled={isChecklistBlocking} className="gap-2">
                     <CheckCircle2 className="w-4 h-4" aria-hidden="true" /> Resolver
+                  </DropdownMenuItem>
+                )}
+                {podeCriarTutorial && (
+                  <DropdownMenuItem onClick={tutorialComIA} className="gap-2">
+                    <Wand2 className="w-4 h-4" aria-hidden="true" /> Criar tutorial com IA
                   </DropdownMenuItem>
                 )}
                 {podeTransferir && (

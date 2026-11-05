@@ -9,6 +9,7 @@
 // Período e PDF (etapa 4 · Financeiro, 2026-10-25): a lista e os totais do período escolhido, e o PDF (com ou sem os
 // recibos) daqui mesmo. O item "Relatório da Caixinha" saiu do menu — repetia esta tela; o endereço antigo traz para cá.
 import { useMemo, useState } from 'react';
+import { PreencherComIA } from '@/components/ai/PreencherComIA';
 import { ArrowDownCircle, ArrowUpCircle, FileDown, Paperclip, PiggyBank, Trash2, Wallet } from 'lucide-react';
 import { toast } from 'sonner';
 import { useQueryState } from '@/hooks/useQueryState';
@@ -383,6 +384,14 @@ function NovoLancamento({ tipo, saldo, valorSemanal, caixinhaId, onFechar }: {
               <span className={cn(!recibo && 'text-primary underline')}>{recibo ? recibo.name : 'Anexar recibo ou nota (opcional)'}</span>
               <input type="file" className="hidden" onChange={(e) => setRecibo(e.target.files?.[0] ?? null)} />
             </label>
+          )}
+          {tipo === 'saida' && recibo && (
+            <PreencherComIA<{ valor_total?: number; data?: string; descricao?: string }> arquivo={recibo} modelo="comprovante"
+              onCampos={(c) => {
+                if (c.valor_total) setValor(String(c.valor_total).replace('.', ','));
+                if (c.data && /^\d{4}-\d{2}-\d{2}$/.test(c.data)) setData(c.data);
+                if (c.descricao) setDescricao(c.descricao);
+              }} />
           )}
         </div>
         <DialogFooter>

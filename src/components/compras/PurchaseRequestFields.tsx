@@ -8,6 +8,7 @@ import { usePurchaseProducts, useCreatePurchaseProduct, usePurchaseHistoryByProd
 import { ComoFuncionaCompras } from './ComoFuncionaCompras';
 import { UNIDADES_DE_COMPRA, porUnidade } from '@/lib/unidades-de-compra';
 import { SeletorFornecedor } from '@/components/compras/SeletorFornecedor';
+import { PreencherComIA } from '@/components/ai/PreencherComIA';
 import type { NewQuoteInput } from '@/types/purchases';
 import { formatBRLAmount } from '@/types/purchases';
 import { totalDigitado, type PurchaseFieldsValue } from '@/lib/pedido-de-compra';
@@ -250,6 +251,19 @@ export function PurchaseRequestFields({ value, onChange, orcamentoOpcional = fal
                 onChange={(e) => setQuote(i, { file: e.target.files?.[0] ?? null })}
               />
             </label>
+            {q.file && (
+              <div className="sm:col-span-3">
+                <PreencherComIA<{ fornecedor?: string; valor_unitario?: number; frete?: number; prazo_dias?: number; link?: string }>
+                  arquivo={q.file} modelo="orcamento"
+                  onCampos={(c) => setQuote(i, {
+                    ...(c.fornecedor ? { supplier: c.fornecedor, supplierId: null } : {}),
+                    ...(c.valor_unitario ? { amount: String(c.valor_unitario).replace('.', ',') } : {}),
+                    ...(c.frete ? { fretePago: true, frete: String(c.frete).replace('.', ',') } : {}),
+                    ...(c.prazo_dias ? { prazoDias: String(c.prazo_dias) } : {}),
+                    ...(c.link ? { link: c.link } : {}),
+                  })} />
+              </div>
+            )}
             <div className="relative sm:col-span-3">
               <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
               <Input

@@ -41,6 +41,8 @@ export interface AICallOptions {
   maxTokens?: number;
   /** sobrescreve o modelo configurado pelo tenant (raro) */
   model?: string;
+  /** PDF ou foto para a IA ler, junto da última mensagem. Só com o Claude. */
+  anexo?: { base64: string; tipo: string };
   /** Obriga a IA a responder por esta ferramenta. */
   forcarFerramenta?: string;
   /** Quem pediu e para quê: toda chamada confere o limite e fica registrada (20270212340000). */
@@ -332,6 +334,14 @@ async function chamarProvedor(
       messages: toAnthropicMessages(rest),
     };
     if (system) body.system = system;
+    if (opts.anexo) {
+      const ultima = body.messages[body.messages.length - 1];
+      const fonte = { type: "base64", media_type: opts.anexo.tipo, data: opts.anexo.base64 };
+      ultima.content = [
+        { type: opts.anexo.tipo === "application/pdf" ? "document" : "image", source: fonte },
+        { type: "text", text: ultima.content },
+      ];
+    }
     const tools = toAnthropicTools(opts.tools);
     if (tools?.length) body.tools = tools;
     if (opts.forcarFerramenta) body.tool_choice = { type: "tool", name: opts.forcarFerramenta };
@@ -366,6 +376,8 @@ async function chamarProvedor(
       tokens: { entrada: data.usage?.input_tokens ?? 0, saida: data.usage?.output_tokens ?? 0 },
     };
   }
+
+  if (opts.anexo) throw new AIError("provider_error", "A leitura de anexos precisa do Claude.", 400);
 
   // OpenAI e Google (endpoint compatível OpenAI)
   // deno-lint-ignore no-explicit-any

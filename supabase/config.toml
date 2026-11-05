@@ -81,6 +81,10 @@ verify_enabled = true
     verify_jwt = false
   [functions.automation-worker]
     verify_jwt = true
+  [functions.ai-ler-anexo]
+    verify_jwt = false
+  [functions.ai-rascunho-tutorial]
+    verify_jwt = false
   [functions.ai-organizar]
     verify_jwt = false
   [functions.ai-refine]
