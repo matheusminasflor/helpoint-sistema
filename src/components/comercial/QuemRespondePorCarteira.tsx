@@ -16,6 +16,7 @@ import { useMemo, useState } from 'react';
 import { Archive, Pencil, Plus, Users, X } from 'lucide-react';
 import { DialogoRenomearCarteira } from '@/components/comercial/DialogoRenomearCarteira';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useAuth } from '@/contexts/AuthContext';
 import { useDepartmentPermissions, usePodeGerirCarteiras } from '@/hooks/useAccessProfiles';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -55,6 +56,9 @@ export function QuemRespondePorCarteira({ carteiras, permiteCriar = false }: { c
   const [inativando, setInativando] = useState<string | null>(null);
   const [destino, setDestino] = useState('');
   const [pessoaDaReativada, setPessoaDaReativada] = useState<Record<string, string>>({});
+  // Carteira inativa não aparece para a equipe (dono, 2026-11-05); dono e admin seguem vendo para poder reativar.
+  const { role } = useAuth();
+  const donoOuAdmin = role === 'owner' || role === 'admin';
 
   // As carteiras que já têm gente entram mesmo se a lista de fora não as trouxer — é o caso
   // de uma carteira acabada de criar, antes de a lista recarregar.
@@ -205,7 +209,7 @@ export function QuemRespondePorCarteira({ carteiras, permiteCriar = false }: { c
         </div>
       )}
 
-      {inativas.length > 0 && (
+      {donoOuAdmin && inativas.length > 0 && (
         <div className="space-y-1.5">
           <p className="text-[13px] font-medium text-muted-foreground flex items-center gap-1.5">
             <Archive className="w-3.5 h-3.5" aria-hidden="true" /> Carteiras inativas
