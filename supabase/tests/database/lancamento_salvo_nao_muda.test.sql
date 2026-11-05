@@ -136,9 +136,9 @@ select is((select n from cnt), 0, 'mas sem "Apagar lancamento" nao apaga');
 
 -- 20261122020000: quem corrige também deixa registro no PRÓPRIO lançamento (antes só no alheio).
 insert into l select 'do_gil', public.com_salvar_interacao(null,
-  '{"data":"2026-08-12","status":"em_andamento"}'::jsonb, null);
+  '{"cliente_codigo":"N1","fora_da_carteira":true,"data":"2026-08-12","status":"em_andamento"}'::jsonb, null);
 select public.com_salvar_interacao((select id from l where nome = 'do_gil'),
-  '{"data":"2026-08-13","status":"em_andamento"}'::jsonb, null);
+  '{"cliente_codigo":"N1","fora_da_carteira":true,"data":"2026-08-13","status":"em_andamento"}'::jsonb, null);
 select tests.clear_authentication();
 select ok((select count(*) > 0 from public.audit_logs
             where record_id = (select id from l where nome = 'do_gil') and user_id = (select gil from u)),
