@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Pencil, Trash2, Sparkles } from 'lucide-react';
+import { Plus, Pencil, Trash2, Sparkles, Wand2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,7 +16,9 @@ import { useTechnicians } from '@/hooks/useTechnicians';
 import { useCRMStages } from '@/hooks/useCRM';
 import { flowOf, useDeleteWorkflow, useSaveWorkflow, useSetWorkflowStatus, useWorkflows, type AutomationWorkflow } from '@/hooks/useAutomations';
 import { describeFlow, type AutomationModule } from '@/lib/automation-flow';
+import { useIALigada } from '@/hooks/useAssistantName';
 import { AutomationTemplatesDialog } from './AutomationTemplatesDialog';
+import { LyraMontaAutomacao } from './LyraMontaAutomacao';
 
 interface AutomationsTabProps {
   module: AutomationModule;
@@ -49,6 +51,8 @@ export function AutomationsTab({ module }: AutomationsTabProps) {
   const deleteWorkflow = useDeleteWorkflow();
   const [deleting, setDeleting] = useState<AutomationWorkflow | null>(null);
   const [templatesOpen, setTemplatesOpen] = useState(false);
+  const [lyraAberta, setLyraAberta] = useState(false);
+  const iaLigada = useIALigada();
 
   const ctx = useMemo(() => ({
     people: technicians.map((t) => ({ id: t.id, name: t.full_name || t.email })),
@@ -77,6 +81,11 @@ export function AutomationsTab({ module }: AutomationsTabProps) {
                 <Sparkles className="w-3.5 h-3.5 mr-1" /> Usar um modelo
               </Button>
             )}
+            {iaLigada && module !== 'crm' && (
+              <Button size="sm" variant="outline" onClick={() => setLyraAberta(true)}>
+                <Wand2 className="w-3.5 h-3.5 mr-1" /> Falar com a Lyra
+              </Button>
+            )}
             {/* Um botão principal por tela (etapa 2): o da tela de configuração é "Nova categoria". */}
             <Button size="sm" variant="outline" onClick={createNew} disabled={saveWorkflow.isPending}>
               <Plus className="w-3.5 h-3.5 mr-1" /> Novo fluxo
@@ -85,6 +94,7 @@ export function AutomationsTab({ module }: AutomationsTabProps) {
         )}
       </CardHeader>
       <AutomationTemplatesDialog open={templatesOpen} onOpenChange={setTemplatesOpen} module={module} />
+      <LyraMontaAutomacao aberto={lyraAberta} onFechar={() => setLyraAberta(false)} module={module} ctx={ctx} />
       <CardContent>
         {isLoading ? (
           <div className="py-8 text-center text-sm text-muted-foreground">Carregando…</div>

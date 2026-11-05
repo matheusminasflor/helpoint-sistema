@@ -28,6 +28,8 @@ export interface ChamadoDoPeriodo {
   subcategory: string | null;
   created_at: string;
   assignee?: { full_name?: string | null; email?: string | null } | null;
+  /** O setor de quem abriu (`profiles.department`), para os pontos de melhoria. */
+  setor?: string | null;
   /** Em aberto e com o prazo já vencido — a mesma conta do "SLA violados" (`slaDoChamado`). */
   sla_estourado: boolean;
   /** Agendou o chamado com o prazo já vencido (`tickets.agendou_vencido`) — o hover de "Agendados com prazo vencido". */
@@ -158,7 +160,7 @@ export function useTicketMetrics(filter?: MetricsFilter) {
     queryFn: async (): Promise<TicketMetrics> => {
       let query = supabase
         .from('tickets')
-        .select('*, assignee:profiles!tickets_assigned_to_fkey(full_name, email)')
+        .select('*, assignee:profiles!tickets_assigned_to_fkey(full_name, email), solicitante:profiles!tickets_requester_id_fkey(department)')
         .gte('created_at', dateRange.startDate.toISOString())
         .lte('created_at', dateRange.endDate.toISOString());
 
@@ -235,6 +237,7 @@ export function useTicketMetrics(filter?: MetricsFilter) {
           // O `closed` antigo entra como `resolved` (`statusVisivel`).
           status: statusVisivel(ticket.status || 'open'),
           priority: ticket.priority, category, subcategory: ticket.subcategory ?? null, created_at: ticket.created_at, assignee: ticket.assignee,
+          setor: (ticket as { solicitante?: { department?: string | null } | null }).solicitante?.department ?? null,
           sla_estourado: !!sla?.estourado,
           agendou_vencido: agendouVencido,
         });

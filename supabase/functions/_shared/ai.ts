@@ -41,6 +41,10 @@ export interface AICallOptions {
   maxTokens?: number;
   /** sobrescreve o modelo configurado pelo tenant (raro) */
   model?: string;
+  /** Análise pesada, no clique do administrador: usa o Sonnet quando a credencial é do Claude. */
+  analise?: boolean;
+  /** Tempo máximo de espera pelo provedor. Padrão: 60 s. */
+  limiteMs?: number;
   /** PDF ou foto para a IA ler, junto da última mensagem. Só com o Claude. */
   anexo?: { base64: string; tipo: string };
   /** Obriga a IA a responder por esta ferramenta. */
@@ -285,7 +289,7 @@ export async function callTenantAI(
   opts: AICallOptions,
 ): Promise<AIResult> {
   const cred = await requireCredential(tenantId);
-  const modelo = opts.model || cred.model || DEFAULT_MODELS[cred.provider];
+  const modelo = opts.model || (opts.analise && cred.provider === "anthropic" ? "claude-sonnet-5-5" : cred.model) || DEFAULT_MODELS[cred.provider];
   const db = admin();
   const { userId, recurso, guardar } = opts.uso;
   const chave = guardar ? await chaveDoTexto(modelo, opts) : null;
@@ -354,7 +358,7 @@ async function chamarProvedor(
         "Content-Type": "application/json",
       },
       body: JSON.stringify(body),
-    }, { limiteMs: 60_000 });
+    }, { limiteMs: opts.limiteMs ?? 60_000 });
     if (!res.ok) throw mapHttpError(res.status, await res.text());
     const data = await res.json();
     let content = "";

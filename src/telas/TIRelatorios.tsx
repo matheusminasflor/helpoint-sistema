@@ -47,10 +47,11 @@ import { useMaintenances } from '@/hooks/useMaintenances';
 import { useMembrosDoSetor } from '@/hooks/useMembrosDoSetor';
 import { useConfiguracaoDosSetores, usePodeVerEquipe } from '@/hooks/useAccessProfiles';
 import { useMetasDaTI } from '@/hooks/useMetasDaTI';
-import { useKanbanReportMetrics, ReportFilter } from '@/hooks/useReportMetrics';
 import { useIALigada } from '@/hooks/useAssistantName';
-import { AlertTriangle, BarChart3, BrainCircuit, CheckCircle2, ChevronDown, ClipboardPaste, Clock, Download, FileKey, Inbox, Monitor, Presentation, ShieldCheck, Target, Timer, Wrench } from 'lucide-react';
-import { AIIndicatorAnalysis } from '@/components/dashboard/AIIndicatorAnalysis';
+import { AlertTriangle, BarChart3, CheckCircle2, ChevronDown, ClipboardPaste, Clock, Download, FileKey, Inbox, Monitor, Presentation, ShieldCheck, Target, Timer, Wrench } from 'lucide-react';
+import { PontosDeMelhoria } from '@/components/ti/PontosDeMelhoria';
+import { SugestoesDaIA } from '@/components/ti/SugestoesDaIA';
+import { useAuth } from '@/contexts/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { addDays, isBefore } from 'date-fns';
@@ -93,6 +94,9 @@ export default function TIRelatorios() {
   const [aiAnalysisOpen, setAiAnalysisOpen] = useState(false);
   const [apresentando, setApresentando] = useState(false);
   const iaLigada = useIALigada();
+  const { role } = useAuth();
+  // A mesma pergunta das policies de `ia_sugestoes` (`is_admin_or_higher`).
+  const podeVerSugestoes = iaLigada && (role === 'owner' || role === 'admin');
 
   const filter = filtroDoPeriodo(selectedPeriod, intervalo);
   const intervaloDaTela: IntervaloDeDias = intervaloDoFiltro(filter);
@@ -122,8 +126,6 @@ export default function TIRelatorios() {
     && (perfil.alteraAba('ti', 'chamados') || perfil.pode('diretoria', 'indicadores', 'definir_metas'));
   const { data: semanasAConfirmar = [] } = useSemanasDoFsenseAConfirmar();
 
-  const reportFilter: ReportFilter = { period: selectedPeriod as ReportFilter['period'], collaboratorId };
-  const { data: kanbanData } = useKanbanReportMetrics('ti', reportFilter);
 
   // Colunas `date` do banco: "vence hoje" ainda não venceu — compara-se o dia como texto e usa-se o dia local.
   const hojeISO = todayISO();
@@ -219,7 +221,6 @@ export default function TIRelatorios() {
   const rotuloDoPeriodo = PERIODOS.find(p => p.value === selectedPeriod)?.label;
   const subtitulo = `${rotuloDoPeriodo ? `${rotuloDoPeriodo}: ` : ''}${rotuloDoIntervalo(intervaloDaTela)} · comparado com ${ddmm(anteriorDaTela.startDate)} a ${ddmm(anteriorDaTela.endDate)}`;
   const barras = barrasDaTendencia(trends || []);
-  const km = kanbanData?.metrics;
 
   // O PDF leva o que a Visão Geral mostra (rodada 2): os mesmos números, já em texto.
   const n1 = (v: number) => v.toLocaleString('pt-BR', { maximumFractionDigits: 1 });
@@ -312,11 +313,6 @@ export default function TIRelatorios() {
             <Button size="sm" variant="default" className="max-[860px]:hidden" onClick={() => setApresentando(true)}>
               <Presentation className="w-3.5 h-3.5 mr-1" />Apresentar
             </Button>
-            {iaLigada && (
-              <Button size="sm" variant="default" onClick={() => setAiAnalysisOpen(true)}>
-                <BrainCircuit className="w-3 h-3 mr-1" />Analisar com IA
-              </Button>
-            )}
             {podeExportar && (
               <Button size="sm" variant="outline" onClick={() => setExportDialogOpen(true)}>
                 <Download className="w-3 h-3 mr-1" />Exportar PDF
@@ -371,6 +367,9 @@ export default function TIRelatorios() {
                   )}
                 </div>
               </div>
+
+              <PontosDeMelhoria chamados={metrics?.chamados ?? []} totalAnterior={anterior?.total ?? null}
+                onVerSugestoes={podeVerSugestoes ? () => setAiAnalysisOpen(true) : undefined} />
 
               <EquipeDaTI intervalo={intervaloDaTela} />
 
@@ -534,37 +533,9 @@ export default function TIRelatorios() {
         }}
       />
 
-      {iaLigada && (
-        <AIIndicatorAnalysis
-          open={aiAnalysisOpen}
-          onClose={() => setAiAnalysisOpen(false)}
-          period={subtitulo}
-          metrics={{
-            chamados: {
-              abertos: metrics?.open || 0,
-              em_andamento: metrics?.inProgress || 0,
-              resolvidos: metrics?.resolved || 0,
-              sla_cumprido_percent: metrics?.slaCompliance || 0,
-              tempo_medio_resolucao_horas: metrics?.avgResolutionTime || 0,
-              por_prioridade: metrics?.byPriority || {},
-              por_categoria: metrics?.byCategory || {},
-            },
-            inventario: {
-              ativos_operacionais: assetsInUse,
-              total_cadastrados: totalAssets,
-            },
-            licencas_expirando_30d: licencasVencendo.length,
-            contratos_expirando_30d: contratosVencendo.length,
-            manutencoes_agendadas: manutencoesProximas.length,
-            kanban: km ? {
-              total_cards: km.total,
-              em_andamento: km.inProgress,
-              concluidos: km.completed,
-              atrasados: km.overdue,
-              pendentes: km.pending,
-            } : null,
-          }}
-        />
+      {podeVerSugestoes && (
+        <SugestoesDaIA aberto={aiAnalysisOpen} onFechar={() => setAiAnalysisOpen(false)}
+          de={intervaloDaTela.de} ate={intervaloDaTela.ate} periodo={rotuloDoIntervalo(intervaloDaTela)} />
       )}
     </div>
   );
