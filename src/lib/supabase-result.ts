@@ -41,8 +41,8 @@ export function expectRows<T>(
  * recusa real ficou escondida. Mora aqui, junto de `unwrap`, porque é o par dele.
  */
 export function mensagemDeErro(e: unknown): string {
-  if (e instanceof Error) return e.message;
-  const mensagem = (e as { message?: unknown } | null)?.message;
+  const mensagem = e instanceof Error ? e.message : (e as { message?: unknown } | null)?.message;
+  if (typeof mensagem === 'string' && /jwt expired/i.test(mensagem)) return 'Sua sessão expirou. Saia e entre de novo no sistema.';
   if (typeof mensagem === 'string' && mensagem) return mensagem;
   return 'Não foi possível concluir. Tente de novo; se continuar, avise o suporte.';
 }

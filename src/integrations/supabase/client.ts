@@ -9,6 +9,7 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from '@/lib/env';
+import { fetchQueRenovaSessao } from '@/lib/fetch-que-renova-sessao';
 
 // Falha ALTO e cedo, em vez de deixar o `createClient` receber `undefined` e a
 // primeira consulta morrer com "Failed to fetch" — que não diz o que fazer.
@@ -27,5 +28,11 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
   auth: {
     persistSession: true,
     autoRefreshToken: true,
+  },
+  global: {
+    fetch: fetchQueRenovaSessao(async () => {
+      const { data, error } = await supabase.auth.refreshSession();
+      return error ? null : data.session?.access_token ?? null;
+    }),
   },
 });
