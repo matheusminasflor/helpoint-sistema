@@ -68,7 +68,7 @@ export function PedidoPorVoz({ onOrganizado, compacto = false }: { onOrganizado:
       {semResposta && (
         <p className="text-[13px] text-aviso font-medium">Este aparelho não transcreveu. Toque no campo abaixo e use o microfone do teclado.</p>
       )}
-      {(!compacto || ouvindo || texto) && (
+      {(!compacto || ouvindo || texto || semResposta) && (
         <Textarea aria-label="O que foi falado" rows={3} value={ouvindo && provisorio ? `${texto} ${provisorio}`.trim() : texto}
           readOnly={ouvindo} onChange={(e) => setTexto(e.target.value)} placeholder="O que você falar aparece aqui. Pode corrigir antes de continuar." />
       )}
