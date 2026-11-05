@@ -10,7 +10,9 @@
 // trabalho de cada um. O gestor lê a equipe em Comercial › Indicadores.
 import { MeusRetornos } from '@/components/comercial/MeusRetornos';
 import { FonteDoNumero } from '@/components/comercial/FonteDoNumero';
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { toast } from 'sonner';
+import { mensagemDeErro } from '@/lib/supabase-result';
 import { AlertTriangle, ClipboardList, Pencil, Plus, Trash2 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card } from '@/components/ui/card';
@@ -24,7 +26,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useQueryState } from '@/hooks/useQueryState';
 import { usePodeNoLancamento } from '@/hooks/useAccessProfiles';
 import {
-  STATUS_INTERACAO, useApagarInteracao, useIndicadoresCatalogo, useInteracoes, useMinhasCarteiras,
+  STATUS_INTERACAO, buscarInteracao, useApagarInteracao, useIndicadoresCatalogo, useInteracoes, useMinhasCarteiras,
   type Interacao,
 } from '@/hooks/useComercialLancamentos';
 import { useChecklists } from '@/hooks/usePedidosChecklist';
@@ -65,6 +67,25 @@ export default function ComercialLancamentos() {
   const abrirNovo = () => { setEditando(null); setAberto(true); };
   const abrirEdicao = (l: Interacao) => { setEditando(l); setAberto(true); };
 
+  // Devolvido pelo Financeiro aparece aqui em qualquer mês: o lançamento de outubro não estava na lista de novembro, e a
+  // vendedora não achava como corrigir (chamado #303, 2026-11-04).
+  const devolvidos = checklists.filter((c) => c.situacao === 'Recusado' && c.vendedor_id === user?.id);
+  const corrigir = useCallback(async (interacaoId: string) => {
+    try {
+      const lancamento = await buscarInteracao(interacaoId);
+      if (lancamento) abrirEdicao(lancamento);
+      else toast.error('Lançamento não encontrado.');
+    } catch (e) {
+      toast.error(mensagemDeErro(e));
+    }
+  }, []);
+  const [pedeCorrigir, setPedeCorrigir] = useQueryState('corrigir', '');
+  useEffect(() => {
+    if (!pedeCorrigir) return;
+    void corrigir(pedeCorrigir);
+    setPedeCorrigir('');
+  }, [pedeCorrigir, corrigir, setPedeCorrigir]);
+
   return (
     <div className="flex flex-col min-h-full">
       <PageHeader
@@ -84,6 +105,20 @@ export default function ComercialLancamentos() {
             <Plus className="w-4 h-4 mr-1.5" aria-hidden="true" /> Novo lançamento
           </Button>
         </div>
+
+        {devolvidos.length > 0 && (
+          <Card className="p-3 badge-warning space-y-2">
+            <p className="text-[14px] font-semibold">Pedidos devolvidos pelo Financeiro ({devolvidos.length})</p>
+            {devolvidos.map((c) => (
+              <div key={c.id} className="flex flex-wrap items-center gap-2 text-[14px]">
+                <span className="flex-1 min-w-[12rem]">
+                  <strong>{c.protocolo}</strong> · {c.cliente_nome}{c.retorno_observacao ? ` · ${c.retorno_observacao}` : ''}
+                </span>
+                <Button size="sm" onClick={() => void corrigir(c.interacao_id)}>Corrigir</Button>
+              </div>
+            ))}
+          </Card>
+        )}
 
         <MeusRetornos onAbrir={abrirEdicao} />
 

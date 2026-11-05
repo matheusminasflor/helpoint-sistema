@@ -255,12 +255,14 @@ type InteracaoCrua = Omit<Interacao, 'marcas' | 'valor_venda'> & {
 };
 
 /** A consulta dos lançamentos de `de` a `ate` (os dois dias incluídos), mais novos primeiro. */
+const COLUNAS_DA_INTERACAO = `id, vendedor_id, cliente_codigo, data, status, valor_venda, nota_fiscal, nota_em, nota_filial, prazo, observacoes, fora_da_carteira,
+             marcas:com_interacao_marcas(indicador_id),
+             cliente:com_clientes(razao_social, cidade, estado, telefone)`;
+
 function consultaDeInteracoes(de: string, ate: string, vendedorId?: string) {
   let q = supabase
     .from('com_interacoes')
-    .select(`id, vendedor_id, cliente_codigo, data, status, valor_venda, nota_fiscal, nota_em, nota_filial, prazo, observacoes, fora_da_carteira,
-             marcas:com_interacao_marcas(indicador_id),
-             cliente:com_clientes(razao_social, cidade, estado, telefone)`)
+    .select(COLUNAS_DA_INTERACAO)
     .gte('data', de)
     .lte('data', ate)
     .order('data', { ascending: false })
@@ -281,6 +283,12 @@ function lerInteracoes(linhas: InteracaoCrua[]): Interacao[] {
  * Os lançamentos de uma competência. O RLS decide: a vendedora vê os dela; o gestor, todos.
  * `ativo = false` desliga a consulta — é o que a tela faz quando está num período, e não num mês.
  */
+/** Um lançamento pelo id: o pedido devolvido pode ser de um mês que a lista não está mostrando. */
+export async function buscarInteracao(id: string): Promise<Interacao | null> {
+  const linha = unwrap(await supabase.from('com_interacoes').select(COLUNAS_DA_INTERACAO).eq('id', id).maybeSingle());
+  return linha ? lerInteracoes([linha as unknown as InteracaoCrua])[0] : null;
+}
+
 export function useInteracoes(competencia: string, vendedorId?: string, ativo = true) {
   const { tenantId } = useAuth();
   return useQuery({

@@ -10,6 +10,7 @@
 //   * Região comum / proximidade — em "Todos", um cartão por situação, com o título e a soma do grupo;
 //   * Von Restorff — a cor diz o estado: devolvido em âmbar, cancelado em vermelho, finalizado em verde.
 import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { PackageCheck } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Badge } from '@/components/ui/badge';
@@ -27,6 +28,7 @@ import { PedidoDeReajuste } from '@/components/comercial/PedidoDeReajuste';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePodeGerirCarteiras } from '@/hooks/useAccessProfiles';
 import { useQueryState } from '@/hooks/useQueryState';
+import { useTenantPath } from '@/hooks/useTenantPath';
 import { useChecklistDoLancamento, useChecklists, useItensDoChecklist, type ChecklistResumo } from '@/hooks/usePedidosChecklist';
 import { formatBRL, formatDateBR } from '@/types/financeiro';
 import { cn } from '@/lib/utils';
@@ -170,6 +172,9 @@ function Tabela({ linhas, mostrarVendedora, onAbrir }: { linhas: ChecklistResumo
 
 function DetalheDoPedido({ c: linha, onClose, podePedirReajuste }: { c: ChecklistResumo | null; onClose: () => void; podePedirReajuste: boolean }) {
   const { data } = useChecklistDoLancamento(linha?.interacao_id ?? null);
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const tenantPath = useTenantPath();
   const { data: itens = [] } = useItensDoChecklist(true);
   // A linha pode estar velha (o reajuste acabou de ser pedido aqui): vale a que acabou de chegar.
   const c = data?.resumo ?? linha;
@@ -186,7 +191,10 @@ function DetalheDoPedido({ c: linha, onClose, podePedirReajuste }: { c: Checklis
             <div className="rounded-lg badge-warning p-3 text-[13px]">
               <p className="font-semibold">O Financeiro devolveu: {(c.retorno_motivos ?? []).join(', ')}</p>
               {c.retorno_observacao && <p>{c.retorno_observacao}</p>}
-              <p className="pt-1">Corrija no Forteplus e, em Lançamentos, abra o lançamento deste cliente e salve para reenviar.</p>
+              <p className="pt-1">Corrija no Forteplus, ajuste o checklist e reenvie.</p>
+              {c.vendedor_id === user?.id && (
+                <Button size="sm" className="mt-2" onClick={() => navigate(tenantPath(`/comercial/lancamentos?corrigir=${c.interacao_id}`))}>Corrigir agora</Button>
+              )}
             </div>
           )}
           <PedidoDeReajuste resumo={c} podePedir={podePedirReajuste} />

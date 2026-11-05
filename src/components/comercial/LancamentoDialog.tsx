@@ -276,7 +276,12 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
         </DialogHeader>
 
         <div className="space-y-5">
-          {travadoParaMim && (
+          {situacao === 'Recusado' && !deOutraPessoa && (
+            <p className="text-[13px] rounded-md badge-warning px-2 py-1.5">
+              <strong>Pedido devolvido pelo Financeiro.</strong> O checklist abaixo está liberado: corrija e clique em Salvar e enviar ao Financeiro.
+            </p>
+          )}
+          {travadoParaMim && situacao !== 'Recusado' && (
             <p className="text-[13px] rounded-md badge-info px-2 py-1.5">
               {concluidoTravado
                 ? <>Lançamento <strong>concluído</strong>: nada nele muda mais.</>
