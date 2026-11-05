@@ -14,11 +14,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { useTicketActions } from '@/hooks/useTicketActions';
-import { useAISuggestReply } from '@/hooks/useAISuggestReply';
-import { useIALigada } from '@/hooks/useAssistantName';
 import { AIRefineButton } from '@/components/ai/AIRefineButton';
 import { toast } from 'sonner';
-import { Loader2, CheckCircle2, Sparkles } from 'lucide-react';
+import { Loader2, CheckCircle2 } from 'lucide-react';
 import type { TicketWithDetails } from '@/types/helpdesk';
 import { fromLocalDateTimeInput, toLocalDateTimeInput } from '@/lib/dates';
 import { outrosAbertos, useChamadosDaQueda } from '@/hooks/useChamadosDaQueda';
@@ -42,8 +40,6 @@ export function ResolveTicketDialog({
   blockedMessage = 'Não é possível encerrar: existem itens pendentes no Checklist de Conformidade.'
 }: ResolveTicketDialogProps) {
   const { resolveTicket, isLoading } = useTicketActions();
-  const { generateSuggestion, isGenerating } = useAISuggestReply();
-  const iaLigada = useIALigada();
   const [resolutionNotes, setResolutionNotes] = useState('');
   const perguntar = usePrecisaPerguntarQuemResolve(ticket);
   const [modo, setModo] = useState<ModoDeResolver>('assumir');
@@ -58,10 +54,6 @@ export function ResolveTicketDialog({
   const tenantPath = useTenantPath();
   const escreveTutorial = useDepartmentPermissions('ti').can('knowledge', 'create');
 
-  const handleSuggestResolution = async () => {
-    const suggestion = await generateSuggestion(ticket.id, 'resolution');
-    if (suggestion) setResolutionNotes(suggestion);
-  };
 
   const handleSubmit = async () => {
     if (isBlocked) {
@@ -149,29 +141,12 @@ ${notas}`,
             <div className="flex items-center justify-between">
               <Label htmlFor="resolution">Descrição da resolução *</Label>
               <div className="flex items-center gap-1">
-                {iaLigada && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleSuggestResolution}
-                  disabled={isBlocked || isGenerating}
-                  className="h-7 px-2 text-xs gap-1 text-muted-foreground hover:text-primary"
-                >
-                  {isGenerating ? (
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-3 w-3" />
-                  )}
-                  <span className="hidden sm:inline">Sugerir com IA</span>
-                </Button>
-                )}
                 <AIRefineButton
                   text={resolutionNotes}
-                  apoio={ticket?.title}
+                  ticketId={ticket.id}
                   context="resolution"
                   onRefine={(refined) => setResolutionNotes(refined)}
-                  disabled={isBlocked || !resolutionNotes.trim()}
+                  disabled={isBlocked}
                 />
               </div>
             </div>
@@ -181,7 +156,7 @@ ${notas}`,
               value={resolutionNotes}
               onChange={(e) => setResolutionNotes(e.target.value)}
               rows={4}
-              disabled={isBlocked || isGenerating}
+              disabled={isBlocked}
             />
             <p className="text-xs text-muted-foreground">
               Esta descrição fica visível para quem abriu o chamado.

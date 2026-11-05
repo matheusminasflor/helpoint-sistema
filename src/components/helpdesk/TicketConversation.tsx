@@ -150,7 +150,6 @@ export function TicketConversation({
       ) : !isClosed ? (
         <ReplyComposer
           ticketId={ticketId}
-          assunto={ticket?.title}
           onReply={handleReply}
           isSending={isSending}
           showInternalOption={showInternalOption && pode('internal_notes')}

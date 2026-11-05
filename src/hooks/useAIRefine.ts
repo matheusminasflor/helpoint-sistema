@@ -10,8 +10,8 @@ export type ContextoDoTexto = 'general' | 'title_from_description' | 'ticket_tit
 export function useAIRefine() {
   const [isRefining, setIsRefining] = useState(false);
 
-  const refineText = useCallback(async (text: string, context: ContextoDoTexto, apoio?: string): Promise<string> => {
-    if (!text.trim()) return text;
+  const refineText = useCallback(async (text: string, context: ContextoDoTexto, apoio?: string, ticketId?: string): Promise<string> => {
+    if (!text.trim() && !ticketId) return text;
 
     setIsRefining(true);
     try {
@@ -21,7 +21,7 @@ export function useAIRefine() {
       const response = await fetch(`${FUNCTIONS_URL}/ai-refine`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-        body: JSON.stringify({ text, context, apoio }),
+        body: JSON.stringify({ text, context, apoio, ticket_id: ticketId }),
       });
 
       // A função responde 200 com `{ error: 'no_ai_credentials' }` quando a empresa não cadastrou a chave da IA.

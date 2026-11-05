@@ -18,6 +18,8 @@ interface AIRefineButtonProps {
   context: ContextoDoTexto;
   /** O assunto em volta do texto, para a IA entender a que ele se refere. */
   apoio?: string;
+  /** O chamado aberto: a IA lê a conversa dele e, com o campo vazio, escreve o texto. */
+  ticketId?: string;
   /** "Melhorar" por padrão; "Sugerir título" quando o texto vem da descrição. */
   rotulo?: string;
   onRefine: (refined: string) => void;
@@ -29,6 +31,7 @@ export function AIRefineButton({
   text,
   context,
   apoio,
+  ticketId,
   rotulo = 'Melhorar',
   onRefine,
   disabled = false,
@@ -38,12 +41,14 @@ export function AIRefineButton({
   const [refinedText, setRefinedText] = useState('');
   const { refineText, isRefining } = useAIRefine();
   const iaLigada = useIALigada();
+  const vazio = !text.trim();
+  const nome = vazio && ticketId ? 'Escrever' : rotulo;
 
   const handleRefine = async () => {
-    if (!text.trim()) return;
+    if (vazio && !ticketId) return;
     
     setIsOpen(true);
-    const result = await refineText(text, context, apoio);
+    const result = await refineText(text, context, apoio, ticketId);
     setRefinedText(result);
   };
 
@@ -69,21 +74,21 @@ export function AIRefineButton({
         variant="ghost"
         size="sm"
         onClick={handleRefine}
-        disabled={disabled || !text.trim() || isRefining}
+        disabled={disabled || (vazio && !ticketId) || isRefining}
         className={cn(
           "h-7 px-2 text-xs gap-1 text-muted-foreground hover:text-primary",
           "border border-transparent hover:border-border",
           "transition-all duration-200",
           className
         )}
-        title={`${rotulo} com IA`}
+        title={`${nome} com IA`}
       >
         {isRefining ? (
           <Loader2 className="h-3 w-3 animate-spin" />
         ) : (
           <Wand2 className="h-3 w-3" />
         )}
-        <span>{rotulo}</span>
+        <span>{nome}</span>
       </Button>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -91,13 +96,13 @@ export function AIRefineButton({
           <DialogHeader className="border-b border-border pb-4">
             <DialogTitle className="flex items-center gap-2 text-lg font-mono uppercase tracking-wider">
               <Wand2 className="h-5 w-5" />
-              {rotulo} com IA
+              {nome} com IA
             </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             {/* Original text */}
-            <div className="space-y-2">
+            <div className={cn('space-y-2', vazio && 'hidden')}>
               <label className="text-xs font-mono uppercase tracking-wider text-muted-foreground">
                 Como foi escrito
               </label>
@@ -109,7 +114,7 @@ export function AIRefineButton({
             {/* Refined text */}
             <div className="space-y-2">
               <label className="text-xs font-mono uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                Melhorado
+                Sugestão da IA
                 {isRefining && (
                   <span className="text-primary animate-pulse">processando…</span>
                 )}
@@ -123,7 +128,7 @@ export function AIRefineButton({
                 {isRefining ? (
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Melhorando o texto…
+                    Lendo o chamado e escrevendo…
                   </div>
                 ) : refinedText ? (
                   <MarkdownRenderer content={refinedText} />
@@ -142,7 +147,7 @@ export function AIRefineButton({
                   : "border-muted bg-muted/30 text-muted-foreground"
               )}>
                 {hasChanges 
-                  ? "Sugestões de melhoria encontradas"
+                  ? "Confira antes de usar"
                   : "○ Texto já está adequado"}
               </div>
             )}

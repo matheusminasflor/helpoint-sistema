@@ -8,22 +8,13 @@ import {
   TooltipTrigger,
   TooltipProvider,
 } from '@/components/ui/tooltip';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import { Send, Paperclip, Loader2, Lock, Globe, AtSign, MessageSquarePlus, History, Hourglass } from 'lucide-react';
+import { Send, Paperclip, Loader2, Lock, Globe, AtSign, Hourglass } from 'lucide-react';
 import { AIRefineButton } from '@/components/ai/AIRefineButton';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { useAISuggestReply } from '@/hooks/useAISuggestReply';
-import { useIALigada } from '@/hooks/useAssistantName';
 
 interface ReplyComposerProps {
   ticketId: string;
-  /** O título do chamado, para o Melhorar entender do que a resposta trata. */
-  assunto?: string;
   onReply: (content: string, isInternal: boolean, attachments?: File[], mantemStatus?: boolean) => Promise<void>;
   isSending?: boolean;
   showInternalOption?: boolean;
@@ -42,7 +33,6 @@ interface ReplyComposerProps {
 
 export function ReplyComposer({
   ticketId,
-  assunto,
   onReply,
   isSending = false,
   showInternalOption = false,
@@ -56,22 +46,7 @@ export function ReplyComposer({
   const [isInternal, setIsInternal] = useState(false);
   const [aguardar, setAguardar] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
-  const [suggestions, setSuggestions] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { generateSuggestion, isGenerating } = useAISuggestReply();
-  const iaLigada = useIALigada();
-
-  const handleSuggestReply = async () => {
-    const suggestion = await generateSuggestion(ticketId, 'reply');
-    if (suggestion) {
-      setSuggestions(prev => [suggestion, ...prev].slice(0, 5));
-      setContent(suggestion);
-    }
-  };
-
-  const handleRestoreSuggestion = (suggestion: string) => {
-    setContent(suggestion);
-  };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(e.target.files || []);
@@ -135,73 +110,15 @@ export function ReplyComposer({
         {/* AI action bar for technicians */}
         {showInternalOption && (
           <div className="flex items-center gap-1.5 mb-2">
-            {/* Suggest reply button */}
-            {iaLigada && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleSuggestReply}
-                  disabled={disabled || isSending || isGenerating}
-                  className="h-7 px-2.5 text-xs gap-1.5 text-muted-foreground hover:text-primary hover:border-primary/50 transition-all"
-                >
-                  {isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <MessageSquarePlus className="w-3.5 h-3.5" />}
-                  <span className="hidden sm:inline">Sugerir</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Gerar resposta com IA</TooltipContent>
-            </Tooltip>
-            )}
-
-            {/* AI Refine button */}
+            {/* Um botão só (dono, 2026-11-05): com o campo vazio escreve; com texto, melhora. */}
             <AIRefineButton
               text={content}
-              apoio={assunto}
+              ticketId={ticketId}
               context="comment"
               onRefine={(refined) => setContent(refined)}
               disabled={disabled || isSending}
             />
 
-            {/* Suggestion history */}
-            {suggestions.length > 0 && (
-              <Popover>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <PopoverTrigger asChild>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 px-2 text-xs gap-1.5 text-muted-foreground hover:text-primary"
-                      >
-                        <History className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">{suggestions.length}</span>
-                      </Button>
-                    </PopoverTrigger>
-                  </TooltipTrigger>
-                  <TooltipContent>Sugestões anteriores</TooltipContent>
-                </Tooltip>
-                <PopoverContent className="w-80 p-0" align="start">
-                  <div className="p-3 border-b border-border">
-                    <p className="text-xs font-medium text-muted-foreground">Sugestões anteriores da IA</p>
-                  </div>
-                  <div className="max-h-[250px] overflow-y-auto">
-                    {suggestions.map((s, i) => (
-                      <button
-                        key={i}
-                        type="button"
-                        onClick={() => handleRestoreSuggestion(s)}
-                        className="w-full text-left px-3 py-2.5 text-sm hover:bg-muted/50 border-b border-border last:border-0 transition-colors line-clamp-3"
-                      >
-                        {s}
-                      </button>
-                    ))}
-                  </div>
-                </PopoverContent>
-              </Popover>
-            )}
           </div>
         )}
 
