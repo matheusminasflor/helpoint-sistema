@@ -23,6 +23,7 @@ REGRAS:
 4. titulo: frase curta, até 80 caracteres, sem ponto final.
 5. descricao: português profissional e claro, com todos os fatos do relato.
 6. Nunca invente causa, prazo, marca, nome ou detalhe que não esteja no relato.
+7. É fala transcrita: tire hesitações, gagueira e repetições ("ééé", "tipo", "né") e escreva como a pessoa quis dizer, sem mudar o sentido.
 
 Responda chamando a ferramenta preencher_chamado.`;
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { categoriaVirouPedido } from '@/config/solicitacoes';
@@ -8,6 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useDepartmentMembers } from '@/hooks/useDepartmentMembers';
 import { AssetSelector } from './AssetSelector';
 import { AIRefineButton } from '@/components/ai/AIRefineButton';
+import { BotaoDitar } from '@/components/ai/BotaoDitar';
+import { useEnvioUnico } from '@/hooks/useEnvioUnico';
 import { DynamicFormFields, validateDynamicFields } from './DynamicFormFields';
 import { POPSuggestionBanner, POPSuggestionLoading } from '@/components/pops/POPSuggestionBanner';
 import { AdmissionAccessEditor } from './AdmissionAccessEditor';
@@ -108,7 +110,9 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
   });
   const { createTicket, isCreating: criandoChamado } = useCreateTicket();
   const batchCreateGrants = useBatchCreateAccessGrants();
-  const isCreating = criandoChamado;
+  // Do clique até o último anexo: o `criandoChamado` termina antes de os anexos subirem.
+  const { enviando, enviarUmaVez } = useEnvioUnico();
+  const isCreating = criandoChamado || enviando;
   const categoryModule = module as any;
   const tenantPath = useTenantPath();
   const { rootCategories, getSubcategories, isLoading: isLoadingCategories } = useTICategories(categoryModule);
@@ -125,6 +129,7 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
     if (chaveDoRascunho) guardarRascunho(...chaveDoRascunho, { titulo: title, descricao: description });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- a chave é fixa enquanto o formulário vive (key={assunto})
   }, [title, description]);
+  const acrescentarNaDescricao = useCallback((trecho: string) => setDescription((d) => (d.trim() ? `${d.trim()} ${trecho}` : trecho)), []);
   const [selectedCategory, setSelectedCategory] = useState<TICategory | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<TICategory | null>(null);
   // O terceiro nível (dono, 2026-10-13: Software › Forteplus › Correções e Ajustes); obrigatório quando existe.
@@ -284,8 +289,12 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    void enviarUmaVez(enviarChamado);
+  };
+
+  const enviarChamado = async () => {
     if (!formularioDoAssunto && (!title.trim() || !description.trim())) { toast.error('Preencha o título e a descrição'); return; }
     if (itens.length > 0 && !selectedItem) { toast.error(`Escolha uma opção dentro de "${selectedSubcategory?.name}".`); return; }
     if ((isAdmission || isDesligamento) && !colaboradorId) {
@@ -575,7 +584,10 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
           <label htmlFor="description" className="text-sm font-medium text-foreground">
             Descrição *
           </label>
-          <AIRefineButton text={description} apoio={title} context="ticket_description" onRefine={setDescription} disabled={!description.trim()} />
+          <span className="flex min-w-0 items-center gap-2">
+            <BotaoDitar onTexto={acrescentarNaDescricao} />
+            <AIRefineButton text={description} apoio={title} context="ticket_description" onRefine={setDescription} disabled={!description.trim()} />
+          </span>
         </div>
         <textarea
           id="description"

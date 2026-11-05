@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { textoDaEscuta, trechoNovo } from '@/lib/ditado';
+import { limparFala, textoDaEscuta, trechoNovo } from '@/lib/ditado';
 
 interface Reconhecimento {
   lang: string;
@@ -62,7 +62,7 @@ export function useDitado(onTexto: (trecho: string) => void) {
     r.onresult = (e) => {
       clearTimeout(relogio.current);
       setSemResposta(false);
-      escuta.current = textoDaEscuta(Array.from(e.results, (resultado) => resultado[0].transcript));
+      escuta.current = limparFala(textoDaEscuta(Array.from(e.results, (resultado) => resultado[0].transcript)));
       setProvisorio(escuta.current);
     };
     r.onerror = (e) => {

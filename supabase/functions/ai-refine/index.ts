@@ -46,7 +46,8 @@ O QUE ENTREGAR:
 2. Texto curto ou seco vira uma mensagem completa, em 1 ou 2 frases. Use do CHAMADO ou do ASSUNTO só o que a frase precisa para dizer de que se trata: qual relatório, qual pedido, qual problema.
 3. Fale só do que o texto da pessoa fala. Não reconte o chamado nem traga outros assuntos dele.
 4. Mantenha os fatos, nomes, números, datas e pedidos do original. Corrija a escrita de nomes conhecidos, como WhatsApp.
-5. Copie os nomes de sistemas e produtos exatamente. Os sistemas da empresa são Forteplus, Helpoint, Conecta, Kommo, Yampi e Bling. Nome que você não conhece fica como a pessoa escreveu.
+5. O texto pode ser fala transcrita: tire hesitações, gagueira e repetições ("ééé", "tipo", "né") sem mudar o sentido.
+6. Copie os nomes de sistemas e produtos exatamente. Os sistemas da empresa são Forteplus, Helpoint, Conecta, Kommo, Yampi e Bling. Nome que você não conhece fica como a pessoa escreveu.
 
 EXEMPLOS:
 Texto: "troquei o cabo" | Chamado: "Impressora do Financeiro não imprime" | Resposta: "Realizamos a troca do cabo da impressora do Financeiro para resolver o problema de impressão."

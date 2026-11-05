@@ -14,6 +14,15 @@ export function somarTrecho(acumulado: string, trecho: string): string {
   return `${limpo(acumulado)} ${limpo(trecho)}`;
 }
 
+const LETRA = '\\p{L}\\p{N}';
+const HESITACAO = new RegExp(`(?<![${LETRA}])(?:e{2,}h*|é{2,}h*|eh+|éh+|ah{2,}|ãh+|ahn+|h[uü]m+|hm+|uhm+|m{2,})(?![${LETRA}])[,.]?`, 'giu');
+const DUAS_REPETIDAS = /(?<![\p{L}\p{N}])(\p{L}+\s+\p{L}+)(?:\s+\1)+(?![\p{L}\p{N}])/giu;
+const UMA_REPETIDA = /(?<![\p{L}\p{N}])(\p{L}+)(?:[\s,]+\1)+(?![\p{L}\p{N}])/giu;
+
+/** Tira o "ééé", o "hum" e a palavra gaguejada, sem IA (dono, 2026-11-05). Reescrever a frase é do Organizar e do Melhorar. */
+export const limparFala = (t: string) =>
+  limpo(t.replace(HESITACAO, ' ').replace(DUAS_REPETIDAS, '$1').replace(UMA_REPETIDA, '$1')).replace(/^[,.;]\s*/, '');
+
 /** O texto de uma escuta inteira, a partir dos resultados que o aparelho entregou até agora. */
 export const textoDaEscuta = (transcritos: string[]) => transcritos.reduce(somarTrecho, '');
 

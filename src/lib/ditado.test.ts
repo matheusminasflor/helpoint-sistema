@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { somarTrecho, textoDaEscuta, trechoNovo } from './ditado';
+import { limparFala, somarTrecho, textoDaEscuta, trechoNovo } from './ditado';
 
 describe('textoDaEscuta', () => {
   it('resultado acumulado do Android não repete a frase', () => {
@@ -13,6 +13,21 @@ describe('textoDaEscuta', () => {
   });
   it('palavra que só começa igual não engole a anterior', () => {
     expect(somarTrecho('a', 'ata da reunião')).toBe('a ata da reunião');
+  });
+});
+
+describe('limparFala', () => {
+  it('tira as hesitações', () => {
+    expect(limparFala('eeee abre um chamado ééé hum sobre a reunião')).toBe('abre um chamado sobre a reunião');
+  });
+  it('tira a palavra gaguejada', () => {
+    expect(limparFala('a a a impressora não não imprime')).toBe('a impressora não imprime');
+  });
+  it('tira o trecho repetido', () => {
+    expect(limparFala('abre um abre um chamado')).toBe('abre um chamado');
+  });
+  it('não mexe em palavra normal nem em número', () => {
+    expect(limparFala('ele é o dono, eram 20 20 caixas')).toBe('ele é o dono, eram 20 20 caixas');
   });
 });
 

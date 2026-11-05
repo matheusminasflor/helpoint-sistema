@@ -8,7 +8,7 @@ import { AssuntosDoSetor } from '@/components/request/AssuntosDoSetor';
 import { PedidoPorVoz } from '@/components/request/PedidoPorVoz';
 import { CreateTicketForm } from '@/components/helpdesk/CreateTicketForm';
 import { KnowledgePanel } from '@/components/pops/KnowledgePanel';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { useTICategories, type TICategory, type TIModule } from '@/hooks/useTICategories';
 import { ArrowLeft, BookOpen, ChevronDown } from 'lucide-react';
@@ -33,8 +33,10 @@ export default function NewRequest() {
   const modulo = setor ? MODULO_DO_SETOR[setor] : null;
   const assuntoId = params.get('assunto');
   // O texto que a pessoa escreveu no "Do que você precisa?" vai para a descrição.
-  const [texto, setTexto] = useState<string | undefined>(undefined);
-  const [titulo, setTitulo] = useState<string | undefined>(undefined);
+  // O áudio do Início chega por aqui, já organizado.
+  const doInicio = useLocation().state as { texto?: string; titulo?: string } | null;
+  const [texto, setTexto] = useState<string | undefined>(doInicio?.texto);
+  const [titulo, setTitulo] = useState<string | undefined>(doInicio?.titulo);
   const [knowledgeOpen, setKnowledgeOpen] = useState(false);
   // Voltar e Cancelar apagavam a descrição sem perguntar (defeito 19, 2026-10-24).
   const [temRascunho, setTemRascunho] = useState(false);

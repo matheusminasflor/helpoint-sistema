@@ -1,5 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { pedeCompra, rotaDeExportacao } from './comando-de-voz';
+import { pedeCompra, pedeProjeto, pedeRotina, rotaDeExportacao } from './comando-de-voz';
+
+describe('pedeRotina e pedeProjeto', () => {
+  it('reconhece o pedido de criar', () => {
+    expect(pedeRotina('cria uma rotina toda segunda de conferir o backup')).toBe(true);
+    expect(pedeProjeto('abre um novo projeto da feira de beleza')).toBe(true);
+  });
+  it('chamado sobre rotina ou projeto continua chamado', () => {
+    expect(pedeRotina('abre um chamado da rotina de backup')).toBe(false);
+    expect(pedeProjeto('abre chamado do projeto da feira')).toBe(false);
+  });
+  it('só citar não é pedir para criar', () => {
+    expect(pedeProjeto('como está o projeto da feira')).toBe(false);
+  });
+});
 
 describe('rotaDeExportacao', () => {
   it('entende setor e período', () => {

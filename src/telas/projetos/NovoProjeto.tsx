@@ -4,7 +4,7 @@
 // → 3 Atividades → Criar, com as atividades do modelo revisadas (editar, excluir, criar) ANTES de criar, e a
 // pessoa do setor sempre do setor (2026-10-09). Nada é gravado antes de "Criar" (`criar_projeto`).
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Check, FolderPlus, Mail, Plus, Trash2 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -32,8 +32,10 @@ export default function NovoProjeto() {
   const { data: modelos = [] } = useModelosDeProjeto();
   const { data: pessoas = [] } = usePessoasDaEmpresa();
   const [etapa, setEtapa] = useState(0);
-  const [nome, setNome] = useState('');
-  const [objetivo, setObjetivo] = useState('');
+  // O áudio do Início preenche; a pessoa confere e segue pelas etapas de sempre.
+  const doAudio = useLocation().state as { nome?: string; objetivo?: string } | null;
+  const [nome, setNome] = useState(doAudio?.nome ?? '');
+  const [objetivo, setObjetivo] = useState(doAudio?.objetivo ?? '');
   const [entrega, setEntrega] = useState('');
   const [modeloId, setModeloId] = useState(SEM);
   const [setores, setSetores] = useState<Record<string, string | null>>({});

@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { ReguaDoDia } from './ReguaDoDia';
+import { PedidoPorVoz } from '@/components/request/PedidoPorVoz';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -461,6 +462,12 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
           <span className="max-sm:hidden">Atualizar</span>
         </Button>
       </div>
+
+      {/* O áudio no Início (dono, 2026-11-05): chamado, rotina, projeto e relatório; só a pessoa envia, nas telas de sempre. */}
+      <PedidoPorVoz compacto onOrganizado={(c) => navigate(
+        tenantPath(`/nova-solicitacao?setor=${c.setor}${c.categoriaId ? `&assunto=${c.categoriaId}` : ''}`),
+        { state: { texto: c.texto, titulo: c.titulo } },
+      )} />
 
       {/* Três selos numa linha (proposta de 2026-11-04, Parte 1): o trabalho sobe. Passar o mouse mostra QUAIS demandas
           estão no número, cada uma clicável (dono, 2026-10-15). */}

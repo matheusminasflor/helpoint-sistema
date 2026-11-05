@@ -1,6 +1,7 @@
 // Início › Rotinas (dono, 2026-10-30; docs/proposta-rotinas.md): cadastrar o que se repete no dia. A pessoa cria as
 // suas; quem tem a caixinha "Rotinas" do setor (o Gestor) cria para a equipe — e a rotina do gestor a pessoa não muda
 // (o banco confere: policy `rotinas_muda`). Excluir tira do dia a dia; o que já foi marcado fica no histórico.
+import { useLocation } from 'react-router-dom';
 import { useMemo, useState } from 'react';
 import { RotinaPorVoz } from '@/components/rotinas/RotinaPorVoz';
 import { useIALigada } from '@/hooks/useAssistantName';
@@ -56,7 +57,9 @@ export default function Rotinas() {
   const excluir = useExcluirRotina();
   const [editando, setEditando] = useState<{ id?: string; dados: RotinaNova } | null>(null);
   const [apagando, setApagando] = useState<Rotina | null>(null);
-  const [falando, setFalando] = useState(false);
+  // O áudio do Início traz a fala pronta: a janela abre com ela, para a pessoa montar a rotina.
+  const falaDoInicio = (useLocation().state as { fala?: string } | null)?.fala;
+  const [falando, setFalando] = useState(!!falaDoInicio);
   const iaLigada = useIALigada();
   const { data: setoresQueVejo = [] } = useSetoresQueVejo();
   const vejoEquipe = setoresQueVejo.length > 0;
@@ -130,7 +133,7 @@ export default function Rotinas() {
           </div>
         ) : undefined} />
       {falando && (
-        <RotinaPorVoz onFechar={() => setFalando(false)}
+        <RotinaPorVoz inicial={falaDoInicio} onFechar={() => setFalando(false)}
           onMontada={(rotina) => { setFalando(false); setEditando({ dados: { ...vazia(meuSetor, eu), ...rotina } }); }} />
       )}
       <div className="w-full space-y-5 px-4 pb-6 lg:px-8">

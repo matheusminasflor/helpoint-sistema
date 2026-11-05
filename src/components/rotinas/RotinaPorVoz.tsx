@@ -12,8 +12,8 @@ import { toast } from 'sonner';
 export type RotinaFalada = Pick<RotinaNova, 'titulo' | 'como_fazer' | 'periodo' | 'repeticao' | 'dias_da_semana' | 'dia_do_mes' | 'pede'>;
 
 /** A fala vira texto no aparelho, sem IA. Só "Montar rotina" gasta, e o resultado apenas preenche o formulário de sempre. */
-export function RotinaPorVoz({ onFechar, onMontada }: { onFechar: () => void; onMontada: (rotina: RotinaFalada) => void }) {
-  const [texto, setTexto] = useState('');
+export function RotinaPorVoz({ onFechar, onMontada, inicial = '' }: { onFechar: () => void; onMontada: (rotina: RotinaFalada) => void; inicial?: string }) {
+  const [texto, setTexto] = useState(inicial);
   const [montando, setMontando] = useState(false);
   const juntar = useCallback((trecho: string) => setTexto((t) => (t ? `${t} ${trecho}` : trecho)), []);
   const { ouvindo, provisorio, semResposta, iniciar, parar } = useDitado(juntar);
