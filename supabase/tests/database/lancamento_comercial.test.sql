@@ -115,12 +115,12 @@ select throws_ok($$
 $$, '23514', null,
   'indicador comercial sem cliente e recusado');
 
--- 6. Ação do FAROL não exige (§4).
-select lives_ok($$
+-- 6. Ação do FAROL também exige (dono, 2026-11-05: "sem cliente não consegue lançar"; antes não exigia).
+select throws_ok($$
   select public.com_salvar_interacao(null,
     '{"data":"2026-08-12","status":"concluido"}'::jsonb,
     array[(select id from public.com_indicadores where nome = 'Campanhas' and tenant_id = (select a from f))])
-$$, 'acao do FAROL sem cliente entra: campanha e treinamento podem ser internos');
+$$, '23514', null, 'acao do FAROL sem cliente e recusada: todo lancamento novo precisa de cliente');
 
 -- 7 e 8. Trazer do Histórico para a PRÓPRIA carteira é permitido — é o gancho funcionando.
 select lives_ok($$

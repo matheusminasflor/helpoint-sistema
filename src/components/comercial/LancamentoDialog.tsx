@@ -185,6 +185,8 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
   const mostra = (p: 1 | 2) => !!editando || passo === p;
 
   const semCliente = form.cliente === null;
+  // Lançamento novo exige cliente (dono, 2026-11-05); o antigo sem cliente ainda se edita. O banco recusa o mesmo.
+  const faltaCliente = !editando && semCliente;
   // O valor da venda só com a nota fiscal (dono, 2026-10-15): o pedido fechado é "A faturar" — o valor dele fica
   // no checklist e aparece na Carteira, mas não é venda até a nota.
   const valorNumero = form.valor.trim() === '' ? null : Number(form.valor.replace(/\./g, '').replace(',', '.'));
@@ -227,7 +229,7 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
   };
 
   const confirmar = async () => {
-    if (!form.data || valorInvalido || notaIncompleta || dataDaNotaInvalida || indicadorSemCliente) return;
+    if (!form.data || faltaCliente || valorInvalido || notaIncompleta || dataDaNotaInvalida || indicadorSemCliente) return;
     if (enviaChecklist) {
       const achados = problemasDoChecklist(checklist.contato, checklist.pedidos, itens);
       setProblemas(achados);
@@ -389,8 +391,7 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
                 ) : (
                   <p className="text-[13px] rounded-md badge-warning px-2 py-1.5">
                     Você ainda não está em nenhuma carteira. Peça ao gestor para colocá-la em uma em
-                    Comercial › Configurações › Equipe e carteiras. Enquanto isso, dá para registrar ações sem cliente
-                    e atender cliente de outra carteira.
+                    Comercial › Configurações › Equipe e carteiras. Enquanto isso, dá para atender cliente de outra carteira.
                   </p>
                 )}
                 <div className="flex flex-wrap gap-2">
@@ -398,7 +399,7 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
                     Cliente do Histórico ou de outra carteira…
                   </Button>
                   <span className="text-[12px] text-muted-foreground self-center">
-                    Sem cliente, só as ações do FAROL contam (campanha, treinamento…).
+                    Escolha o cliente para continuar: todo lançamento precisa de um cliente.
                   </span>
                 </div>
               </div>
@@ -516,7 +517,7 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
           <section className="space-y-2">
             <div>
               <Label>Ações realizadas (FAROL)</Label>
-              <p className="text-[12px] text-muted-foreground">Contam mesmo sem cliente — campanha e treinamento podem ser internos.</p>
+              <p className="text-[12px] text-muted-foreground">Campanha, treinamento e demais ações ficam registrados no lançamento do cliente.</p>
             </div>
             <div className="grid gap-1.5 sm:grid-cols-2">
               {acoes.map((a) => (
@@ -605,9 +606,9 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
           {!editando && passo === 2
             ? <Button variant="outline" onClick={() => setPasso(1)}>Voltar</Button>
             : <Button variant="outline" onClick={() => onOpenChange(false)}>{concluidoTravado && !enviaChecklist && !completandoNota ? 'Fechar' : 'Cancelar'}</Button>}
-          {!editando && passo === 1 && <Button onClick={() => setPasso(2)} disabled={!form.data}>Continuar</Button>}
+          {!editando && passo === 1 && <Button onClick={() => setPasso(2)} disabled={!form.data || faltaCliente}>Continuar</Button>}
           {(!!editando || passo === 2) && !(concluidoTravado && !enviaChecklist && !completandoNota) && <Button onClick={confirmar}
-            disabled={!form.data || valorInvalido || notaIncompleta || dataDaNotaInvalida || indicadorSemCliente || salvar.isPending || salvarChecklist.isPending}>
+            disabled={!form.data || faltaCliente || valorInvalido || notaIncompleta || dataDaNotaInvalida || indicadorSemCliente || salvar.isPending || salvarChecklist.isPending}>
             {salvar.isPending || salvarChecklist.isPending
               ? 'Salvando…'
               : enviaChecklist ? 'Salvar e enviar ao Financeiro' : 'Salvar lançamento'}
