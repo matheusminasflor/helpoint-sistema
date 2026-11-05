@@ -14,16 +14,22 @@ describe('pontos de melhoria da TI', () => {
   });
 
   it('alta de 20% vira atenção, com a conta na frase', () => {
-    const chamados = varios(1, 12, { category: 'Rede' });
-    const [equipe] = pontosDeMelhoria({ chamados, totalAnterior: 10 });
+    const chamados = varios(1, 36, { category: 'Rede' });
+    const [equipe] = pontosDeMelhoria({ chamados, totalAnterior: 30 });
     expect(equipe.cor).toBe('perigo');
-    expect(equipe.texto).toBe('2 atendentes com cerca de 6 chamados cada um. O volume subiu 20% em relação ao período anterior: de 10 para 12.');
+    expect(equipe.texto).toBe('2 atendentes com cerca de 18 chamados cada um. O volume subiu 20% em relação ao período anterior: de 30 para 36.');
   });
 
   it('abaixo de 20%, ou sem período anterior, é só observação', () => {
-    const chamados = varios(1, 11, { category: 'Rede' });
-    expect(pontosDeMelhoria({ chamados, totalAnterior: 10 })[0].cor).toBe('info');
+    const chamados = varios(1, 33, { category: 'Rede' });
+    expect(pontosDeMelhoria({ chamados, totalAnterior: 30 })[0].cor).toBe('info');
     expect(pontosDeMelhoria({ chamados, totalAnterior: null })[0].cor).toBe('info');
+  });
+
+  it('período anterior pequeno demais não vira alta', () => {
+    const [equipe] = pontosDeMelhoria({ chamados: varios(1, 148, { category: 'Rede' }), totalAnterior: 13 });
+    expect(equipe.cor).toBe('info');
+    expect(equipe.texto).not.toContain('subiu');
   });
 
   it('assunto repetido soma pelo caminho e mostra os setores', () => {

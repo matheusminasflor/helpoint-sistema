@@ -17,6 +17,8 @@ export interface PontoDeMelhoria {
 const REPETIDO = 5;
 /** Alta em relação ao período anterior que merece atenção (%). */
 const ALTA = 20;
+/** Abaixo disso o período anterior não serve de base: o Helpoint entrou em uso em outubro e "subiu 1038%" não diz nada. */
+const BASE_MINIMA = 30;
 /** Fatia dos chamados para o setor aparecer como o que mais abre (%). */
 const FATIA_DO_SETOR = 20;
 
@@ -34,7 +36,7 @@ export function pontosDeMelhoria({ chamados, totalAnterior }: { chamados: Chamad
   if (!total) return pontos;
 
   const atendentes = new Set(chamados.flatMap((c) => c.assignee?.email ?? c.assignee?.full_name ?? [])).size;
-  const alta = totalAnterior ? Math.round(((total - totalAnterior) / totalAnterior) * 100) : null;
+  const alta = totalAnterior && totalAnterior >= BASE_MINIMA ? Math.round(((total - totalAnterior) / totalAnterior) * 100) : null;
   const subiu = alta !== null && alta >= ALTA;
   if (atendentes) {
     const porAtendente = Math.round(chamados.filter((c) => c.assignee).length / atendentes);

@@ -348,7 +348,8 @@ async function chamarProvedor(
     }
     const tools = toAnthropicTools(opts.tools);
     if (tools?.length) body.tools = tools;
-    if (opts.forcarFerramenta) body.tool_choice = { type: "tool", name: opts.forcarFerramenta };
+    // O Sonnet 5.5 recusa ferramenta obrigatória com 400 (2026-11-05): fica o pedido escrito nas regras de quem chama.
+    if (opts.forcarFerramenta && !/sonnet-5/.test(model)) body.tool_choice = { type: "tool", name: opts.forcarFerramenta };
 
     const res = await fetchDoProvedor("https://api.anthropic.com/v1/messages", {
       method: "POST",
