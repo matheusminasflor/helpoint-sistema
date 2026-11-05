@@ -67,7 +67,7 @@ export function ExportPDFDialog({ open, onOpenChange, reportData, secoes: SECTIO
   const handleExport = async () => {
     setIsExporting(true);
     try {
-      generatePDFReport({ ...reportData, selectedSections: [...selected] });
+      await generatePDFReport({ ...reportData, selectedSections: [...selected] });
       onOpenChange(false);
     } finally {
       setIsExporting(false);

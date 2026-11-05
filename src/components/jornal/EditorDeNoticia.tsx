@@ -1,6 +1,7 @@
 // Escrever ou editar uma notícia do Jornal (quem tem "Criar e editar" na seção Jornal do Marketing).
 // Salva sempre como está; publicar é outro botão, de quem tem "Publicar e despublicar".
 import { useState } from 'react';
+import { AIRefineButton } from '@/components/ai/AIRefineButton';
 import { toast } from 'sonner';
 import { Paperclip, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -132,7 +133,10 @@ export function EditorDeNoticia({ noticia, onClose }: { noticia: Noticia | null;
             )}
           </div>
           <div className="space-y-1">
-            <Label htmlFor="jor-texto">Texto</Label>
+            <div className="flex items-center justify-between gap-2">
+              <Label htmlFor="jor-texto">Texto</Label>
+              <AIRefineButton text={f.texto} context="general" onRefine={(t) => mudar('texto', t)} />
+            </div>
             <Textarea id="jor-texto" rows={8} value={f.texto} onChange={(e) => mudar('texto', e.target.value)} />
             <p className="text-[13px] text-muted-foreground">Dá para usar **negrito**, *itálico* e listas com "- ".</p>
           </div>

@@ -14,7 +14,7 @@ export interface AICredentialStatus {
 }
 
 export const AI_PROVIDERS: { value: AIProvider; label: string; defaultModel: string; hint: string }[] = [
-  { value: 'anthropic', label: 'Anthropic (Claude)', defaultModel: 'claude-3-5-sonnet-latest', hint: 'Chave começa com sk-ant-' },
+  { value: 'anthropic', label: 'Anthropic (Claude)', defaultModel: 'claude-haiku-5-5', hint: 'Chave começa com sk-ant-' },
   { value: 'openai', label: 'OpenAI (GPT)', defaultModel: 'gpt-4o-mini', hint: 'Chave começa com sk-' },
   { value: 'google', label: 'Google (Gemini)', defaultModel: 'gemini-3.8-flash', hint: 'Chave da API do Google AI Studio' },
 ];

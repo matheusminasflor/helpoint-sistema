@@ -47,6 +47,8 @@ interface CreateTicketFormProps {
   /** Vindos do "O que você precisa?" (2026-10-24): a categoria sugerida pelo texto e o próprio texto, na descrição. */
   categoriaInicialId?: string;
   textoInicial?: string;
+  /** O título que veio do áudio do "Novo". */
+  tituloInicial?: string;
 }
 
 const MODULE_LABELS: Record<string, { team: string; title: string; subtitle: string }> = {
@@ -92,7 +94,7 @@ const PRIORITIES = [
   { value: 'critical' as const, label: 'Crítica', dotClass: 'bg-status-danger', selectedClass: 'bg-status-danger text-primary-foreground border-status-danger ' },
 ];
 
-export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRascunhoChange, categoriaInicialId, textoInicial, assuntoFixo = false }: CreateTicketFormProps) {
+export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRascunhoChange, categoriaInicialId, textoInicial, tituloInicial, assuntoFixo = false }: CreateTicketFormProps) {
   // Para quem pede, é tudo "solicitação" (dono, 2026-10-28); pedido × chamado ficou só por dentro (atendente, fila).
   const { user, tenantId, role } = useAuth();
   // Abrir em nome de outra pessoa (2026-10-15): caixinha própria em "Chamados" desde 2026-10-24 (vale em qualquer
@@ -117,7 +119,7 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
   // No Novo, o texto sobrevive ao "voltar" do celular (`rascunho-do-novo`); quem apaga é a tela, ao enviar ou descartar.
   const chaveDoRascunho = assuntoFixo && user?.id && categoriaInicialId ? [user.id, categoriaInicialId] as const : null;
   const [guardado] = useState(() => (chaveDoRascunho ? lerRascunho(...chaveDoRascunho) : null));
-  const [title, setTitle] = useState(guardado?.titulo ?? '');
+  const [title, setTitle] = useState(guardado?.titulo ?? tituloInicial ?? '');
   const [description, setDescription] = useState(guardado?.descricao ?? textoInicial ?? '');
   useEffect(() => {
     if (chaveDoRascunho) guardarRascunho(...chaveDoRascunho, { titulo: title, descricao: description });
@@ -555,7 +557,8 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
           <label htmlFor="title" className="text-sm font-medium text-foreground">
             Título *
           </label>
-          <AIRefineButton text={title} context="ticket_title" onRefine={setTitle} disabled={!title.trim()} />
+          <AIRefineButton text={title.trim() ? title : description} context={title.trim() ? 'ticket_title' : 'title_from_description'}
+            rotulo={title.trim() ? 'Melhorar' : 'Sugerir título'} onRefine={setTitle} disabled={!title.trim() && !description.trim()} />
         </div>
         <Input
           id="title"

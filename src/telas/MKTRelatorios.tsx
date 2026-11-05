@@ -7,7 +7,7 @@
 //   · Analítico = o detalhe dos chamados, a prioridade, os Artistas mês a mês, as redes sociais e os padrões;
 //   · Apresentar e Exportar PDF, como na TI. Nada que a tela mostrava antes saiu: mudou de lugar.
 import { COR, COR_ABERTOS, COR_DA_PRIORIDADE, COR_RESOLVIDOS, EIXO } from '@/config/cores-dos-graficos';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AlertTriangle, BarChart3, CheckCircle2, ClipboardPaste, Clock, Download, Inbox, Presentation, Share2, ShieldCheck, Target, Timer } from 'lucide-react';
 import { Bar, BarChart, CartesianGrid, Cell, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
@@ -214,6 +214,14 @@ export default function MKTRelatorios() {
     temArtistas && semEntrega > 0 && { texto: `${semEntrega} ${semEntrega === 1 ? 'artista sem entrega' : 'artistas sem entrega'} ${recorte.semana ? `na S${recorte.semana}` : 'no mês'}`, cor: 'aviso', para: '#artistas-do-marketing' },
   ].filter(Boolean) as { texto: string; cor: 'perigo' | 'aviso'; para: string }[];
 
+  // Vindo do áudio do "Novo" (`?exportar=1`): abre a exportação, que depende do clique da pessoa para compartilhar.
+  const [pedeExportar, setPedeExportar] = useQueryState<string>('exportar', '');
+  useEffect(() => {
+    if (pedeExportar !== '1' || perfil.isLoading) return;
+    if (podeExportar) setExportando(true);
+    setPedeExportar('');
+  }, [pedeExportar, perfil.isLoading, podeExportar, setPedeExportar]);
+
   const rotuloDoPeriodo = PERIODOS_DA_REUNIAO.find((p) => p.value === periodo)?.label;
   const subtitulo = `${rotuloDoPeriodo ? `${rotuloDoPeriodo}: ` : ''}${rotuloDoIntervalo(intervaloDaTela)} · comparado com ${ddmm(anteriorDaTela.startDate)} a ${ddmm(anteriorDaTela.endDate)}`;
   const barras = barrasDaTendencia(trends || []);
@@ -373,7 +381,7 @@ export default function MKTRelatorios() {
               <Presentation className="w-3.5 h-3.5 mr-1" />Apresentar
             </Button>
             {podeExportar && (
-              <Button size="sm" variant="outline" className="max-[860px]:hidden" onClick={() => setExportando(true)}>
+              <Button size="sm" variant="outline" onClick={() => setExportando(true)}>
                 <Download className="w-3 h-3 mr-1" />Exportar PDF
               </Button>
             )}

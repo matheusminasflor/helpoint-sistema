@@ -41,6 +41,10 @@ export interface AICallOptions {
   maxTokens?: number;
   /** sobrescreve o modelo configurado pelo tenant (raro) */
   model?: string;
+  /** Obriga a IA a responder por esta ferramenta. */
+  forcarFerramenta?: string;
+  /** Quem pediu e para quê: toda chamada confere o limite e fica registrada (20270212340000). */
+  uso: { userId: string; recurso: string; guardar?: boolean };
 }
 
 export interface AIResult {
@@ -48,6 +52,7 @@ export interface AIResult {
   tool_calls?: { id: string; function: { name: string; arguments: string } }[];
   provider: AIProvider;
   model: string;
+  tokens?: { entrada: number; saida: number };
 }
 
 export class AIError extends Error {
@@ -68,7 +73,7 @@ export const NO_CREDENTIALS_MESSAGE =
   "Nenhum provedor de IA configurado para esta empresa.";
 
 export const DEFAULT_MODELS: Record<AIProvider, string> = {
-  anthropic: "claude-3-5-sonnet-latest",
+  anthropic: "claude-haiku-5-5",
   openai: "gpt-4o-mini",
   google: "gemini-3.8-flash", // 2026-10-07: o Google tirou o 2.5-flash de contas novas (404)
 };
@@ -251,12 +256,69 @@ function mapHttpError(status: number, body: string): AIError {
 
 // ── Chamada não-streaming (normalizada) ───────────────────────
 
+/** US$ por milhão de tokens (entrada, saída). Modelo fora da lista conta pelo preço mais alto, para o teto valer. */
+const PRECOS: [RegExp, number, number][] = [
+  [/haiku-5/, 0.10, 0.50],
+  [/sonnet-5/, 2, 10],
+  [/gemini.*flash-lite/, 0.25, 1.50],
+  [/gemini.*flash/, 0.75, 3.75],
+];
+const custoDe = (modelo: string, t: { entrada: number; saida: number }) => {
+  const [, entrada, saida] = PRECOS.find(([re]) => re.test(modelo)) ?? [null, 4, 20];
+  return (t.entrada * entrada + t.saida * saida) / 1_000_000;
+};
+
+async function chaveDoTexto(modelo: string, opts: AICallOptions) {
+  const dados = new TextEncoder().encode(JSON.stringify([modelo, opts.messages, opts.tools ?? null]));
+  const hash = await crypto.subtle.digest("SHA-256", dados);
+  return [...new Uint8Array(hash)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/**
+ * A única porta para a IA: confere o limite da pessoa e o teto da empresa, devolve a resposta guardada de texto
+ * repetido e registra o consumo. Falha aqui nunca derruba o que a pessoa estava fazendo: o formulário segue normal.
+ */
 export async function callTenantAI(
   tenantId: string | null | undefined,
   opts: AICallOptions,
 ): Promise<AIResult> {
   const cred = await requireCredential(tenantId);
-  const model = opts.model || cred.model || DEFAULT_MODELS[cred.provider];
+  const modelo = opts.model || cred.model || DEFAULT_MODELS[cred.provider];
+  const db = admin();
+  const { userId, recurso, guardar } = opts.uso;
+  const chave = guardar ? await chaveDoTexto(modelo, opts) : null;
+  if (chave) {
+    const { data, error } = await db.from("ia_cache").select("resposta").eq("tenant_id", tenantId).eq("chave", chave).maybeSingle();
+    if (error) console.error("ia_cache:", error.message);
+    if (data) {
+      const { error: erroDoUso } = await db.from("ia_uso").insert({ tenant_id: tenantId, user_id: userId, recurso, modelo, do_cache: true });
+      if (erroDoUso) console.error("ia_uso:", erroDoUso.message);
+      return data.resposta as AIResult;
+    }
+  }
+  const { data: motivo, error: erroDoLimite } = await db.rpc("ia_motivo_do_bloqueio", { p_tenant: tenantId, p_user: userId });
+  if (erroDoLimite) throw new AIError("provider_error", "Não foi possível conferir o limite da IA.", 500);
+  if (motivo) throw new AIError("rate_limited", motivo as string, 429);
+
+  const resultado = await chamarProvedor(cred, modelo, opts);
+  const tokens = resultado.tokens ?? { entrada: 0, saida: 0 };
+  const { error: erroDoRegistro } = await db.from("ia_uso").insert({
+    tenant_id: tenantId, user_id: userId, recurso, modelo,
+    tokens_entrada: tokens.entrada, tokens_saida: tokens.saida, custo_usd: custoDe(modelo, tokens),
+  });
+  if (erroDoRegistro) console.error("ia_uso:", erroDoRegistro.message);
+  if (chave) {
+    const { error } = await db.from("ia_cache").upsert({ tenant_id: tenantId, chave, resposta: resultado });
+    if (error) console.error("ia_cache:", error.message);
+  }
+  return resultado;
+}
+
+async function chamarProvedor(
+  cred: Awaited<ReturnType<typeof requireCredential>>,
+  model: string,
+  opts: AICallOptions,
+): Promise<AIResult> {
   const maxTokens = opts.maxTokens ?? 1200;
   const temperature = opts.temperature ?? 0.3;
 
@@ -272,6 +334,7 @@ export async function callTenantAI(
     if (system) body.system = system;
     const tools = toAnthropicTools(opts.tools);
     if (tools?.length) body.tools = tools;
+    if (opts.forcarFerramenta) body.tool_choice = { type: "tool", name: opts.forcarFerramenta };
 
     const res = await fetchDoProvedor("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -300,6 +363,7 @@ export async function callTenantAI(
       tool_calls: toolCalls.length ? toolCalls : undefined,
       provider: cred.provider,
       model,
+      tokens: { entrada: data.usage?.input_tokens ?? 0, saida: data.usage?.output_tokens ?? 0 },
     };
   }
 
@@ -315,7 +379,7 @@ export async function callTenantAI(
   if (cred.provider === "google") body.reasoning_effort = RACIOCINIO_DO_GEMINI;
   if (opts.tools?.length) {
     body.tools = opts.tools;
-    body.tool_choice = "auto";
+    body.tool_choice = opts.forcarFerramenta ? { type: "function", function: { name: opts.forcarFerramenta } } : "auto";
   }
   const res = await postarSemRaciocinioSeRecusar(cred, body, { limiteMs: 60_000 });
   if (!res.ok) throw mapHttpError(res.status, await res.text());
@@ -326,117 +390,10 @@ export async function callTenantAI(
     tool_calls: choice?.tool_calls ?? undefined,
     provider: cred.provider,
     model,
+    tokens: { entrada: data.usage?.prompt_tokens ?? 0, saida: data.usage?.completion_tokens ?? 0 },
   };
 }
 
-// ── Chamada com streaming (SSE normalizado no formato OpenAI) ──
-
-/**
- * Retorna um Response SSE cujos chunks seguem o formato OpenAI
- * (`data: {"choices":[{"delta":{"content":"..."}}]}`), independentemente
- * do provedor, para que o frontend não precise saber quem respondeu.
- */
-export async function streamTenantAI(
-  tenantId: string | null | undefined,
-  opts: AICallOptions,
-  corsHeaders: Record<string, string>,
-): Promise<Response> {
-  const cred = await requireCredential(tenantId);
-  const model = opts.model || cred.model || DEFAULT_MODELS[cred.provider];
-  const maxTokens = opts.maxTokens ?? 1200;
-  const temperature = opts.temperature ?? 0.3;
-
-  const sseHeaders = { ...corsHeaders, "Content-Type": "text/event-stream" };
-
-  if (cred.provider === "anthropic") {
-    const { system, rest } = splitSystem(opts.messages);
-    // deno-lint-ignore no-explicit-any
-    const body: any = {
-      model,
-      max_tokens: maxTokens,
-      temperature,
-      stream: true,
-      messages: toAnthropicMessages(rest),
-    };
-    if (system) body.system = system;
-
-    const res = await fetchDoProvedor("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": cred.api_key,
-        "anthropic-version": "2023-06-01",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-    }, { limiteMs: 60_000, streaming: true });
-    if (!res.ok) throw mapHttpError(res.status, await res.text());
-    return new Response(anthropicToOpenAIStream(res.body!), { headers: sseHeaders });
-  }
-
-  // deno-lint-ignore no-explicit-any
-  const body: any = {
-    model,
-    messages: opts.messages,
-    max_tokens: maxTokens,
-    temperature,
-    stream: true,
-  };
-  if (cred.provider === "google") body.reasoning_effort = RACIOCINIO_DO_GEMINI;
-  const res = await postarSemRaciocinioSeRecusar(cred, body, { limiteMs: 60_000, streaming: true });
-  if (!res.ok) throw mapHttpError(res.status, await res.text());
-  return new Response(res.body, { headers: sseHeaders });
-}
-
-function anthropicToOpenAIStream(input: ReadableStream<Uint8Array>): ReadableStream<Uint8Array> {
-  const decoder = new TextDecoder();
-  const encoder = new TextEncoder();
-  let buffer = "";
-
-  return new ReadableStream({
-    async start(controller) {
-      const reader = input.getReader();
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split("\n");
-          buffer = lines.pop() ?? "";
-          for (const line of lines) {
-            if (!line.startsWith("data:")) continue;
-            const raw = line.slice(5).trim();
-            if (!raw) continue;
-            try {
-              const evt = JSON.parse(raw);
-              if (evt.type === "content_block_delta" && evt.delta?.type === "text_delta") {
-                const chunk = { choices: [{ delta: { content: evt.delta.text } }] };
-                controller.enqueue(encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`));
-              }
-              if (evt.type === "message_stop") {
-                controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-              }
-            } catch {
-              // ignora eventos malformados
-            }
-          }
-        }
-        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-      } catch (e) {
-        console.error("anthropic stream error:", e);
-      } finally {
-        controller.close();
-      }
-    },
-  });
-}
-
-// ── Helper de resposta de erro ────────────────────────────────
-
-/**
- * Converte um AIError em Response JSON. O caso `no_ai_credentials` volta
- * com HTTP 200 e `{ error: 'no_ai_credentials' }` para que o frontend
- * possa exibir o estado amigável em vez de um erro cru.
- */
 export function aiErrorResponse(
   err: unknown,
   corsHeaders: Record<string, string>,
@@ -466,6 +423,11 @@ export function aiErrorResponse(
  * `profiles` vem primeiro porque é o caso da maioria das chamadas.
  */
 export async function resolveTenantId(req: Request): Promise<string | null> {
+  return (await resolveUsuario(req))?.tenantId ?? null;
+}
+
+/** Quem está chamando: a pessoa e a empresa dela. Nulo sem login. */
+export async function resolveUsuario(req: Request): Promise<{ userId: string; tenantId: string | null } | null> {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) return null;
   const url = Deno.env.get("SUPABASE_URL");
@@ -480,7 +442,7 @@ export async function resolveTenantId(req: Request): Promise<string | null> {
     .select("tenant_id")
     .eq("id", data.user.id)
     .maybeSingle();
-  if (profile?.tenant_id) return profile.tenant_id;
+  if (profile?.tenant_id) return { userId: data.user.id, tenantId: profile.tenant_id };
 
   // Cliente do SAC: mesma pergunta, outro cadastro.
   const { data: customer } = await admin()
@@ -488,5 +450,5 @@ export async function resolveTenantId(req: Request): Promise<string | null> {
     .select("tenant_id")
     .eq("user_id", data.user.id)
     .maybeSingle();
-  return customer?.tenant_id ?? null;
+  return { userId: data.user.id, tenantId: customer?.tenant_id ?? null };
 }

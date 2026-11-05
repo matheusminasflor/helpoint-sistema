@@ -11,7 +11,7 @@ import { COR, COR_ABERTOS, COR_RESOLVIDOS, EIXO } from '@/config/cores-dos-grafi
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { TutorialDoRelatorio } from '@/components/ajuda/TutorialDoRelatorio';
 import { ExplicacaoDoIndicador } from '@/components/ajuda/ExplicacaoDoIndicador';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQueryState } from '@/hooks/useQueryState';
 import { usePeriodoNaUrl } from '@/hooks/usePeriodoNaUrl';
 import { PERIODOS_DA_REUNIAO, PERSONALIZADO, rotuloDoIntervalo, type IntervaloDeDias } from '@/lib/period';
@@ -208,6 +208,14 @@ export default function TIRelatorios() {
     manutencoesProximas.length > 0 && { texto: `${manutencoesProximas.length} ${manutencoesProximas.length === 1 ? 'manutenção marcada' : 'manutenções marcadas'} nos próximos 30 dias`, cor: 'neutro', para: '/ti/manutencoes' },
   ].filter(Boolean) as { texto: string; cor: 'perigo' | 'aviso' | 'neutro'; para: string }[];
 
+  // Vindo do áudio do "Novo" (`?exportar=1`): abre a exportação, que depende do clique da pessoa para compartilhar.
+  const [pedeExportar, setPedeExportar] = useQueryState<string>('exportar', '');
+  useEffect(() => {
+    if (pedeExportar !== '1' || perfil.isLoading) return;
+    if (podeExportar) setExportDialogOpen(true);
+    setPedeExportar('');
+  }, [pedeExportar, perfil.isLoading, podeExportar, setPedeExportar]);
+
   const rotuloDoPeriodo = PERIODOS.find(p => p.value === selectedPeriod)?.label;
   const subtitulo = `${rotuloDoPeriodo ? `${rotuloDoPeriodo}: ` : ''}${rotuloDoIntervalo(intervaloDaTela)} · comparado com ${ddmm(anteriorDaTela.startDate)} a ${ddmm(anteriorDaTela.endDate)}`;
   const barras = barrasDaTendencia(trends || []);
@@ -310,7 +318,7 @@ export default function TIRelatorios() {
               </Button>
             )}
             {podeExportar && (
-              <Button size="sm" variant="outline" className="max-[860px]:hidden" onClick={() => setExportDialogOpen(true)}>
+              <Button size="sm" variant="outline" onClick={() => setExportDialogOpen(true)}>
                 <Download className="w-3 h-3 mr-1" />Exportar PDF
               </Button>
             )}

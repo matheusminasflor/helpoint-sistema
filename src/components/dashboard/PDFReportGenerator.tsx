@@ -1,4 +1,5 @@
 import { jsPDF } from 'jspdf';
+import { entregarPdf } from '@/lib/entregar-pdf';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { TicketMetrics, TicketTrend, MetricsFilter, getDateRangeFromPeriod } from '@/hooks/useHelpdeskMetrics';
@@ -74,7 +75,7 @@ function hasSection(sections: string[] | undefined, id: string): boolean {
   return !sections || sections.includes(id);
 }
 
-export function generatePDFReport(data: PDFReportData): void {
+export async function generatePDFReport(data: PDFReportData): Promise<void> {
   const doc = new jsPDF();
   const pw = doc.internal.pageSize.getWidth();
   const ph = doc.internal.pageSize.getHeight();
@@ -363,5 +364,5 @@ export function generatePDFReport(data: PDFReportData): void {
   addFooter();
 
   const fileName = `relatorio-ti-${format(new Date(), 'yyyy-MM-dd-HHmm')}.pdf`;
-  doc.save(fileName);
+  await entregarPdf(doc, fileName);
 }

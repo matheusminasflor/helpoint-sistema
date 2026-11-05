@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { callTenantAI, aiErrorResponse, resolveTenantId } from "../_shared/ai.ts";
+import { callTenantAI, aiErrorResponse, resolveUsuario } from "../_shared/ai.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -24,7 +24,11 @@ serve(async (req) => {
     const body = await req.json();
     const { metrics, period } = body;
 
-    const tenantId = await resolveTenantId(req);
+    const usuario = await resolveUsuario(req);
+    if (!usuario) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    const tenantId = usuario.tenantId;
 
     const systemPrompt = `Você é um Analista Sênior de TI e Consultor de Gestão com 20 anos de experiência.
 Sua função é analisar os indicadores operacionais de TI e fornecer uma análise executiva para o líder do setor.
@@ -61,6 +65,7 @@ ${JSON.stringify(metrics, null, 2)}
 Forneça sua análise executiva completa.`;
 
     const result = await callTenantAI(tenantId, {
+      uso: { userId: usuario.userId, recurso: 'analisar_indicadores' },
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },

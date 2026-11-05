@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { AIRefineButton } from '@/components/ai/AIRefineButton';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -117,7 +118,10 @@ export function PedirCompraDialog({ onFechar, onEnviado, tipoInicial = '' }: {
             </div>
           )}
           <div className="space-y-1.5">
-            <Label htmlFor="compra-para-que">Descrição: para quê <span className="font-normal text-muted-foreground">(opcional)</span></Label>
+            <div className="flex items-center justify-between gap-2">
+              <Label htmlFor="compra-para-que">Descrição: para quê <span className="font-normal text-muted-foreground">(opcional)</span></Label>
+              <AIRefineButton text={paraQue} context="general" onRefine={setParaQue} />
+            </div>
             <Textarea id="compra-para-que" rows={2} value={paraQue} onChange={(e) => setParaQue(e.target.value)}
               placeholder="Ex.: a cadeira da recepção quebrou" />
           </div>

@@ -3,6 +3,7 @@
 // onde a pessoa clicou. Só aparecem os setores que a pessoa planeja (o banco é quem barra de verdade); quem
 // faz é sempre do setor da tarefa, e cada campo tem a sua explicação (dono, 2026-10-09).
 import { useEffect, useState } from 'react';
+import { AIRefineButton } from '@/components/ai/AIRefineButton';
 import { ChevronRight } from 'lucide-react';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -171,7 +172,10 @@ export function AtividadeDialog({ projectId, aberta, onFechar, atividade, setore
                 )}
               </div>
               <div className="grid gap-1.5">
-                <Rotulo htmlFor="at-descricao" campo="Detalhes" dica={DICAS.descricao} />
+                <div className="flex items-center justify-between gap-2">
+                  <Rotulo htmlFor="at-descricao" campo="Detalhes" dica={DICAS.descricao} />
+                  <AIRefineButton text={f.description} context="general" onRefine={(t) => set('description', t)} />
+                </div>
                 <Textarea id="at-descricao" rows={3} value={f.description} onChange={(e) => set('description', e.target.value)} />
               </div>
               <div className="grid gap-1.5">

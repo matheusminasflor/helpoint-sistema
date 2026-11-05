@@ -81,6 +81,8 @@ verify_enabled = true
     verify_jwt = false
   [functions.automation-worker]
     verify_jwt = true
+  [functions.ai-organizar]
+    verify_jwt = false
   [functions.ai-refine]
     verify_jwt = false
   [functions.ai-suggest-reply]

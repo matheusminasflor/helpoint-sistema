@@ -167,6 +167,7 @@ Crie um texto de lembrete/convite engajante que:
     // Texto: usa o provedor de IA do próprio tenant (BYOK).
     if (!generateImage) {
       const textResult = await callTenantAI(creatorProfile?.tenant_id ?? null, {
+        uso: { userId: authData.user.id, recurso: 'criativo_de_texto' },
         messages: requestBody.messages,
         maxTokens: 1200,
         temperature: 0.7,

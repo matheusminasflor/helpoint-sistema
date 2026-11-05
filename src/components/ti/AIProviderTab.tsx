@@ -33,8 +33,8 @@ export function AIProviderTab() {
   const testMutation = useTestAICredential();
   const deleteMutation = useDeleteAICredential();
 
-  const [provider, setProvider] = useState<AIProvider>('google');
-  const [model, setModel] = useState('gemini-3.8-flash');
+  const [provider, setProvider] = useState<AIProvider>('anthropic');
+  const [model, setModel] = useState('claude-haiku-5-5');
   const [apiKey, setApiKey] = useState('');
 
   useEffect(() => {

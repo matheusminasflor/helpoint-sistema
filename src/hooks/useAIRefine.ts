@@ -4,7 +4,7 @@ import { mensagemDeErro, unwrap } from '@/lib/supabase-result';
 import { FUNCTIONS_URL } from '@/lib/env';
 import { toast } from 'sonner';
 
-export type ContextoDoTexto = 'ticket_title' | 'ticket_description' | 'comment' | 'resolution' | 'checklist_description';
+export type ContextoDoTexto = 'general' | 'title_from_description' | 'ticket_title' | 'ticket_description' | 'comment' | 'resolution' | 'checklist_description';
 
 /** Melhora um texto com a IA da empresa. Só roda com o clique da pessoa (dono, 2026-11-04). */
 export function useAIRefine() {

@@ -1,42 +1,19 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { callTenantAI, aiErrorResponse, resolveTenantId } from "../_shared/ai.ts";
+import { callTenantAI, aiErrorResponse, resolveUsuario } from "../_shared/ai.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-type ContextType = 'ticket_title' | 'ticket_description' | 'comment' | 'resolution' | 'checklist_description';
+type ContextType = 'general' | 'title_from_description' | 'ticket_title' | 'ticket_description' | 'comment' | 'resolution' | 'checklist_description';
 
 interface RequestBody {
   text: string;
   context: ContextType;
 }
 
-async function requireAuth(req: Request): Promise<string | null> {
-  const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
-  if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error("Backend keys are not configured");
-  }
-
-  const authHeader = req.headers.get("Authorization");
-  if (authHeader?.startsWith("Bearer ")) {
-    const token = authHeader.replace("Bearer ", "");
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-    const { data, error } = await supabase.auth.getUser(token);
-    if (!error && data?.user?.id) return await resolveTenantId(req); // autenticado OK
-  }
-
-  throw new Response(JSON.stringify({ error: "Unauthorized" }), {
-    status: 401,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
-}
-
+const MAX_CARACTERES = 4000;
 
 function getSystemPrompt(context: ContextType): string {
   // 2026-10-07, o dono: "quando refina está totalmente incorreto". O exemplo do título ensinava a
@@ -59,6 +36,14 @@ O QUE NUNCA FAZER:
 Devolva APENAS o texto revisado, sem aspas e sem rótulos.`;
 
   const contextRules: Record<ContextType, string> = {
+    general: `
+
+É um texto interno da empresa: mantenha o formato e o tamanho da pessoa.`,
+
+    title_from_description: `
+
+O texto é a DESCRIÇÃO de um chamado. Devolva só um TÍTULO para ela: uma frase curta, até 80 caracteres, sem ponto final.`,
+
     ticket_title: `
 
 É o TÍTULO de um chamado: uma frase curta, até 80 caracteres, sem ponto final.`,
@@ -90,7 +75,10 @@ serve(async (req) => {
 
   try {
     const body = await req.json();
-    const tenantId = await requireAuth(req);
+    const usuario = await resolveUsuario(req);
+    if (!usuario) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
 
     const { text, context } = body as RequestBody;
 
@@ -102,15 +90,22 @@ serve(async (req) => {
     }
 
 
+    if (text.length > MAX_CARACTERES) {
+      return new Response(
+        JSON.stringify({ error: "texto_longo", message: `O texto passa de ${MAX_CARACTERES} caracteres. Encurte para melhorar com IA.` }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const systemPrompt = getSystemPrompt(context || 'comment');
 
-    const result = await callTenantAI(tenantId, {
+    const result = await callTenantAI(usuario.tenantId, {
+      uso: { userId: usuario.userId, recurso: `melhorar_${context || 'comment'}`, guardar: true },
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: text },
       ],
-      // 200 era pouco: o Gemini 3 gasta parte do limite "pensando" e o texto saía cortado.
-      maxTokens: 1024,
+      maxTokens: 700,
       temperature: 0.2,
     });
     // Sem as aspas que alguns modelos devolvem em volta.

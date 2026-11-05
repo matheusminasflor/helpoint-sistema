@@ -5,6 +5,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { DepartmentGrid } from '@/components/request/DepartmentGrid';
 import { AssuntosDoSetor } from '@/components/request/AssuntosDoSetor';
+import { PedidoPorVoz } from '@/components/request/PedidoPorVoz';
 import { CreateTicketForm } from '@/components/helpdesk/CreateTicketForm';
 import { KnowledgePanel } from '@/components/pops/KnowledgePanel';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -33,6 +34,7 @@ export default function NewRequest() {
   const assuntoId = params.get('assunto');
   // O texto que a pessoa escreveu no "Do que você precisa?" vai para a descrição.
   const [texto, setTexto] = useState<string | undefined>(undefined);
+  const [titulo, setTitulo] = useState<string | undefined>(undefined);
   const [knowledgeOpen, setKnowledgeOpen] = useState(false);
   // Voltar e Cancelar apagavam a descrição sem perguntar (defeito 19, 2026-10-24).
   const [temRascunho, setTemRascunho] = useState(false);
@@ -69,8 +71,9 @@ export default function NewRequest() {
     setParams(p);
   };
 
-  const escolherSetor = (id: SetorDoPedido, extra?: { categoriaId?: string; texto?: string }) => {
+  const escolherSetor = (id: SetorDoPedido, extra?: { categoriaId?: string; texto?: string; titulo?: string }) => {
     setTexto(extra?.texto);
+    setTitulo(extra?.titulo);
     irPara({ setor: id, assunto: extra?.categoriaId });
   };
   const escolherAssunto = (cat: TICategory) => {
@@ -119,7 +122,14 @@ export default function NewRequest() {
   );
 
   if (!setor || !modulo) {
-    return <div className="min-h-full bg-background"><DepartmentGrid onSelectDepartment={escolherSetor} /></div>;
+    return (
+      <div className="min-h-full bg-background">
+        <div className="px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 lg:pt-8 max-w-5xl">
+          <PedidoPorVoz onOrganizado={(c) => escolherSetor(c.setor, { categoriaId: c.categoriaId, texto: c.texto, titulo: c.titulo })} />
+        </div>
+        <DepartmentGrid onSelectDepartment={escolherSetor} />
+      </div>
+    );
   }
 
   if (!assuntoId || pedidoDireto || (!assunto && rootCategories.length > 0 && !categories.some((c) => c.id === assuntoId))) {
@@ -177,6 +187,7 @@ export default function NewRequest() {
               categoriaInicialId={assuntoId}
               assuntoFixo
               textoInicial={texto}
+              tituloInicial={titulo}
               module={modulo}
             />
           </div>

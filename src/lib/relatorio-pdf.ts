@@ -3,6 +3,7 @@
 // primeiras páginas, depois cada nota ou recibo, com o nome da linha no topo. Foto entra como imagem; PDF entra
 // página por página (desenhada pelo `pdfjs-dist`, carregado só aqui). `jspdf` já é dependência do projeto.
 import { jsPDF } from 'jspdf';
+import { entregarPdf } from '@/lib/entregar-pdf';
 
 export interface ColunaDoRelatorio { titulo: string; largura: number; direita?: boolean }
 export interface AnexoDoRelatorio { titulo: string; path: string }
@@ -65,7 +66,7 @@ export async function gerarRelatorioPdf(r: RelatorioPdf): Promise<void> {
     }
   }
 
-  doc.save(r.nomeDoArquivo);
+  await entregarPdf(doc, r.nomeDoArquivo);
 }
 
 interface Imagem { dataUrl: string; largura: number; altura: number }

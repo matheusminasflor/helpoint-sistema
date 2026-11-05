@@ -18,7 +18,7 @@ async function requireAuth(req: Request) {
       global: { headers: { Authorization: authHeader } },
     });
     const { data, error } = await sb.auth.getUser(token);
-    if (!error && data?.user?.id) return { authenticated: true, supabase: sb, tenantId: await resolveTenantId(req) };
+    if (!error && data?.user?.id) return { authenticated: true, supabase: sb, userId: data.user.id, tenantId: await resolveTenantId(req) };
   }
 
   return null;
@@ -114,6 +114,7 @@ REGRAS:
     const systemPrompt = systemPrompts[mode || "reply"] || systemPrompts.reply;
 
     const result = await callTenantAI(auth.tenantId, {
+      uso: { userId: auth.userId, recurso: 'sugerir_resposta' },
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: context },

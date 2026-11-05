@@ -5,10 +5,16 @@ import { type ReactNode } from 'react';
 import { PlugZap } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { BuscarAgoraDaMeta } from '@/components/configuracoes/BuscarAgoraDaMeta';
 import { LigacoesComSistemasDeFora } from '@/components/configuracoes/LigacoesComSistemasDeFora';
 import { MetaConnectButton } from '@/components/mkt/MetaConnectButton';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { useAICredentialStatus } from '@/hooks/useTenantAICredentials';
+import { unwrap } from '@/lib/supabase-result';
 import { metaParada, useLigacaoMeta } from '@/hooks/useLigacaoMeta';
 
 const NOME_DO_TIPO = { instagram: 'Instagram', pagina: 'Página', anuncios: 'Anúncios' } as const;
@@ -35,6 +41,34 @@ function Cartao({ nome, situacao, tom, descricao, children }: {
       </CardHeader>
       {children && <CardContent className="space-y-3">{children}</CardContent>}
     </Card>
+  );
+}
+
+interface SituacaoDaIA { usos: number; custo_usd: number; teto_mes: number; limite_dia: number }
+
+const dolar = (v: number) => `US$ ${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+function CartaoDaIA() {
+  const { tenantId } = useAuth();
+  const { data: credencial } = useAICredentialStatus();
+  const { data: situacao } = useQuery({
+    queryKey: ['ia-situacao', tenantId],
+    enabled: !!tenantId,
+    queryFn: async () => (unwrap(await supabase.rpc('ia_situacao' as never)) as unknown as SituacaoDaIA[])?.[0] ?? null,
+  });
+  const ligada = credencial?.configured;
+  return (
+    <Cartao nome="IA da empresa" tom={ligada ? 'ok' : 'neutro'} situacao={ligada ? 'Funcionando' : 'Esperando a chave'}
+      descricao={ligada ? `Modelo ${credencial?.model ?? ''}. Só usa IA quando a pessoa clica.` : 'A chave entra em Configurações › IA.'}>
+      {situacao && (
+        <>
+          <Progress value={Math.min(100, (Number(situacao.custo_usd) / Number(situacao.teto_mes)) * 100)} className="h-2" />
+          <p className="text-sm text-muted-foreground">
+            {dolar(situacao.custo_usd)} de {dolar(situacao.teto_mes)} neste mês · {situacao.usos} usos · limite de {situacao.limite_dia} por pessoa ao dia
+          </p>
+        </>
+      )}
+    </Cartao>
   );
 }
 
@@ -65,6 +99,7 @@ export default function ConfiguracoesIntegracoes() {
             {meta && <LigacoesComSistemasDeFora />}
           </Cartao>
         )}
+        <CartaoDaIA />
         {FALTA_LIGAR.map((i) => <Cartao key={i.nome} nome={i.nome} situacao={i.situacao} tom="neutro" descricao={i.texto} />)}
       </div>
     </div>
