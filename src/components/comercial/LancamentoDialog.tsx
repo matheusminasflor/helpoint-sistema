@@ -26,7 +26,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { todayISO } from '@/lib/dates';
 import {
-  STATUS_INTERACAO, useAtribuirCarteiraEmLote, useBuscarClienteParaLancar, useClientesDaCarteira,
+  STATUS_INTERACAO, useAcompanhamentoDaCarteira, useAtribuirCarteiraEmLote, useBuscarClienteParaLancar, useClientesDaCarteira,
   useSalvarInteracao, useMeusIndicadoresMaisUsados,
   type ClienteParaLancar, type IndicadorCatalogo, type Interacao, type StatusInteracao,
 } from '@/hooks/useComercialLancamentos';
@@ -41,6 +41,9 @@ import { NotasDosPedidos } from '@/components/financeiro/NotasDosPedidos';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePodeGerirCarteiras, usePodeNoLancamento } from '@/hooks/useAccessProfiles';
 import { PedidoDeReajuste } from '@/components/comercial/PedidoDeReajuste';
+import { PerguntaDoRaioX } from '@/components/comercial/PerguntaDoRaioX';
+import { useRegistrarContato } from '@/hooks/useRaioX';
+import { alertaDoCliente, faltaNaResposta, respostaVazia, type RespostaDoLancamento } from '@/lib/raio-x';
 
 interface Props {
   open: boolean;
@@ -94,6 +97,11 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
   const [checklist, setChecklist] = useState<ChecklistEmEdicao>(checklistVazio);
   const [idGravado, setIdGravado] = useState<string | null>(null);
   const [problemas, setProblemas] = useState<string[]>([]);
+  // Raio-X (dono, 2026-11-05): cliente parado ou em queda, em contato sem venda, responde por que não está comprando.
+  // ponytail: a obrigação mora só nesta tela, porque "parado ou em queda" é conta da Carteira. Se surgir outra porta de
+  // lançamento, a regra vai para `com_salvar_interacao`.
+  const [resposta, setResposta] = useState<RespostaDoLancamento>(respostaVazia);
+  const registrarContato = useRegistrarContato();
   const { data: itens = [] } = useItensDoChecklist();
   // DOIS PASSOS (proposta "Helpoint no dia a dia", etapa 4 · Comercial, 2026-10-24): eram ~35 controles numa janela,
   // 26 deles caixinhas. Passo 1: o cliente e o que aconteceu (data, status, pedido); passo 2: indicadores, ações e
@@ -126,6 +134,7 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
   useEffect(() => {
     if (!open) return;
     setIdGravado(null);
+    setResposta(respostaVazia());
     setProblemas([]);
     if (gravado) {
       setTemPedido(true);
@@ -226,6 +235,10 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
   });
 
   const enviaChecklist = temPedido && !checklistTravado;
+  const { data: daCarteiraDoCliente = [] } = useAcompanhamentoDaCarteira(open && !editando ? form.cliente?.carteira ?? null : null, `${todayISO().slice(0, 7)}-01`);
+  const linhaDoCliente = daCarteiraDoCliente.find((l) => form.cliente && l.codigos.includes(form.cliente.codigo));
+  const alerta = !editando && !temPedido && !valorNumero && linhaDoCliente ? alertaDoCliente(linhaDoCliente) : null;
+  const faltaRaioX = !!alerta && faltaNaResposta(resposta);
 
   const ligarPedido = (ligado: boolean) => {
     setTemPedido(ligado);
@@ -235,7 +248,7 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
   };
 
   const confirmar = async () => {
-    if (!form.data || faltaCliente || faltaAcaoInterna || valorInvalido || notaIncompleta || dataDaNotaInvalida || indicadorSemCliente) return;
+    if (!form.data || faltaCliente || faltaAcaoInterna || valorInvalido || notaIncompleta || dataDaNotaInvalida || indicadorSemCliente || faltaRaioX) return;
     if (enviaChecklist) {
       const achados = problemasDoChecklist(checklist.contato, checklist.pedidos, itens);
       setProblemas(achados);
@@ -259,6 +272,7 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
       marcas: [...form.marcas],
     });
     setIdGravado(id);
+    if (alerta) await registrarContato.mutateAsync({ interacaoId: id, r: resposta });
     if (enviaChecklist) {
       await salvarChecklist.mutateAsync({
         interacaoId: id,
@@ -625,6 +639,7 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
             {valorInvalido && (
               <p className="sm:col-span-2 text-[13px] badge-danger rounded-md px-2 py-1">Valor inválido.</p>
             )}
+            {alerta && <div className="sm:col-span-2"><PerguntaDoRaioX alerta={alerta} resposta={resposta} onChange={setResposta} /></div>}
             <div className="space-y-1.5 sm:col-span-2">
               <Label htmlFor="lanc-obs">Observações</Label>
               <Textarea id="lanc-obs" rows={3} readOnly={concluidoTravado} placeholder="Contexto, próximo passo, informação útil — evite só “falado”."
@@ -640,8 +655,8 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
             : <Button variant="outline" onClick={() => onOpenChange(false)}>{concluidoTravado && !enviaChecklist && !completandoNota ? 'Fechar' : 'Cancelar'}</Button>}
           {!editando && passo === 1 && <Button onClick={() => setPasso(2)} disabled={!form.data || faltaCliente}>Continuar</Button>}
           {(!!editando || passo === 2) && !(concluidoTravado && !enviaChecklist && !completandoNota) && <Button onClick={confirmar}
-            disabled={!form.data || faltaCliente || faltaAcaoInterna || valorInvalido || notaIncompleta || dataDaNotaInvalida || indicadorSemCliente || salvar.isPending || salvarChecklist.isPending}>
-            {salvar.isPending || salvarChecklist.isPending
+            disabled={!form.data || faltaCliente || faltaAcaoInterna || valorInvalido || notaIncompleta || dataDaNotaInvalida || indicadorSemCliente || faltaRaioX || salvar.isPending || salvarChecklist.isPending || registrarContato.isPending}>
+            {salvar.isPending || salvarChecklist.isPending || registrarContato.isPending
               ? 'Salvando…'
               : enviaChecklist ? 'Salvar e enviar ao Financeiro' : 'Salvar lançamento'}
           </Button>}

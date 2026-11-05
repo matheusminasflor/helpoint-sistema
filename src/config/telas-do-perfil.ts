@@ -111,6 +111,7 @@ export const TELAS_DO_PERFIL: TelaDoPerfil[] = [
   { prefixo: '/comercial/cashback', setor: 'comercial', secoes: ['cashback'] },
   { prefixo: '/comercial/beneficios', setor: 'comercial', secoes: ['diretrizes_beneficio'] },
   { prefixo: '/comercial/atendimento', setor: 'comercial', secoes: ['atendimento'] },
+  { prefixo: '/comercial/relatorios/motivos-e-dores', setor: 'comercial', secoes: ['clientes'] },
   // Setores só de atendimento
   { prefixo: '/educacional/treinamentos', setor: 'educacional', secoes: ['treinamentos'] },
   { prefixo: '/educacional/indicadores', setor: 'educacional', secoes: ['reports'] },

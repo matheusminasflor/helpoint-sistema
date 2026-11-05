@@ -3,7 +3,7 @@ import { formatBRL, formatDateBR } from '@/types/financeiro';
 
 /**
  * Os contatos com o cliente (aba Relacionamento da Ficha, etapa 4 · Comercial, 2026-10-24): cada lançamento, com quem
- * fez, o status, a venda e o próximo prazo. O banco mostra à vendedora os dela e ao gestor todos.
+ * fez, o status, a venda e o próximo prazo. Quem acessa a carteira do cliente vê todos, de qualquer vendedor.
  */
 export function ContatosDoCliente({ codigo }: { codigo: string }) {
   const { data: contatos = [], isLoading, isError } = useContatosDoCliente(codigo);
@@ -20,7 +20,7 @@ export function ContatosDoCliente({ codigo }: { codigo: string }) {
               <li key={c.id} className="py-2 text-[13px] grid gap-0.5">
                 <span className="flex flex-wrap gap-x-2">
                   <span className="tabular-nums font-medium">{formatDateBR(c.data)}</span>
-                  <span>{c.vendedor?.full_name ?? '—'}</span>
+                  <span>{c.vendedor ?? '—'}</span>
                   <span className="text-muted-foreground">{rotulo(c.status)}</span>
                   {c.valor_venda ? <span className="tabular-nums">{formatBRL(c.valor_venda)}</span> : null}
                   {c.prazo && c.status !== 'concluido' && <span className="text-muted-foreground">retorno {formatDateBR(c.prazo)}</span>}

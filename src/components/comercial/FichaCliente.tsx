@@ -47,6 +47,7 @@ import { DiretrizesDoCliente } from '@/components/comercial/DiretrizesApuradas';
 import { useVisaoRelatorio } from '@/hooks/useVisaoRelatorio';
 import { useQueryState } from '@/hooks/useQueryState';
 import { ContatosDoCliente } from '@/components/comercial/ContatosDoCliente';
+import { RaioXDaFicha } from '@/components/comercial/RaioXDaFicha';
 import type {
   CashbackMensal, CashbackResumo, CriterioCurva, FaixaCurva, Filial, FichaCliente,
   FichaClienteComprou, FichaClienteEvolucaoFaixa, FichaClienteEvolucaoProdutoItem,
@@ -73,7 +74,7 @@ export function FichaClienteSecao({
 }) {
   const [visao, setVisao] = useVisaoRelatorio('ficha-cliente');
   // Abas Vendas e Relacionamento (etapa 4 · Comercial, 2026-10-24): os números do cliente e os contatos com ele.
-  const [aba, setAba] = useQueryState<'vendas' | 'relacionamento'>('aba-ficha', 'vendas');
+  const [aba, setAba] = useQueryState<'vendas' | 'relacionamento' | 'raio-x'>('aba-ficha', 'vendas');
   const { data: ficha, isLoading } = useFichaCliente(codigo, de, ate, filial, criterio);
   // O cashback é apurado por ANO (a faixa é mensal, dentro do ano) — é o
   // ano do fim do período, o mesmo que o título da ficha mostra.
@@ -141,15 +142,16 @@ export function FichaClienteSecao({
       <CadastroDoCliente codigo={codigo} de={de} ate={ate} filial={filial} />
 
       <div className="inline-flex rounded-md border border-border p-0.5" role="tablist" aria-label="Partes da ficha">
-        {(['vendas', 'relacionamento'] as const).map((a) => (
+        {(['vendas', 'relacionamento', 'raio-x'] as const).map((a) => (
           <button key={a} type="button" role="tab" aria-selected={aba === a} onClick={() => setAba(a)}
             className={`px-3 min-h-9 rounded text-[13px] ${aba === a ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>
-            {a === 'vendas' ? 'Vendas' : 'Relacionamento'}
+            {a === 'vendas' ? 'Vendas' : a === 'relacionamento' ? 'Relacionamento' : 'Raio-X'}
           </button>
         ))}
       </div>
 
       {aba === 'relacionamento' && <ContatosDoCliente codigo={codigo} />}
+      {aba === 'raio-x' && <RaioXDaFicha codigo={codigo} />}
 
       {aba === 'vendas' && ficha && (visao === 'simplificado' ? (
         <VisaoSimplificada

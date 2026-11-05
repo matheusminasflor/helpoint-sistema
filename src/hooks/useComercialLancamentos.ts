@@ -517,22 +517,25 @@ export function useAcompanhamentoDaCarteira(carteira: string | null, competencia
   return useQuery({
     queryKey: ['comercial', 'acompanhamento-da-carteira', tenantId, carteira, competencia, intervalo?.de ?? null, intervalo?.ate ?? null, filial],
     enabled: !!tenantId && !!carteira,
-    queryFn: async (): Promise<LinhaAcompanhamento[]> => {
-      const linhas = unwrap(await supabase.rpc('com_acompanhamento_da_carteira' as never, {
-        p_carteira: carteira!, p_competencia: competencia,
-        p_de: intervalo?.de ?? null, p_ate: intervalo?.ate ?? null, p_filial: filial || null,
-      } as never)) as unknown as Array<Record<string, unknown>>;
-      return linhas.map((l) => ({
-        ...(l as unknown as LinhaAcompanhamento),
-        venda_12m: num(l.venda_12m),
-        venda_mes: num(l.venda_mes),
-        venda_mes_passado: num(l.venda_mes_passado),
-        a_faturar: num(l.a_faturar),
-        media_3m: num(l.media_3m),
-        media_12m: num(l.media_12m),
-      }));
-    },
+    queryFn: () => lerAcompanhamento(carteira!, competencia, intervalo, filial),
   });
+}
+
+export async function lerAcompanhamento(carteira: string, competencia: string,
+  intervalo?: IntervaloDeDias | null, filial: FiltroFilial = ''): Promise<LinhaAcompanhamento[]> {
+  const linhas = unwrap(await supabase.rpc('com_acompanhamento_da_carteira' as never, {
+    p_carteira: carteira, p_competencia: competencia,
+    p_de: intervalo?.de ?? null, p_ate: intervalo?.ate ?? null, p_filial: filial || null,
+  } as never)) as unknown as Array<Record<string, unknown>>;
+  return linhas.map((l) => ({
+    ...(l as unknown as LinhaAcompanhamento),
+    venda_12m: num(l.venda_12m),
+    venda_mes: num(l.venda_mes),
+    venda_mes_passado: num(l.venda_mes_passado),
+    a_faturar: num(l.a_faturar),
+    media_3m: num(l.media_3m),
+    media_12m: num(l.media_12m),
+  }));
 }
 
 /** O cliente (o grupo), mês a mês, no período da Carteira. */
@@ -776,21 +779,19 @@ export function useMeusRetornos() {
 }
 
 /** Os contatos (lançamentos) com um cliente, do mais novo ao mais velho — a aba Relacionamento da ficha (2026-10-24). */
+export interface ContatoDoCliente {
+  id: string; data: string; status: string; valor_venda: number | null; prazo: string | null; observacoes: string | null; vendedor: string | null;
+}
+
 export function useContatosDoCliente(codigo: string | null) {
   const { tenantId } = useAuth();
   return useQuery({
     queryKey: ['comercial', 'interacoes', tenantId, 'cliente', codigo],
     enabled: !!tenantId && !!codigo,
-    queryFn: async (): Promise<(Interacao & { vendedor?: { full_name: string | null } | null })[]> =>
-      ((unwrap(await supabase.from('com_interacoes')
-        .select(`id, vendedor_id, cliente_codigo, data, status, valor_venda, nota_fiscal, nota_em, nota_filial, prazo, observacoes, fora_da_carteira,
-                 marcas:com_interacao_marcas(indicador_id),
-                 cliente:com_clientes(razao_social, cidade, estado, telefone),
-                 vendedor:profiles!com_interacoes_vendedor_id_fkey(full_name)`)
-        .eq('cliente_codigo', codigo!)
-        .order('data', { ascending: false })
-        .limit(50)) ?? []) as unknown as (InteracaoCrua & { vendedor?: { full_name: string | null } | null })[])
-        .map((l) => ({ ...lerInteracoes([l])[0], vendedor: l.vendedor })),
+    // Pela função, e não pela tabela: quem assume a carteira vê os contatos de quem atendeu antes (Raio-X, 2026-11-05).
+    queryFn: async (): Promise<ContatoDoCliente[]> =>
+      ((unwrap(await supabase.rpc('com_contatos_do_cliente' as never, { p_codigo: codigo! } as never)) ?? []) as unknown as ContatoDoCliente[])
+        .map((c) => ({ ...c, valor_venda: c.valor_venda === null ? null : Number(c.valor_venda) })),
   });
 }
 

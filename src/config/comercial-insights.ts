@@ -20,7 +20,7 @@
 import type { FaixaCurva } from '@/types/comercial';
 
 export type Visao =
-  | 'vendas' | 'clientes' | 'bonificacao' | 'cashback' | 'diretrizes' | 'atendimento' | 'venda-por-familia' | 'retornos';
+  | 'vendas' | 'clientes' | 'bonificacao' | 'cashback' | 'diretrizes' | 'atendimento' | 'venda-por-familia' | 'retornos' | 'motivos-e-dores';
 
 export const VISAO_PADRAO: Visao = 'vendas';
 
@@ -58,6 +58,9 @@ export const VISOES: VisaoInsight[] = [
   // Relatórios novos (etapa 5).
   { valor: 'venda-por-familia', rotulo: 'Venda por família e região', descricao: 'Que linha cresce, que cidade compra, onde há espaço',
     rota: '/comercial/relatorios/venda-por-familia', secao: 'vendas', grupo: 'Relatórios' },
+  // Raio-X do Cliente (dono, 2026-11-05).
+  { valor: 'motivos-e-dores', rotulo: 'Motivos e dores', descricao: 'Por que os clientes não estão comprando, o que foi proposto e o que funcionou',
+    rota: '/comercial/relatorios/motivos-e-dores', secao: 'clientes', grupo: 'Relatórios' },
   { valor: 'retornos', rotulo: 'Agenda de retornos', descricao: 'Quem ligar hoje e que retorno atrasou, da equipe',
     rota: '/comercial/agenda-de-retornos', secao: 'lancamentos', grupo: 'Gestão' },
 ];
@@ -121,6 +124,8 @@ export function rotaDaVisao(valor: Visao): string {
 export function linkFichaCliente(codigo: string): string {
   return `${rotaDaVisao('clientes')}?cliente=${encodeURIComponent(codigo)}`;
 }
+
+export const linkRaioX = (codigo: string) => `${linkFichaCliente(codigo)}&aba-ficha=raio-x`;
 
 /**
  * O que `?visao=` significa, resolvido uma vez só — **a página e o menu usam

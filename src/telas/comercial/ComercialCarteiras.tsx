@@ -46,6 +46,11 @@ import { fromLocalISODate, toLocalISODate, todayISO } from '@/lib/dates';
 import { rotuloDoIntervalo } from '@/lib/period';
 import { tendenciaDoCliente, type Tendencia } from '@/lib/tendencia-do-cliente';
 import { formatBRL, formatDateBR } from '@/types/financeiro';
+import { Link } from 'react-router-dom';
+import { useDoresEmAberto } from '@/hooks/useRaioX';
+import { useTenantPath } from '@/hooks/useTenantPath';
+import { linkRaioX } from '@/config/comercial-insights';
+import { rotuloDoMotivo } from '@/lib/raio-x';
 
 const MESES_CURTOS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 
@@ -489,6 +494,11 @@ function AQuemProcurar({ linhas, noRecorte, aoAbrir, aoVerTudo }: {
   aoAbrir: (l: LinhaAcompanhamento) => void;
   aoVerTudo: (motivo: MotivoDeProcurar) => void;
 }) {
+  const { data: abertas = [] } = useDoresEmAberto();
+  const motivoDe = (l: LinhaAcompanhamento) => {
+    const dor = abertas.find((d) => l.codigos.includes(d.cliente_codigo));
+    return dor ? rotuloDoMotivo(dor) : null;
+  };
   const usados = new Set<string>();
   const pega = (f: (l: LinhaAcompanhamento) => boolean) => linhas
     .filter((l) => !usados.has(l.grupo_chave) && f(l))
@@ -524,6 +534,7 @@ function AQuemProcurar({ linhas, noRecorte, aoAbrir, aoVerTudo }: {
                     <button type="button" onClick={() => aoAbrir(l)} className="w-full text-left px-3 py-2 hover:bg-muted/50">
                       <span className="block text-[14px] font-medium">{l.grupo_nome}</span>
                       <span className="block text-[12px] text-muted-foreground">{g.porque(l)}</span>
+                      {motivoDe(l) && <span className="mt-0.5 inline-block rounded px-1.5 text-[12px] badge-danger">{motivoDe(l)}</span>}
                     </button>
                   </li>
                 ))}
@@ -624,6 +635,7 @@ function ClienteMesAMes({ linha, onClose, carteira, competencia, intervalo, fili
   const de = intervalo?.de ?? toLocalISODate(new Date(inicio.getFullYear(), inicio.getMonth() - 11, 1));
   const ate = intervalo?.ate ?? toLocalISODate(new Date(inicio.getFullYear(), inicio.getMonth() + 1, 0));
   const { data: meses = [], isLoading } = useClienteMesAMes(carteira, linha?.codigos ?? null, de, ate, filial);
+  const tenantPath = useTenantPath();
   const maior = Math.max(0, ...meses.map((m) => m.venda));
   const total = meses.reduce((s, m) => s + m.venda, 0);
   return (
@@ -632,6 +644,11 @@ function ClienteMesAMes({ linha, onClose, carteira, competencia, intervalo, fili
         <DialogHeader>
           <DialogTitle>{linha?.grupo_nome}</DialogTitle>
         </DialogHeader>
+        {linha?.codigos[0] && (
+          <Button asChild variant="outline" size="sm" className="justify-self-start">
+            <Link to={tenantPath(linkRaioX(linha.codigos[0]))}>Abrir Raio-X</Link>
+          </Button>
+        )}
         <p className="text-[13px] text-muted-foreground">
           Venda mês a mês de {formatDateBR(de)} a {formatDateBR(ate)}{filial ? ` · ${filial}` : ' · as duas filiais'}.
         </p>
