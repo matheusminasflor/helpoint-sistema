@@ -191,7 +191,7 @@ export default function ComercialLancamentos() {
                             {l.observacoes && <p className="text-muted-foreground line-clamp-2">{l.observacoes}</p>}
                           </>
                         ) : (
-                          <span className="text-muted-foreground">Ação interna{l.observacoes ? ` — ${l.observacoes}` : ''}</span>
+                          <span className="text-muted-foreground">Ação interna{l.pessoa?.full_name ? ` com ${l.pessoa.full_name}` : ''}{l.observacoes ? ` — ${l.observacoes}` : ''}</span>
                         )}
                       </td>
                       <td className="px-3 py-2 font-mono whitespace-nowrap">{formatDateBR(l.data)}</td>

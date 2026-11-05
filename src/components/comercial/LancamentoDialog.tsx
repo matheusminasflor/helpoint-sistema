@@ -15,6 +15,7 @@
 // digitação só. Salvar são duas chamadas (lançamento, depois checklist): se a segunda falhar, o
 // lançamento já está gravado, a tela continua aberta nele e o próximo "Salvar" reenvia o checklist.
 import { useEffect, useMemo, useState } from 'react';
+import { useColaboradores } from '@/hooks/useColaboradores';
 import { AlertTriangle, ArrowDownToLine, ClipboardCheck, Search, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -53,6 +54,9 @@ interface Props {
 
 interface Form {
   cliente: ClienteParaLancar | null;
+  /** Lançamento com alguém da empresa, no lugar do cliente (dono, 2026-11-05). */
+  comPessoa: boolean;
+  pessoaId: string;
   data: string;
   status: StatusInteracao;
   valor: string;
@@ -68,7 +72,7 @@ interface Form {
 
 function formVazio(): Form {
   return {
-    cliente: null, data: todayISO(), status: 'em_andamento', valor: '', nota: '', notaEm: todayISO(), notaFilial: '', prazo: '', observacoes: '',
+    cliente: null, comPessoa: false, pessoaId: '', data: todayISO(), status: 'em_andamento', valor: '', nota: '', notaEm: todayISO(), notaFilial: '', prazo: '', observacoes: '',
     foraDaCarteira: false, marcas: new Set(),
   };
 }
@@ -78,6 +82,7 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
   const [buscaFora, setBuscaFora] = useState('');
   const [procurandoFora, setProcurandoFora] = useState(false);
   const salvar = useSalvarInteracao();
+  const { data: colaboradores = [] } = useColaboradores();
   const trazer = useAtribuirCarteiraEmLote();
   const { data: daCarteira = [] } = useClientesDaCarteira(minhasCarteiras);
   const { data: achados = [] } = useBuscarClienteParaLancar(procurandoFora ? buscaFora : '');
@@ -185,8 +190,9 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
   const mostra = (p: 1 | 2) => !!editando || passo === p;
 
   const semCliente = form.cliente === null;
-  // Lançamento novo exige cliente (dono, 2026-11-05); o antigo sem cliente ainda se edita. O banco recusa o mesmo.
-  const faltaCliente = !editando && semCliente;
+  // Lançamento novo diz com quem foi: cliente ou pessoa da empresa (dono, 2026-11-05). O banco recusa o mesmo.
+  const faltaCliente = !editando && semCliente && !form.pessoaId;
+  const faltaAcaoInterna = !editando && form.comPessoa && !acoes.some((a) => form.marcas.has(a.id));
   // O valor da venda só com a nota fiscal (dono, 2026-10-15): o pedido fechado é "A faturar" — o valor dele fica
   // no checklist e aparece na Carteira, mas não é venda até a nota.
   const valorNumero = form.valor.trim() === '' ? null : Number(form.valor.replace(/\./g, '').replace(',', '.'));
@@ -229,7 +235,7 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
   };
 
   const confirmar = async () => {
-    if (!form.data || faltaCliente || valorInvalido || notaIncompleta || dataDaNotaInvalida || indicadorSemCliente) return;
+    if (!form.data || faltaCliente || faltaAcaoInterna || valorInvalido || notaIncompleta || dataDaNotaInvalida || indicadorSemCliente) return;
     if (enviaChecklist) {
       const achados = problemasDoChecklist(checklist.contato, checklist.pedidos, itens);
       setProblemas(achados);
@@ -240,6 +246,7 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
     const id = !vaiAoBanco && editando ? editando.id : await salvar.mutateAsync({
       id: editando?.id ?? idGravado ?? undefined,
       cliente_codigo: form.cliente?.codigo ?? null,
+      pessoa_interna_id: form.pessoaId || null,
       data: form.data,
       status: form.status,
       valor_venda: valorNumero,
@@ -294,8 +301,31 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
           {mostra(1) && (<>
           {/* ── Cliente ─────────────────────────────────────────────────────── */}
           <section className="space-y-2">
-            <Label>Cliente</Label>
-            {form.cliente ? (
+            {editando?.pessoa_interna_id ? (
+              <p className="text-[14px]">Ação interna com <strong>{editando.pessoa?.full_name ?? 'pessoa da empresa'}</strong></p>
+            ) : (
+              <>
+            {editando ? <Label>Cliente</Label> : (
+              <div className="flex h-9 w-full max-w-xs rounded-md border border-input bg-card overflow-hidden" role="group" aria-label="Com quem foi">
+                {([[false, 'Cliente'], [true, 'Pessoa da empresa']] as const).map(([comPessoa, rotulo]) => (
+                  <button key={rotulo} type="button" aria-pressed={form.comPessoa === comPessoa}
+                    onClick={() => setForm((f) => (f.comPessoa === comPessoa ? f : { ...f, comPessoa, pessoaId: '', cliente: null, foraDaCarteira: false, marcas: new Set() }))}
+                    className={`flex-1 text-[13px] font-semibold ${form.comPessoa === comPessoa ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-muted'}`}>
+                    {rotulo}
+                  </button>
+                ))}
+              </div>
+            )}
+            {form.comPessoa ? (
+              <div className="space-y-1.5">
+                <select id="lanc-pessoa" aria-label="Pessoa da empresa" value={form.pessoaId} onChange={(e) => setForm((f) => ({ ...f, pessoaId: e.target.value }))}
+                  className="flex h-9 w-full rounded-md border border-input bg-card px-3 text-[14px]">
+                  <option value="">Escolha a pessoa…</option>
+                  {colaboradores.map((c) => <option key={c.id} value={c.id}>{c.full_name || c.email}</option>)}
+                </select>
+                <p className="text-[12px] text-muted-foreground">Para campanha, evento, treinamento ou reunião interna. Venda e demais indicadores precisam de cliente.</p>
+              </div>
+            ) : form.cliente ? (
               <div className="rounded-lg border border-border p-3 space-y-1.5">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
@@ -399,10 +429,12 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
                     Cliente do Histórico ou de outra carteira…
                   </Button>
                   <span className="text-[12px] text-muted-foreground self-center">
-                    Escolha o cliente para continuar: todo lançamento precisa de um cliente.
+                    Campanha, evento, treinamento ou reunião interna? Use Pessoa da empresa, acima.
                   </span>
                 </div>
               </div>
+            )}
+              </>
             )}
           </section>
 
@@ -517,12 +549,12 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
           <section className="space-y-2">
             <div>
               <Label>Ações realizadas (FAROL)</Label>
-              <p className="text-[12px] text-muted-foreground">Campanha, treinamento e demais ações ficam registrados no lançamento do cliente.</p>
+              <p className="text-[12px] text-muted-foreground">{form.comPessoa ? 'Com pessoa da empresa: marque pelo menos uma das ações liberadas.' : 'Campanha, treinamento e demais ações do atendimento ao cliente.'}</p>
             </div>
             <div className="grid gap-1.5 sm:grid-cols-2">
               {acoes.map((a) => (
                 <label key={a.id} className="flex items-center gap-2 text-[13px] cursor-pointer">
-                  <Checkbox checked={form.marcas.has(a.id)} disabled={travadoParaMim} onCheckedChange={() => alternarMarca(a.id)} />
+                  <Checkbox checked={form.marcas.has(a.id)} disabled={travadoParaMim || (form.comPessoa && !a.aceita_pessoa_interna)} onCheckedChange={() => alternarMarca(a.id)} />
                   {a.nome}
                 </label>
               ))}
@@ -608,7 +640,7 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
             : <Button variant="outline" onClick={() => onOpenChange(false)}>{concluidoTravado && !enviaChecklist && !completandoNota ? 'Fechar' : 'Cancelar'}</Button>}
           {!editando && passo === 1 && <Button onClick={() => setPasso(2)} disabled={!form.data || faltaCliente}>Continuar</Button>}
           {(!!editando || passo === 2) && !(concluidoTravado && !enviaChecklist && !completandoNota) && <Button onClick={confirmar}
-            disabled={!form.data || faltaCliente || valorInvalido || notaIncompleta || dataDaNotaInvalida || indicadorSemCliente || salvar.isPending || salvarChecklist.isPending}>
+            disabled={!form.data || faltaCliente || faltaAcaoInterna || valorInvalido || notaIncompleta || dataDaNotaInvalida || indicadorSemCliente || salvar.isPending || salvarChecklist.isPending}>
             {salvar.isPending || salvarChecklist.isPending
               ? 'Salvando…'
               : enviaChecklist ? 'Salvar e enviar ao Financeiro' : 'Salvar lançamento'}

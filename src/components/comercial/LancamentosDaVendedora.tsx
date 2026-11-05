@@ -97,7 +97,7 @@ export function LancamentosDaVendedora({ vendedorId, nome, competencia, interval
                           {l.observacoes && <p className="text-muted-foreground line-clamp-2">{l.observacoes}</p>}
                         </>
                       ) : (
-                        <span className="text-muted-foreground">Ação interna{l.observacoes ? ` — ${l.observacoes}` : ''}</span>
+                        <span className="text-muted-foreground">Ação interna{l.pessoa?.full_name ? ` com ${l.pessoa.full_name}` : ''}{l.observacoes ? ` — ${l.observacoes}` : ''}</span>
                       )}
                     </td>
                     <td className="py-1.5 pr-2 whitespace-nowrap">{STATUS_INTERACAO.find((s) => s.valor === l.status)?.rotulo}</td>

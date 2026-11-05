@@ -46,12 +46,16 @@ export interface IndicadorCatalogo {
   ativo: boolean;
   periodo: 'mes' | 'semana';
   conta_em_aberto: boolean;
+  aceita_pessoa_interna?: boolean;
 }
 
 export interface Interacao {
   id: string;
   vendedor_id: string;
   cliente_codigo: string | null;
+  /** Campanha, evento, treinamento ou reunião com alguém da empresa, no lugar do cliente. */
+  pessoa_interna_id?: string | null;
+  pessoa?: { full_name: string | null } | null;
   data: string;
   status: StatusInteracao;
   valor_venda: number | null;
@@ -69,6 +73,7 @@ export interface Interacao {
 export interface InteracaoInput {
   id?: string;
   cliente_codigo: string | null;
+  pessoa_interna_id?: string | null;
   data: string;
   status: StatusInteracao;
   valor_venda: number | null;
@@ -148,7 +153,7 @@ export function useIndicadoresCatalogo() {
     queryFn: async (): Promise<IndicadorCatalogo[]> =>
       unwrap(await supabase
         .from('com_indicadores')
-        .select('id, tipo, nome, rotulo_painel, ordem, ativo, periodo, conta_em_aberto')
+        .select('id, tipo, nome, rotulo_painel, ordem, ativo, periodo, conta_em_aberto, aceita_pessoa_interna')
         .order('tipo')
         .order('ordem')) as IndicadorCatalogo[],
   });
@@ -257,7 +262,8 @@ type InteracaoCrua = Omit<Interacao, 'marcas' | 'valor_venda'> & {
 /** A consulta dos lançamentos de `de` a `ate` (os dois dias incluídos), mais novos primeiro. */
 const COLUNAS_DA_INTERACAO = `id, vendedor_id, cliente_codigo, data, status, valor_venda, nota_fiscal, nota_em, nota_filial, prazo, observacoes, fora_da_carteira,
              marcas:com_interacao_marcas(indicador_id),
-             cliente:com_clientes(razao_social, cidade, estado, telefone)`;
+             cliente:com_clientes(razao_social, cidade, estado, telefone),
+             pessoa:profiles!com_interacoes_pessoa_interna_id_fkey(full_name)`;
 
 function consultaDeInteracoes(de: string, ate: string, vendedorId?: string) {
   let q = supabase
@@ -357,6 +363,7 @@ export function useSalvarInteracao() {
     mutationFn: async (input: InteracaoInput): Promise<string> => {
       const dados = {
         cliente_codigo: input.cliente_codigo,
+        pessoa_interna_id: input.pessoa_interna_id ?? '',
         data: input.data,
         status: input.status,
         valor_venda: input.valor_venda === null ? '' : String(input.valor_venda),

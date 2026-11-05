@@ -114,7 +114,7 @@ Campanhas · Eventos · Treinamento semanal com distribuidores · Pós-venda · 
 distribuidores · Venda direta · Evento PCF · Proposta para diretoria · Dúvidas relacionadas aos
 produtos · Pedido para evento · Pedidos gerais · Cashback
 
-> **Atualização de 2026-11-05 (dono):** todo lançamento novo exige cliente, inclusive ação do FAROL. O parágrafo abaixo fica como histórico.
+> **Atualização de 2026-11-05 (dono):** todo lançamento novo diz com quem foi: um cliente ou, em campanha, evento, treinamento e reunião interna, uma pessoa da empresa. O parágrafo abaixo fica como histórico.
 >
 > **Por que uma ação pode contar sem cliente?** Campanhas, treinamentos e outras ações podem
 > ser internas ou gerais. O FAROL exige Data válida e marcação Sim, mas não Cliente.

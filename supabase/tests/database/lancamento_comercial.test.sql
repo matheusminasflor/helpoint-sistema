@@ -18,7 +18,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(19);
+select plan(22);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-lancamento', 'Lançamento Comercial', false) as a;
@@ -121,6 +121,25 @@ select throws_ok($$
     '{"data":"2026-08-12","status":"concluido"}'::jsonb,
     array[(select id from public.com_indicadores where nome = 'Campanhas' and tenant_id = (select a from f))])
 $$, '23514', null, 'acao do FAROL sem cliente e recusada: todo lancamento novo precisa de cliente');
+
+-- 6b. Com pessoa da empresa, só as ações liberadas (dono, 2026-11-05).
+select tests.clear_authentication();
+update public.com_indicadores set aceita_pessoa_interna = true where nome = 'Campanhas' and tenant_id = (select a from f);
+select tests.authenticate_as('ana@lanc.test');
+select lives_ok($$
+  select public.com_salvar_interacao(null,
+    jsonb_build_object('data', '2026-08-12', 'status', 'concluido', 'pessoa_interna_id', auth.uid()),
+    array[(select id from public.com_indicadores where nome = 'Campanhas' and tenant_id = (select a from f))])
+$$, 'campanha com pessoa da empresa entra sem cliente');
+select throws_ok($$
+  select public.com_salvar_interacao(null,
+    jsonb_build_object('data', '2026-08-12', 'status', 'concluido', 'pessoa_interna_id', auth.uid()),
+    array[(select id from public.com_indicadores where nome = 'Pedidos gerais' and tenant_id = (select a from f))])
+$$, '23514', null, 'acao fora da lista nao entra com pessoa da empresa');
+select throws_ok($$
+  select public.com_salvar_interacao(null,
+    jsonb_build_object('data', '2026-08-12', 'status', 'concluido', 'pessoa_interna_id', auth.uid()), null)
+$$, '23514', null, 'pessoa da empresa sem acao marcada nao entra');
 
 -- 7 e 8. Trazer do Histórico para a PRÓPRIA carteira é permitido — é o gancho funcionando.
 select lives_ok($$
