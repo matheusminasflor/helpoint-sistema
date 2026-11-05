@@ -144,7 +144,8 @@ serve(async (req) => {
       forcarFerramenta: "entregar_sugestoes",
       analise: true,
       limiteMs: 120_000,
-      maxTokens: 6000,
+      // 6000 cortou a resposta em 2026-11-05: cinco tutoriais completos pedem mais.
+      maxTokens: 12000,
     });
     const bruto = resposta.tool_calls?.[0]?.function.arguments;
     if (!bruto) throw new Error("A IA não devolveu as sugestões.");
