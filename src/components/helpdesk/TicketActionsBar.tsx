@@ -82,6 +82,8 @@ export function TicketActionsBar({
   const { guardrail } = useTicketChecklist(ticket.id);
   const navigate = useNavigate();
   const tenantPath = useTenantPath();
+  const iaLigada = useIALigada();
+  const escreveTutorial = useDepartmentPermissions('ti').can('knowledge', 'create');
   
   const [transferOpen, setTransferOpen] = useState(false);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
@@ -155,8 +157,6 @@ export function TicketActionsBar({
   const podeReabrir = pode('reopen') && isFinalState;
   const podeResolver = pode('close') && !isResolved;
   // Rascunho de tutorial a partir do chamado resolvido (mapa de IA, 2026-11-04): a pessoa revisa no editor.
-  const iaLigada = useIALigada();
-  const escreveTutorial = useDepartmentPermissions('ti').can('knowledge', 'create');
   const podeCriarTutorial = isResolved && iaLigada && escreveTutorial;
   const tutorialComIA = async () => {
     const aviso = toast.loading('Montando o rascunho do tutorial…');
