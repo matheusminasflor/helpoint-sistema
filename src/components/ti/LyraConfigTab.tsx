@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { LyraAvatar } from '@/components/ai/LyraAvatar';
 import { useTenantSettings, useUpdateTenantSettings, LyraSettings } from '@/hooks/useTenantSettings';
 import { TestTube } from 'lucide-react';
 import { useAICredentialStatus, useTestAICredential } from '@/hooks/useTenantAICredentials';
@@ -57,27 +56,19 @@ export function LyraConfigTab() {
     <Card>
       <CardHeader>
         <div className="flex items-center gap-3">
-          <LyraAvatar size="lg" />
           <div>
-            <CardTitle>Configurações da Lyra</CardTitle>
-            <CardDescription>Ligar ou desligar a assistente e escolher o nome dela.</CardDescription>
+            <CardTitle>Recursos de IA</CardTitle>
+            <CardDescription>Liga ou desliga os botões de IA. Eles só usam IA quando a pessoa clica.</CardDescription>
           </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="flex items-center justify-between gap-4">
           <div className="space-y-0.5">
-            <Label htmlFor="lyra-ativa">Ativar Lyra</Label>
-            <p className="text-sm text-muted-foreground">O resumo do dia que a Lyra faz na fila e no Início.</p>
+            <Label htmlFor="lyra-ativa">Ativar os recursos de IA</Label>
+            <p className="text-sm text-muted-foreground">Melhorar texto e demais botões. Desligado, os formulários seguem normais.</p>
           </div>
           <Switch id="lyra-ativa" checked={lyraSettings.enabled !== false} onCheckedChange={(checked) => handleChange('enabled', checked)} />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="customName">Nome da assistente</Label>
-          <Input id="customName" placeholder="Lyra (padrão)" value={lyraSettings.customName || ''}
-            onChange={(e) => handleChange('customName', e.target.value)} className="max-w-sm" />
-          <p className="text-sm text-muted-foreground">Deixe em branco para usar "Lyra".</p>
         </div>
 
         <div className="flex justify-end pt-4 border-t">

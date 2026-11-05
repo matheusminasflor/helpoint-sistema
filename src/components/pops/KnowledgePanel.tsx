@@ -5,12 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Search, BookOpen, Lightbulb, Sparkles } from 'lucide-react';
+import { Search, BookOpen, Lightbulb } from 'lucide-react';
 import { useActivePOPs, POP, useIncrementPOPViews, useRecordPOPInteraction } from '@/hooks/usePOPs';
 import { POPCard } from './POPCard';
-import { AISearchInput } from './AISearchInput';
 import { cn } from '@/lib/utils';
-import { useIALigada } from '@/hooks/useAssistantName';
 
 interface KnowledgePanelProps {
   onPOPSolved?: () => void;
@@ -22,12 +20,10 @@ export function KnowledgePanel({ onPOPSolved, className }: KnowledgePanelProps) 
   const tenantPath = useTenantPath();
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
-  const [showAISearch, setShowAISearch] = useState(true);
   
   const { data: pops, isLoading } = useActivePOPs();
   const incrementViews = useIncrementPOPViews();
   const recordInteraction = useRecordPOPInteraction();
-  const iaLigada = useIALigada();
 
   const filteredPOPs = useMemo(() => {
     return pops?.filter(pop => {
@@ -66,41 +62,6 @@ export function KnowledgePanel({ onPOPSolved, className }: KnowledgePanelProps) 
       </div>
 
       <div className="p-4 space-y-4 flex-1 overflow-hidden">
-        {/* Busca por IA e o divisor: somem com a IA desligada; a busca comum abaixo continua. */}
-        {iaLigada && (<>
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-              <Sparkles className="h-4 w-4 text-primary" />
-              Busca Inteligente
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowAISearch(!showAISearch)}
-              className="text-xs h-7 text-muted-foreground hover:text-foreground"
-            >
-              {showAISearch ? 'Ocultar' : 'Expandir'}
-            </Button>
-          </div>
-          
-          {showAISearch && (
-            <AISearchInput 
-              onSelectPOP={handleSelectPOP}
-              className="pb-2"
-            />
-          )}
-        </div>
-
-        {/* Divider */}
-        <div className="relative">
-          <div className="border-t border-border" />
-          <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-3 text-xs text-muted-foreground">
-            ou navegue pelos tutoriais
-          </span>
-        </div>
-        </>)}
-
         {/* Simple Search */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

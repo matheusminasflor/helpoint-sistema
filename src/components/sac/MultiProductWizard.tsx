@@ -5,7 +5,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { Plus, X, Package, Upload, ChevronLeft, ChevronRight } from 'lucide-react';
-import { ImproveTextButton } from '@/components/ai/ImproveTextButton';
 
 export interface ProductItem {
   product_id: string;
@@ -149,12 +148,6 @@ export function MultiProductWizard({ items, onChange, products, batches, tenantS
           <div>
             <div className="flex items-center justify-between mb-1">
               <Label className="text-xs">Descrição deste produto *</Label>
-              <ImproveTextButton
-                text={current.description}
-                onApply={(t) => update('description', t)}
-                tone="claro, educado e objetivo, mantendo todos os fatos"
-                tenantSlug={tenantSlug}
-              />
 
             </div>
             <Textarea

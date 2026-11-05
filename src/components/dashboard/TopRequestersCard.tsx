@@ -4,7 +4,6 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useTopRequesters, RequesterMetric } from '@/hooks/useRequesterMetrics';
-import { RequesterAnalysisSheet } from './RequesterAnalysisSheet';
 import { MetricsFilter } from '@/hooks/useHelpdeskMetrics';
 import { Users, AlertTriangle, Building2 } from 'lucide-react';
 import { ExplicacaoDoIndicador } from '@/components/ajuda/ExplicacaoDoIndicador';
@@ -15,14 +14,6 @@ interface TopRequestersCardProps {
 
 export function TopRequestersCard({ filter }: TopRequestersCardProps) {
   const { data: requesters, isLoading } = useTopRequesters(filter, 10);
-  const [selectedRequester, setSelectedRequester] = useState<RequesterMetric | null>(null);
-  const [sheetOpen, setSheetOpen] = useState(false);
-
-  const handleRequesterClick = (requester: RequesterMetric) => {
-    setSelectedRequester(requester);
-    setSheetOpen(true);
-  };
-
   if (isLoading) {
     return (
       <Card>
@@ -87,8 +78,7 @@ export function TopRequestersCard({ filter }: TopRequestersCardProps) {
                 return (
                   <div
                     key={requester.id}
-                    className="relative p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors cursor-pointer"
-                    onClick={() => handleRequesterClick(requester)}
+                    className="relative p-3 rounded-lg border bg-card transition-colors"
                   >
                     <div
                       className="absolute inset-0 bg-primary/10 rounded-lg transition-all"
@@ -133,12 +123,6 @@ export function TopRequestersCard({ filter }: TopRequestersCardProps) {
         </CardContent>
       </Card>
 
-      <RequesterAnalysisSheet
-        open={sheetOpen}
-        onOpenChange={setSheetOpen}
-        requester={selectedRequester}
-        filter={filter}
-      />
     </>
   );
 }

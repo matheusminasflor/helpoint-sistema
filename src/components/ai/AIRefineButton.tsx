@@ -8,7 +8,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Wand2, Loader2, Check, X } from 'lucide-react';
-import { useAIRefine } from '@/hooks/useAISecretary';
+import { useAIRefine } from '@/hooks/useAIRefine';
 import { useIALigada } from '@/hooks/useAssistantName';
 import { cn } from '@/lib/utils';
 import { MarkdownRenderer } from '@/components/ui/markdown-renderer';

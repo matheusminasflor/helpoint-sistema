@@ -14,7 +14,7 @@ interface RequestBody {
   context: ContextType;
 }
 
-async function requireAuthOrPublicTenant(req: Request, body: any): Promise<string | null> {
+async function requireAuth(req: Request): Promise<string | null> {
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
   if (!supabaseUrl || !supabaseAnonKey) {
@@ -29,15 +29,6 @@ async function requireAuthOrPublicTenant(req: Request, body: any): Promise<strin
     });
     const { data, error } = await supabase.auth.getUser(token);
     if (!error && data?.user?.id) return await resolveTenantId(req); // autenticado OK
-  }
-
-  // Acesso público — exige tenant_slug válido (uso no formulário SAC público)
-  const slug = body?.tenant_slug;
-  if (typeof slug === "string" && slug.length > 0) {
-    const sb = createClient(supabaseUrl, supabaseAnonKey);
-    const { data } = await sb.rpc("get_sac_tenant_branding", { _slug: slug });
-    const row = Array.isArray(data) ? data[0] : data;
-    if (row?.id) return row.id as string;
   }
 
   throw new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -99,9 +90,9 @@ serve(async (req) => {
 
   try {
     const body = await req.json();
-    const tenantId = await requireAuthOrPublicTenant(req, body);
+    const tenantId = await requireAuth(req);
 
-    const { text, context } = body as RequestBody & { tenant_slug?: string };
+    const { text, context } = body as RequestBody;
 
     if (!text || text.trim().length === 0) {
       return new Response(

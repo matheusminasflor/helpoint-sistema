@@ -190,7 +190,6 @@ export const STEP_CATALOG: StepDef[] = [
   { kind: 'stop', label: 'Parar', hint: 'Encerra o fluxo' },
   { kind: 'send_email', label: 'Enviar e-mail', hint: 'Para um endereço ou para o e-mail do registro', external: true },
   { kind: 'http_request', label: 'Chamar outro sistema', hint: 'Requisição HTTP (webhook de saída)', external: true },
-  { kind: 'ai_text', label: 'Gerar texto com IA', hint: 'Lyra escreve a partir de um pedido e do registro', external: true },
   { kind: 'branch', label: 'Ramificar', hint: 'Caminhos diferentes conforme condições' },
   { kind: 'create_receivable', label: 'Criar conta a receber', hint: 'No Financeiro, com o valor do pedido', entities: ['crm_order'] },
   { kind: 'bling_order', label: 'Pedido no Bling', hint: 'Lança o pedido de venda no Bling e, se quiser, gera e transmite a NF-e', entities: ['crm_order'], external: true },

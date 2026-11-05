@@ -1,7 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.91.0';
-import { callTenantAI } from "../_shared/ai.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,7 +11,6 @@ interface MatchRequest {
   title: string;
   description?: string;
   category?: string;
-  useAI?: boolean;
 }
 
 serve(async (req) => {
@@ -55,7 +53,7 @@ serve(async (req) => {
       });
     }
 
-    const { title, description, category, useAI }: MatchRequest = await req.json();
+    const { title, description, category }: MatchRequest = await req.json();
 
     if (!title?.trim()) {
       return new Response(JSON.stringify({ match: false }), {
@@ -113,74 +111,6 @@ serve(async (req) => {
 
     scoredPOPs.sort((a, b) => b.score - a.score);
     const bestMatch = scoredPOPs[0];
-
-    // If useAI flag and no good keyword match, try AI
-    if (useAI && (!bestMatch || bestMatch.confidence < 0.3)) {
-      try {
-        const aiResult = await callTenantAI(profile.tenant_id, {
-          messages: [
-            {
-              role: 'system',
-              content: `Você é um assistente que encontra tutoriais relevantes. Analise o problema e retorne os IDs dos tutoriais mais relevantes com uma pontuação de confiança (0-1). Responda SEMPRE chamando a função select_tutorials.`
-            },
-            {
-              role: 'user',
-              content: `Problema do usuário: "${title} ${description || ''}"\n\nTutoriais disponíveis:\n${pops.map(p => `- ID: ${p.id} | Título: ${p.title} | Keywords: ${(p.keywords || []).join(', ')}`).join('\n')}`
-            }
-          ],
-          tools: [{
-            type: 'function',
-            function: {
-              name: 'select_tutorials',
-              description: 'Seleciona os tutoriais mais relevantes',
-              parameters: {
-                type: 'object',
-                properties: {
-                  matches: {
-                    type: 'array',
-                    items: {
-                      type: 'object',
-                      properties: { id: { type: 'string' }, confidence: { type: 'number' } },
-                      required: ['id', 'confidence']
-                    }
-                  }
-                },
-                required: ['matches']
-              }
-            }
-          }],
-          maxTokens: 600,
-        });
-
-        const toolCall = aiResult.tool_calls?.[0];
-        if (toolCall?.function?.arguments) {
-          const parsed = JSON.parse(toolCall.function.arguments);
-          if (parsed.matches && parsed.matches.length > 0) {
-            const aiMatches = parsed.matches
-              .filter((m: any) => m.confidence >= 0.3)
-              .slice(0, 3)
-              .map((m: any) => {
-                const pop = pops.find(p => p.id === m.id);
-                return pop ? {
-                  pop: { id: pop.id, title: pop.title, content: pop.content, keywords: pop.keywords || [] },
-                  confidence: m.confidence,
-                  keywords: pop.keywords || []
-                } : null;
-              })
-              .filter(Boolean);
-
-            if (aiMatches.length > 0) {
-              return new Response(JSON.stringify({ match: true, matches: aiMatches }), {
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-              });
-            }
-          }
-        }
-      } catch (e) {
-        // Sem credencial de IA do tenant: segue apenas com o match por palavras-chave
-        if (!(e instanceof AIError)) console.error('AI matching error:', e);
-      }
-    }
 
     if (bestMatch && bestMatch.confidence >= 0.3) {
       return new Response(JSON.stringify({

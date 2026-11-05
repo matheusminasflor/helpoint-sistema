@@ -7,7 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-async function authOrPublic(req: Request, body: any) {
+async function requireAuth(req: Request) {
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
@@ -21,14 +21,6 @@ async function authOrPublic(req: Request, body: any) {
     if (!error && data?.user?.id) return { authenticated: true, supabase: sb, tenantId: await resolveTenantId(req) };
   }
 
-  const slug = body?.tenant_slug;
-  if (typeof slug === "string" && slug.length > 0) {
-    const sb = createClient(supabaseUrl, supabaseAnonKey);
-    const { data } = await sb.rpc("get_sac_tenant_branding", { _slug: slug });
-    const row = Array.isArray(data) ? data[0] : data;
-    if (row?.id) return { authenticated: false, supabase: sb, tenantId: row.id as string };
-  }
-
   return null;
 }
 
@@ -39,7 +31,7 @@ serve(async (req) => {
 
   try {
     const body = await req.json();
-    const auth = await authOrPublic(req, body);
+    const auth = await requireAuth(req);
     if (!auth) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },

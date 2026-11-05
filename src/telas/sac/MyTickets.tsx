@@ -24,7 +24,6 @@ import {
   hasSeenOnboarding,
 } from '@/components/sac/SACOnboardingDialog';
 import { RatingDialog } from '@/components/sac/RatingDialog';
-import { ImproveTextButton } from '@/components/ai/ImproveTextButton';
 import { useSacTenantSlug } from '@/hooks/useSacTenantSlug';
 
 /** Preserva o ?tenant=<slug> nos links do painel do cliente (acesso whitelabel). */
@@ -471,11 +470,6 @@ export function MyTicketDetail() {
           <Card className="p-3">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-semibold uppercase text-muted-foreground">Responder</span>
-              <ImproveTextButton
-                text={reply}
-                onApply={setReply}
-                tone="claro e educado, mantendo todos os fatos do cliente"
-              />
             </div>
             <Textarea value={reply} onChange={e => setReply(e.target.value)} placeholder="Escreva uma resposta…" rows={3} />
             {files.length > 0 && (

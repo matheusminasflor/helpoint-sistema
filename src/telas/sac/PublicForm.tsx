@@ -11,7 +11,6 @@ import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { Loader2, CheckCircle2 } from 'lucide-react';
 import { InvoiceUploader } from '@/components/sac/InvoiceUploader';
-import { ImproveTextButton } from '@/components/ai/ImproveTextButton';
 import { MultiProductWizard, emptyItem, type ProductItem } from '@/components/sac/MultiProductWizard';
 import { CamposDoFormulario } from '@/components/sac/CamposDoFormulario';
 import { faltandoNoSAC, type CampoDoSAC, type RespostasDoSAC } from '@/lib/campos-do-sac';
@@ -267,15 +266,6 @@ export default function SACPublicForm() {
                 </select>
               </Field>
               <Field label="Resumo geral do chamado *">
-                <div className="flex items-center justify-end mb-1">
-                  <ImproveTextButton
-                    text={form.description}
-                    onApply={(t) => update('description', t)}
-                    tone="claro, educado e objetivo, mantendo todos os fatos do cliente"
-                    tenantSlug={tenant}
-                  />
-
-                </div>
                 <Textarea
                   value={form.description}
                   onChange={e => update('description', e.target.value)}

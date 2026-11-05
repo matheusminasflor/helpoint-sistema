@@ -25,8 +25,6 @@ import {
   Shield
 } from 'lucide-react';
 import { useActivePOPs, POP } from '@/hooks/usePOPs';
-import { useSemanticSearch } from '@/hooks/useSemanticSearch';
-import { useIALigada } from '@/hooks/useAssistantName';
 import { CategorySection } from '@/components/pops/CategorySection';
 import { cn } from '@/lib/utils';
 import type { LucideIcon } from 'lucide-react';
@@ -101,26 +99,6 @@ export default function Portal() {
   const debouncedSearch = useDebouncedValue(search, 300);
   const { data: pops, isLoading } = useActivePOPs();
   
-  // Semantic search
-  const { 
-    search: semanticSearch, 
-    clearResults: clearSemanticResults,
-    isSearching: isAISearching, 
-    results: aiResults,
-    hasResults: hasAIResults 
-  } = useSemanticSearch();
-
-  // Trigger AI search on debounced input (min 5 chars)
-  // IA desligada: só a busca por texto (filteredArticles) trabalha.
-  const iaLigada = useIALigada();
-  useEffect(() => {
-    if (iaLigada && debouncedSearch.trim().length >= 5) {
-      semanticSearch(debouncedSearch);
-    } else {
-      clearSemanticResults();
-    }
-  }, [iaLigada, debouncedSearch, semanticSearch, clearSemanticResults]);
-
   // Group by category with ordering
   const categories = useMemo(() => {
     const grouped = new Map<string, POP[]>();
@@ -296,7 +274,6 @@ export default function Portal() {
 
   // Main view - Hero + Search Results / Categories + Popular
   const showSearchResults = debouncedSearch.trim().length > 0;
-  const showAIResults = hasAIResults && !isAISearching;
 
   return (
     <div className="min-h-screen bg-background">
@@ -319,60 +296,10 @@ export default function Portal() {
               placeholder="Descreva seu problema…"
               className="pl-12 h-12 text-base rounded-full border-2 shadow-sm pr-12"
             />
-            {isAISearching && (
-              <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                <Loader2 className="h-5 w-5 animate-spin text-primary" />
-              </div>
-            )}
           </form>
           
-          {/* AI Search Hint */}
-          {iaLigada && !showSearchResults && (
-            <p className="text-xs text-muted-foreground mt-3 flex items-center justify-center gap-1">
-              <Sparkles className="h-3 w-3" />
-              Use linguagem natural: "não consigo imprimir" ou "esqueci minha senha"
-            </p>
-          )}
         </div>
       </div>
-
-      {/* AI Search Results */}
-      {showAIResults && (
-        <div className="max-w-5xl mx-auto px-4 pt-8 pb-4">
-          <div className="flex items-center gap-2 mb-4">
-            <Sparkles className="h-4 w-4 text-primary" />
-            <h2 className="text-lg font-semibold">Sugestões da IA</h2>
-            <Badge variant="secondary" className="text-xs">Beta</Badge>
-          </div>
-          
-          <div className="border rounded-lg overflow-hidden bg-card divide-y">
-            {aiResults.map((result) => (
-              <Link
-                key={result.id}
-                to={`/portal/${result.id}`}
-                className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors group"
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium group-hover:text-primary transition-colors">
-                      {result.title}
-                    </span>
-                    {result.score >= 80 && (
-                      <Badge variant="default" className="text-xs">
-                        {result.score}% relevante
-                      </Badge>
-                    )}
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-0.5 truncate">
-                    {result.reason}
-                  </p>
-                </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-primary transition-colors shrink-0 ml-4" />
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Text Search Results */}
       {showSearchResults && (
@@ -386,7 +313,7 @@ export default function Portal() {
             </Button>
           </div>
           
-          {filteredArticles.length === 0 && !hasAIResults ? (
+          {filteredArticles.length === 0 ? (
             <div className="text-center py-12 border rounded-lg bg-muted/30">
               <HelpCircle className="h-10 w-10 text-muted-foreground/50 mx-auto mb-3" />
               <p className="text-muted-foreground">Nenhum artigo encontrado.</p>

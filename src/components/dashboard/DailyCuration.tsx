@@ -6,8 +6,6 @@ import { cn } from '@/lib/utils';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { MarkdownRenderer } from '@/components/ui/markdown-renderer';
-import type { KanbanCardItem } from '@/hooks/useAISecretary';
 import { ptBR } from 'date-fns/locale';
 import { 
   Play, RefreshCw, CheckCircle2, ChevronDown,
@@ -20,20 +18,15 @@ import { ExplicacaoDoIndicador } from '@/components/ajuda/ExplicacaoDoIndicador'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { useCalendarEvents } from '@/hooks/useCalendarEvents';
-import { useLyraChat } from '@/hooks/useLyraChat';
-import { LyraAvatar } from '@/components/ai/LyraAvatar';
-import { useAssistantName, useIALigada } from '@/hooks/useAssistantName';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useAISecretary } from '@/hooks/useAISecretary';
+import { useChamadosDoInicio } from '@/hooks/useChamadosDoInicio';
 import { LyraAvisa } from '@/components/dashboard/LyraAvisa';
 import { JornalNaHome } from '@/components/jornal/JornalNaHome';
 import { NoticiaNovaNaHome } from '@/components/jornal/NoticiaNovaNaHome';
 import { RotinasDeHoje } from '@/components/rotinas/RotinasDeHoje';
 import { useVisibleModules } from '@/hooks/useVisibleModules';
-import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
-import { VoiceRecorderBar } from '@/components/ui/VoiceRecorderBar';
 import { usePersonalPerformance } from '@/hooks/usePersonalPerformance';
 import type { Task } from '@/types/database';
 import { MODULE_LABELS } from '@/lib/automation-flow';
@@ -265,61 +258,6 @@ function rotuloDoPrazo(item: UnifiedDemand): string {
   return format(item.dueDate, 'EEE dd/MM', { locale: ptBR });
 }
 
-function LyraBriefing({
-  content, tickets: briefTickets, kanbanCards: briefCards, tasks: briefTasks, onFocusTask,
-}: {
-  content: string;
-  tickets: { id: string; ticket_number: number; title: string }[];
-  kanbanCards: KanbanCardItem[];
-  tasks: Task[];
-  onFocusTask: (task: Task) => void;
-}) {
-  const nav = useNavigate();
-  const tenantPath = useTenantPath();
-  const ticketMap = useMemo(() => {
-    const m = new Map<number, string>();
-    briefTickets.forEach(t => m.set(t.ticket_number, t.id));
-    return m;
-  }, [briefTickets]);
-
-  const segments = useMemo(() => {
-    const regex = /(#(\d+))|("([^"]+)")/g;
-    const result: { text: string; type: string; id?: string; task?: Task; route?: string }[] = [];
-    let lastIndex = 0;
-    let match: RegExpExecArray | null;
-    while ((match = regex.exec(content)) !== null) {
-      if (match.index > lastIndex) result.push({ text: content.slice(lastIndex, match.index), type: 'text' });
-      if (match[2]) {
-        const num = parseInt(match[2], 10);
-        const ticketId = ticketMap.get(num);
-        result.push(ticketId ? { text: match[0], type: 'ticket', id: ticketId } : { text: match[0], type: 'text' });
-      } else if (match[4]) {
-        const quoted = match[4].toLowerCase();
-        const kanbanCard = briefCards.find(c => c.title.toLowerCase() === quoted);
-        const taskItem = briefTasks.find(t => t.title.toLowerCase() === quoted);
-        if (kanbanCard) result.push({ text: match[0], type: 'kanban', id: kanbanCard.id });
-        else if (taskItem) result.push({ text: match[0], type: 'task', task: taskItem });
-        else result.push({ text: match[0], type: 'text' });
-      }
-      lastIndex = match.index + match[0].length;
-    }
-    if (lastIndex < content.length) result.push({ text: content.slice(lastIndex), type: 'text' });
-    return result;
-  }, [content, ticketMap, briefCards, briefTasks]);
-
-  return (
-    <div className="text-[14px] leading-relaxed text-muted-foreground">
-      {segments.map((seg, i) => {
-        if (seg.type === 'ticket') return <span key={i} className="text-primary font-bold cursor-pointer hover:underline" onClick={() => nav(tenantPath(`/helpdesk/${seg.id}`))}>{seg.text}</span>;
-        // `/kanban` existe desde 2026-09-13 (OKR-2) e leva a `/projetos`.
-        if (seg.type === 'kanban') return <span key={i} className="text-primary font-bold cursor-pointer hover:underline" onClick={() => nav(tenantPath('/projetos'))}>{seg.text}</span>;
-        if (seg.type === 'task' && seg.task) return <span key={i} className="text-primary font-bold cursor-pointer hover:underline" onClick={() => onFocusTask(seg.task!)}>{seg.text}</span>;
-        return <span key={i}>{seg.text}</span>;
-      })}
-    </div>
-  );
-}
-
 export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationProps) {
   const navigate = useNavigate();
   const tenantPath = useTenantPath();
@@ -341,45 +279,15 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
   const chama = nivelDaChama(perf.streak);
   const noPeriodo = periodo === 'semana' ? 'nesta semana (de segunda até hoje)' : 'neste mês';
 
-  const { summary, isLoading: isLoadingAI, error: aiError, generateSummary, tickets, kanbanCards, ticketsDosAvisos } = useAISecretary();
-  // O resumo cita também os chamados das movimentações não lidas — que podem já estar resolvidos
-  // ou ser de outra fila; o link do #número precisa deles (a lista de abertos não os traz).
-  const ticketsDoResumo = useMemo(() => {
-    const vistos = new Set(tickets.map((t) => t.id));
-    return [...tickets, ...ticketsDosAvisos.filter((t) => !vistos.has(t.id))];
-  }, [tickets, ticketsDosAvisos]);
-  const assistantName = useAssistantName();
-  const iaLigada = useIALigada();
-  const { messages: chatMessages, isTyping: isChatTyping, sendMessage } = useLyraChat({ tickets, kanbanCards, tasks });
-
-  const [chatInput, setChatInput] = useState('');
-  const chatScrollRef = useRef<HTMLDivElement>(null);
-  const scrollAnchorRef = useRef<HTMLDivElement>(null);
-
-  const handleVoiceTranscript = useCallback((text: string) => { sendMessage(text); }, [sendMessage]);
-  const { recorderState, interimText, duration, audioUrl, audioLevels, isSupported, isSending, startRecording, stopRecording, sendRecording, cancelRecording } = useVoiceRecorder(handleVoiceTranscript);
-
-  useEffect(() => {
-    if (scrollAnchorRef.current) scrollAnchorRef.current.scrollIntoView({ behavior: 'smooth' });
-  }, [chatMessages, isChatTyping]);
-
-  const handleSendChat = () => {
-    if (!chatInput.trim() || isChatTyping) return;
-    sendMessage(chatInput.trim());
-    setChatInput('');
-  };
+  const chamados = useChamadosDoInicio();
+  const tickets = useMemo(() => chamados.data ?? [], [chamados.data]);
+  useEffect(() => { if (chamados.isError) toast.error('Não foi possível carregar os chamados.'); }, [chamados.isError]);
 
   const hasFetchedRef = useRef(false);
   useEffect(() => {
     if (user && !hasFetchedRef.current) { hasFetchedRef.current = true; fetchTasks(true); }
   }, [user]);
 
-  // O "Atualizar" (o dono, 2026-10-02: "não atualiza"). Três defeitos: a tela inteira virava
-  // esqueleto enquanto a Lyra escrevia o resumo (o fetch esperava o streaming todo); os números de
-  // "Concluídos hoje", no prazo e sequência (`usePersonalPerformance`, React Query) nunca eram
-  // recarregados; e o giro do botão seguia a IA, não a atualização. Agora o esqueleto é só da
-  // PRIMEIRA carga, o resumo roda por trás (ele também relê os chamados e os avisos) e o botão
-  // recarrega tarefas, desempenho e avisos de uma vez.
   const queryClient = useQueryClient();
   const [atualizando, setAtualizando] = useState(false);
   const fetchTasks = async (primeiraCarga = false) => {
@@ -389,7 +297,6 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
       const { data, error } = await supabase.from('tasks').select('*').eq('user_id', user.id).in('status', ['pending', 'in_progress']).order('priority', { ascending: true }).order('due_date', { ascending: true, nullsFirst: false }).limit(20);
       if (error) throw error;
       setTasks((data || []) as Task[]);
-      void generateSummary((data || []) as Task[], !primeiraCarga);
     } catch (e) {
       console.error('Error fetching tasks:', e);
       toast.error('Não foi possível atualizar as tarefas.');
@@ -400,6 +307,7 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
     try {
       await Promise.all([
         fetchTasks(),
+        queryClient.invalidateQueries({ queryKey: ['chamados-do-inicio'] }),
         queryClient.invalidateQueries({ queryKey: ['personal-perf-tickets-resolved'] }),
         queryClient.invalidateQueries({ queryKey: ['personal-perf-tickets-open'] }),
         queryClient.invalidateQueries({ queryKey: ['personal-perf-tasks-done'] }),
@@ -428,18 +336,11 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
       const slaStopped = ['resolved', 'closed', 'cancelled', 'rejected'].includes(t.status)
         || ((SLA_PAUSED_STATUSES as readonly string[]).includes(t.status)
             // Agendado com o prazo já vencido continua atrasado (2026-10-15; 20270115010000).
-            && !(t.status === 'scheduled' && (t as { agendou_vencido?: boolean }).agendou_vencido));
+            && !(t.status === 'scheduled' && t.agendou_vencido));
       const prazo = t.sla_due_at ?? t.due_date;
       const due = !slaStopped && prazo ? new Date(prazo) : null;
       const prio = normalizePriority(t.priority);
-      const doResumo = t as { meu?: boolean; atendente?: string | null };
-      items.push({ id: t.id, type: 'ticket', typeLabel: 'Chamado', title: t.title, subtitle: `#${t.ticket_number}`, priority: prio, dueDate: due, urgencyGroup: getUrgencyGroup(due), status: t.status, daEquipe: doResumo.meu === false, atendenteId: doResumo.atendente ?? null, modulo: t.module, moduleLabel: t.module ? (MODULE_LABELS[t.module as keyof typeof MODULE_LABELS] ?? (t.module === 'compras' ? 'Compras' : undefined)) : undefined, onClick: () => navigate(tenantPath(`/helpdesk/${t.id}`)) });
-    });
-    // Projetos pausados pelo dono (2026-10-03): os cartões deles saem da lista do dia.
-    if (!estaPausada('/projetos')) kanbanCards.forEach(c => {
-      const due = c.due_date ? new Date(c.due_date) : null;
-      const prio = normalizePriority(c.priority);
-      items.push({ id: c.id, type: 'kanban', typeLabel: 'Projeto', title: c.title, subtitle: c.board_name || 'Kanban', priority: prio, dueDate: due, urgencyGroup: getUrgencyGroup(due), status: c.column_name || 'Em andamento', onClick: () => navigate(tenantPath('/projetos')) });
+            items.push({ id: t.id, type: 'ticket', typeLabel: 'Chamado', title: t.title, subtitle: `#${t.ticket_number}`, priority: prio, dueDate: due, urgencyGroup: getUrgencyGroup(due), status: t.status, daEquipe: t.meu === false, atendenteId: t.atendente, modulo: t.module, moduleLabel: t.module ? (MODULE_LABELS[t.module as keyof typeof MODULE_LABELS] ?? (t.module === 'compras' ? 'Compras' : undefined)) : undefined, onClick: () => navigate(tenantPath(`/helpdesk/${t.id}`)) });
     });
     // Uma lista só, "Para fazer", na ordem em que precisa ser feita (dono, 2026-10-28, proposta aprovada): atrasados,
     // hoje, amanhã, depois, sem prazo; dentro de cada um, o prazo mais perto; empate, a prioridade. Os grupos
@@ -461,7 +362,7 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
       if (chamado && !chamado.onFocus) chamado.onFocus = t.onFocus;
     }
     return items.filter((i) => !(i.type === 'task' && i.ticketId && porChamado.has(i.ticketId)));
-  }, [tasks, tickets, kanbanCards, navigate, tenantPath, onEnterFocusMode, onOpenTask]);
+  }, [tasks, tickets, navigate, tenantPath, onEnterFocusMode, onOpenTask]);
   // "Meus" × "Da minha equipe" (dono, 2026-10-20, #140): quem gerencia a fila via no topo o atraso do chamado
   // de outro atendente. Os números, o "Comece por" e a agenda contam só o que é meu — como a Performance —, e o
   // resto do setor vai para um bloco à parte, com o atendente de cada um.
@@ -965,86 +866,6 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
               </div>
             )}
           </section>
-
-          {/* Lyra Chat: o painel inteiro é IA (resumo, chat, voz) e some com a IA desligada (2026-10-26). */}
-          {/* No celular o painel da Lyra sai (proposta aprovada, 2026-10-28); fica no computador. */}
-          {iaLigada && (
-          <section className="hidden lg:block panel overflow-hidden">
-            <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border">
-              <LyraAvatar size="sm" animated={isLoadingAI || isChatTyping} />
-              <span className="text-[14px] font-semibold text-foreground">{assistantName}</span>
-              <span className="text-[12px] font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded uppercase">IA</span>
-            </div>
-
-            <div ref={chatScrollRef} className="px-4 py-3 max-h-[180px] overflow-y-auto space-y-3" onWheel={(e) => e.stopPropagation()}>
-              {isLoadingAI && !summary ? (
-                <div className="flex items-center gap-2 text-muted-foreground py-2">
-                  <span className="text-[14px]">Analisando…</span>
-                  <div className="flex gap-1">
-                    <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                    <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                  </div>
-                </div>
-              ) : (
-                <LyraBriefing content={summary || 'Nenhuma pendência.'} tickets={ticketsDoResumo} kanbanCards={kanbanCards} tasks={tasks} onFocusTask={onOpenTask} />
-              )}
-
-              {chatMessages.map((msg, idx) => (
-                <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  {msg.role === 'user' ? (
-                    <div className="bg-primary text-primary-foreground rounded-2xl rounded-br-md px-3 py-2 max-w-[85%]">
-                      <p className="text-[14px]">{msg.content}</p>
-                    </div>
-                  ) : (
-                    <div className="bg-surface-2 rounded-2xl rounded-bl-md px-3 py-2 max-w-[90%]">
-                      <MarkdownRenderer content={msg.content} className="text-[14px] text-foreground" />
-                    </div>
-                  )}
-                </div>
-              ))}
-
-              {isChatTyping && chatMessages[chatMessages.length - 1]?.role !== 'assistant' && (
-                <div className="flex gap-1 text-muted-foreground py-1">
-                  <span className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-bounce" />
-                  <span className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                  <span className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                </div>
-              )}
-              <div ref={scrollAnchorRef} />
-            </div>
-
-            {aiError && <p className="text-[13px] text-monday-red px-4 pb-1">{aiError}</p>}
-
-            {!isLoadingAI && (
-              <div className="px-4 pb-3 pt-1">
-                {recorderState !== 'idle' ? (
-                  <VoiceRecorderBar recorderState={recorderState} duration={duration} interimText={interimText} audioUrl={audioUrl} audioLevels={audioLevels} isSending={isSending} onStop={stopRecording} onSend={sendRecording} onCancel={cancelRecording} />
-                ) : (
-                  <div className="border border-border rounded-full flex items-center px-3 py-1.5 bg-surface-2">
-                    <input
-                      type="text" value={chatInput}
-                      onChange={(e) => setChatInput(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendChat()}
-                      aria-label={`Pergunte à ${assistantName}`}
-                      placeholder={`Pergunte à ${assistantName}…`}
-                      disabled={isChatTyping}
-                      className="bg-transparent border-0 focus:outline-none focus:ring-0 text-[14px] text-foreground placeholder:text-muted-foreground flex-1"
-                    />
-                    {isSupported && (
-                      <button type="button" aria-label="Gravar mensagem de voz" onClick={startRecording} disabled={isChatTyping} className="ml-1.5 p-1.5 text-muted-foreground hover:text-primary transition-colors">
-                        <Mic className="w-4 h-4" strokeWidth={2} aria-hidden="true" />
-                      </button>
-                    )}
-                    <button type="button" aria-label="Enviar pergunta" onClick={handleSendChat} disabled={!chatInput.trim() || isChatTyping} className="ml-1.5 p-1.5 text-primary hover:text-primary/80 disabled:text-muted-foreground disabled:opacity-50 transition-colors">
-                      <Send className="w-4 h-4" strokeWidth={2} aria-hidden="true" />
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-          </section>
-          )}
         </div>
       </div>
 

@@ -27,7 +27,6 @@ import { IndicatorsView } from '@/components/dashboard/IndicatorsView';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { KPIGrid } from '@/components/dashboard/KPIGrid';
 import { KPICard } from '@/components/glpi/KPICard';
-import { TILyraPanel } from '@/components/dashboard/TILyraPanel';
 import { ExportPDFDialog } from '@/components/dashboard/ExportPDFDialog';
 import { CategoriasDosChamados } from '@/components/ti/CategoriasDosChamados';
 import { arvoreDosChamados, type No } from '@/lib/arvore-de-categorias';
@@ -49,8 +48,6 @@ import { useMembrosDoSetor } from '@/hooks/useMembrosDoSetor';
 import { useConfiguracaoDosSetores, usePodeVerEquipe } from '@/hooks/useAccessProfiles';
 import { useMetasDaTI } from '@/hooks/useMetasDaTI';
 import { useKanbanReportMetrics, ReportFilter } from '@/hooks/useReportMetrics';
-import { useLyraChat } from '@/hooks/useLyraChat';
-import { useAISecretary } from '@/hooks/useAISecretary';
 import { useIALigada } from '@/hooks/useAssistantName';
 import { AlertTriangle, BarChart3, BrainCircuit, CheckCircle2, ChevronDown, ClipboardPaste, Clock, Download, FileKey, Inbox, Monitor, Presentation, ShieldCheck, Target, Timer, Wrench } from 'lucide-react';
 import { AIIndicatorAnalysis } from '@/components/dashboard/AIIndicatorAnalysis';
@@ -127,12 +124,6 @@ export default function TIRelatorios() {
 
   const reportFilter: ReportFilter = { period: selectedPeriod as ReportFilter['period'], collaboratorId };
   const { data: kanbanData } = useKanbanReportMetrics('ti', reportFilter);
-
-  // Lyra
-  const { tickets: lyraTickets, kanbanCards: lyraKanbanCards } = useAISecretary();
-  const { messages, isTyping, sendMessage } = useLyraChat({
-    tickets: lyraTickets || [], kanbanCards: lyraKanbanCards || [], tasks: [],
-  });
 
   // Colunas `date` do banco: "vence hoje" ainda não venceu — compara-se o dia como texto e usa-se o dia local.
   const hojeISO = todayISO();
@@ -336,7 +327,7 @@ export default function TIRelatorios() {
         </TabsList>
 
         <TabsContent value="overview">
-          <div className={`grid grid-cols-1 ${iaLigada ? 'lg:grid-cols-[1fr_340px]' : ''} gap-6 mt-4`}>
+          <div className="grid grid-cols-1 gap-6 mt-4">
             <div className="space-y-6 min-w-0">
               {atencao.length > 0 && (
                 <div className="flex flex-wrap items-center gap-2" role="list" aria-label="O que pede atenção agora">
@@ -401,15 +392,6 @@ export default function TIRelatorios() {
 
             </div>
 
-            {iaLigada && (
-              <div className="hidden lg:block">
-                <TILyraPanel
-                  messages={messages} isTyping={isTyping} onSend={sendMessage}
-                  ticketCount={metrics?.open} slaCompliance={metrics?.slaCompliance}
-                  expiringLicenses={licencasVencendo.length}
-                />
-              </div>
-            )}
           </div>
         </TabsContent>
 

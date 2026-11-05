@@ -12,7 +12,6 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { requireServiceRole } from '../_shared/require-service-role.ts';
 import { sendEmail } from '../_shared/email.ts';
 import { REMETENTE_PADRAO } from '../_shared/app-hosts.ts';
-import { callTenantAI } from '../_shared/ai.ts';
 import { pushOrderToBling } from '../_shared/bling.ts';
 import { emitirNotaDoPedido } from '../_shared/focusnfe.ts';
 import { enviarModeloNoNegocio } from '../_shared/whatsapp.ts';
@@ -192,12 +191,8 @@ async function runStep(c: Claimed, admin: ReturnType<typeof createClient>): Prom
         clearTimeout(timer);
       }
     }
-    case 'ai_text': {
-      const prompt = str(cfg.prompt).trim();
-      if (!prompt) throw new Error('pedido para a IA vazio');
-      const ai = await callTenantAI(c.tenant_id, { messages: [{ role: 'user', content: prompt }], maxTokens: 800 });
-      return { text: ai.content ?? '', model: ai.model, provider: ai.provider };
-    }
+    case 'ai_text':
+      throw new Error('passo de IA desligado: automação não usa IA');
     default:
       throw new Error(`o worker não sabe executar "${c.kind}"`);
   }

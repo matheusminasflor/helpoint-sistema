@@ -27,7 +27,6 @@ import { useConfiguracaoDosSetores, useDepartmentPermissions } from '@/hooks/use
 import { useCaixinhas } from '@/hooks/useCaixinha';
 import type { Department } from '@/config/access-profile-schemas';
 import { abreATela, telaDoPerfil } from '@/config/telas-do-perfil';
-import { useAssistantName } from '@/hooks/useAssistantName';
 import { useSetoresQueConfiguro } from '@/hooks/useSetoresQueConfiguro';
 import { ROTA_DOS_SETORES } from '@/config/setores-de-configuracao';
 import { VISOES } from '@/config/comercial-insights';
@@ -257,7 +256,7 @@ const configMenuItems: MenuItem[] = [
   { to: '/configuracoes/sistema', icon: Users, label: 'Pessoas e acessos', title: 'Quem entra no sistema, em quais setores, e com qual perfil', secao: 'Empresa' },
   { to: '/configuracoes/identidade-visual', icon: Palette, label: 'Identidade Visual', secao: 'Empresa' },
   { to: '/configuracoes/integracoes', icon: PlugZap, label: 'Sistemas de fora', title: 'Meta, Google, Kommo, Bling e Conecta: o que está ligado', secao: 'Integrações' },
-  { to: '/configuracoes/lyra', icon: Sparkles, label: 'IA / Lyra', secao: 'Integrações' }, // label ajustado em runtime com o nome do assistente
+  { to: '/configuracoes/lyra', icon: Sparkles, label: 'IA', secao: 'Integrações' },
 ];
 
 
@@ -490,7 +489,6 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
   }, [profile?.tenant_id]);
 
 
-  const assistantName = useAssistantName();
   // "Configurações" num lugar só (ADR-009). Duas seções (LEVA P): o que é da EMPRESA, e os
   // SETORES — um item só, que abre a grade dos setores (dono, 2026-09-29: "a pessoa clica em
   // Setores e abre o menu para selecionar qual setor, igual quando abre chamado"). Eram nove itens,
@@ -498,7 +496,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
   // na grade é o perfil de acesso de cada um (`useSetoresQueConfiguro`).
   const { algum: configuraAlgumSetor } = useSetoresQueConfiguro();
   const configItems: MenuItem[] = [
-    ...(modules.showSettings ? configMenuItems.map(i => i.to === '/configuracoes/lyra' ? { ...i, label: `IA / ${assistantName}` } : i) : []),
+    ...(modules.showSettings ? configMenuItems : []),
     ...(podeVerImportacoes ? [{
       to: '/configuracoes/importacoes', icon: Upload, label: 'Importações',
       title: 'Importar vendas, clientes e metas — atualiza Comercial e Diretoria de um lugar só',

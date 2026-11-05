@@ -8,7 +8,6 @@ import { useIncrementPOPViews, useIncrementPOPSolved, useRecordPOPInteraction, P
 import { POPFeedbackDialog } from './POPFeedbackDialog';
 import { MarkdownRenderer } from '@/components/ui/markdown-renderer';
 import { cn } from '@/lib/utils';
-import { useIALigada } from '@/hooks/useAssistantName';
 
 interface POPSuggestionBannerProps {
   pop: POP;
@@ -25,9 +24,8 @@ export function POPSuggestionBanner({ pop, onProceed, onSolved, isLoading }: POP
   const incrementViews = useIncrementPOPViews();
   const incrementSolved = useIncrementPOPSolved();
   const recordInteraction = useRecordPOPInteraction();
-  const iaLigada = useIALigada();
 
-  if (dismissed || !iaLigada) return null;
+  if (dismissed) return null;
 
   const handleViewTutorial = () => {
     setShowDialog(true);

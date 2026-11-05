@@ -239,9 +239,10 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
   }, [selectedItem?.id]);
 
   // Debounced POP matching
-  // IA desligada: nem chama o casamento (é IA) — sem isso o banner some e `isSubmitBlocked` trava o envio sem saída.
+  // Busca por palavras: não usa IA (dono, 2026-11-04), funciona com a IA desligada.
+  // Sem chamar, o banner some e `isSubmitBlocked` trava o envio.
   useEffect(() => {
-    if (popDismissed || !iaLigada) return;
+    if (popDismissed) return;
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
     if (title.trim().length >= 5) {
