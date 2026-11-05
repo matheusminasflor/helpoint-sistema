@@ -326,11 +326,11 @@ async function chamarProvedor(
 
   if (cred.provider === "anthropic") {
     const { system, rest } = splitSystem(opts.messages);
+    // Sem temperature: o Haiku 5.5 recusa o campo com 400 (2026-11-05). O teste da chave não o envia, por isso passava.
     // deno-lint-ignore no-explicit-any
     const body: any = {
       model,
       max_tokens: maxTokens,
-      temperature,
       messages: toAnthropicMessages(rest),
     };
     if (system) body.system = system;
