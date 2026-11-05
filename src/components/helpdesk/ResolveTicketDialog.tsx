@@ -168,6 +168,7 @@ ${notas}`,
                 )}
                 <AIRefineButton
                   text={resolutionNotes}
+                  apoio={ticket?.title}
                   context="resolution"
                   onRefine={(refined) => setResolutionNotes(refined)}
                   disabled={isBlocked || !resolutionNotes.trim()}

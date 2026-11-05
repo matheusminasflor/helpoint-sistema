@@ -557,7 +557,7 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
           <label htmlFor="title" className="text-sm font-medium text-foreground">
             Título *
           </label>
-          <AIRefineButton text={title.trim() ? title : description} context={title.trim() ? 'ticket_title' : 'title_from_description'}
+          <AIRefineButton text={title.trim() ? title : description} apoio={title.trim() ? description : undefined} context={title.trim() ? 'ticket_title' : 'title_from_description'}
             rotulo={title.trim() ? 'Melhorar' : 'Sugerir título'} onRefine={setTitle} disabled={!title.trim() && !description.trim()} />
         </div>
         <Input
@@ -575,7 +575,7 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
           <label htmlFor="description" className="text-sm font-medium text-foreground">
             Descrição *
           </label>
-          <AIRefineButton text={description} context="ticket_description" onRefine={setDescription} disabled={!description.trim()} />
+          <AIRefineButton text={description} apoio={title} context="ticket_description" onRefine={setDescription} disabled={!description.trim()} />
         </div>
         <textarea
           id="description"
@@ -746,7 +746,7 @@ export function CreateTicketForm({ onSuccess, onCancel, module = 'tickets', onRa
         <input ref={anexoInputRef} type="file" multiple accept={ANEXO_ACEITA} className="hidden"
           onChange={(e) => escolherAnexos(e.target.files)} />
         <div className="flex flex-wrap items-center gap-2">
-          <Button type="button" variant="outline" size="sm" className="gap-1.5 rounded-xl"
+          <Button type="button" size="sm" className="gap-1.5 rounded-xl"
             onClick={() => anexoInputRef.current?.click()}>
             <Paperclip className="w-4 h-4" aria-hidden="true" /> Anexar arquivo
           </Button>

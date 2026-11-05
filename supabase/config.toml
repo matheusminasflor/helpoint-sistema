@@ -87,6 +87,8 @@ verify_enabled = true
     verify_jwt = false
   [functions.ai-montar-automacao]
     verify_jwt = false
+  [functions.ai-montar-rotina]
+    verify_jwt = false
   [functions.ai-organizar]
     verify_jwt = false
   [functions.ai-refine]

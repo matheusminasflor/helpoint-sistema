@@ -2,7 +2,9 @@
 // suas; quem tem a caixinha "Rotinas" do setor (o Gestor) cria para a equipe — e a rotina do gestor a pessoa não muda
 // (o banco confere: policy `rotinas_muda`). Excluir tira do dia a dia; o que já foi marcado fica no histórico.
 import { useMemo, useState } from 'react';
-import { ListChecks, MoreHorizontal, Pencil, Plus, Trash2 } from 'lucide-react';
+import { RotinaPorVoz } from '@/components/rotinas/RotinaPorVoz';
+import { useIALigada } from '@/hooks/useAssistantName';
+import { ListChecks, MoreHorizontal, Pencil, Plus, Trash2, Wand2 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -54,6 +56,8 @@ export default function Rotinas() {
   const excluir = useExcluirRotina();
   const [editando, setEditando] = useState<{ id?: string; dados: RotinaNova } | null>(null);
   const [apagando, setApagando] = useState<Rotina | null>(null);
+  const [falando, setFalando] = useState(false);
+  const iaLigada = useIALigada();
   const { data: setoresQueVejo = [] } = useSetoresQueVejo();
   const vejoEquipe = setoresQueVejo.length > 0;
   // O gestor abre direto na equipe; a escolha fica na URL (`?aba=`).
@@ -119,7 +123,16 @@ export default function Rotinas() {
   return (
     <div className="flex min-h-full flex-col">
       <PageHeader icon={ListChecks} title="Rotinas" description="O que se repete no seu dia: manhã, tarde e fim do dia. Aparece no Início, antes dos chamados."
-        actions={setores.length > 0 ? <Button onClick={() => setEditando({ dados: vazia(meuSetor, eu) })}><Plus className="mr-1 h-4 w-4" />Nova rotina</Button> : undefined} />
+        actions={setores.length > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {iaLigada && <Button variant="outline" className="gap-1.5" onClick={() => setFalando(true)}><Wand2 className="h-4 w-4" aria-hidden="true" />Falar com a Lyra</Button>}
+            <Button onClick={() => setEditando({ dados: vazia(meuSetor, eu) })}><Plus className="mr-1 h-4 w-4" />Nova rotina</Button>
+          </div>
+        ) : undefined} />
+      {falando && (
+        <RotinaPorVoz onFechar={() => setFalando(false)}
+          onMontada={(rotina) => { setFalando(false); setEditando({ dados: { ...vazia(meuSetor, eu), ...rotina } }); }} />
+      )}
       <div className="w-full space-y-5 px-4 pb-6 lg:px-8">
         {/* "Da minha equipe" só para quem tem a caixinha "Ver as rotinas da equipe" em algum setor (etapa 2). */}
         {vejoEquipe && (

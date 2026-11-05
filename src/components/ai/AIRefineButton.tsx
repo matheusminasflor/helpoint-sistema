@@ -16,6 +16,8 @@ import { MarkdownRenderer } from '@/components/ui/markdown-renderer';
 interface AIRefineButtonProps {
   text: string;
   context: ContextoDoTexto;
+  /** O assunto em volta do texto, para a IA entender a que ele se refere. */
+  apoio?: string;
   /** "Melhorar" por padrão; "Sugerir título" quando o texto vem da descrição. */
   rotulo?: string;
   onRefine: (refined: string) => void;
@@ -26,6 +28,7 @@ interface AIRefineButtonProps {
 export function AIRefineButton({
   text,
   context,
+  apoio,
   rotulo = 'Melhorar',
   onRefine,
   disabled = false,
@@ -40,7 +43,7 @@ export function AIRefineButton({
     if (!text.trim()) return;
     
     setIsOpen(true);
-    const result = await refineText(text, context);
+    const result = await refineText(text, context, apoio);
     setRefinedText(result);
   };
 

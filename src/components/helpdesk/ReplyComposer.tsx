@@ -22,6 +22,8 @@ import { useIALigada } from '@/hooks/useAssistantName';
 
 interface ReplyComposerProps {
   ticketId: string;
+  /** O título do chamado, para o Melhorar entender do que a resposta trata. */
+  assunto?: string;
   onReply: (content: string, isInternal: boolean, attachments?: File[], mantemStatus?: boolean) => Promise<void>;
   isSending?: boolean;
   showInternalOption?: boolean;
@@ -40,6 +42,7 @@ interface ReplyComposerProps {
 
 export function ReplyComposer({
   ticketId,
+  assunto,
   onReply,
   isSending = false,
   showInternalOption = false,
@@ -155,6 +158,7 @@ export function ReplyComposer({
             {/* AI Refine button */}
             <AIRefineButton
               text={content}
+              apoio={assunto}
               context="comment"
               onRefine={(refined) => setContent(refined)}
               disabled={disabled || isSending}
@@ -225,7 +229,7 @@ export function ReplyComposer({
               placeholder={placeholder}
               disabled={disabled || isSending}
               className={cn(
-                "min-h-[80px] max-h-[200px] resize-none pr-12",
+                "min-h-[80px] max-h-[200px] resize-none pb-11",
                 isInternal && "border-status-warning focus-visible:ring-status-warning"
               )}
               rows={2}
@@ -235,10 +239,11 @@ export function ReplyComposer({
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={disabled || isSending}
-              className="absolute right-3 bottom-2.5 p-1.5 text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+              className="absolute right-2.5 bottom-2 inline-flex items-center gap-1.5 rounded-md bg-primary px-2.5 py-1 text-[13px] font-semibold text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
               title="Anexar arquivo"
             >
-              <Paperclip className="w-4 h-4" />
+              <Paperclip className="w-3.5 h-3.5" aria-hidden="true" />
+              Anexar
             </button>
           </div>
 
