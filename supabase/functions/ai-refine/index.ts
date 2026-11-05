@@ -54,7 +54,7 @@ Texto: "ja vi aqui amanha passo la" | Chamado: "Monitor piscando" | Resposta: "O
 Texto: "Yuri, favor subir junto com Marcus e comigo a mesa antiga sua na sala de baixo antiga para a sala comercial." | Resposta: "Yuri, por gentileza, ajude a mim e ao Marcus a levar a sua mesa antiga da sala de baixo para a sala comercial."
 
 O QUE NUNCA FAZER:
-- NUNCA invente fato, prazo, causa, resultado, marca, modelo ou seção que não esteja no texto, no CHAMADO ou no ASSUNTO. Não diga que algo foi resolvido se isso não foi dito.
+- NUNCA invente fato, prazo, causa, resultado, marca, modelo ou seção que não esteja no texto, no CHAMADO ou no ASSUNTO. Não diga que algo foi resolvido ou enviado se isso não foi dito. "Relatório pronto" significa pronto, não enviado.
 - NUNCA cite o que veio de fora deste chamado, nem diga que é uma IA.
 - NUNCA comente o texto, explique o que mudou, escreva em outro idioma nem comece com rótulo, como "Registro:".
 
@@ -65,7 +65,7 @@ const REGRAS_DO_CAMPO: Record<ContextType, string> = {
   title_from_description: `O texto é a DESCRIÇÃO de um chamado. Devolva só um TÍTULO para ela: uma frase curta, até 80 caracteres, sem ponto final.`,
   ticket_title: `É o TÍTULO de um chamado: uma frase curta e específica, até 80 caracteres, sem ponto final. Se o título for vago e o ASSUNTO trouxer a descrição, escreva um título que diga o que é pedido. Exemplo: "Mesa", com descrição sobre levar uma mesa, vira "Levar mesa antiga para a sala comercial".`,
   ticket_description: `É a DESCRIÇÃO de um chamado, escrita por quem pede: deixe claro o que acontece e o que a pessoa precisa. Só use itens se ela já listou várias coisas.`,
-  comment: `É a RESPOSTA do atendente num chamado: falada diretamente com a pessoa, em tom cordial, sem repetir para a pessoa o que ela mesma contou.`,
+  comment: `É a RESPOSTA do atendente da TI para quem abriu o chamado. Quem escreve é o atendente: nunca fale como quem abriu. Tom cordial, sem repetir para a pessoa o que ela mesma contou.`,
   resolution: `É o REGISTRO do que foi feito para resolver o chamado: no passado, em 1 ou 2 frases, dizendo o que foi feito ou encontrado e sobre qual problema.`,
   checklist_description: `É a DESCRIÇÃO de um checklist: curta e direta; não crie regras, critérios ou etapas.`,
 };
@@ -110,7 +110,7 @@ serve(async (req) => {
     const pedido = [
       chamado && `CHAMADO:\n${chamado}`,
       apoio?.trim() && `ASSUNTO: ${apoio.trim().slice(0, MAX_APOIO)}`,
-      text.trim() ? `TEXTO A MELHORAR:\n${text}` : `Ainda não há texto: escreva você, usando só o que está no CHAMADO.`,
+      text.trim() ? `TEXTO A MELHORAR:\n${text}` : `Ainda não há texto: escreva você, usando só o que está no CHAMADO. Sem informação sobre o andamento, diga apenas que o chamado foi recebido e será analisado.`,
     ].filter(Boolean).join("\n\n");
 
     const result = await callTenantAI(usuario.tenantId, {
@@ -126,7 +126,7 @@ serve(async (req) => {
     const bruto = result.tool_calls?.[0]?.function.arguments;
     const entregue = bruto ? String(JSON.parse(bruto).texto ?? "") : "";
     // Sem as aspas que alguns modelos devolvem em volta.
-    const refinedText = entregue.trim().replace(/^["“”']+|["“”']+$/g, "").trim() || text;
+    const refinedText = entregue.trim().replace(/^["“”']+|["“”']+$/g, "").replace(/^(registro|resposta|resolução)s*:s*/i, "").trim() || text;
 
     return json({ refined: refinedText });
   } catch (error) {
