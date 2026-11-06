@@ -39,7 +39,7 @@ insert into public.com_faixas_cashback (tenant_id, tabela_base, valor_minimo, pe
 
 select tests.authenticate_as('dono@condicao.test');
 select is((select sum(valor_curva)::numeric from public.com_vendas_itens where cliente_codigo = 'C1' and emissao >= '2026-10-01'), 1000::numeric, 'a nota importada nao muda');
-select is((select sum(valor)::numeric from public.com_vendas_unificadas(array['C1', 'C2'], '2026-10-01', '2026-11-01', null)), 2500::numeric, 'a Carteira le a Venda total');
+select is((select sum(venda)::numeric from public.com_cliente_mes_a_mes('X', array['C1', 'C2'], '2026-10-01', '2026-10-31', null)), 2500::numeric, 'a Carteira le a Venda total');
 select is((select faturado from public.com_composicao_da_venda('2026-10-01', '2026-10-31')), 1500::numeric, 'Faturado');
 select is((select condicao from public.com_composicao_da_venda('2026-10-01', '2026-10-31')), 1000::numeric, 'Condicao');
 select is((select venda_total from public.com_composicao_da_venda('2026-10-01', '2026-10-31')), 2500::numeric, 'Venda total');
