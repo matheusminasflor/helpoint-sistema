@@ -205,7 +205,7 @@ export default function ComercialIndicadores() {
                     <span className="text-[13px] text-muted-foreground">{v.carteira ? `Carteira ${v.carteira}` : 'Sem carteira'}</span>
                   </div>
                   {v.carteira && !analitico && (
-                    <TresRespostas carteira={v.carteira} competencia={competencia} intervalo={intervalo}
+                    <TresRespostas carteiras={v.carteira.split(', ')} competencia={competencia} intervalo={intervalo}
                       de={intervalo?.de ?? competencia} ate={intervalo?.ate ?? ultimoDiaDoMes(competencia)}
                       vendido={v.linhas.find((l) => eValor(l.metrica))?.realizado ?? 0}
                       meta={v.linhas.find((l) => eValor(l.metrica))?.meta ?? null}

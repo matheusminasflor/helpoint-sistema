@@ -2,17 +2,17 @@
 // a meta vêm do painel, a composição e o A faturar das consultas da Carteira. Verde é faturado, roxo é condição e laranja é
 // o que ainda pode entrar.
 import { useComposicaoDaVenda } from '@/components/comercial/ComposicaoDaVenda';
-import { useAcompanhamentoDaCarteira } from '@/hooks/useComercialLancamentos';
+import { useAcompanhamentoDasCarteiras } from '@/hooks/useRaioX';
 import { tresRespostas } from '@/lib/tres-respostas';
 import { formatBRL } from '@/types/financeiro';
 
-export function TresRespostas({ carteira, competencia, intervalo, de, ate, vendido, meta, foraDoAlvo }: {
-  carteira: string; competencia: string; intervalo: { de: string; ate: string } | null | undefined;
+export function TresRespostas({ carteiras, competencia, intervalo, de, ate, vendido, meta, foraDoAlvo }: {
+  carteiras: string[]; competencia: string; intervalo: { de: string; ate: string } | null | undefined;
   de: string; ate: string; vendido: number; meta: number | null; foraDoAlvo: number;
 }) {
-  const { data: composicao } = useComposicaoDaVenda({ de, ate, carteira });
-  const { data: clientes = [] } = useAcompanhamentoDaCarteira(carteira, competencia, intervalo);
-  const aFaturar = clientes.reduce((s, l) => s + l.a_faturar, 0);
+  const { data: composicao } = useComposicaoDaVenda({ de, ate, carteira: carteiras.join(', ') });
+  const consultas = useAcompanhamentoDasCarteiras(carteiras, competencia, intervalo);
+  const aFaturar = consultas.flatMap((c) => c.data ?? []).reduce((s, l) => s + l.a_faturar, 0);
   const r = tresRespostas({
     vendido, meta, faturado: composicao?.faturado ?? vendido, condicao: composicao?.condicao ?? 0, aFaturar,
   });

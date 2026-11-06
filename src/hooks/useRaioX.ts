@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { expectRows, mensagemDeErro, unwrap } from '@/lib/supabase-result';
 import { lerAcompanhamento } from '@/hooks/useComercialLancamentos';
+import type { IntervaloDeDias } from '@/lib/period';
 import type {
   LinhaDoRelatorio, Motivo, PerfilDoCliente, RaioXDoCliente, RespostaDoLancamento, ResultadoDaProposta, StatusDaDor, TipoDeProposta,
 } from '@/lib/raio-x';
@@ -50,13 +51,13 @@ export function useDoresEmAberto() {
 }
 
 /** Os clientes de cada carteira, pela leitura da própria Carteira: o relatório não refaz essa conta. */
-export function useAcompanhamentoDasCarteiras(carteiras: string[], competencia: string) {
+export function useAcompanhamentoDasCarteiras(carteiras: string[], competencia: string, intervalo?: IntervaloDeDias | null) {
   const { tenantId } = useAuth();
   return useQueries({
     queries: carteiras.map((carteira) => ({
-      queryKey: ['comercial', 'acompanhamento-da-carteira', tenantId, carteira, competencia, null, null, ''],
+      queryKey: ['comercial', 'acompanhamento-da-carteira', tenantId, carteira, competencia, intervalo?.de ?? null, intervalo?.ate ?? null, ''],
       enabled: !!tenantId,
-      queryFn: () => lerAcompanhamento(carteira, competencia),
+      queryFn: () => lerAcompanhamento(carteira, competencia, intervalo),
     })),
   });
 }
