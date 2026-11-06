@@ -88,9 +88,13 @@ export function FichaDoDistribuidor() {
                   </Link>
                 )}
               </div>
-              {f.compras.length === 0 ? <p className="text-[14px] text-muted-foreground">Nenhuma nota nos últimos 12 meses.</p> : (
+              {f.compras.length === 0 ? (
+                <p className="text-[14px] text-muted-foreground">
+                  {f.distribuidor.com_cliente_codigo ? 'Nenhuma nota que você possa ver nos últimos 12 meses.' : 'Este distribuidor ainda não tem cliente ligado.'}
+                </p>
+              ) : (
                 <>
-                  <p className="text-[14px] mb-1">{f.compras.length} nota(s) · <b className="tabular-nums">{formatBRL(f.compras.reduce((t, n) => t + n.valor, 0))}</b></p>
+                  <p className="text-[14px] mb-1">{f.compras.length} nota(s) · venda <b className="tabular-nums">{formatBRL(f.compras.filter((n) => n.classe === 'venda').reduce((t, n) => t + n.valor, 0))}</b></p>
                   <ul className="divide-y divide-border max-h-[420px] overflow-y-auto">
                     {f.compras.map((n) => (
                       <li key={n.chave} className="py-1.5 text-[14px]">

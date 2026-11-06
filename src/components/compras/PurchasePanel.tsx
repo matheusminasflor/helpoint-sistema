@@ -658,6 +658,11 @@ export function PurchasePanel({ pedidoId, onUpdate }: Props) {
         </div>
       )}
 
+      {/* Aprovada e ainda sem pagamento: se o fornecedor desistir, cancela com motivo (auditoria de 2026-11-06). */}
+      {request.status === 'approved' && canApprove && !paga && !request.pago_junto_com && (
+        <button type="button" className="text-[13px] text-muted-foreground underline" onClick={() => setRejectOpen(true)}>Cancelar compra</button>
+      )}
+
       {/* Depois de aprovada (dono, 2026-10-15; 20270121010000): PAGAR — a conta nasce aqui — e só depois, quando a
           nota chega, registrar e encerrar. Compras não tem prazo. */}
       {request.status === 'approved' && canExecute && !paga && (
@@ -795,7 +800,7 @@ export function PurchasePanel({ pedidoId, onUpdate }: Props) {
       <AlertDialog open={rejectOpen} onOpenChange={setRejectOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Recusar este pedido de compra?</AlertDialogTitle>
+            <AlertDialogTitle>{request.status === 'approved' ? 'Cancelar esta compra aprovada?' : 'Recusar este pedido de compra?'}</AlertDialogTitle>
             <AlertDialogDescription>
               O motivo fica no histórico do pedido, visível para quem pediu a compra.
             </AlertDialogDescription>
@@ -803,12 +808,12 @@ export function PurchasePanel({ pedidoId, onUpdate }: Props) {
           <Input
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            placeholder="Motivo da reprovação"
+            placeholder={request.status === 'approved' ? 'Motivo do cancelamento' : 'Motivo da reprovação'}
           />
           <AlertDialogFooter>
-            <AlertDialogCancel>Manter em análise</AlertDialogCancel>
+            <AlertDialogCancel>Voltar</AlertDialogCancel>
             <AlertDialogAction disabled={!reason.trim()} onClick={handleReject}>
-              Recusar compra
+              {request.status === 'approved' ? 'Cancelar compra' : 'Recusar compra'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

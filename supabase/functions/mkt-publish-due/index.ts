@@ -133,8 +133,11 @@ serve(async (req) => {
   const now = new Date().toISOString();
   const { data: duePosts, error } = await supabase
     .from('mkt_social_posts')
-    .select('id, tenant_id, title, content, platform, media_urls, hashtags, notes, scheduled_at, created_by')
+    .select('id, tenant_id, title, content, platform, post_type, account_id, media_urls, hashtags, notes, scheduled_at, created_by')
     .eq('status', 'scheduled')
+    // O resto é publicado à mão: não é falha do robô (dono, 2026-11-06).
+    .in('platform', ['instagram', 'facebook'])
+    .eq('post_type', 'feed')
     .lte('scheduled_at', now)
     .limit(50);
 
@@ -165,15 +168,15 @@ serve(async (req) => {
   for (const post of duePosts || []) {
     results.processed++;
 
-    // Find an active account on the same tenant/platform
-    const { data: account } = await supabase
+    // A conta escolhida no post; sem escolha, a conta ativa da plataforma.
+    let contas = supabase
       .from('mkt_social_accounts')
       .select('id, platform, account_id, page_id, token_expires_at')
       .eq('tenant_id', post.tenant_id)
       .eq('platform', post.platform)
-      .eq('is_active', true)
-      .limit(1)
-      .maybeSingle();
+      .eq('is_active', true);
+    if (post.account_id) contas = contas.eq('id', post.account_id);
+    const { data: account } = await contas.limit(1).maybeSingle();
 
     if (!account) {
       await supabase

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 import type { TicketComment } from '@/types/helpdesk';
 import { unwrap, expectRows } from '@/lib/supabase-result';
 
@@ -172,7 +173,9 @@ export function useAddComment() {
       if (commentError) throw commentError;
 
       if (files.length > 0 && comment) {
-        await enviarAnexosDoChamado(user.id, ticketId, comment.id, files);
+        // A mensagem já foi: se o anexo falhar, avisa sem deixar o texto na caixa, senão o novo clique duplica a mensagem.
+        await enviarAnexosDoChamado(user.id, ticketId, comment.id, files)
+          .catch(() => toast.error('Sua mensagem foi enviada, mas o anexo não subiu. Anexe de novo.'));
       }
 
       // Quem é avisado decide o banco: trigger `trg_notify_on_ticket_comment`

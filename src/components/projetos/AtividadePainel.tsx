@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { ExternalLink, Pencil, Trash2 } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
+import { ConfirmarExclusao } from '@/components/ui/ConfirmarExclusao';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { rotuloDoSetor } from '@/lib/setores';
@@ -39,6 +40,7 @@ export function AtividadePainel({ atividade, onFechar, nomes, dependeDe, faseNom
   const { lista, comentar } = useComentarios(atividade?.id);
   const { data: pessoas = [] } = usePessoasDaEmpresa();
   const [texto, setTexto] = useState('');
+  const [confirmando, setConfirmando] = useState(false);
   if (!atividade) return null;
   const responsavel = atividade.user_id === user?.id;
   const podeAndamento = podePlanejar || responsavel;
@@ -62,7 +64,7 @@ export function AtividadePainel({ atividade, onFechar, nomes, dependeDe, faseNom
                 <Button size="sm" variant="outline" onClick={onEditar}><Pencil className="w-3.5 h-3.5 mr-1.5" />Editar</Button>
               )}
               {podePlanejar && (
-                <Button size="sm" variant="ghost" className="text-destructive" onClick={async () => { await apagar.mutateAsync(atividade.id); onFechar(); }}>
+                <Button size="sm" variant="ghost" className="text-destructive" onClick={() => setConfirmando(true)}>
                   <Trash2 className="w-3.5 h-3.5 mr-1.5" />Apagar
                 </Button>
               )}
@@ -149,6 +151,11 @@ export function AtividadePainel({ atividade, onFechar, nomes, dependeDe, faseNom
           </aside>
         </div>
       </SheetContent>
+      {atividade && (
+        <ConfirmarExclusao aberto={confirmando} titulo="Apagar esta tarefa?" descricao="Os comentários dela somem junto." enviando={apagar.isPending}
+          onCancelar={() => setConfirmando(false)}
+          onConfirmar={async () => { await apagar.mutateAsync(atividade.id); setConfirmando(false); onFechar(); }} />
+      )}
     </Sheet>
   );
 }

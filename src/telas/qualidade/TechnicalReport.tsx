@@ -4,7 +4,7 @@ import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { unwrap } from '@/lib/supabase-result';
+import { expectRows, unwrap } from '@/lib/supabase-result';
 import { todayISO } from '@/lib/dates';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -215,15 +215,14 @@ export default function TechnicalReport() {
 
       let reportId = current.id;
       if (reportId) {
-        const { error } = await supabase.from('sac_technical_reports').update(reportPayload).eq('id', reportId);
-        if (error) throw error;
+        expectRows(await supabase.from('sac_technical_reports').update(reportPayload).eq('id', reportId).select('id'), 'o laudo');
       } else {
         const { data, error } = await supabase.from('sac_technical_reports').insert(reportPayload).select('id').single();
         if (error) throw error;
         reportId = data.id;
       }
 
-      await supabase.from('sac_report_products').delete().eq('report_id', reportId);
+      unwrap(await supabase.from('sac_report_products').delete().eq('report_id', reportId));
       const p = current.product;
       const { error: rpErr } = await supabase.from('sac_report_products').insert({
         report_id: reportId, tenant_id: ticket.tenant_id,

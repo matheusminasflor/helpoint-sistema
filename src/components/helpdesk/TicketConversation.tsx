@@ -13,6 +13,7 @@ import { contaComoResolvido } from '@/lib/status-do-chamado';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { unwrap } from '@/lib/supabase-result';
+import { useEuAtendoJunto } from '@/hooks/useAtenderJunto';
 
 interface TicketConversationProps {
   ticketId: string;
@@ -29,10 +30,12 @@ export function TicketConversation({
 }: TicketConversationProps) {
   const { user, tenantId } = useAuth();
   const { ticket, isLoading: isLoadingTicket, refetch: recarregarChamado } = useTicketDetail(ticketId);
-  const { comments, isLoading: isLoadingComments } = useTicketComments(ticketId);
+  const { comments, isLoading: isLoadingComments, refetch: recarregarConversa } = useTicketComments(ticketId);
   const { addComment, isSending } = useAddComment();
   const scrollRef = useRef<HTMLDivElement>(null);
-  const { pode, atende } = usePodeNoChamado(ticket?.module);
+  // Quem atende junto vindo de outro setor é da equipe nesta conversa, como na tela do chamado (auditoria de 2026-11-06).
+  const euAtendoJunto = useEuAtendoJunto(ticketId);
+  const { pode, atende } = usePodeNoChamado(ticket?.module, euAtendoJunto);
   // Da equipe do setor: age no chamado ou ao menos vê a fila ("Ver os chamados do setor").
   const isTechnician = atende || pode('view_all');
   const [mentionOpen, setMentionOpen] = useState(false);
@@ -48,6 +51,8 @@ export function TicketConversation({
     // A resposta muda status e atendente NO BANCO (Pendente/Em andamento, 1ª resposta assume): sem
     // recarregar, a tela seguia mostrando o status antigo e o botão "Assumir" (2026-10-07).
     void recarregarChamado();
+    // O anexo sobe depois do comentário, e o aviso ao vivo pode chegar antes dele ou não chegar.
+    void recarregarConversa();
     onUpdate?.();
   };
 

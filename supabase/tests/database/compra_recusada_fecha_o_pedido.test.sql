@@ -3,10 +3,12 @@
 --   1  recusada, o pedido fica recusado
 --   2  com o motivo da recusa no histórico
 --   3  e quem pediu é avisado, no pedido
+--   4  compra aprovada pode ser cancelada antes do pagamento
+--   5  depois de paga, não
 begin;
 \ir _helpers.psql
 
-select plan(3);
+select plan(5);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-recusada', 'Recusada', false) as a;
@@ -43,6 +45,33 @@ select is((select count(*)::int from public.notifications
             where user_id = (select ana from u) and reference_type = 'solicitacao'
               and reference_id = (select solicitacao from pedido) and title like 'Compra recusada%'), 1,
   'e quem pediu e avisado, no pedido');
+
+select tests.authenticate_as('ana@recusada.test');
+insert into pedido
+select public.compras_abrir_pedido('{"title":"Teclado","priority":"low"}'::jsonb,
+  '{"few_quotes_reason":"pgtap: fornecedor unico","product_name":"Teclado","department":"ti","quantidade":"1"}'::jsonb,
+  '[{"supplier":"Loja","valor_unitario":"90","link":"https://l"}]'::jsonb);
+insert into pedido
+select public.compras_abrir_pedido('{"title":"Mouse","priority":"low"}'::jsonb,
+  '{"few_quotes_reason":"pgtap: fornecedor unico","product_name":"Mouse","department":"ti","quantidade":"1"}'::jsonb,
+  '[{"supplier":"Loja","valor_unitario":"50","link":"https://l"}]'::jsonb);
+select tests.clear_authentication();
+
+alter table public.compras_solicitacoes disable trigger user;
+update public.compras_solicitacoes c set status = 'approved'
+  from public.solicitacoes s where s.id = c.solicitacao_id and s.id in (select solicitacao from pedido) and c.product_name in ('Teclado', 'Mouse');
+update public.compras_solicitacoes set pagamento_em = now() where product_name = 'Mouse'
+  and solicitacao_id in (select solicitacao from pedido);
+alter table public.compras_solicitacoes enable trigger user;
+
+select tests.authenticate_as('apr@recusada.test');
+select lives_ok($$ update public.compras_solicitacoes set status = 'rejected', rejection_reason = 'Fornecedor desistiu'
+                    where product_name = 'Teclado' and solicitacao_id in (select solicitacao from pedido) $$,
+  'aprovada e sem pagamento, cancela com motivo');
+select throws_ok($$ update public.compras_solicitacoes set status = 'rejected', rejection_reason = 'Fornecedor desistiu'
+                     where product_name = 'Mouse' and solicitacao_id in (select solicitacao from pedido) $$,
+  '23514', null, 'depois de paga nao cancela');
+select tests.clear_authentication();
 
 select * from finish();
 rollback;

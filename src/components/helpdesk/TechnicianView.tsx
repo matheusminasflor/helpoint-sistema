@@ -305,7 +305,8 @@ export function TechnicianView({ module, titulo = 'Fila de chamados', descricao,
       </div>
 
       <TicketDetailSheet
-        ticket={selectedTicket}
+        // A gaveta lê o chamado da lista atual: guardado no clique, ficava com o status e os botões de antes.
+        ticket={selectedTicket && ([...tickets, ...historyTickets].find((t) => t.id === selectedTicket.id) ?? selectedTicket)}
         open={sheetOpen}
         onClose={handleCloseSheet}
         onUpdate={handleUpdate}

@@ -2,7 +2,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(9);
+select plan(10);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-faltavam', 'Faltavam', false) as a;
@@ -62,6 +62,11 @@ select lives_ok($$ update public.sac_technical_reports set status = 'completed' 
 select tests.clear_authentication();
 
 select is((select status from public.sac_technical_reports where id = (select laudo from s)), 'completed', 'o laudo ficou finalizado');
+
+select tests.authenticate_as('escreve@faltavam.test');
+select throws_ok($$ update public.sac_technical_reports set status = 'draft', conclusion = 'Mudou' where id = (select laudo from s) $$,
+  '42501', null, 'laudo concluido nao volta a rascunho sem "Assinar/Finalizar"');
+select tests.clear_authentication();
 
 select * from finish();
 rollback;

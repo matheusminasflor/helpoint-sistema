@@ -9,6 +9,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
+import { ConfirmarExclusao } from '@/components/ui/ConfirmarExclusao';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -366,6 +367,7 @@ function AcoesDaFase({ projectId, faseId, nome, fases }: { projectId: string; fa
   const { salvar, apagar } = useFases(projectId);
   const [renomeando, setRenomeando] = useState(false);
   const [texto, setTexto] = useState(nome);
+  const [confirmando, setConfirmando] = useState(false);
   const ordenadas = [...fases].sort((a, b) => a.ordem - b.ordem);
   const i = ordenadas.findIndex((f) => f.id === faseId);
   const trocar = (j: number) => {
@@ -387,7 +389,9 @@ function AcoesDaFase({ projectId, faseId, nome, fases }: { projectId: string; fa
       <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Mover a etapa para antes" title="Mover para antes" disabled={i <= 0} onClick={() => trocar(i - 1)}><ArrowLeft className="w-3.5 h-3.5" /></Button>
       <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Mover a etapa para depois" title="Mover para depois" disabled={i >= ordenadas.length - 1} onClick={() => trocar(i + 1)}><ArrowRight className="w-3.5 h-3.5" /></Button>
       <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Renomear a etapa" title="Renomear" onClick={() => setRenomeando(true)}><Pencil className="w-3.5 h-3.5" /></Button>
-      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" aria-label="Apagar a fase" onClick={() => apagar.mutate(faseId)}><Trash2 className="w-3.5 h-3.5" /></Button>
+      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" aria-label="Apagar a etapa" onClick={() => setConfirmando(true)}><Trash2 className="w-3.5 h-3.5" /></Button>
+      <ConfirmarExclusao aberto={confirmando} titulo={`Apagar a etapa ${nome}?`} descricao="As tarefas dela ficam sem etapa."
+        onCancelar={() => setConfirmando(false)} onConfirmar={() => { apagar.mutate(faseId); setConfirmando(false); }} />
     </div>
   );
 }
@@ -408,6 +412,7 @@ function SetoresDoProjeto({ projectId, editaProjeto, estrutura }: {
   const { data: pessoas = [] } = usePessoasDaEmpresa();
   const [novoSetor, setNovoSetor] = useState('');
   const [novaPessoa, setNovaPessoa] = useState('');
+  const [tirando, setTirando] = useState<{ id: string; setor: string } | null>(null);
   // A pessoa do setor é sempre do setor (dono, 2026-10-09); o banco recusa a de fora.
   const genteDo = (setor: string) => pessoas.filter((p) => p.setores.includes(setor));
   const semPlano = new Set(setoresSemPlano(estrutura.setores.map((s) => s.setor), estrutura.atividades));
@@ -460,7 +465,7 @@ function SetoresDoProjeto({ projectId, editaProjeto, estrutura }: {
                       {genteDo(s.setor).map((p) => <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>)}
                     </SelectContent>
                   </Select>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" aria-label={`Tirar ${rotuloDoSetor(s.setor)} do projeto`} onClick={() => tirar.mutate(s.id)}>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" aria-label={`Tirar ${rotuloDoSetor(s.setor)} do projeto`} onClick={() => setTirando(s)}>
                     <Trash2 className="w-3.5 h-3.5" />
                   </Button>
                 </div>
@@ -493,6 +498,8 @@ function SetoresDoProjeto({ projectId, editaProjeto, estrutura }: {
           </Button>
         </div>
       )}
+      <ConfirmarExclusao aberto={!!tirando} titulo={`Tirar ${tirando ? rotuloDoSetor(tirando.setor) : ''} do projeto?`} descricao="O setor deixa de participar deste projeto." acao="Tirar do projeto"
+        onCancelar={() => setTirando(null)} onConfirmar={() => { if (tirando) tirar.mutate(tirando.id); setTirando(null); }} />
       <p className="text-[12px] text-muted-foreground">
         "Aguardando plano" = o setor foi chamado e ainda não criou nenhuma tarefa. Na equipe: {estrutura.equipe.map((u) => estrutura.nomes[u] ?? '—').join(', ') || 'ninguém'}.
       </p>
@@ -507,6 +514,7 @@ function Briefing({ projectId, editaProjeto, nome, objetivo, entrega, status }: 
   const tenantPath = useTenantPath();
   const salvar = useSalvarBriefing(projectId);
   const apagar = useApagarProjeto();
+  const [confirmando, setConfirmando] = useState(false);
   const [f, setF] = useState({ name: nome, description: objetivo ?? '', due_date: entrega ?? '', status });
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
@@ -533,9 +541,12 @@ function Briefing({ projectId, editaProjeto, nome, objetivo, entrega, status }: 
               onClick={() => salvar.mutate({ name: f.name.trim(), description: f.description.trim() || null, due_date: f.due_date || null, status: f.status })}>
               Salvar briefing
             </Button>
-            <Button variant="ghost" className="text-destructive" onClick={async () => { await apagar.mutateAsync(projectId); navigate(tenantPath('/projetos')); }}>
+            <Button variant="ghost" className="text-destructive ml-auto" onClick={() => setConfirmando(true)}>
               Apagar projeto
             </Button>
+            <ConfirmarExclusao aberto={confirmando} titulo={`Apagar o projeto ${nome}?`} descricao="Etapas, tarefas e comentários do projeto somem junto. Isso não tem como desfazer."
+              enviando={apagar.isPending} onCancelar={() => setConfirmando(false)}
+              onConfirmar={async () => { await apagar.mutateAsync(projectId); navigate(tenantPath('/projetos')); }} />
           </div>
         )}
       </div>

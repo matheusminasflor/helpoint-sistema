@@ -77,7 +77,7 @@ export function ReplyComposer({
       setFiles([]);
       setAguardar(false);
     } catch (error) {
-      console.error('Error sending reply:', error);
+      toast.error(error instanceof Error ? error.message : 'Não consegui enviar. Tente de novo.');
     }
   };
 

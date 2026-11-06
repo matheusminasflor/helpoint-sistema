@@ -61,9 +61,11 @@ export function useMKTSocialPost(id: string | undefined) {
 
 export function useCreateSocialPost() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   return useMutation({
     mutationFn: async (data: CreatePostData) => {
       const insertData = {
+        created_by: user?.id,
         title: data.title,
         content: data.content,
         platform: data.platform,

@@ -110,8 +110,8 @@ export function FinEntriesPage({ kind, description }: Props) {
   // "Feito · Desfazer" (regra 1, 2026-10-24): a linha já aparece paga; o banco grava em 8 s.
   const qc = useQueryClient();
   const marcaNaTela = (id: string, mudanca: Partial<FinEntry>) =>
-    qc.setQueriesData<FinEntry[]>({ queryKey: ['fin-entries'] }, (linhas) =>
-      linhas?.map((l) => (l.id === id ? { ...l, ...mudanca } : l)));
+    qc.setQueriesData<{ linhas: FinEntry[]; cortou: boolean }>({ queryKey: ['fin-entries'] }, (atual) =>
+      atual && { ...atual, linhas: atual.linhas.map((l) => (l.id === id ? { ...l, ...mudanca } : l)) });
   const confirmarLiquidacao = () => {
     if (!liquidando || !dataDoPagamento) return;
     const e = liquidando;

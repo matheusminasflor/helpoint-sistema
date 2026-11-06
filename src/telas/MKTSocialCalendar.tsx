@@ -51,18 +51,22 @@ import { Link } from 'react-router-dom';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { useChamadosDoSetorNoIntervalo } from '@/hooks/useAgendaUnica';
 import { itensDaAgenda } from '@/lib/agenda-unica';
-import { toLocalISODate } from '@/lib/dates';
+import { fromLocalDateTimeInput, toLocalISODate } from '@/lib/dates';
 
 /**
  * O que o post diz de quando sai (etapa 4 · Marketing, 2026-10-25). A publicação automática (`mkt-publish-due`, a cada
  * 5 minutos) usa a conta ATIVA da plataforma; sem ela, o post não sai sozinho e quem publica marca à mão. Antes, o
  * cartão só mostrava a hora, e "Marcar publicado" e a publicação automática se confundiam.
  */
-function quandoSai(post: { status: string; scheduled_at?: string | null; platform: string }, contas: { platform: string; is_active?: boolean; account_name: string }[], contaDoPost?: { account_name: string }) {
+function quandoSai(post: { status: string; scheduled_at?: string | null; platform: string; post_type?: string | null }, contas: { platform: string; is_active?: boolean; account_name: string }[], contaDoPost?: { account_name: string }) {
   if (post.status !== 'scheduled' || !post.scheduled_at) return null;
   const hora = format(parseISO(post.scheduled_at), 'HH:mm');
   const ativa = contas.find((a) => a.platform === post.platform && a.is_active !== false);
   if (!ativa) return { texto: `Às ${hora}, sem conta conectada: publique à mão e marque como publicado`, manual: true };
+  // O robô só publica no feed do Instagram e do Facebook (`mkt-publish-due`): o resto continua sendo à mão.
+  if (!['instagram', 'facebook'].includes(post.platform) || (post.post_type ?? 'feed') !== 'feed') {
+    return { texto: `Às ${hora}: publique à mão e marque como publicado`, manual: true };
+  }
   return { texto: `Sai sozinho às ${hora} em @${(contaDoPost ?? ativa).account_name}`, manual: false };
 }
 
@@ -158,7 +162,7 @@ export default function MKTSocialCalendar() {
     if (!formData.title.trim()) return;
 
     const scheduledAt = formData.scheduled_date
-      ? `${formData.scheduled_date}T${formData.scheduled_time}:00`
+      ? fromLocalDateTimeInput(`${formData.scheduled_date}T${formData.scheduled_time}`)
       : undefined;
 
     const hashtags = formData.hashtags
@@ -482,7 +486,7 @@ export default function MKTSocialCalendar() {
                             <p className="text-xs text-muted-foreground">{POST_TYPE_LABELS[post.post_type]}</p>
                           </div>
                         </div>
-                        {((podePublicar && post.status === 'scheduled') || podeExcluir || podeEditar) && (
+                        {((podePublicar && ['scheduled', 'failed'].includes(post.status)) || podeExcluir || podeEditar) && (
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                               <Button variant="ghost" size="icon" className="h-8 w-8" aria-label={`Opções de ${post.title}`}><MoreHorizontal className="w-4 h-4" aria-hidden="true" /></Button>
@@ -493,7 +497,7 @@ export default function MKTSocialCalendar() {
                                   <Pencil className="w-4 h-4 mr-2" aria-hidden="true" /> Editar
                                 </DropdownMenuItem>
                               )}
-                              {podePublicar && post.status === 'scheduled' && (
+                              {podePublicar && ['scheduled', 'failed'].includes(post.status) && (
                                 <DropdownMenuItem onClick={() => publishPost.mutate(post.id)}>
                                   <CheckCircle className="w-4 h-4 mr-2" /> Marcar publicado
                                 </DropdownMenuItem>
@@ -512,6 +516,9 @@ export default function MKTSocialCalendar() {
                       {account && <p className="text-xs text-muted-foreground mb-2">@{account.account_name}</p>}
                       {post.content && <p className="text-xs text-muted-foreground line-clamp-2 mb-2">{post.content}</p>}
 
+                      {post.status === 'failed' && post.notes && (
+                        <p className="mt-2 p-2 rounded-md badge-danger text-[12px]">{post.notes.trim().split(/\r?\n/).pop()}</p>
+                      )}
                       {post.strategy_notes && (
                         <div className="mt-2 p-2 rounded-md badge-warning border border-border text-[12px] text-status-warning">
                           <b>Estratégia:</b> {post.strategy_notes}

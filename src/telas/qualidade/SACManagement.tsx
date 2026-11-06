@@ -13,7 +13,7 @@ import { useIALigada } from '@/hooks/useAssistantName';
 import { useSetBreadcrumbLeaf } from '@/contexts/BreadcrumbContext';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { unwrap } from '@/lib/supabase-result';
+import { expectRows, unwrap } from '@/lib/supabase-result';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -187,8 +187,11 @@ export function QualidadeSACDetail() {
     const payload: any = { status };
     // Como foi resolvido (R6): a coluna existia e nada a escrevia.
     if (resolucaoAoEncerrar !== undefined) payload.resolution_notes = resolucaoAoEncerrar.trim() || null;
-    if (status === 'resolved') payload.resolved_at = new Date().toISOString();
+    // As duas portas de fechar valem o mesmo para o tempo e o prazo; reabrir limpa as datas (auditoria de 2026-11-06).
+    const fechando = ['resolved', 'closed'].includes(status);
+    if (fechando && !ticket?.resolved_at) payload.resolved_at = new Date().toISOString();
     if (status === 'closed') payload.closed_at = new Date().toISOString();
+    if (!fechando) { payload.resolved_at = null; payload.closed_at = null; }
     const { data, error } = await supabase.from('sac_tickets').update(payload).eq('id', id).select('id');
     if (error) {
       const msg = error.message || '';
@@ -210,9 +213,9 @@ export function QualidadeSACDetail() {
   const send = async () => {
     if ((!reply.trim() && files.length === 0) || !id) return;
     setSending(true);
+    try {
     const { user } = unwrap(await supabase.auth.getUser());
-    const { data: p, error: pErr } = await supabase.from('profiles').select('full_name').eq('id', user?.id).maybeSingle();
-    if (pErr) { toast.error(pErr.message); setSending(false); return; }
+    const p = unwrap(await supabase.from('profiles').select('full_name').eq('id', user?.id).maybeSingle());
 
     // upload attachments
     const uploaded: any[] = [];
@@ -222,18 +225,26 @@ export function QualidadeSACDetail() {
       if (upErr) { toast.error(`Falha ao enviar ${f.name}: ${upErr.message}`); continue; }
       uploaded.push({ file_name: f.name, file_path: path, mime_type: f.type, file_size: f.size });
     }
+    // Só anexo, e nenhum subiu: não grava "(anexo enviado)" sem anexo.
+    if (!reply.trim() && uploaded.length === 0) return;
 
-    const { error } = await supabase.from('sac_ticket_comments').insert({
+    expectRows(await supabase.from('sac_ticket_comments').insert({
       tenant_id: ticket.tenant_id, ticket_id: id, author_id: user?.id,
       author_type: 'staff', author_name: p?.full_name || 'Atendimento',
       content: reply || '(anexo enviado)', is_internal: internal,
       attachments: uploaded,
-    });
-    if (!error && !ticket.first_response_at && !internal) {
-      await supabase.from('sac_tickets').update({ first_response_at: new Date().toISOString() }).eq('id', id);
+    }).select('id'), 'a resposta');
+    if (!ticket.first_response_at && !internal) {
+      expectRows(await supabase.from('sac_tickets').update({ first_response_at: new Date().toISOString() }).eq('id', id).select('id'), 'a primeira resposta');
     }
-    if (error) toast.error(error.message);
-    setReply(''); setFiles([]); setSending(false); load();
+    toast.success('Resposta enviada');
+    setReply(''); setFiles([]); load();
+    } catch (e) {
+      // O texto fica na caixa para tentar de novo.
+      toast.error(e instanceof Error ? e.message : 'Não consegui enviar a resposta.');
+    } finally {
+      setSending(false);
+    }
   };
 
   const suggestAI = async () => {
@@ -417,7 +428,7 @@ export function QualidadeSACDetail() {
 
           <Card className="p-4">
             <h3 className="font-semibold text-sm mb-3">Status</h3>
-            <select value={ticket.status} onChange={e => updateStatus(e.target.value)} className="w-full h-9 rounded-md border px-2 text-sm">
+            <select value={ticket.status} onChange={e => updateStatus(e.target.value, ['resolved', 'closed'].includes(e.target.value) ? resolucao : undefined)} className="w-full h-9 rounded-md border px-2 text-sm">
               {STATUSES.map(st => <option key={st} value={st}>{STATUS_LABEL[st].label}</option>)}
             </select>
             {!['resolved','closed'].includes(ticket.status) ? (
