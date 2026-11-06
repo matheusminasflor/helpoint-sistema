@@ -34,7 +34,9 @@ export function TresRespostas({ carteiras, competencia, intervalo, de, ate, vend
             <span className="bg-status-warning" style={{ width: `${r.larguraAFaturar}%` }} />
           </div>
           <p className="mt-1 flex flex-wrap gap-x-3 text-[12px] text-muted-foreground">
-            <span>Faturado</span>{(composicao?.condicao ?? 0) > 0 && <span>Condição</span>}<span>A faturar</span>
+            <Legenda cor="bg-status-success" texto="Faturado" />
+            {(composicao?.condicao ?? 0) > 0 && <Legenda cor="bg-[hsl(var(--badge-purple-text))]" texto="Condição" />}
+            <Legenda cor="bg-status-warning" texto="A faturar" />
           </p>
         </div>
       )}
@@ -45,6 +47,10 @@ export function TresRespostas({ carteiras, competencia, intervalo, de, ate, vend
       </div>
     </section>
   );
+}
+
+function Legenda({ cor, texto }: { cor: string; texto: string }) {
+  return <span className="inline-flex items-center gap-1"><span className={`h-2.5 w-2.5 rounded-sm ${cor}`} aria-hidden="true" />{texto}</span>;
 }
 
 function Resposta({ rotulo, valor, nota, alerta }: { rotulo: string; valor: string; nota?: string; alerta?: boolean }) {
