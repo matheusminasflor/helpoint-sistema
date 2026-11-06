@@ -213,9 +213,20 @@ export default function ComercialIndicadores() {
                       indicadores={v.linhas.filter((l) => !eValor(l.metrica) && l.metrica !== 'pct_meta' && l.cor !== 'sem_meta').length}
                       abaixoDaMeta={v.linhas.filter((l) => !eValor(l.metrica) && l.metrica !== 'pct_meta' && (l.cor === 'vermelho' || l.cor === 'amarelo')).length} />
                   )}
-                  {/* A tabela fica no celular (proposta de 2026-11-05): antes o resumo do celular a tirava do cartão. */}
-                  <div className="overflow-x-auto">
-                  <table className="w-full text-[13px]" data-celular="tabela">
+                  {/* No celular a tabela vira lista (proposta de 2026-11-05): o resumo do celular a tirava do cartão. */}
+                  <ul className="min-[861px]:hidden print:hidden divide-y divide-border text-[14px]">
+                    {linhasDoCartao(id, v.linhas).map((l) => (
+                      <li key={l.metrica} className="flex items-center justify-between gap-2 py-2">
+                        <span className="min-w-0">
+                          <span className="block">{eValor(l.metrica) ? 'Venda total' : l.rotulo}</span>
+                          <span className="block font-mono">{formatar(l, l.realizado)}{l.meta !== null && l.metrica !== 'pct_meta' && <span className="text-muted-foreground"> de {formatar(l, l.meta)}</span>}</span>
+                        </span>
+                        <FarolDaMeta cor={l.cor} />
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="overflow-x-auto max-[860px]:hidden print:block">
+                  <table className="w-full text-[13px]">
                     <thead>
                       <tr className="text-left text-muted-foreground">
                         <th className="py-1 font-medium">Indicador</th>
