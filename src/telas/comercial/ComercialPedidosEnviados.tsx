@@ -10,6 +10,7 @@
 //   * Região comum / proximidade — em "Todos", um cartão por situação, com o título e a soma do grupo;
 //   * Von Restorff — a cor diz o estado: devolvido em âmbar, cancelado em vermelho, finalizado em verde.
 import { useMemo, useState } from 'react';
+import { NotasParaResolver } from '@/components/comercial/NotasParaResolver';
 import { useNavigate } from 'react-router-dom';
 import { PackageCheck } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -89,6 +90,8 @@ export default function ComercialPedidosEnviados() {
             </Select>
           )}
         </div>
+
+        <NotasParaResolver />
 
         {isLoading ? <Skeleton className="h-64 w-full" /> : aba === 'todos' ? (
           buscados.length === 0 ? <Vazio /> : GRUPOS_DO_TODOS.map((g) => {

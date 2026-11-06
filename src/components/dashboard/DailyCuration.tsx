@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { AvisoDeNotasNoInicio } from '@/components/comercial/NotasParaResolver';
 import { ReguaDoDia } from './ReguaDoDia';
 import { PedidoPorVoz } from '@/components/request/PedidoPorVoz';
 import { useQueryClient } from '@tanstack/react-query';
@@ -488,6 +489,7 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
       <div className="grid grid-cols-12 gap-6 lg:gap-7 items-start">
         <div className="col-span-12 lg:col-span-7 xl:col-span-8 flex flex-col gap-6 lg:gap-7 min-w-0">
           {/* O que depende de você vem antes da lista (proposta de 2026-11-04, Parte 1; substitui a de 2026-10-28). */}
+          <AvisoDeNotasNoInicio />
           <LyraAvisa />
           {/* "Para fazer": UMA lista, na ordem do prazo (proposta aprovada, 2026-10-28), no cartão "Deals Details" da
               DashStack: título, a faixa do cabeçalho e uma linha por demanda. No celular cada linha tem duas linhas. */}

@@ -267,9 +267,9 @@ export default function ComercialCarteiras() {
               </ExplicacaoDoIndicador>
               <ExplicacaoDoIndicador id="carteira.a_faturar">
                 <Card className="p-3 h-full">
-                  <p className="text-[12px] text-muted-foreground">Pedido sem nota (a faturar)</p>
+                  <p className="text-[12px] text-muted-foreground">A faturar</p>
                   <p className="text-[18px] font-semibold font-mono">{formatBRL(totais.aFaturar)}</p>
-                  <p className="text-[12px] text-muted-foreground">fechado, ainda não faturado</p>
+                  <p className="text-[12px] text-muted-foreground">pedido aprovado sem nota · não conta na meta</p>
                 </Card>
               </ExplicacaoDoIndicador>
               <div className="col-span-full">
@@ -393,7 +393,7 @@ export default function ComercialCarteiras() {
                         sub={`${janelaAntes(base, meses12)}${meses12 < 12 ? ` (${meses12} ${meses12 === 1 ? 'mês' : 'meses'})` : ''}`} />
                       {analitico && <Coluna id="carteira.media_3m" direita titulo="Média 3 meses" sub={janelaAntes(base, meses3)} />}
                       <Coluna id="carteira.tendencia" titulo="Ritmo" sub={`últimos 3 meses (${janelaAntes(base, meses3)})`} />
-                      <Coluna id="carteira.a_faturar" direita titulo="Pedido sem nota" sub="a faturar" />
+                      <Coluna id="carteira.a_faturar" direita titulo="A faturar" sub="pedido aprovado sem nota" />
                       {analitico && <Coluna id="carteira.venda_12m" direita titulo="Venda 12 meses" sub="e meses com compra" />}
                       {analitico && <Coluna id="carteira.contatos" direita titulo="Contatos" sub={noRecorte} />}
                       <Coluna id="carteira.ultimo_contato" titulo="Último contato" sub={recorteRotulo.curto} />

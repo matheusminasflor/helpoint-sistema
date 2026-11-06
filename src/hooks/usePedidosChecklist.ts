@@ -4,6 +4,7 @@
 // Uma leitura só para as telas — a view `ped_checklists_situacao` (manual §3.6): situação, valor,
 // recusas e pagamento vêm prontos, e nenhuma tela recalcula.
 import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
+import type { SituacaoParaResolver } from '@/lib/notas-para-resolver';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { expectRows, unwrap, mensagemDeErro } from '@/lib/supabase-result';
@@ -99,6 +100,8 @@ export interface PedidoGravado {
   numero: string;
   /** O Nº da nota que o pedido gerou, informado depois do faturamento (`ped_informar_nota`). */
   nota_fiscal: string | null;
+  nota_valor: number | null;
+  nota_em: string | null;
   valor: number;
   desconto: number;
   espelho_total: number | null;
@@ -257,7 +260,7 @@ export function useChecklistDoLancamento(interacaoId: string | null) {
         .eq('interacao_id', interacaoId!).maybeSingle()) as unknown as ChecklistResumo | null;
       if (!resumo) return null;
       const pedidos = unwrap(await supabase.from('ped_pedidos')
-        .select('id, ordem, tipo, serie, filial, numero, nota_fiscal, valor, desconto, espelho_total, espelho_st, qtd_coloracao, qtd_tonalizante, importado_em, ped_respostas(item_id, resposta, justificativa, ped_itens(ordem))')
+        .select('id, ordem, tipo, serie, filial, numero, nota_fiscal, nota_valor, nota_em, valor, desconto, espelho_total, espelho_st, qtd_coloracao, qtd_tonalizante, importado_em, ped_respostas(item_id, resposta, justificativa, ped_itens(ordem))')
         .eq('checklist_id', resumo.id).order('ordem')) as unknown as PedidoGravado[];
       // As respostas na ordem dos itens, como a vendedora respondeu — a conferência e o PDF leem
       // daqui (visto na navegação de 2026-09-30: sem isto saíam na ordem em que o banco devolvia).
@@ -484,11 +487,35 @@ export function useSituacaoDasNotas(checklistId: string | null) {
   });
 }
 
+export interface NotaParaResolver {
+  pedido_id: string; checklist_id: string; interacao_id: string; protocolo: string; cliente_codigo: string; cliente: string;
+  vendedor_id: string; vendedor: string | null; filial: string; numero: string; tipo: string; valor_pedido: number;
+  aprovado_em: string | null; situacao: SituacaoParaResolver; nota_fiscal: string | null; nota_valor: number | null;
+  nota_em: string | null; forteplus_valor: number | null;
+}
+
+/** Os pedidos com nota para resolver: os da pessoa, ou de todos para quem vê todos (o banco decide). */
+export function useNotasDoComercial() {
+  const { tenantId, user } = useAuth();
+  return useQuery({
+    queryKey: [CHAVE, 'notas-para-resolver', tenantId, user?.id],
+    enabled: !!tenantId && !!user?.id,
+    queryFn: async () => ((unwrap(await supabase.rpc('ped_notas_do_comercial' as never)) ?? []) as unknown as NotaParaResolver[])
+      .map((n) => ({
+        ...n, valor_pedido: Number(n.valor_pedido),
+        nota_valor: n.nota_valor === null ? null : Number(n.nota_valor),
+        forteplus_valor: n.forteplus_valor === null ? null : Number(n.forteplus_valor),
+      })),
+  });
+}
+
 export function useInformarNota() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { pedidoId: string; nota: string }) =>
-      unwrap(await supabase.rpc('ped_informar_nota' as never, { p_pedido: input.pedidoId, p_nota: input.nota } as never)),
+    mutationFn: async (input: { pedidoId: string; nota: string; valor?: number | null; emissao?: string | null }) =>
+      unwrap(await supabase.rpc('ped_informar_nota' as never, {
+        p_pedido: input.pedidoId, p_nota: input.nota, p_valor: input.valor ?? null, p_emissao: input.emissao ?? null,
+      } as never)),
     onSuccess: () => {
       invalidar(qc);
       toast.success('Nota do pedido salva.');

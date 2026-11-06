@@ -173,8 +173,8 @@ select (select a from f), imp.id, 'MF', current_date, v.doc, v.serie, '5101', 'v
   from imp, (values ('9001', '75'), ('9003', '1')) v(doc, serie);
 
 select tests.authenticate_as('vendedora@pedck.test');
-select public.ped_informar_nota((select pedido1 from ck), '009001');
-select public.ped_informar_nota((select p.id from public.ped_pedidos p where p.checklist_id = (select checklist from ck) and p.ordem = 2), '9002');
+select public.ped_informar_nota((select pedido1 from ck), '009001', 100, (now() at time zone 'America/Sao_Paulo')::date);
+select public.ped_informar_nota((select p.id from public.ped_pedidos p where p.checklist_id = (select checklist from ck) and p.ordem = 2), '9002', 100, (now() at time zone 'America/Sao_Paulo')::date);
 select is((select string_agg(situacao, '|' order by ordem) from public.ped_situacao_das_notas((select checklist from ck))),
   'divergente|aguardando_importacao', 'a nota 9001 saiu na serie 75 (diverge) e a 9002 ainda nao chegou');
 select tests.clear_authentication();
@@ -183,7 +183,7 @@ select tests.authenticate_as('financeiro@pedck.test');
 select throws_ok($$ insert into public.ped_finalizacoes (checklist_id) values ((select checklist from ck)) $$,
   'P0001', null, 'nota na serie errada nao deixa finalizar');
 -- Corrigido no Forteplus (nota 9003, série 1): finaliza; a 9002 ainda não importada não trava.
-select public.ped_informar_nota((select pedido1 from ck), '9003');
+select public.ped_informar_nota((select pedido1 from ck), '9003', 100, (now() at time zone 'America/Sao_Paulo')::date);
 select is((select situacao from public.ped_situacao_das_notas((select checklist from ck)) where ordem = 1), 'ok',
   'o Financeiro informa a nota certa e ela confere');
 with x as (insert into public.ped_finalizacoes (checklist_id) values ((select checklist from ck)) returning checklist_id)
@@ -221,7 +221,7 @@ select throws_ok($$ insert into public.ped_decisoes (checklist_id, status, motiv
 select tests.clear_authentication();
 
 select tests.authenticate_as('vendedora@pedck.test');
-select lives_ok($$ select public.ped_informar_nota((select pedido1 from ck), '9003') $$, 'devolvido, a nota volta a poder ser trocada');
+select lives_ok($$ select public.ped_informar_nota((select pedido1 from ck), '9003', 100, (now() at time zone 'America/Sao_Paulo')::date) $$, 'devolvido, a nota volta a poder ser trocada');
 select public.ped_salvar_checklist((select interacao from ck), tests.ped_dados((select a from f)));
 select is((select versao || '|' || situacao || '|' || coalesce(pagamento_status, '-') from public.ped_checklists_situacao
             where id = (select checklist from ck)),

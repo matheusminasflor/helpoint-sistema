@@ -781,10 +781,10 @@ export const EXPLICACOES = {
     comoCalcula: 'Venda do mês ÷ meta do mês. Verde: bateu; âmbar: de 70% a 99%; vermelho: abaixo de 70%.',
   },
   'carteira.a_faturar': {
-    titulo: 'Pedido sem nota (a faturar)',
-    oQueE: 'Pedido fechado que ainda não tem nota fiscal — venda que vem aí.',
-    deOndeVem: 'O checklist do pedido ("Fechou pedido") nos lançamentos do mês.',
-    comoCalcula: 'Soma o valor dos pedidos tipo Venda dos lançamentos do mês que ainda não têm o Nº da nota. Quando a vendedora põe a nota, sai daqui e entra na Venda.',
+    titulo: 'A faturar',
+    oQueE: 'Pedido aprovado pelo Financeiro que ainda não tem nota. Não conta na meta.',
+    deOndeVem: 'Os pedidos tipo Venda aprovados, inclusive os de meses anteriores que continuam sem nota.',
+    comoCalcula: 'Soma o valor desses pedidos, com a parte da condição quando houver. Quando a nota é informada, ou encontrada na importação do Forteplus, o pedido sai daqui.',
   },
   'carteira.venda_cliente_mes': {
     titulo: 'Comprou no mês',

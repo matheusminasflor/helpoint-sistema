@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { todayISO } from '@/lib/dates';
 import {
   useInformarNota, useSituacaoDasNotas, type PedidoGravado, type SituacaoDaNota,
 } from '@/hooks/usePedidosChecklist';
@@ -23,6 +24,8 @@ export function NotasDosPedidos({ checklistId, pedidos, podeEditar }: {
   const { data: situacoes = [] } = useSituacaoDasNotas(checklistId);
   const informar = useInformarNota();
   const [digitado, setDigitado] = useState<Record<string, string>>({});
+  const [valores, setValores] = useState<Record<string, string>>({});
+  const [datas, setDatas] = useState<Record<string, string>>({});
   const comSerie = pedidos.filter((p) => p.serie);
   if (comSerie.length === 0) return null;
 
@@ -30,13 +33,19 @@ export function NotasDosPedidos({ checklistId, pedidos, podeEditar }: {
     <div className="rounded-lg border border-border p-3 space-y-2">
       <p className="text-[14px] font-semibold">Notas dos pedidos</p>
       <p className="text-[12px] text-muted-foreground">
-        Depois de faturar, informe o Nº da nota de cada pedido. Quando a nota chega na importação do Forteplus, o
+        Depois de faturar, informe o número, o valor faturado e a data de emissão da nota de cada pedido. Quando a nota chega na importação do Forteplus, o
         sistema confere a série e o tipo. Sem a nota, ou com a nota errada, o Financeiro não finaliza.
       </p>
       <ul className="divide-y divide-border">
         {comSerie.map((p) => {
           const s = situacoes.find((x) => x.pedido_id === p.id);
           const valor = digitado[p.id] ?? p.nota_fiscal ?? '';
+          const venda = p.tipo === 'Venda';
+          const valorNota = valores[p.id] ?? (p.nota_valor ? String(p.nota_valor).replace('.', ',') : '');
+          const valorNumero = Number(valorNota.replace(/\./g, '').replace(',', '.'));
+          const emissao = datas[p.id] ?? p.nota_em ?? '';
+          const incompleto = !!valor.trim() && venda && (!(valorNumero > 0) || !emissao || emissao > todayISO());
+          const igual = valor.trim() === (p.nota_fiscal ?? '') && valorNumero === Number(p.nota_valor ?? 0) && emissao === (p.nota_em ?? '');
           return (
             <li key={p.id} className="py-2 space-y-1">
               <div className="flex flex-wrap items-center gap-2 text-[13px]">
@@ -45,12 +54,20 @@ export function NotasDosPedidos({ checklistId, pedidos, podeEditar }: {
                 {s && <Badge variant="outline" className={`text-[12px] ${SELO[s.situacao].classe}`}>{SELO[s.situacao].rotulo}</Badge>}
               </div>
               {podeEditar ? (
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <Input className="h-8 w-36 font-mono" inputMode="numeric" placeholder="Nº da nota" aria-label={`Nº da nota do pedido ${p.ordem}`}
                     value={valor} onChange={(e) => setDigitado({ ...digitado, [p.id]: e.target.value })} />
+                  {venda && (
+                    <>
+                      <Input className="h-8 w-32 font-mono" inputMode="decimal" placeholder="Valor faturado" aria-label={`Valor faturado do pedido ${p.ordem}`}
+                        value={valorNota} onChange={(e) => setValores({ ...valores, [p.id]: e.target.value })} />
+                      <Input className="h-8 w-40" type="date" max={todayISO()} aria-label={`Data de emissão do pedido ${p.ordem}`}
+                        value={emissao} onChange={(e) => setDatas({ ...datas, [p.id]: e.target.value })} />
+                    </>
+                  )}
                   <Button size="sm" variant="outline" className="h-8"
-                    disabled={informar.isPending || valor.trim() === (p.nota_fiscal ?? '')}
-                    onClick={() => informar.mutate({ pedidoId: p.id, nota: valor })}>
+                    disabled={informar.isPending || igual || incompleto}
+                    onClick={() => informar.mutate({ pedidoId: p.id, nota: valor, valor: venda ? valorNumero : null, emissao: venda ? emissao : null })}>
                     Salvar nota
                   </Button>
                 </div>

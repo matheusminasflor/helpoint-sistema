@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { mensagemDeErro } from '@/lib/supabase-result';
 import { AlertTriangle, ClipboardList, Pencil, Plus, Trash2 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { FluxoDoLancamento } from '@/components/comercial/FluxoDoLancamento';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -100,10 +101,13 @@ export default function ComercialLancamentos() {
           <SeletorCompetencia competencia={competencia} onChange={setCompetencia} />
           {/* No celular fica preso embaixo, no alcance do polegar (dono, 2026-10-28, Lei de Fitts): é o que a vendedora faz o
               dia todo. */}
+          <span className="flex items-center gap-2">
+          <FluxoDoLancamento />
           <Button onClick={abrirNovo} size="lg"
             className="max-[860px]:fixed max-[860px]:inset-x-4 max-[860px]:bottom-[calc(68px+env(safe-area-inset-bottom))] max-[860px]:z-30 max-[860px]:shadow-elevated">
             <Plus className="w-4 h-4 mr-1.5" aria-hidden="true" /> Novo lançamento
           </Button>
+          </span>
         </div>
 
         {devolvidos.length > 0 && (
