@@ -7,10 +7,11 @@
 --  11    o realizado da vendedora lê a Venda total
 --  12    o realizado da Diretoria lê a Venda total
 --  13    o cashback do mês lê a Venda total
+--  14    quem tem duas carteiras soma as duas
 begin;
 \ir _helpers.psql
 
-select plan(13);
+select plan(14);
 
 select is(public.com_parte_da_condicao('VIP CONDICAO', '2026-10-01'), 1::numeric, 'VIP CONDICAO conta em outubro');
 select is(public.com_parte_da_condicao('ATACADISTA CONDIÇÃO', '2026-12-31'), 1::numeric, 'com acento tambem conta');
@@ -47,6 +48,8 @@ select is((select venda_total from public.com_composicao_da_venda('2026-09-01', 
 select is((select sum(faturado)::numeric from public.com_venda_atribuida('2026-10-01', '2026-10-31')), 2500::numeric, 'o realizado da vendedora le a Venda total');
 select is((select sum(realizado)::numeric from public.dir_realizado_carteiras(array[2026]) where mes = 10), 2500::numeric, 'a Diretoria le a Venda total');
 select is((select cashback::numeric from public.com_cashback_mensal(2026, null, 'C1') where competencia = '2026-10-01'), 200::numeric, 'o cashback le a Venda total');
+
+select is((select venda_total from public.com_composicao_da_venda('2026-10-01', '2026-10-31', 'OUTRA, X')), 2500::numeric, 'quem tem duas carteiras soma as duas');
 
 select * from finish();
 rollback;
