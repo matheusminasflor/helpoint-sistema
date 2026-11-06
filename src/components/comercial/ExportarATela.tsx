@@ -6,10 +6,14 @@ import { FileDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
-import { exportarTabelasDaTela } from '@/lib/tabela';
+import { exportarPlanilha, exportarTabelasDaTela } from '@/lib/tabela';
 import { todayISO } from '@/lib/dates';
 
-export function ExportarATela({ arquivo, setor = 'comercial' }: { arquivo: string; setor?: 'comercial' | 'diretoria' }) {
+export function ExportarATela({ arquivo, setor = 'comercial', linhas }: {
+  arquivo: string; setor?: 'comercial' | 'diretoria';
+  /** Para a tela que mostra listas, sem tabela: exporta estas linhas em vez de ler a tela. */
+  linhas?: Record<string, string | number | null>[];
+}) {
   const { can } = useDepartmentPermissions(setor);
   const [exportando, setExportando] = useState(false);
   if (!can(setor === 'comercial' ? 'reports' : 'exportar', setor === 'comercial' ? 'export' : 'view')) return null;
@@ -18,7 +22,8 @@ export function ExportarATela({ arquivo, setor = 'comercial' }: { arquivo: strin
     <Button variant="outline" size="sm" className="print:hidden max-[860px]:hidden" disabled={exportando} onClick={async () => {
       setExportando(true);
       try {
-        await exportarTabelasDaTela(`${arquivo}-${todayISO()}`, document.querySelector('main') ?? document);
+        if (linhas) exportarPlanilha(`${arquivo}-${todayISO()}`, linhas);
+        else await exportarTabelasDaTela(`${arquivo}-${todayISO()}`, document.querySelector('main') ?? document);
       } catch (e) {
         toast.error(e instanceof Error ? e.message : 'Não exportou.');
       } finally {

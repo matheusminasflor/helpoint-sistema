@@ -557,15 +557,15 @@ export function useClienteMesAMes(carteira: string | null, codigos: string[] | n
 export interface MesDaCarteira { mes: number; meta: number | null; venda: number; cor: CorFarol }
 
 /** Meta da Diretoria × venda lançada, os 12 meses do ano (manual §8.1). */
-export function useCarteiraMesAMes(carteira: string | null, ano: number) {
+export function useCarteiraMesAMes(carteira: string | null, ano: number, filial: FiltroFilial = '') {
   const { tenantId } = useAuth();
   return useQuery({
-    queryKey: ['comercial', 'carteira-mes-a-mes', tenantId, carteira, ano],
+    queryKey: ['comercial', 'carteira-mes-a-mes', tenantId, carteira, ano, filial],
     enabled: !!tenantId && !!carteira,
     queryFn: async (): Promise<MesDaCarteira[]> => {
       const linhas = unwrap(await supabase.rpc('com_carteira_mes_a_mes', {
-        p_carteira: carteira!, p_ano: ano,
-      })) as unknown as Array<{ mes: number; meta: unknown; venda: unknown; cor: CorFarol }>;
+        p_carteira: carteira!, p_ano: ano, p_filial: filial || null,
+      } as never)) as unknown as Array<{ mes: number; meta: unknown; venda: unknown; cor: CorFarol }>;
       return linhas.map((l) => ({ mes: l.mes, meta: numOuNulo(l.meta), venda: num(l.venda), cor: l.cor }));
     },
   });

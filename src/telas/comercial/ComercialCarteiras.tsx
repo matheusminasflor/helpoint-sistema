@@ -50,7 +50,9 @@ import { formatBRL, formatDateBR } from '@/types/financeiro';
 import { Link } from 'react-router-dom';
 import { useDoresEmAberto } from '@/hooks/useRaioX';
 import { useTenantPath } from '@/hooks/useTenantPath';
-import { linkRaioX } from '@/config/comercial-insights';
+import { linkFichaCliente, linkRaioX } from '@/config/comercial-insights';
+import { useCashbackDoCliente } from '@/hooks/useComercialCashback';
+import { ordenarPor, proximaOrdem, type Ordem } from '@/lib/tabela';
 import { ultimoDiaDoMes } from '@/lib/semanas-dos-artistas';
 import { rotuloDoMotivo } from '@/lib/raio-x';
 
@@ -109,6 +111,17 @@ const FILIAIS = [
 
 // Os direcionais (dono, 2026-10-15): "ter apontamento dos seus clientes e facilitar o comercial a quem procurar".
 // Cartões que filtram a lista; passar o mouse mostra quais. "Comprou menos": o recorte contra o anterior inteiro.
+const emCondicao = (l: LinhaAcompanhamento) => /CONDI/i.test(l.tabelas ?? '');
+function SeloCondicao() {
+  return <span className="ml-1.5 inline-block rounded px-1.5 text-[12px] font-normal badge-purple">Condição</span>;
+}
+
+const ORDENAR: Record<string, (l: LinhaAcompanhamento) => string | number | null> = {
+  cliente: (l) => l.grupo_nome, venda: (l) => l.venda_mes, media: (l) => l.media_12m, media3: (l) => l.media_3m,
+  ritmo: (l) => (l.media_12m > 0 ? l.media_3m / l.media_12m : null), aFaturar: (l) => l.a_faturar, venda12: (l) => l.venda_12m,
+  contatos: (l) => l.contatos_mes, ultimo: (l) => l.ultimo_contato, prazo: (l) => l.proximo_prazo,
+};
+
 const DIRECIONAIS = [
   { id: 'sem_contato', titulo: 'Sem contato', filtro: (l: LinhaAcompanhamento) => l.contatos_mes === 0 },
   { id: 'com_contato', titulo: 'Com contato', filtro: (l: LinhaAcompanhamento) => l.contatos_mes > 0 },
@@ -139,7 +152,7 @@ export default function ComercialCarteiras() {
   const mesIndice = Number(competencia.slice(5, 7));
 
   const { data: linhas = [], isLoading } = useAcompanhamentoDaCarteira(carteira, competencia, intervalo, filial);
-  const { data: meses = [] } = useCarteiraMesAMes(carteira, ano);
+  const { data: meses = [] } = useCarteiraMesAMes(carteira, ano, filial);
   const doMes = intervalo ? null : meses.find((m) => m.mes === mesIndice);
   const meta = doMes?.meta ?? null;
   const hoje = todayISO();
@@ -172,6 +185,17 @@ export default function ComercialCarteiras() {
     aFaturar: linhas.reduce((s, l) => s + l.a_faturar, 0),
   }), [linhas]);
   const clientesAFaturar = linhas.filter((l) => l.a_faturar > 0).length;
+  const paraExportar = visiveis.map((l) => ({
+    Cliente: l.grupo_nome, Situação: ROTULO_SITUACAO[l.situacao], Comprou: l.venda_mes, 'Média mensal': l.media_12m,
+    'A faturar': l.a_faturar, 'Último contato': l.ultimo_contato,
+  }));
+  // Ordenar por qualquer coluna: o clique no título alterna maior, menor e a ordem original.
+  const [ordem, setOrdem] = useState<Ordem | null>(null);
+  const ordenadas = useMemo(() => {
+    const valor = ordem ? ORDENAR[ordem.coluna] : undefined;
+    return valor && ordem ? ordenarPor(visiveis, valor, ordem.direcao) : visiveis;
+  }, [visiveis, ordem]);
+  const ordena = (coluna: string) => ({ ativa: ordem?.coluna === coluna ? ordem.direcao : null, alternar: () => setOrdem((o) => proximaOrdem(o, coluna)) });
   const tenantPath = useTenantPath();
 
   return (
@@ -220,7 +244,7 @@ export default function ComercialCarteiras() {
           </div>
           <div className="flex items-center gap-2 print:hidden">
             <SeletorVisao visao={visao} onChange={setVisao} />
-            <ExportarATela arquivo="carteiras" />
+            <ExportarATela arquivo="carteiras" linhas={analitico ? undefined : paraExportar} />
             <Button variant="outline" size="sm" onClick={() => window.print()}>
               <Printer className="w-4 h-4 mr-1.5" aria-hidden="true" /> Imprimir / PDF
             </Button>
@@ -280,35 +304,6 @@ export default function ComercialCarteiras() {
                   ate={intervalo?.ate ?? ultimoDiaDoMes(competencia)} />
               </div>
             </div>
-
-            {/* ── O ano: meta × venda mês a mês (só no Analítico) ─────────────────────── */}
-            {analitico && (
-              <Card className="p-4 overflow-x-auto">
-                <h2 className="text-sm font-semibold mb-2">
-                  {ano}, mês a mês{filial && <span className="font-normal text-muted-foreground"> (as duas filiais)</span>}
-                </h2>
-                <table className="w-full text-[13px]">
-                  <thead>
-                    <tr className="text-muted-foreground">
-                      <th className="py-1 pr-2 text-left font-medium" />
-                      {MESES_CURTOS.map((m, i) => (
-                        <th key={m} className={`py-1 px-1.5 text-right font-medium ${!intervalo && i + 1 === mesIndice ? 'text-foreground' : ''}`}>{m}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr className="border-t border-border">
-                      <td className="py-1.5 pr-2 text-muted-foreground">Meta</td>
-                      {meses.map((m) => <td key={m.mes} className="py-1.5 px-1.5 text-right font-mono">{m.meta === null ? '—' : formatBRL(m.meta)}</td>)}
-                    </tr>
-                    <tr className="border-t border-border">
-                      <td className="py-1.5 pr-2 text-muted-foreground">Venda</td>
-                      {meses.map((m) => <td key={m.mes} className="py-1.5 px-1.5 text-right font-mono">{m.venda ? formatBRL(m.venda) : '—'}</td>)}
-                    </tr>
-                  </tbody>
-                </table>
-              </Card>
-            )}
 
             <p className="text-[13px] text-muted-foreground">
               {totais.grupos} clientes · {totais.ativos} ativos · {totais.inativos} inativos · {totais.trabalhados} com contato {noRecorte}
@@ -383,28 +378,28 @@ export default function ComercialCarteiras() {
                   <span><span className="inline-block h-2 w-2 rounded-full bg-status-danger mr-1" />parado: sem compra há mais de 120 dias</span>
                   <span><span className="text-status-danger font-semibold">valor vermelho</span>: comprou menos que no mês anterior</span>
                   <span><span className="text-status-success font-semibold">valor verde</span>: comprou mais</span>
-                  <span>clique no nome do cliente para ver o mês a mês · toque ou passe o mouse no título da coluna para a explicação</span>
+                  <span>clique no nome do cliente para ver tudo dele · toque ou passe o mouse no título da coluna para a explicação</span>
                 </p>
                 <table className="w-full text-[13px]">
                   <thead>
                     <tr className="bg-secondary/60 text-left text-muted-foreground">
-                      <th className="px-3 py-2 font-semibold">Cliente</th>
-                      <Coluna id="carteira.venda_cliente_mes" direita
+                      <th className="px-3 py-2 font-semibold">Cliente <Seta {...ordena('cliente')} rotulo="Cliente" /></th>
+                      <Coluna id="carteira.venda_cliente_mes" direita ordem={ordena('venda')}
                         titulo={`Comprou ${recorteRotulo.curto}`}
                         sub={intervalo ? rotuloDoIntervalo(intervalo) : 'embaixo: o mês anterior'} />
-                      <Coluna id="carteira.media_12m" direita titulo="Média mensal"
+                      <Coluna id="carteira.media_12m" direita ordem={ordena('media')} titulo="Média mensal"
                         sub={`${janelaAntes(base, meses12)}${meses12 < 12 ? ` (${meses12} ${meses12 === 1 ? 'mês' : 'meses'})` : ''}`} />
-                      {analitico && <Coluna id="carteira.media_3m" direita titulo="Média 3 meses" sub={janelaAntes(base, meses3)} />}
-                      <Coluna id="carteira.tendencia" titulo="Ritmo" sub={`últimos 3 meses (${janelaAntes(base, meses3)})`} />
-                      <Coluna id="carteira.a_faturar" direita titulo="A faturar" sub="pedido aprovado sem nota" />
-                      {analitico && <Coluna id="carteira.venda_12m" direita titulo="Venda 12 meses" sub="e meses com compra" />}
-                      {analitico && <Coluna id="carteira.contatos" direita titulo="Contatos" sub={noRecorte} />}
-                      <Coluna id="carteira.ultimo_contato" titulo="Último contato" sub={recorteRotulo.curto} />
-                      {analitico && <Coluna id="carteira.proximo_prazo" titulo="Próximo prazo" />}
+                      {analitico && <Coluna id="carteira.media_3m" direita ordem={ordena('media3')} titulo="Média 3 meses" sub={janelaAntes(base, meses3)} />}
+                      <Coluna id="carteira.tendencia" ordem={ordena('ritmo')} titulo="Ritmo" sub={`últimos 3 meses (${janelaAntes(base, meses3)})`} />
+                      <Coluna id="carteira.a_faturar" direita ordem={ordena('aFaturar')} titulo="A faturar" sub="pedido aprovado sem nota" />
+                      {analitico && <Coluna id="carteira.venda_12m" direita ordem={ordena('venda12')} titulo="Venda 12 meses" sub="e meses com compra" />}
+                      {analitico && <Coluna id="carteira.contatos" direita ordem={ordena('contatos')} titulo="Contatos" sub={noRecorte} />}
+                      <Coluna id="carteira.ultimo_contato" ordem={ordena('ultimo')} titulo="Último contato" sub={recorteRotulo.curto} />
+                      {analitico && <Coluna id="carteira.proximo_prazo" ordem={ordena('prazo')} titulo="Próximo prazo" />}
                     </tr>
                   </thead>
                   <tbody>
-                    {visiveis.map((l) => {
+                    {ordenadas.map((l) => {
                       const vencido = !!l.proximo_prazo && l.proximo_prazo < hoje && l.status_ultimo_contato !== 'concluido';
                       const tendencia = CHIP_TENDENCIA[tendenciaDoCliente(l)];
                       const caiu = l.venda_mes_passado > 0 && l.venda_mes < l.venda_mes_passado;
@@ -417,6 +412,7 @@ export default function ComercialCarteiras() {
                               <span className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${COR_SITUACAO[l.situacao]}`}
                                 aria-label={ROTULO_SITUACAO[l.situacao]} title={ROTULO_SITUACAO[l.situacao]} />
                               <span className="font-medium">{l.grupo_nome}</span>
+                              {emCondicao(l) && <SeloCondicao />}
                             </button>
                             <p className="text-muted-foreground pl-[18px]">
                               {ROTULO_SITUACAO[l.situacao]}{l.ultima_compra ? ` · última compra ${formatDateBR(l.ultima_compra)}` : ''}
@@ -478,6 +474,35 @@ export default function ComercialCarteiras() {
                 </table>
               </Card>
             )}
+
+            {/* ── O ano: meta × venda mês a mês (só no Analítico) ─────────────────────── */}
+            {analitico && (
+              <Card className="p-4 overflow-x-auto">
+                <h2 className="text-sm font-semibold mb-2">
+                  {ano}, mês a mês{filial ? ` · ${filial}` : ''}
+                </h2>
+                <table className="w-full text-[13px]">
+                  <thead>
+                    <tr className="text-muted-foreground">
+                      <th className="py-1 pr-2 text-left font-medium" />
+                      {MESES_CURTOS.map((m, i) => (
+                        <th key={m} className={`py-1 px-1.5 text-right font-medium ${!intervalo && i + 1 === mesIndice ? 'text-foreground' : ''}`}>{m}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-t border-border">
+                      <td className="py-1.5 pr-2 text-muted-foreground">Meta</td>
+                      {meses.map((m) => <td key={m.mes} className="py-1.5 px-1.5 text-right font-mono">{m.meta === null ? '—' : formatBRL(m.meta)}</td>)}
+                    </tr>
+                    <tr className="border-t border-border">
+                      <td className="py-1.5 pr-2 text-muted-foreground">Venda</td>
+                      {meses.map((m) => <td key={m.mes} className="py-1.5 px-1.5 text-right font-mono">{m.venda ? formatBRL(m.venda) : '—'}</td>)}
+                    </tr>
+                  </tbody>
+                </table>
+              </Card>
+            )}
             </>)}
           </>
         )}
@@ -507,11 +532,7 @@ function AQuemProcurar({ linhas, noRecorte, aoAbrir, aoVerTudo }: {
     const dor = abertas.find((d) => l.codigos.includes(d.cliente_codigo));
     return dor ? rotuloDoMotivo(dor) : null;
   };
-  const usados = new Set<string>();
-  const pega = (f: (l: LinhaAcompanhamento) => boolean) => linhas
-    .filter((l) => !usados.has(l.grupo_chave) && f(l))
-    .sort((a, b) => b.media_12m - a.media_12m)
-    .map((l) => { usados.add(l.grupo_chave); return l; });
+  const pega = (f: (l: LinhaAcompanhamento) => boolean) => linhas.filter(f).sort((a, b) => b.media_12m - a.media_12m);
   const contato = (l: LinhaAcompanhamento) => (l.ultimo_contato ? `último contato ${formatDateBR(l.ultimo_contato)}` : 'nenhum contato');
   const grupos: { motivo: MotivoDeProcurar; titulo: string; cor: string; itens: LinhaAcompanhamento[]; porque: (l: LinhaAcompanhamento) => string }[] = [
     { motivo: 'parados', titulo: 'Parados', cor: 'bg-status-danger', itens: pega((l) => l.situacao === 'inativo'),
@@ -527,7 +548,7 @@ function AQuemProcurar({ linhas, noRecorte, aoAbrir, aoVerTudo }: {
   }
   return (
     <section className="space-y-3" aria-label="A quem procurar">
-      <h2 className="text-sm font-semibold">A quem procurar <span className="font-normal text-muted-foreground">· clique no cliente para ver o mês a mês</span></h2>
+      <h2 className="text-sm font-semibold">A quem procurar <span className="font-normal text-muted-foreground">· clique no cliente para ver tudo dele</span></h2>
       <div className="grid gap-3 lg:grid-cols-3">
         {grupos.map((g) => (
           <Card key={g.motivo} className="p-0 overflow-hidden">
@@ -540,7 +561,7 @@ function AQuemProcurar({ linhas, noRecorte, aoAbrir, aoVerTudo }: {
                 {g.itens.slice(0, MOSTRA).map((l) => (
                   <li key={l.grupo_chave}>
                     <button type="button" onClick={() => aoAbrir(l)} className="w-full text-left px-3 py-2 hover:bg-muted/50">
-                      <span className="block text-[14px] font-medium">{l.grupo_nome}</span>
+                      <span className="block text-[14px] font-medium">{l.grupo_nome}{emCondicao(l) && <SeloCondicao />}</span>
                       <span className="block text-[12px] text-muted-foreground">{g.porque(l)}</span>
                       {motivoDe(l) && <span className="mt-0.5 inline-block rounded px-1.5 text-[12px] badge-danger">{motivoDe(l)}</span>}
                     </button>
@@ -621,8 +642,18 @@ function ComoLer({ corte }: { corte: string | null }) {
 }
 
 /** O título da coluna com a explicação ao passar o mouse (dono, 2026-10-15: "de onde vem cada número"). */
-function Coluna({ id, titulo, sub, direita }: {
-  id: Parameters<typeof ExplicacaoDoIndicador>[0]['id']; titulo: string; sub?: string; direita?: boolean;
+interface OrdemDaColuna { ativa: 'asc' | 'desc' | null; alternar: () => void }
+
+function Seta({ ativa, alternar, rotulo }: OrdemDaColuna & { rotulo: string }) {
+  return (
+    <button type="button" onClick={alternar} aria-label={`Ordenar por ${rotulo}`} className="px-1 min-h-6 text-muted-foreground hover:text-foreground print:hidden">
+      {ativa === 'asc' ? '↑' : ativa === 'desc' ? '↓' : '↕'}
+    </button>
+  );
+}
+
+function Coluna({ id, titulo, sub, direita, ordem }: {
+  id: Parameters<typeof ExplicacaoDoIndicador>[0]['id']; titulo: string; sub?: string; direita?: boolean; ordem?: OrdemDaColuna;
 }) {
   return (
     <th className={`px-3 py-2 font-semibold ${direita ? 'text-right' : ''}`}>
@@ -630,6 +661,7 @@ function Coluna({ id, titulo, sub, direita }: {
         {titulo}
         {sub && <p className="font-normal text-[12px] no-underline">{sub}</p>}
       </ExplicacaoDoIndicador>
+      {ordem && <Seta {...ordem} rotulo={titulo} />}
     </th>
   );
 }
@@ -644,6 +676,9 @@ function ClienteMesAMes({ linha, onClose, carteira, competencia, intervalo, fili
   const ate = intervalo?.ate ?? toLocalISODate(new Date(inicio.getFullYear(), inicio.getMonth() + 1, 0));
   const { data: meses = [], isLoading } = useClienteMesAMes(carteira, linha?.codigos ?? null, de, ate, filial);
   const tenantPath = useTenantPath();
+  const { data: abertas = [] } = useDoresEmAberto();
+  const dor = abertas.find((d) => linha?.codigos.includes(d.cliente_codigo));
+  const { data: cashback } = useCashbackDoCliente(linha?.codigos[0] ?? null, Number(ate.slice(0, 4)), filial || null);
   const maior = Math.max(0, ...meses.map((m) => m.venda));
   const total = meses.reduce((s, m) => s + m.venda, 0);
   return (
@@ -653,9 +688,19 @@ function ClienteMesAMes({ linha, onClose, carteira, competencia, intervalo, fili
           <DialogTitle>{linha?.grupo_nome}</DialogTitle>
         </DialogHeader>
         {linha?.codigos[0] && (
-          <Button asChild variant="outline" size="sm" className="justify-self-start">
-            <Link to={tenantPath(linkRaioX(linha.codigos[0]))}>Abrir Raio-X</Link>
-          </Button>
+          <>
+            <dl className="grid grid-cols-2 gap-2 text-[13px]">
+              <div className="rounded-md border border-border p-2"><dt className="text-muted-foreground">A faturar</dt><dd className="font-mono font-semibold">{formatBRL(linha.a_faturar)}</dd></div>
+              <div className="rounded-md border border-border p-2"><dt className="text-muted-foreground">Cashback liberado no ano</dt><dd className="font-mono font-semibold">{formatBRL(cashback?.resumo?.cashback_liberado ?? 0)}</dd></div>
+              <div className="rounded-md border border-border p-2"><dt className="text-muted-foreground">Dor em aberto</dt><dd className={dor ? 'text-status-danger font-semibold' : ''}>{dor ? rotuloDoMotivo(dor) : 'Nenhuma'}</dd></div>
+              <div className="rounded-md border border-border p-2"><dt className="text-muted-foreground">Próximo retorno</dt><dd>{linha.proximo_prazo ? formatDateBR(linha.proximo_prazo) : 'Sem retorno'}</dd></div>
+            </dl>
+            <div className="flex flex-wrap gap-2">
+              <Button asChild size="sm"><Link to={tenantPath(linkRaioX(linha.codigos[0]))}>Abrir Raio-X</Link></Button>
+              <Button asChild variant="outline" size="sm"><Link to={tenantPath(linkFichaCliente(linha.codigos[0]))}>Abrir ficha completa</Link></Button>
+              <Button asChild variant="outline" size="sm"><Link to={tenantPath('/comercial/lancamentos')}>Novo lançamento</Link></Button>
+            </div>
+          </>
         )}
         <p className="text-[13px] text-muted-foreground">
           Venda mês a mês de {formatDateBR(de)} a {formatDateBR(ate)}{filial ? ` · ${filial}` : ' · as duas filiais'}.
