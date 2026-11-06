@@ -89,7 +89,7 @@ export default function DetalheDaSolicitacao() {
 
   // Rodada 3, decisão 4: quem só PEDIU (não decide, não aprova) vê as três etapas traduzidas, sem o gestor no meio.
   const soPediu = souEu && !setorDecide && !gestor && !admin;
-  const podeRecusar = !terminou(s.tipo, s.etapa) && (
+  const podeRecusar = s.tipo !== 'rh_ferias' && s.tipo !== 'rh_atestado' && !terminou(s.tipo, s.etapa) && (
     (s.etapa === 'pedido' && pedeGestor && gestor)
     || (setorDecide && ((s.etapa === 'pedido' && !pedeGestor) || ['aceita', 'aprovada', 'em_andamento'].includes(s.etapa))));
 
@@ -205,7 +205,10 @@ export default function DetalheDaSolicitacao() {
             {s.tipo === 'adiantamento' && s.etapa === 'prestando_contas' && setorDecide && (
               <Button className="w-full" disabled={agir.isPending} onClick={() => fazer('concluir')}>Conferido</Button>
             )}
-            {s.setor === 'rh' && setorDecide && !recusando && (s.etapa === 'pedido' || s.etapa === 'em_andamento') && (
+            {(s.tipo === 'rh_ferias' || s.tipo === 'rh_atestado') && setorDecide && s.etapa === 'pedido' && (
+              <Button asChild className="w-full"><Link to={tenantPath('/rh/aprovacoes')}>Decidir em Aprovações</Link></Button>
+            )}
+            {s.setor === 'rh' && s.tipo !== 'rh_ferias' && s.tipo !== 'rh_atestado' && setorDecide && !recusando && (s.etapa === 'pedido' || s.etapa === 'em_andamento') && (
               <div className="flex flex-col gap-2">
                 {s.etapa === 'pedido' && <Button variant="outline" disabled={agir.isPending} onClick={() => fazer('andamento')}>Pôr em andamento</Button>}
                 <Button disabled={agir.isPending} onClick={() => fazer('concluir', motivo || undefined)}>Concluir</Button>

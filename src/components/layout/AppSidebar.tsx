@@ -108,9 +108,8 @@ const qualidadeMenuItems: MenuItem[] = [
 ];
 
 const rhMenuItems: MenuItem[] = [
-  { to: '/rh/chamados', icon: Ticket, label: 'Fila de chamados', title: 'Fila de chamados de RH', secao: DIA },
+  { to: '/rh/solicitacoes', icon: ClipboardList, label: 'Pedidos ao RH', title: 'Tudo o que pedem ao RH', secao: DIA },
   { to: '/rh/aprovacoes', icon: CheckCircle2, label: 'Aprovações', secao: DIA },
-  { to: '/rh/solicitacoes', icon: ClipboardList, label: 'Pedidos ao RH', title: 'Dados, benefício, documento, dúvida de folha e conversa confidencial', secao: DIA },
   { to: '/rh/faltas', icon: CalendarOff, label: 'Faltas e Atestados', secao: DIA },
   { to: '/rh/colaboradores', icon: Users, label: 'Colaboradores', secao: 'Pessoas' },
   { to: '/rh/folha', icon: Banknote, label: 'Folha de Pagamento', secao: 'Pessoas' },
@@ -356,7 +355,7 @@ export const getBreadcrumb = (pathnameRaw: string): { label: string; path?: stri
   } else if (pathname.startsWith('/qualidade')) {
     push('Qualidade', '/qualidade/chamados', qualidadeMenuItems);
   } else if (pathname.startsWith('/rh')) {
-    push('RH', '/rh/chamados', rhMenuItems);
+    push('RH', '/rh/solicitacoes', rhMenuItems);
   } else if (pathname.startsWith('/financeiro')) {
     push('Financeiro', '/financeiro/contas-a-pagar', financeiroMenuItems);
   } else if (pathname.startsWith('/crm')) {
@@ -538,7 +537,7 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
     { id: 'empresa',   label: 'Empresa',      icon: Building, items: inicioMenuItems(modules.showPortal).filter((i) => DA_EMPRESA.includes(i.to)), show: true, home: '/jornal' },
     { id: 'ti',        label: 'TI',           icon: Monitor,     items: withoutConfig(tiMenuItems, 'ti'),        show: modules.showTI,        home: '/ti/chamados' },
     { id: 'qualidade', label: 'Qualidade',    icon: ShieldCheck, items: withoutConfig(qualidadeMenuItems, 'qualidade'), show: modules.showQuality,   home: '/qualidade/chamados' },
-    { id: 'rh',        label: 'RH',           icon: Users,       items: withoutConfig(rhMenuItems, 'rh'),        show: modules.showRH,        home: '/rh/chamados' },
+    { id: 'rh',        label: 'RH',           icon: Users,       items: withoutConfig(rhMenuItems, 'rh'),        show: modules.showRH,        home: '/rh/solicitacoes' },
     { id: 'mkt',       label: 'Marketing',    icon: Megaphone,   items: withoutConfig(mktMenuItems, 'marketing'),       show: modules.showMarketing, home: '/mkt/chamados' },
     { id: 'financeiro', label: 'Financeiro',   icon: Banknote,    items: withoutConfig(financeiroMenuItems, 'financeiro'), show: modules.showFinanceiro, home: '/financeiro/contas-a-pagar' },
     // Compras, grupo próprio desde 2026-09-27 (leva N). A configuração dele (LEVA P) mora em

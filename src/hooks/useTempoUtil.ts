@@ -11,6 +11,19 @@ export async function lerTempoUtil(ids: string[]) {
   return new Map((linhas ?? []).map((l) => [l.ticket_id, l]));
 }
 
+export function useTempoDasSolicitacoes(ids: string[]) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['solicitacoes-tempo-util', tenantId, ids],
+    enabled: !!tenantId && ids.length > 0,
+    refetchInterval: 60_000,
+    queryFn: async () => {
+      const linhas = unwrap(await supabase.rpc('solicitacoes_tempo_util' as never, { p_ids: ids } as never)) as unknown as (TempoUtil & { solicitacao_id: string })[] | null;
+      return new Map((linhas ?? []).map((l) => [l.solicitacao_id, l]));
+    },
+  });
+}
+
 export function useTempoUtil(ids: string[]) {
   const { tenantId } = useAuth();
   return useQuery({

@@ -32,7 +32,6 @@ export const ABAS_DE_CONFIGURACAO: Record<Department, AbaDeConfiguracao[]> = {
     { aba: 'sac_campos', rotulo: 'SAC: campos do formulário' },
   ],
   rh: [
-    CHAMADOS,
     { aba: 'empresas', rotulo: 'Empresas' },
     { aba: 'departamentos', rotulo: 'Departamentos' },
     { aba: 'folha', rotulo: 'Parâmetros da folha' },

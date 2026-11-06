@@ -249,7 +249,7 @@ export function StaffAppRoutes() {
       <Route path="qualidade/chamados" element={S(<QualidadeChamados />)} />
       <Route path="qualidade/chamados/:id" element={S(<TicketDetail />)} />
       <Route path="qualidade/configuracoes" element={S(<RequireConfigDoSetor><QualidadeSettings /></RequireConfigDoSetor>)} />
-      <Route path="rh" element={<Navigate to="chamados" replace />} />
+      <Route path="rh" element={<Navigate to="solicitacoes" replace />} />
       <Route path="rh/chamados" element={S(<TechnicianView module="rh" />)} />
       <Route path="rh/chamados/:id" element={S(<TicketDetail />)} />
       <Route path="rh/indicadores" element={S(<RHRelatorios />)} />

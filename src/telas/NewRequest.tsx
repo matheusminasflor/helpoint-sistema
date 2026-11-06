@@ -4,6 +4,7 @@ import {
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { DepartmentGrid } from '@/components/request/DepartmentGrid';
+import { AssuntosDoRH } from '@/components/request/AssuntosDoRH';
 import { AssuntosDoSetor } from '@/components/request/AssuntosDoSetor';
 import { PedidoPorVoz } from '@/components/request/PedidoPorVoz';
 import { CreateTicketForm } from '@/components/helpdesk/CreateTicketForm';
@@ -138,7 +139,9 @@ export default function NewRequest() {
     return (
       <div className="min-h-full bg-background">
         {barraDeVoltar('Setores')}
-        <AssuntosDoSetor modulo={modulo} onEscolher={escolherAssunto} />
+        {modulo === 'rh'
+          ? <AssuntosDoRH onEscolher={(tipo) => navigate(tenantPath(`/solicitacoes?novo=${tipo}`))} />
+          : <AssuntosDoSetor modulo={modulo} onEscolher={escolherAssunto} />}
       </div>
     );
   }

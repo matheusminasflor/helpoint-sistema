@@ -18,6 +18,9 @@ import { TopRequestersCard } from '@/components/dashboard/TopRequestersCard';
 import { PatternsAnalysis } from '@/components/ti/PatternsAnalysis';
 import { LinhaAgendaEAjuda } from '@/components/dashboard/AjudaAOutrosSetoresKPI';
 import { useTicketMetrics, useTicketTrends, MetricsFilter, filtroDoPeriodo, intervaloDoFiltro } from '@/hooks/useHelpdeskMetrics';
+import { useSolicitacoesDoSetor } from '@/hooks/useSolicitacoes';
+import { indicadoresDasSolicitacoes } from '@/lib/indicadores-das-solicitacoes';
+import { toLocalISODate } from '@/lib/dates';
 import {
   Ticket, CheckCircle2, Clock, AlertTriangle,
 } from 'lucide-react';
@@ -44,6 +47,11 @@ export default function RHRelatorios() {
 
   const { data: metrics, isLoading } = useTicketMetrics(filter);
   const { data: trends } = useTicketTrends(filter);
+  const { data: solicitacoes = [] } = useSolicitacoesDoSetor('rh');
+  const { de, ate } = intervaloDoFiltro(filter);
+  const pedidos = useMemo(() => indicadoresDasSolicitacoes(
+    solicitacoes.filter((s) => { const dia = toLocalISODate(new Date(s.created_at)); return dia >= de && dia <= ate; }), new Date(),
+  ), [solicitacoes, de, ate]);
 
   const priorityData = useMemo(() => Object.entries(metrics?.byPriority || {}).map(([k, v]) => ({
     name: PRIORITY_LABEL[k] || k, value: v, color: PRIORITY_COLORS[k] || COR.eixo,
@@ -57,7 +65,7 @@ export default function RHRelatorios() {
     <div className="px-4 lg:px-8 pb-6 w-full">
       <DashboardHeader
         title="Indicadores de RH"
-        subtitle="As pessoas da empresa (quantas, entradas e saídas, faltas, folha e férias) e os chamados do RH."
+        subtitle="As pessoas da empresa (quantas, entradas e saídas, faltas, folha e férias) e os pedidos ao RH."
         actions={<TutorialDoRelatorio id="rh-indicadores" />}
         period={periodo}
         onPeriodChange={(v) => escolher(v, intervaloDoFiltro(filter))}
@@ -87,7 +95,15 @@ export default function RHRelatorios() {
             <IndicadoresDePessoas {...intervaloDoFiltro(filter)} />
           </section>
 
-          <h2 className="text-[14px] font-semibold text-muted-foreground">Chamados do RH</h2>
+          <h2 className="text-[14px] font-semibold text-muted-foreground">Pedidos ao RH</h2>
+          <KPIGrid lgCols={4}>
+            <KPICard value={pedidos.total} label="Pedidos no período" icon={Ticket} color="blue" />
+            <KPICard value={pedidos.noPrazo === null ? '—' : `${pedidos.noPrazo}%`} label="Concluídos no prazo" icon={CheckCircle2} color="green" />
+            <KPICard value={pedidos.atrasadas} label="Em aberto com prazo vencido" icon={AlertTriangle} color="red" />
+            <KPICard value={pedidos.tempoMedio === null ? '—' : `${pedidos.tempoMedio}h`} label="Tempo médio até concluir" icon={Clock} color="purple" />
+          </KPIGrid>
+
+          <h2 className="text-[14px] font-semibold text-muted-foreground">Chamados antigos do RH</h2>
           {isLoading ? (
             <KPIGrid lgCols={4}>{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-20 w-full" />)}</KPIGrid>
           ) : (

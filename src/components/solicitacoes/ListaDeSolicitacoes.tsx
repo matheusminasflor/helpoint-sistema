@@ -6,6 +6,8 @@ import { useTenantPath } from '@/hooks/useTenantPath';
 import { ROTULO_DA_ETAPA, TIPOS, deQuemEAVez, terminou } from '@/config/solicitacoes';
 import type { Solicitacao } from '@/hooks/useSolicitacoes';
 import { haQuantoTempo, todayISO } from '@/lib/dates';
+import { useTempoDasSolicitacoes } from '@/hooks/useTempoUtil';
+import { getSLATimeRemaining } from '@/types/helpdesk';
 import { formatBRL } from '@/types/financeiro';
 import { cn } from '@/lib/utils';
 
@@ -18,6 +20,7 @@ export function ListaDeSolicitacoes({ linhas, carregando, vazio, mostrarQuem = t
 }) {
   const tenantPath = useTenantPath();
   const hoje = todayISO();
+  const { data: tempo } = useTempoDasSolicitacoes(linhas.filter((s) => s.sla_due_at && !terminou(s.tipo, s.etapa)).map((s) => s.id));
   if (carregando) return <div className="space-y-1">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}</div>;
   if (linhas.length === 0) return <EmptyState icon={ClipboardList} title={vazio} description="" />;
   return (
@@ -25,6 +28,8 @@ export function ListaDeSolicitacoes({ linhas, carregando, vazio, mostrarQuem = t
       {linhas.map((s) => {
         const vez = terminou(s.tipo, s.etapa) ? null : deQuemEAVez(s.tipo, s.etapa);
         const atrasada = !!s.preciso_ate && s.preciso_ate < hoje && !terminou(s.tipo, s.etapa) && s.etapa !== 'entregue';
+        const prazo = s.sla_due_at && !terminou(s.tipo, s.etapa)
+          ? getSLATimeRemaining(s.sla_due_at, { status: 'open', created_at: s.created_at }, tempo?.get(s.id)) : null;
         return (
           <li key={s.id}>
             <Link to={tenantPath(`/solicitacoes/${s.id}`)} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 hover:bg-muted/40">
@@ -40,6 +45,7 @@ export function ListaDeSolicitacoes({ linhas, carregando, vazio, mostrarQuem = t
               <span className="text-right text-[13px] shrink-0">
                 <span className={cn('block', s.etapa === 'recusada' ? 'text-status-danger' : 'text-foreground')}>{ROTULO_DA_ETAPA[s.etapa]}</span>
                 <span className="block text-muted-foreground tabular-nums">{vez ? `${vez} · ` : ''}{haQuantoTempo(s.atualizada_em)}</span>
+                {prazo && <span className={cn('block tabular-nums', prazo.isOverdue ? 'text-status-danger font-semibold' : 'text-muted-foreground')}>{prazo.label}</span>}
               </span>
             </Link>
           </li>

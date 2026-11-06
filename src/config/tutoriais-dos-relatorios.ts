@@ -171,8 +171,8 @@ export const TUTORIAIS = {
   },
   'rh-indicadores': {
     titulo: 'RH › Indicadores',
-    oQueE: 'Os chamados do RH e o quadro de pessoas.',
-    deOndeVem: 'A fila de chamados do RH e o cadastro de colaboradores.',
+    oQueE: 'Os pedidos ao RH e o quadro de pessoas.',
+    deOndeVem: 'As Solicitações do RH, os chamados antigos e o cadastro de colaboradores.',
     comoLer: ['Escolha o período no topo.'],
   },
   'qualidade-indicadores': {

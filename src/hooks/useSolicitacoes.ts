@@ -23,6 +23,9 @@ export interface Solicitacao {
   dados: Record<string, unknown>;
   valor: number | null;
   preciso_ate: string | null;
+  /** O prazo em expediente do setor: hoje só o RH tem. */
+  sla_due_at: string | null;
+  encerrada_em: string | null;
   etapa: EtapaDaSolicitacao;
   motivo_recusa: string | null;
   /** A conta a pagar que o reembolso/adiantamento aprovado gerou (`solicitacao_agir`). */

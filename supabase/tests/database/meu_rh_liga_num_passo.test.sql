@@ -45,7 +45,7 @@ select is((select ticket from r), null, 'ligado: o pedido nao abre chamado');
 
 select tests.clear_authentication();
 select is(
-  (select count(*)::int from public.notifications where user_id = (select rh from u) and reference_type = 'rh_aprovacao'),
+  (select count(*)::int from public.notifications where user_id = (select rh from u) and reference_type = 'solicitacao' and title like 'Férias%'),
   1, 'e quem decide no RH recebe o aviso');
 
 select * from finish();

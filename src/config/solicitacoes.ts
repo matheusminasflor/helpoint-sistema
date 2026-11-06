@@ -3,7 +3,8 @@
 
 export type TipoDeSolicitacao =
   | 'arte' | 'acesso' | 'reembolso' | 'adiantamento' | 'compra'
-  | 'rh_dados' | 'rh_beneficio' | 'rh_documento' | 'rh_duvida' | 'rh_confidencial';
+  | 'rh_dados' | 'rh_beneficio' | 'rh_documento' | 'rh_duvida' | 'rh_confidencial'
+  | 'rh_ferias' | 'rh_atestado' | 'rh_ponto' | 'rh_admissao' | 'rh_desligamento' | 'rh_outro';
 
 export type EtapaDaSolicitacao =
   | 'pedido' | 'aceita' | 'aprovada' | 'em_andamento' | 'paga' | 'prestando_contas'
@@ -86,7 +87,38 @@ export const TIPOS: Record<TipoDeSolicitacao, ConfigDoTipo> = {
     setor: 'rh', etapas: [['pedido', 'Recebida'], ['em_andamento', 'Em conversa'], ['concluida', 'Encerrada']],
     rotuloDoTitulo: 'Assunto', dicaDoTitulo: 'Pode ser só uma palavra',
   },
+  rh_ferias: {
+    rotulo: 'Férias', descricao: 'Período desejado, 1/3 e 13º', setor: 'rh',
+    etapas: [['pedido', 'Pedido'], ['concluida', 'Aprovadas']], rotuloDoTitulo: 'Férias', dicaDoTitulo: '',
+  },
+  rh_atestado: {
+    rotulo: 'Atestado', descricao: 'Foto ou PDF do atestado e os dias', setor: 'rh',
+    etapas: [['pedido', 'Enviado'], ['concluida', 'Validado']], rotuloDoTitulo: 'Atestado', dicaDoTitulo: '',
+  },
+  rh_ponto: {
+    rotulo: 'Ponto e banco de horas', descricao: 'Ajuste, abono ou dúvida', setor: 'rh',
+    etapas: [['pedido', 'Pedido'], ['em_andamento', 'Em análise'], ['concluida', 'Ajustado']], rotuloDoTitulo: 'Ponto', dicaDoTitulo: '',
+  },
+  rh_admissao: {
+    rotulo: 'Admissão', descricao: 'Para gestores: quem entra e os acessos dessa pessoa', setor: 'rh',
+    etapas: [['pedido', 'Pedido'], ['em_andamento', 'Em andamento'], ['concluida', 'Concluída']], rotuloDoTitulo: 'Admissão', dicaDoTitulo: '',
+  },
+  rh_desligamento: {
+    rotulo: 'Desligamento', descricao: 'Para gestores: o RH é acionado e a TI confere os equipamentos', setor: 'rh',
+    etapas: [['pedido', 'Pedido'], ['em_andamento', 'Em andamento'], ['concluida', 'Concluído']], rotuloDoTitulo: 'Desligamento', dicaDoTitulo: '',
+  },
+  rh_outro: {
+    rotulo: 'Outro assunto', descricao: 'O que não couber nos assuntos acima', setor: 'rh',
+    etapas: [['pedido', 'Pedido'], ['em_andamento', 'Em análise'], ['concluida', 'Concluído']],
+    rotuloDoTitulo: 'Do que você precisa', dicaDoTitulo: 'Ex.: dúvida sobre treinamento',
+  },
 };
+
+/** Novo › RH, na ordem da proposta aprovada em 2026-11-06: o RH atende só por Solicitações. */
+export const ASSUNTOS_DO_RH: TipoDeSolicitacao[] = [
+  'rh_ferias', 'rh_atestado', 'rh_ponto', 'rh_duvida', 'rh_beneficio', 'rh_documento', 'rh_dados', 'rh_confidencial',
+  'rh_admissao', 'rh_desligamento', 'rh_outro',
+];
 
 /**
  * Os pedidos com formulário próprio que o "Novo" ainda abre (os do RH ficam no Meu RH). Rodada 3 (2026-10-26): arte e
@@ -139,7 +171,7 @@ export const terminou = (tipo: TipoDeSolicitacao, etapa: EtapaDaSolicitacao) =>
 /**
  * As categorias de chamado que viraram pedido (decisão do dono, 2026-10-25: "sai da grade e leva ao pedido"). Quem
  * escolhe ou procura por elas no abrir chamado cai no pedido. Os chamados antigos dessas categorias seguem até o fim.
- * As do RH entram quando o Meu RH ligar.
+ * As do RH viraram todas pedido em 2026-11-06: a categoria antiga leva ao assunto equivalente.
  */
 const VIROU_PEDIDO: Array<{ modulo: string; nome: string; tipo: TipoDeSolicitacao }> = [
   // Rodada 3: "Criação de Arte" (Marketing) e os acessos (TI) voltaram a ser assunto de chamado.
@@ -148,8 +180,17 @@ const VIROU_PEDIDO: Array<{ modulo: string; nome: string; tipo: TipoDeSolicitaca
 ];
 const semAcento = (t: string) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 
-export function categoriaVirouPedido(modulo: string, nome: string): TipoDeSolicitacao | null {
+export function categoriaVirouPedido(modulo: string, nome_: string): TipoDeSolicitacao | null {
   // Toda categoria de Compras é um tipo de compra, e a compra é pedido (rodada 2, decisão 2).
   if (modulo === 'compras') return 'compra';
-  return VIROU_PEDIDO.find((v) => v.modulo === modulo && v.nome === semAcento(nome))?.tipo ?? null;
+  if (modulo === 'rh') {
+    const nome = semAcento(nome_);
+    if (nome.startsWith('ferias')) return 'rh_ferias';
+    if (nome.startsWith('atestado')) return 'rh_atestado';
+    if (nome.startsWith('ponto')) return 'rh_ponto';
+    if (nome.startsWith('folha')) return 'rh_duvida';
+    if (nome.startsWith('admissao')) return 'rh_admissao';
+    return 'rh_outro';
+  }
+  return VIROU_PEDIDO.find((v) => v.modulo === modulo && v.nome === semAcento(nome_))?.tipo ?? null;
 }

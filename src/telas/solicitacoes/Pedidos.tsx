@@ -11,11 +11,12 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ListaDeSolicitacoes } from '@/components/solicitacoes/ListaDeSolicitacoes';
 import { NovoPedidoDialog } from '@/components/solicitacoes/NovoPedidoDialog';
+import { NovoPedidoDoRH, TIPOS_DO_FORMULARIO_DO_RH } from '@/components/solicitacoes/NovoPedidoDoRH';
 import { PedirCompraDialog } from '@/components/solicitacoes/PedirCompraDialog';
 import { useMinhasSolicitacoes, useParaEuAprovar } from '@/hooks/useSolicitacoes';
 import { useQueryState } from '@/hooks/useQueryState';
 import { useTenantPath } from '@/hooks/useTenantPath';
-import { TIPOS, TIPOS_DA_PORTA, terminou, type TipoDeSolicitacao } from '@/config/solicitacoes';
+import { ASSUNTOS_DO_RH, TIPOS, TIPOS_DA_PORTA, terminou, type TipoDeSolicitacao } from '@/config/solicitacoes';
 
 export default function Pedidos() {
   const navigate = useNavigate();
@@ -37,7 +38,7 @@ export default function Pedidos() {
   return (
     <div className="flex flex-col min-h-full">
       <PageHeader title="Pedidos" icon={ClipboardList}
-        description="Compra, arte, acesso, reembolso e adiantamento: o que você pediu, em que etapa está e com quem."
+        description="Compra, RH, reembolso e adiantamento: o que você pediu, em que etapa está e com quem."
         actions={<Button onClick={() => setEscolhendo(true)}><Plus className="w-4 h-4 mr-1.5" aria-hidden="true" />Novo pedido</Button>} />
       <div className="p-4 lg:p-6 space-y-4">
         <Tabs value={aba} onValueChange={setAba}>
@@ -71,7 +72,7 @@ export default function Pedidos() {
             <DialogDescription>Algo quebrou ou precisa de ajuda de um setor? Isso é chamado, em Novo › Chamado.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-2 sm:grid-cols-2">
-            {(['compra', ...TIPOS_DA_PORTA] as TipoDeSolicitacao[]).map((t) => (
+            {(['compra', ...TIPOS_DA_PORTA, ...ASSUNTOS_DO_RH] as TipoDeSolicitacao[]).map((t) => (
               <button key={t} type="button" onClick={() => { setEscolhendo(false); setNovo(t); }}
                 className="rounded-lg border border-border p-3 text-left min-h-11 hover:bg-muted/40">
                 <span className="block text-[14px] font-semibold">{TIPOS[t].rotulo}</span>
@@ -84,7 +85,9 @@ export default function Pedidos() {
 
       {novo === 'compra' && <PedirCompraDialog tipoInicial={tipoDaCompra} onFechar={() => { setNovo(''); setTipoDaCompra(''); }} onEnviado={abrir} />}
 
-      {tipoNovo && <NovoPedidoDialog tipo={tipoNovo} onFechar={() => setNovo('')} onEnviado={abrir} />}
+      {tipoNovo && TIPOS_DO_FORMULARIO_DO_RH.includes(tipoNovo)
+        ? <NovoPedidoDoRH tipo={tipoNovo} onFechar={() => setNovo('')} onEnviado={abrir} />
+        : tipoNovo && <NovoPedidoDialog tipo={tipoNovo} onFechar={() => setNovo('')} onEnviado={abrir} />}
     </div>
   );
 }

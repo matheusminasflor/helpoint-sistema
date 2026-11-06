@@ -24,7 +24,7 @@ export interface SetorDeConfiguracao {
 export const SETORES_DE_CONFIGURACAO: SetorDeConfiguracao[] = [
   { setor: 'ti', rotulo: 'TI', icone: Monitor, rota: '/ti/configuracoes', descricao: 'Categorias, prazos, checklists e alertas' },
   { setor: 'qualidade', rotulo: 'Qualidade', icone: CheckSquare, rota: '/qualidade/configuracoes', descricao: 'Chamados internos e o SAC dos clientes' },
-  { setor: 'rh', rotulo: 'RH', icone: Users, rota: '/rh/configuracoes', descricao: 'Chamados, empresas, departamentos e folha' },
+  { setor: 'rh', rotulo: 'RH', icone: Users, rota: '/rh/configuracoes', descricao: 'Empresas, departamentos e folha' },
   { setor: 'marketing', rotulo: 'Marketing', icone: Megaphone, rota: '/mkt/configuracoes', descricao: 'Categorias, prazos e automações' },
   { setor: 'financeiro', rotulo: 'Financeiro', icone: Banknote, rota: '/financeiro/configuracoes', descricao: 'Chamados, planilhas importadas e conferência de vendas' },
   { setor: 'compras', rotulo: 'Compras', icone: ShoppingCart, rota: '/compras/configuracoes', descricao: 'Categorias de compra e teto de gasto' },
