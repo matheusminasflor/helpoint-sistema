@@ -46,7 +46,7 @@ select is((select condicao from public.com_composicao_da_venda('2026-10-01', '20
 select is((select venda_total from public.com_composicao_da_venda('2026-10-01', '2026-10-31')), 2500::numeric, 'Venda total');
 select is((select venda_total from public.com_composicao_da_venda('2026-09-01', '2026-09-30')), 300::numeric, 'setembro nao muda');
 select is((select sum(faturado)::numeric from public.com_venda_atribuida('2026-10-01', '2026-10-31')), 2500::numeric, 'o realizado da vendedora le a Venda total');
-select is((select sum(valor)::numeric from public.dir_realizado_carteiras(array[2026]) where mes = 10), 2500::numeric, 'a Diretoria le a Venda total');
+select is((select sum(realizado)::numeric from public.dir_realizado_carteiras(array[2026]) where mes = 10), 2500::numeric, 'a Diretoria le a Venda total');
 select is((select cashback::numeric from public.com_cashback_mensal(2026, null, 'C1') where competencia = '2026-10-01'), 200::numeric, 'o cashback le a Venda total');
 
 select * from finish();
