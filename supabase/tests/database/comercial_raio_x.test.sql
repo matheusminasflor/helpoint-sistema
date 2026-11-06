@@ -15,10 +15,11 @@
 --  13  perfil novo não apaga a versão anterior
 --  14  Caio não fica com o relatório da carteira alheia
 --  15  dor com motivo Outros exige texto
+--  16-17  apagar o lançamento não esbarra na regra do gestor
 begin;
 \ir _helpers.psql
 
-select plan(15);
+select plan(17);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-raio-x', 'Raio X', false) as a;
@@ -93,6 +94,13 @@ select tests.clear_authentication();
 
 select tests.authenticate_as('bia@raiox.test');
 select throws_ok($$insert into public.com_cliente_dores (cliente_codigo, motivo) values ('100', 'outros') returning id$$, '23514', null, 'Outros exige texto');
+
+select tests.clear_authentication();
+update public.user_access_profiles set overrides = '{"lancamentos": {"equipe": true, "apagar": true, "corrigir": false}}'::jsonb
+ where user_id = (select bia from u) and department = 'comercial';
+select tests.authenticate_as('bia@raiox.test');
+select lives_ok($delete from public.com_interacoes where id = (select id from l where nome = 'falou')$, 'apagar o lancamento nao esbarra na regra do gestor');
+select is((select count(*)::int from public.com_interacoes where id = (select id from l where nome = 'falou')), 0, 'o lancamento saiu mesmo');
 
 select * from finish();
 rollback;

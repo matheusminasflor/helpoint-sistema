@@ -7,10 +7,15 @@
 --   7    a importação encontra a nota por cliente, filial e valor
 --   8    cada nota serve a um pedido só
 --   9    A faturar cai depois do encontro
+--  10    a importação concluída dispara o encontro
+--  11    a mesma nota em dois pedidos soma uma vez
+--  12    pedido devolvido não conta
+--  13    nota digitada em pedido finalizado continua na lista
+--  14    pedido finalizado sem nota é encontrado pela importação
 begin;
 \ir _helpers.psql
 
-select plan(9);
+select plan(14);
 
 create temporary table f on commit drop as select tests.create_tenant('pgtap-nota-pedido', 'Nota Pedido', false) as a;
 create temporary table u on commit drop as select tests.create_user('dono@notapedido.test', (select a from f)) as dono;
@@ -71,6 +76,40 @@ select is((select nota_fiscal from public.ped_pedidos where numero = 'N1' and va
 select is((select count(*)::int from public.ped_pedidos where nota_fiscal = '500'), 1, 'cada nota serve a um pedido so');
 select tests.authenticate_as('dono@notapedido.test');
 select is((select sum(a_faturar)::numeric from public.com_acompanhamento_da_carteira('X', '2026-10-01')), 1400::numeric, 'A faturar cai depois do encontro');
+
+select tests.clear_authentication();
+
+-- 10: o caminho real, pelo gatilho da importação concluída.
+insert into public.com_vendas_itens
+  (tenant_id, importacao_id, filial, emissao, documento, serie, cfop, classe, cliente_codigo, produto_codigo, produto_nome, quantidade, valor_nota)
+select (select a from f), (select id from imp), 'MF', '2026-10-21', '000502', '1', '5102', 'venda', 'C2', 'P1', 'Produto', 1, 200;
+update public.com_vendas_importacoes set status = 'concluida' where id = (select id from imp);
+select is((select nota_fiscal from public.ped_pedidos where numero = 'N1' and valor = 200), '502', 'a importacao concluida dispara o encontro');
+
+-- 11 a 14: a última decisão muda a situação do pedido.
+alter table public.ped_decisoes disable trigger user;
+alter table public.ped_finalizacoes disable trigger user;
+insert into public.ped_pedidos (tenant_id, checklist_id, ordem, tipo, filial, numero, valor, nota_fiscal, nota_em, nota_valor, nota_origem)
+select (select a from f), c.id, x.o, 'Venda', 'INBRAS', 'N' || x.o, 80, x.nf, '2026-10-06', 80, 'digitada'
+  from (select id from ck where cliente_codigo = 'C2') c, (values (7, '901'), (8, '901')) x(o, nf);
+select tests.authenticate_as('dono@notapedido.test');
+select is((select count(*)::int from public.com_notas_a_confirmar() where nota_fiscal = '901'), 1, 'a mesma nota em dois pedidos soma uma vez');
+select tests.clear_authentication();
+insert into public.ped_decisoes (tenant_id, checklist_id, versao, status)
+select c.tenant_id, c.id, c.versao, 'Recusado' from public.ped_checklists c where c.id = (select id from ck where cliente_codigo = 'C2');
+select tests.authenticate_as('dono@notapedido.test');
+select is((select count(*)::int from public.com_notas_a_confirmar() where nota_fiscal = '901'), 0, 'pedido devolvido nao conta');
+select tests.clear_authentication();
+insert into public.ped_finalizacoes (tenant_id, checklist_id, versao)
+select c.tenant_id, c.id, c.versao from public.ped_checklists c where c.id = (select id from ck where cliente_codigo = 'C1');
+select tests.authenticate_as('dono@notapedido.test');
+select is((select situacao from public.ped_notas_do_comercial() where nota_fiscal = '888'), 'corrigir', 'nota digitada em pedido finalizado continua na lista');
+select tests.clear_authentication();
+insert into public.com_vendas_itens
+  (tenant_id, importacao_id, filial, emissao, documento, serie, cfop, classe, cliente_codigo, produto_codigo, produto_nome, quantidade, valor_nota)
+select (select a from f), (select id from imp), 'MF', '2026-10-21', '000503', '1', '5102', 'venda', 'C1', 'P1', 'Produto', 1, 1000;
+select public.ped_achar_notas_importadas((select a from f));
+select is((select nota_fiscal from public.ped_pedidos where numero = 'N6'), '503', 'pedido finalizado sem nota e encontrado');
 
 select * from finish();
 rollback;

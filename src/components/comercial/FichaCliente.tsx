@@ -161,7 +161,7 @@ export function FichaClienteSecao({
       </div>
 
       {aba === 'relacionamento' && <ContatosDoCliente codigo={codigo} />}
-      {aba === 'raio-x' && <RaioXDaFicha codigo={codigo} />}
+      {aba === 'raio-x' && <RaioXDaFicha codigo={codigo} nome={nome ?? codigo} />}
 
       {aba === 'vendas' && ficha && (visao === 'simplificado' ? (
         <VisaoSimplificada

@@ -1,22 +1,26 @@
 // A aba Raio-X da ficha do cliente (proposta aprovada pelo dono em 2026-11-05): "Antes de ligar", o perfil, as dores e as
 // propostas. Vermelho é dor aberta, laranja em tratamento, verde resolvida; dor aberta fica à vista até alguém fechar.
 // O status e o resultado são de quem atende; o texto escrito, só o gestor corrige (o banco cobra as duas regras).
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { usePodeNoLancamento } from '@/hooks/useAccessProfiles';
+import { toast } from 'sonner';
+import { useDepartmentPermissions, usePodeNoLancamento } from '@/hooks/useAccessProfiles';
+import { todayISO } from '@/lib/dates';
+import { gerarRelatorioPdf } from '@/lib/relatorio-pdf';
+import { mensagemDeErro } from '@/lib/supabase-result';
 import {
   useMudarDor, useMudarProposta, useRaioXDoCliente, useRegistrarDor, useRegistrarProposta, useSalvarPerfil, type PerfilEmEdicao,
 } from '@/hooks/useRaioX';
 import { Opcao } from '@/components/comercial/PerguntaDoRaioX';
 import {
   MOTIVOS, O_QUE_PESA, RESULTADOS_DA_PROPOSTA, SITUACOES, STATUS_DA_DOR, TIPOS_DE_NEGOCIO, TIPOS_DE_PROPOSTA, TOTAL_DE_CAMPOS,
-  camposPreenchidos, rotuloDaSituacao, rotuloDoMotivo, rotuloDoTipoDeProposta, situacaoAnterior,
-  type DorDoCliente, type Motivo, type PerfilDoCliente, type ResultadoDaProposta, type Situacao, type StatusDaDor, type TipoDeProposta,
+  camposPreenchidos, rotuloDaSituacao, rotuloDoMotivo, rotuloDoResultado, rotuloDoStatus, rotuloDoTipoDeProposta, situacaoAnterior,
+  type DorDoCliente, type Motivo, type PerfilDoCliente, type RaioXDoCliente, type ResultadoDaProposta, type Situacao, type StatusDaDor, type TipoDeProposta,
 } from '@/lib/raio-x';
 import { formatBRL, formatDateBR } from '@/types/financeiro';
 
@@ -24,7 +28,8 @@ const COR_DA_DOR: Record<StatusDaDor, string> = {
   aberta: 'border-l-status-danger', em_tratamento: 'border-l-status-warning', resolvida: 'border-l-status-success', sem_solucao: 'border-l-border',
 };
 
-export function RaioXDaFicha({ codigo }: { codigo: string }) {
+export function RaioXDaFicha({ codigo, nome }: { codigo: string; nome: string }) {
+  const { can } = useDepartmentPermissions('comercial');
   const { data, isLoading, isError } = useRaioXDoCliente(codigo);
   const [perfilAberto, setPerfilAberto] = useState(false);
   const [novaDor, setNovaDor] = useState(false);
@@ -73,7 +78,10 @@ export function RaioXDaFicha({ codigo }: { codigo: string }) {
       <section className="space-y-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h3 className="text-sm font-semibold">Dores e propostas</h3>
-          <Button size="sm" onClick={() => setNovaDor(true)}>Registrar dor</Button>
+          <span className="flex gap-2">
+            {can('reports', 'export') && <Button variant="outline" size="sm" className="max-[860px]:hidden" onClick={() => exportarCliente(nome, data)}>Exportar este cliente</Button>}
+            <Button size="sm" onClick={() => setNovaDor(true)}>Registrar dor</Button>
+          </span>
         </div>
         {data.dores.length === 0
           ? <p className="text-[13px] text-muted-foreground">Nenhuma dor registrada. Depois de falar com o cliente, registre aqui o que ele contou.</p>
@@ -84,6 +92,28 @@ export function RaioXDaFicha({ codigo }: { codigo: string }) {
       {novaDor && <DialogoDaDor codigo={codigo} onClose={() => setNovaDor(false)} />}
     </div>
   );
+}
+
+function exportarCliente(nome: string, r: RaioXDoCliente) {
+  const p = r.perfis[0];
+  gerarRelatorioPdf({
+    titulo: `Raio-X de ${nome}`,
+    linhasDoCabecalho: [
+      p ? [p.tipo_negocio, p.quem_decide, p.melhor_contato, p.o_que_pesa, rotuloDaSituacao(p.situacao)].filter(Boolean).join(' · ') : 'Perfil não preenchido',
+      r.ultima_compra ? `Última compra em ${formatDateBR(r.ultima_compra)}` : 'Nenhuma compra registrada',
+    ],
+    colunas: [
+      { titulo: 'Data', largura: 18 }, { titulo: 'Motivo', largura: 30 }, { titulo: 'O que contou', largura: 70 },
+      { titulo: 'Situação', largura: 22 }, { titulo: 'Propostas', largura: 80 },
+    ],
+    linhas: r.dores.map((d) => [
+      formatDateBR(d.registrada_em), rotuloDoMotivo(d), d.descricao ?? '', rotuloDoStatus(d.status),
+      d.propostas.map((o) => `${o.proposta} (${rotuloDoResultado(o.resultado)})`).join('; '),
+    ]),
+    totais: [`${r.dores.length} dores`, '', '', '', ''],
+    baixar: async () => null,
+    nomeDoArquivo: `raio-x-${todayISO()}.pdf`,
+  }).catch((e: unknown) => toast.error(mensagemDeErro(e)));
 }
 
 function Campo({ nome, valor }: { nome: string; valor?: string | null }) {
@@ -97,6 +127,8 @@ function CartaoDaDor({ dor }: { dor: DorDoCliente }) {
   const registrar = useRegistrarProposta();
   const [escrevendo, setEscrevendo] = useState(false);
   const [corrigindo, setCorrigindo] = useState(false);
+  const [corrigindoProposta, setCorrigindoProposta] = useState<string | null>(null);
+  const [textoCorrigido, setTextoCorrigido] = useState('');
   const [tipo, setTipo] = useState<TipoDeProposta>('campanha');
   const [texto, setTexto] = useState('');
   return (
@@ -113,7 +145,11 @@ function CartaoDaDor({ dor }: { dor: DorDoCliente }) {
       {dor.descricao && <p className="text-[14px]">{dor.descricao}</p>}
       {dor.propostas.map((p) => (
         <div key={p.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-muted/50 px-2 py-1.5 text-[13px]">
-          <span><strong>{rotuloDoTipoDeProposta(p.tipo)}:</strong> {p.proposta} <span className="text-[12px] text-muted-foreground">{p.autor ?? ''}</span></span>
+          <span>
+            <strong>{rotuloDoTipoDeProposta(p.tipo)}:</strong> {p.proposta}{' '}
+            <span className="text-[12px] text-muted-foreground">{formatDateBR(p.created_at.slice(0, 10))}{p.autor ? ` · ${p.autor}` : ''}</span>
+            {corrigir && <button type="button" className="ml-2 text-[12px] text-primary underline" onClick={() => { setTextoCorrigido(p.proposta); setCorrigindoProposta(p.id); }}>Corrigir</button>}
+          </span>
           <Select value={p.resultado} onValueChange={(v) => mudarProposta.mutate({ id: p.id, resultado: v as ResultadoDaProposta })}>
             <SelectTrigger className="w-52 h-8" aria-label="Resultado da proposta"><SelectValue /></SelectTrigger>
             <SelectContent>{RESULTADOS_DA_PROPOSTA.map((r) => <SelectItem key={r.valor} value={r.valor}>{r.rotulo}</SelectItem>)}</SelectContent>
@@ -136,7 +172,20 @@ function CartaoDaDor({ dor }: { dor: DorDoCliente }) {
           {corrigir && <Button variant="ghost" size="sm" onClick={() => setCorrigindo(true)}>Corrigir</Button>}
         </div>
       )}
-      {corrigindo && <DialogoDeCorrecao dor={dor} onClose={() => setCorrigindo(false)} />}
+      {corrigindoProposta && (
+        <Dialog open onOpenChange={(v) => { if (!v) setCorrigindoProposta(null); }}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader><DialogTitle>Corrigir proposta</DialogTitle></DialogHeader>
+            <Textarea aria-label="Proposta" rows={3} value={textoCorrigido} onChange={(e) => setTextoCorrigido(e.target.value)} />
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setCorrigindoProposta(null)}>Cancelar</Button>
+              <Button disabled={!textoCorrigido.trim() || mudarProposta.isPending}
+                onClick={() => mudarProposta.mutate({ id: corrigindoProposta, proposta: textoCorrigido.trim() }, { onSuccess: () => setCorrigindoProposta(null) })}>Salvar</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+      {corrigindo && <DialogoDaDor dor={dor} onClose={() => setCorrigindo(false)} />}
     </article>
   );
 }
@@ -159,42 +208,27 @@ function CamposDaDor({ motivo, outros, descricao, onMotivo, onOutros, onDescrica
   );
 }
 
-function DialogoDaDor({ codigo, onClose }: { codigo: string; onClose: () => void }) {
-  const registrar = useRegistrarDor(codigo);
-  const [motivo, setMotivo] = useState<Motivo | null>(null);
-  const [outros, setOutros] = useState('');
-  const [descricao, setDescricao] = useState('');
-  const invalido = !motivo || (motivo === 'outros' && !outros.trim());
-  return (
-    <Dialog open onOpenChange={(v) => { if (!v) onClose(); }}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader><DialogTitle>Registrar dor</DialogTitle></DialogHeader>
-        <CamposDaDor motivo={motivo} outros={outros} descricao={descricao} onMotivo={setMotivo} onOutros={setOutros} onDescricao={setDescricao} />
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancelar</Button>
-          <Button disabled={invalido || registrar.isPending} onClick={() => registrar.mutate(
-            { motivo: motivo!, motivo_outros: motivo === 'outros' ? outros.trim() : null, descricao: descricao.trim() || null }, { onSuccess: onClose })}>Salvar</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function DialogoDeCorrecao({ dor, onClose }: { dor: DorDoCliente; onClose: () => void }) {
+/** Com `dor`, corrige (só o gestor chega aqui); sem ela, registra uma nova. */
+function DialogoDaDor({ codigo, dor, onClose }: { codigo?: string; dor?: DorDoCliente; onClose: () => void }) {
+  const registrar = useRegistrarDor(codigo ?? '');
   const mudar = useMudarDor();
-  const [motivo, setMotivo] = useState<Motivo | null>(dor.motivo);
-  const [outros, setOutros] = useState(dor.motivo_outros ?? '');
-  const [descricao, setDescricao] = useState(dor.descricao ?? '');
+  const [motivo, setMotivo] = useState<Motivo | null>(dor?.motivo ?? null);
+  const [outros, setOutros] = useState(dor?.motivo_outros ?? '');
+  const [descricao, setDescricao] = useState(dor?.descricao ?? '');
   const invalido = !motivo || (motivo === 'outros' && !outros.trim());
+  const salvar = () => {
+    const campos = { motivo: motivo!, motivo_outros: motivo === 'outros' ? outros.trim() : null, descricao: descricao.trim() || null };
+    if (dor) mudar.mutate({ id: dor.id, ...campos }, { onSuccess: onClose });
+    else registrar.mutate(campos, { onSuccess: onClose });
+  };
   return (
     <Dialog open onOpenChange={(v) => { if (!v) onClose(); }}>
       <DialogContent className="max-w-lg">
-        <DialogHeader><DialogTitle>Corrigir dor</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>{dor ? 'Corrigir dor' : 'Registrar dor'}</DialogTitle></DialogHeader>
         <CamposDaDor motivo={motivo} outros={outros} descricao={descricao} onMotivo={setMotivo} onOutros={setOutros} onDescricao={setDescricao} />
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancelar</Button>
-          <Button disabled={invalido || mudar.isPending} onClick={() => mudar.mutate(
-            { id: dor.id, motivo: motivo!, motivo_outros: motivo === 'outros' ? outros.trim() : null, descricao: descricao.trim() || null }, { onSuccess: onClose })}>Salvar</Button>
+          <Button disabled={invalido || registrar.isPending || mudar.isPending} onClick={salvar}>Salvar</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -206,7 +240,6 @@ function ListaComOutros({ id, rotulo, opcoes, valor, onChange }: {
   id: string; rotulo: string; opcoes: string[]; valor: string; onChange: (v: string) => void;
 }) {
   const [escrevendo, setEscrevendo] = useState(!!valor && !opcoes.includes(valor));
-  useEffect(() => { if (valor && !opcoes.includes(valor)) setEscrevendo(true); }, [valor, opcoes]);
   return (
     <div className="space-y-1.5">
       <Label htmlFor={id}>{rotulo}</Label>

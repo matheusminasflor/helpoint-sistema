@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { lerValor } from '@/lib/checklist-de-pedidos';
 import { todayISO } from '@/lib/dates';
 import {
   useInformarNota, useSituacaoDasNotas, type PedidoGravado, type SituacaoDaNota,
@@ -42,10 +43,10 @@ export function NotasDosPedidos({ checklistId, pedidos, podeEditar }: {
           const valor = digitado[p.id] ?? p.nota_fiscal ?? '';
           const venda = p.tipo === 'Venda';
           const valorNota = valores[p.id] ?? (p.nota_valor ? String(p.nota_valor).replace('.', ',') : '');
-          const valorNumero = Number(valorNota.replace(/\./g, '').replace(',', '.'));
+          const valorNumero = lerValor(valorNota);
           const emissao = datas[p.id] ?? p.nota_em ?? '';
-          const incompleto = !!valor.trim() && venda && (!(valorNumero > 0) || !emissao || emissao > todayISO());
-          const igual = valor.trim() === (p.nota_fiscal ?? '') && valorNumero === Number(p.nota_valor ?? 0) && emissao === (p.nota_em ?? '');
+          const incompleto = !!valor.trim() && venda && (!valorNumero || !emissao || emissao > todayISO());
+          const igual = valor.trim() === (p.nota_fiscal ?? '') && (valorNumero ?? 0) === Number(p.nota_valor ?? 0) && emissao === (p.nota_em ?? '');
           return (
             <li key={p.id} className="py-2 space-y-1">
               <div className="flex flex-wrap items-center gap-2 text-[13px]">

@@ -772,7 +772,7 @@ export const EXPLICACOES = {
     titulo: 'Vendido',
     oQueE: 'Quanto os clientes da carteira compraram no mês (ou no período) escolhido — venda menos devolução; bonificação não entra.',
     deOndeVem: VENDA_DE_ONDE,
-    comoCalcula: 'Soma as notas de venda do mês, menos as devoluções. Lançamento sem nota não conta.',
+    comoCalcula: 'Soma as notas de venda do mês, menos as devoluções, mais a nota informada que ainda vai ser importada. Cliente condição conta pela Venda total. Pedido sem nota não conta.',
   },
   'carteira.cobertura': {
     titulo: 'Cobertura',

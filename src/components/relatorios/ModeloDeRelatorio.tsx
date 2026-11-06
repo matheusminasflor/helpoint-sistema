@@ -38,7 +38,7 @@ export interface ColunaDoRelatorio<T> {
 }
 
 export function ModeloDeRelatorio<T>({
-  titulo, descricao, icone, periodo, controles, acima, resumo, colunas, linhas, chave, carregando, erro, vazio, arquivo,
+  titulo, descricao, icone, periodo, controles, acima, resumo, colunas, linhas, chave, carregando, erro, vazio, arquivo, exportavel = true,
 }: {
   titulo: string; descricao: string; icone: LucideIcon;
   periodo?: PeriodoDoRelatorio | null;
@@ -54,6 +54,8 @@ export function ModeloDeRelatorio<T>({
   erro?: unknown;
   vazio: string;
   arquivo: string;
+  /** Falso esconde o Exportar: o relatório que segue a permissão do perfil. */
+  exportavel?: boolean;
 }) {
   const [busca, setBusca] = useQueryState<string>('q', '');
   const [ordem, setOrdem] = useState<Ordem | null>(null);
@@ -66,9 +68,9 @@ export function ModeloDeRelatorio<T>({
   return (
     <div className="flex flex-col min-h-full">
       <PageHeader title={titulo} description={descricao} icon={icone}
-        actions={<Button variant="outline" size="sm" className="max-[860px]:hidden" disabled={ordenadas.length === 0} onClick={exportar}>
+        actions={exportavel ? <Button variant="outline" size="sm" className="max-[860px]:hidden" disabled={ordenadas.length === 0} onClick={exportar}>
           <FileDown className="w-4 h-4 mr-1.5" aria-hidden="true" />Exportar
-        </Button>} />
+        </Button> : undefined} />
       <div className="px-4 lg:px-8 pb-6 space-y-4">
         {(periodo || controles) && (
           <div className="flex flex-wrap items-center gap-3">

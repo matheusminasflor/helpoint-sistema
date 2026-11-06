@@ -1,9 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
 import { Inbox } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { unwrap } from '@/lib/supabase-result';
-import { useChecklists } from '@/hooks/usePedidosChecklist';
+import { useChecklists, useNotasDoComercial } from '@/hooks/usePedidosChecklist';
 import { formatBRL } from '@/types/financeiro';
 
 /**
@@ -12,18 +8,10 @@ import { formatBRL } from '@/types/financeiro';
  * No celular, 3 de cada (6 no computador): a fila vinha antes da carteira e a empurrava para longe (R3).
  */
 export function FilaDoGestor() {
-  const { tenantId } = useAuth();
   const { data: checklists = [], isError } = useChecklists();
   const devolvidos = checklists.filter((c) => c.situacao === 'Recusado');
-  const aprovados = checklists.filter((c) => c.situacao === 'Aprovado');
-  const ids = aprovados.map((c) => c.id);
-  const { data: semNota = [] } = useQuery({
-    queryKey: ['pedidos-checklist', 'sem-nota', tenantId, ids.join(',')],
-    enabled: !!tenantId && ids.length > 0,
-    queryFn: async () => (unwrap(await supabase.from('ped_pedidos').select('id, checklist_id, numero, filial, valor')
-      .in('checklist_id', ids).is('nota_fiscal', null)) ?? []) as { id: string; checklist_id: string; numero: string; filial: string; valor: number }[],
-  });
-  const doChecklist = new Map(aprovados.map((c) => [c.id, c]));
+  const { data: notas = [] } = useNotasDoComercial();
+  const semNota = notas.filter((n) => n.situacao === 'falta_nota');
 
   if (isError) return <p className="text-[13px] text-status-danger">Não consegui carregar a fila do gestor.</p>;
   if (devolvidos.length === 0 && semNota.length === 0) return null;
@@ -48,17 +36,14 @@ export function FilaDoGestor() {
           </ul>
         </div>
         <div>
-          <p className="text-[13px] mb-1 text-muted-foreground">Pedidos aprovados sem nota ({semNota.length})</p>
+          <p className="text-[13px] mb-1 text-muted-foreground">Falta informar a nota ({semNota.length})</p>
           <ul className="space-y-1 text-[13px]">
-            {semNota.slice(0, 6).map((p, i) => {
-              const c = doChecklist.get(p.checklist_id);
-              return (
-                <li key={p.id} className={`min-w-0 ${i >= 3 ? 'max-sm:hidden' : ''}`}>
-                  <span className="font-medium">Pedido {p.numero}</span> ({p.filial}) · {c?.cliente_nome ?? '—'} · {c?.vendedor_nome ?? '—'}
-                  <span className="tabular-nums text-muted-foreground"> · {formatBRL(Number(p.valor))}</span>
-                </li>
-              );
-            })}
+            {semNota.slice(0, 6).map((p, i) => (
+              <li key={p.pedido_id} className={`min-w-0 ${i >= 3 ? 'max-sm:hidden' : ''}`}>
+                <span className="font-medium">Pedido {p.numero}</span> ({p.filial}) · {p.cliente} · {p.vendedor ?? '—'}
+                <span className="tabular-nums text-muted-foreground"> · {formatBRL(p.valor_pedido)}</span>
+              </li>
+            ))}
           </ul>
         </div>
       </div>

@@ -43,9 +43,9 @@ export const STATUS_DA_DOR = [
 export type StatusDaDor = (typeof STATUS_DA_DOR)[number]['valor'];
 
 export const RESULTADOS_DA_PROPOSTA = [
-  { valor: 'aguardando', rotulo: 'Aguardando resposta', classe: 'badge-info' },
-  { valor: 'funcionou', rotulo: 'Funcionou', classe: 'badge-success' },
-  { valor: 'nao_funcionou', rotulo: 'Não funcionou', classe: 'badge-danger' },
+  { valor: 'aguardando', rotulo: 'Aguardando resposta' },
+  { valor: 'funcionou', rotulo: 'Funcionou' },
+  { valor: 'nao_funcionou', rotulo: 'Não funcionou' },
 ] as const;
 export type ResultadoDaProposta = (typeof RESULTADOS_DA_PROPOSTA)[number]['valor'];
 

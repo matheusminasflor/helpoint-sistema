@@ -11,7 +11,8 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { useInformarNota, useNotasDoComercial, type NotaParaResolver } from '@/hooks/usePedidosChecklist';
 import { useTenantPath } from '@/hooks/useTenantPath';
-import { diasDesde, tituloDaNota } from '@/lib/notas-para-resolver';
+import { TITULOS, diasDesde } from '@/lib/notas-para-resolver';
+import { lerValor } from '@/lib/checklist-de-pedidos';
 import { todayISO } from '@/lib/dates';
 import { formatBRL, formatDateBR } from '@/types/financeiro';
 
@@ -20,13 +21,14 @@ export function NotasParaResolver() {
   const [aberta, setAberta] = useState<NotaParaResolver | null>(null);
   if (isError) return <p className="text-[13px] text-status-danger">Não consegui carregar as notas pendentes.</p>;
   if (notas.length === 0) return null;
+  const pendentes = notas.filter((n) => n.situacao !== 'valor_diferente').length;
   return (
     <Card className="p-3 space-y-2">
-      <h2 className="text-[14px] font-semibold">Falta informar a nota ({notas.length})</h2>
+      <h2 className="text-[14px] font-semibold">{pendentes ? `Falta informar a nota (${pendentes})` : 'Notas corrigidas pelo Forteplus'}</h2>
       <p className="text-[13px] text-muted-foreground">O pedido só conta na venda depois de informar a nota.</p>
       <ul className="divide-y divide-border">
         {notas.map((n) => {
-          const t = tituloDaNota(n);
+          const t = TITULOS[n.situacao];
           const dias = n.aprovado_em ? diasDesde(n.aprovado_em, todayISO()) : null;
           return (
             <li key={n.pedido_id} className="py-2 flex flex-wrap items-center justify-between gap-2 text-[13px]">
@@ -56,8 +58,8 @@ function DialogoDaNota({ nota, onClose }: { nota: NotaParaResolver; onClose: () 
   const [numero, setNumero] = useState(nota.nota_fiscal ?? '');
   const [valor, setValor] = useState(nota.nota_valor ? String(nota.nota_valor).replace('.', ',') : '');
   const [emissao, setEmissao] = useState(nota.nota_em ?? '');
-  const valorNumero = Number(valor.replace(/\./g, '').replace(',', '.'));
-  const incompleto = !numero.trim() || !(valorNumero > 0) || !emissao || emissao > todayISO();
+  const valorNumero = lerValor(valor);
+  const incompleto = !numero.trim() || !valorNumero || !emissao || emissao > todayISO();
   return (
     <Dialog open onOpenChange={(v) => { if (!v) onClose(); }}>
       <DialogContent className="max-w-sm">
@@ -74,7 +76,7 @@ function DialogoDaNota({ nota, onClose }: { nota: NotaParaResolver; onClose: () 
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancelar</Button>
           <Button disabled={incompleto || informar.isPending}
-            onClick={() => informar.mutate({ pedidoId: nota.pedido_id, nota: numero, valor: valorNumero, emissao }, { onSuccess: onClose })}>Salvar nota</Button>
+            onClick={() => informar.mutate({ pedidoId: nota.pedido_id, nota: numero, valor: valorNumero!, emissao }, { onSuccess: onClose })}>Salvar nota</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -86,7 +88,7 @@ export function AvisoDeNotasNoInicio() {
   const { user } = useAuth();
   const tenantPath = useTenantPath();
   const { data: notas = [] } = useNotasDoComercial();
-  const minhas = notas.filter((n) => n.vendedor_id === user?.id).length;
+  const minhas = notas.filter((n) => n.vendedor_id === user?.id && n.situacao !== 'valor_diferente').length;
   if (minhas === 0) return null;
   return (
     <Link to={tenantPath('/comercial/pedidos')} className="block rounded-lg badge-warning px-3 py-2 text-[14px] font-medium">

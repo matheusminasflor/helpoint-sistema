@@ -43,7 +43,8 @@ import { formatBRL, formatDateBR } from '@/types/financeiro';
 import { LinhaDaConferencia } from '@/components/financeiro/LinhaDaConferencia';
 import { SeletorVisao } from '@/components/comercial/SeletorVisao';
 import { useVisaoRelatorio } from '@/hooks/useVisaoRelatorio';
-import { fromLocalISODate, toLocalISODate } from '@/lib/dates';
+import { toLocalISODate } from '@/lib/dates';
+import { ultimoDiaDoMes } from '@/lib/semanas-dos-artistas';
 import { LancamentosDaVendedora } from '@/components/comercial/LancamentosDaVendedora';
 import { NotasQueNaoBateram } from '@/components/comercial/NotasQueNaoBateram';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -203,7 +204,7 @@ export default function ComercialIndicadores() {
                     <span className="text-[13px] text-muted-foreground">{v.carteira ? `Carteira ${v.carteira}` : 'Sem carteira'}</span>
                   </div>
                   {v.carteira && <ComposicaoDaVenda de={intervalo?.de ?? competencia} carteira={v.carteira}
-                    ate={intervalo?.ate ?? toLocalISODate(new Date(fromLocalISODate(competencia).getFullYear(), fromLocalISODate(competencia).getMonth() + 1, 0))} />}
+                    ate={intervalo?.ate ?? ultimoDiaDoMes(competencia)} />}
                   <table className="w-full text-[13px]">
                     <thead>
                       <tr className="text-left text-muted-foreground">

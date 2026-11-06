@@ -4,13 +4,11 @@ import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/rea
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { expectRows, unwrap } from '@/lib/supabase-result';
+import { expectRows, mensagemDeErro, unwrap } from '@/lib/supabase-result';
 import { lerAcompanhamento } from '@/hooks/useComercialLancamentos';
 import type {
   LinhaDoRelatorio, Motivo, PerfilDoCliente, RaioXDoCliente, RespostaDoLancamento, ResultadoDaProposta, StatusDaDor, TipoDeProposta,
 } from '@/lib/raio-x';
-
-const erroNaTela = (e: unknown) => toast.error(e instanceof Error ? e.message : String((e as { message?: string })?.message ?? e));
 
 export function useRaioXDoCliente(codigo: string | null) {
   const { tenantId } = useAuth();
@@ -63,7 +61,7 @@ export function useAcompanhamentoDasCarteiras(carteiras: string[], competencia: 
   });
 }
 
-function useAoGravar(mensagem: string) {
+function useAoGravar(mensagem?: string) {
   const qc = useQueryClient();
   return {
     onSuccess: () => {
@@ -72,7 +70,7 @@ function useAoGravar(mensagem: string) {
       qc.invalidateQueries({ queryKey: ['comercial', 'raio-x-abertas'] });
       if (mensagem) toast.success(mensagem);
     },
-    onError: erroNaTela,
+    onError: (e: unknown) => toast.error(mensagemDeErro(e)),
   };
 }
 
@@ -96,7 +94,7 @@ export function useRegistrarDor(codigo: string) {
 
 export function useMudarDor() {
   return useMutation({
-    ...useAoGravar(''),
+    ...useAoGravar(),
     mutationFn: async ({ id, ...campos }: { id: string; status?: StatusDaDor; motivo?: Motivo; motivo_outros?: string | null; descricao?: string | null }) =>
       expectRows(await supabase.from('com_cliente_dores' as never).update(campos as never).eq('id', id).select('id'), 'a dor'),
   });
@@ -112,7 +110,7 @@ export function useRegistrarProposta() {
 
 export function useMudarProposta() {
   return useMutation({
-    ...useAoGravar(''),
+    ...useAoGravar(),
     mutationFn: async ({ id, ...campos }: { id: string; resultado?: ResultadoDaProposta; proposta?: string }) =>
       expectRows(await supabase.from('com_cliente_propostas' as never).update(campos as never).eq('id', id).select('id'), 'a proposta'),
   });
@@ -121,7 +119,7 @@ export function useMudarProposta() {
 /** A pergunta do lançamento. Repetir não duplica: o banco reconhece o lançamento. */
 export function useRegistrarContato() {
   return useMutation({
-    ...useAoGravar(''),
+    ...useAoGravar(),
     mutationFn: async ({ interacaoId, r }: { interacaoId: string; r: RespostaDoLancamento }) => {
       unwrap(await supabase.rpc('com_registrar_contato_no_raio_x' as never, {
         p_interacao: interacaoId, p_resultado: r.resultado, p_motivo: r.resultado === 'falou' ? r.motivo : null,

@@ -65,7 +65,7 @@ export const TUTORIAIS = {
   'comercial-indicadores': {
     titulo: 'Comercial › Indicadores',
     oQueE: 'O Painel do Gestor da planilha: meta, realizado e farol de cada vendedora, as ações do mês e o resumo das carteiras.',
-    deOndeVem: 'A VENDA é o FATURADO: as notas importadas do Forteplus (toda sexta) dos clientes da carteira de cada vendedora, até a última importação; depois dela, os lançamentos com Nº da nota fiscal. Lançamento sem nota não conta como venda. Contatos, clientes relacionados e ações vêm dos LANÇAMENTOS (Comercial › Lançamentos). A meta de valor é a da carteira, definida pela Diretoria; as outras metas o gestor define aqui.',
+    deOndeVem: 'A VENDA é o FATURADO: as notas importadas do Forteplus (toda sexta) dos clientes da carteira de cada vendedora, até a última importação; depois dela, os lançamentos com Nº da nota fiscal. Pedido aprovado sem nota não conta como venda. Contatos, clientes relacionados e ações vêm dos LANÇAMENTOS (Comercial › Lançamentos). A meta de valor é a da carteira, definida pela Diretoria; as outras metas o gestor define aqui.',
     comoLer: [
       'Escolha uma vendedora no topo para ver só ela; "Equipe toda" mostra todas.',
       'Simplificado: o cartão de cada vendedora (meta, realizado, farol). Analítico: soma o farol de ações, o resumo das carteiras e, com uma vendedora escolhida, os lançamentos dela.',
@@ -83,10 +83,10 @@ export const TUTORIAIS = {
   'comercial-carteiras': {
     titulo: 'Comercial › Carteiras',
     oQueE: 'O acompanhamento de uma carteira: cada cliente, quanto comprou, se está comprando mais ou menos que o normal dele e o último contato.',
-    deOndeVem: 'Clientes do cadastro; a venda = notas importadas do Forteplus até a última importação e, depois, os lançamentos com Nº da nota fiscal (os dois nunca se somam); "A faturar" = pedidos fechados no lançamento que ainda não têm nota; a meta da carteira definida pela Diretoria.',
+    deOndeVem: 'Clientes do cadastro; a venda = notas importadas do Forteplus até a última importação e, depois, os lançamentos com Nº da nota fiscal (os dois nunca se somam); "A faturar" = pedidos aprovados que ainda não têm nota; a meta da carteira definida pela Diretoria.',
     comoLer: [
       'No topo: a carteira, um mês ou um período (ex.: de janeiro até hoje), a filial (INBRAS, MF ou as duas) e a situação do cliente. Mês depois do atual não abre: ainda não tem venda.',
-      'Simplificado: cliente, Comprou (no mês ou período, com o mês anterior embaixo), Média mensal, Ritmo, Pedido sem nota e último contato. Analítico: soma a média de 3 meses, a venda de 12 meses, contatos, próximo prazo, códigos e o ano mês a mês. A tela lembra a sua escolha.',
+      'Simplificado: cliente, Comprou (no mês ou período, com o mês anterior embaixo), Média mensal, Ritmo, A faturar e último contato. Analítico: soma a média de 3 meses, a venda de 12 meses, contatos, próximo prazo, códigos e o ano mês a mês. A tela lembra a sua escolha.',
       'Toque ou passe o mouse no título de cada coluna para ver de onde vem o número e como é a conta.',
       'Média mensal: o normal do cliente — a venda dos 12 meses antes do mês escolhido ÷ os meses que existem no sistema (se a importação começa em janeiro, divide só por esses meses). O título da coluna diz quais meses.',
       'Ritmo: a média dos últimos 3 meses FECHADOS contra a média mensal (o mês que está correndo não entra). Comprando mais = 110% ou mais; Normal = de 80% a 110%; Comprando menos = abaixo de 80%; Parado = sem compra há mais de 120 dias. Toque ou passe o mouse no selo para ver as duas médias.',

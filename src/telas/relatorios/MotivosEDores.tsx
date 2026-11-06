@@ -14,6 +14,9 @@ import { useMinhasCarteiras } from '@/hooks/useComercialLancamentos';
 import { usePodeGerirCarteiras } from '@/hooks/useAccessProfiles';
 import { useAcompanhamentoDasCarteiras, useDoresEmAberto, useRelatorioRaioX } from '@/hooks/useRaioX';
 import { useTenantPath } from '@/hooks/useTenantPath';
+import { useQueryState } from '@/hooks/useQueryState';
+import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
+import { casaBusca } from '@/lib/tabela';
 import { linkRaioX } from '@/config/comercial-insights';
 import { competenciaAtual } from '@/lib/competencia-comercial';
 import { todayISO } from '@/lib/dates';
@@ -37,7 +40,13 @@ export default function MotivosEDores() {
   const { data: minhas = [] } = useMinhasCarteiras();
   const opcoes = podeTudo ? conhecidas : minhas;
   const filtro = carteira === TODAS ? '' : carteira;
-  const { data = [], isLoading, error } = useRelatorioRaioX(de, ate, filtro);
+  const { data: todas = [], isLoading, error } = useRelatorioRaioX(de, ate, filtro);
+  const [autor, setAutor] = useState(TODAS);
+  const [busca, setBusca] = useQueryState<string>('q', '');
+  const { can } = useDepartmentPermissions('comercial');
+  const podeExportar = can('reports', 'export');
+  const autores = [...new Set(todas.map((l) => l.autor).filter((a): a is string => !!a))].sort();
+  const data = autor === TODAS ? todas : todas.filter((l) => l.autor === autor);
   const { data: abertas = [] } = useDoresEmAberto();
   const consultas = useAcompanhamentoDasCarteiras(filtro ? [filtro] : opcoes, competenciaAtual());
 
@@ -68,6 +77,7 @@ export default function MotivosEDores() {
     { chave: 'voltou', rotulo: 'Voltou a comprar', valor: (l) => l.voltou_em, mostrar: (l) => (l.voltou_em ? formatDateBR(l.voltou_em) : '—') },
   ];
 
+  const paraExportar = data.filter((l) => casaBusca(colunas.map((c) => c.valor(l)), busca));
   const exportarPdf = async () => {
     try {
       await gerarRelatorioPdf({
@@ -77,8 +87,8 @@ export default function MotivosEDores() {
           { titulo: 'Cliente', largura: 34 }, { titulo: 'Perfil', largura: 34 }, { titulo: 'Motivo', largura: 20 }, { titulo: 'O que contou', largura: 44 },
           { titulo: 'Situação', largura: 17 }, { titulo: 'Propostas', largura: 44 }, { titulo: 'Compravam', largura: 20, direita: true },
         ],
-        linhas: data.map((l) => [l.cliente, descreverPerfil(l.perfil), rotuloDoMotivo(l), l.descricao ?? '', rotuloDoStatus(l.status), descreverPropostas(l), formatBRL(l.compravam)]),
-        totais: [`${data.length} dores`, '', '', '', '', '', ''],
+        linhas: paraExportar.map((l) => [l.cliente, descreverPerfil(l.perfil), rotuloDoMotivo(l), l.descricao ?? '', rotuloDoStatus(l.status), descreverPropostas(l), formatBRL(l.compravam)]),
+        totais: [`${paraExportar.length} dores`, '', '', '', '', '', ''],
         baixar: async () => null,
         nomeDoArquivo: `motivos-e-dores-${todayISO()}.pdf`,
       });
@@ -89,7 +99,7 @@ export default function MotivosEDores() {
 
   return (
     <ModeloDeRelatorio titulo="Motivos e dores" icone={SearchCheck} arquivo="motivos-e-dores"
-      descricao="Por que os clientes não estão comprando, o que foi proposto e o que funcionou."
+      descricao="Por que os clientes não estão comprando, o que foi proposto e o que funcionou." exportavel={podeExportar}
       linhas={data} colunas={colunas} chave={(l) => l.dor_id} carregando={isLoading} erro={error}
       vazio="Nenhuma dor registrada neste recorte."
       controles={(
@@ -101,11 +111,20 @@ export default function MotivosEDores() {
               {opcoes.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
             </SelectContent>
           </Select>
+          <Select value={autor} onValueChange={setAutor}>
+            <SelectTrigger className="w-52" aria-label="Quem registrou"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value={TODAS}>Todos os vendedores</SelectItem>
+              {autores.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+            </SelectContent>
+          </Select>
           <Input type="date" className="w-40" aria-label="De" value={de} onChange={(e) => setDe(e.target.value)} />
           <Input type="date" className="w-40" aria-label="Até" value={ate} onChange={(e) => setAte(e.target.value)} />
-          <Button variant="outline" size="sm" className="max-[860px]:hidden" disabled={data.length === 0} onClick={exportarPdf}>
-            <FileDown className="w-4 h-4 mr-1.5" aria-hidden="true" />PDF
-          </Button>
+          {podeExportar && (
+            <Button variant="outline" size="sm" className="max-[860px]:hidden" disabled={paraExportar.length === 0} onClick={exportarPdf}>
+              <FileDown className="w-4 h-4 mr-1.5" aria-hidden="true" />PDF
+            </Button>
+          )}
         </>
       )}
       resumo={[
@@ -119,11 +138,12 @@ export default function MotivosEDores() {
           <section className="rounded-lg border border-border p-3 space-y-2">
             <h2 className="text-sm font-semibold">Por que não estão comprando</h2>
             {motivos.length === 0 ? <p className="text-[13px] text-muted-foreground">Os motivos aparecem aqui conforme a equipe registra.</p> : motivos.map((m) => (
-              <div key={m.rotulo} className="grid grid-cols-[120px_1fr_auto] items-center gap-2 text-[13px]">
-                <span>{m.rotulo}</span>
+              <button key={m.rotulo} type="button" title="Ver estes clientes na lista" onClick={() => setBusca(busca === m.rotulo ? '' : m.rotulo)}
+                className="w-full text-left grid grid-cols-[120px_1fr_auto] items-center gap-2 text-[13px] hover:bg-muted/50 rounded">
+                <span className={busca === m.rotulo ? 'font-semibold' : undefined}>{m.rotulo}</span>
                 <span className="h-3 rounded bg-muted overflow-hidden"><span className="block h-full bg-status-danger" style={{ width: `${(m.compravam / maior) * 100}%` }} /></span>
                 <span className="tabular-nums">{m.clientes} · {formatBRL(m.compravam)}</span>
-              </div>
+              </button>
             ))}
             {propostas.length > 0 && (
               <table className="w-full text-[13px] mt-2">

@@ -51,6 +51,7 @@ import { Link } from 'react-router-dom';
 import { useDoresEmAberto } from '@/hooks/useRaioX';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { linkRaioX } from '@/config/comercial-insights';
+import { ultimoDiaDoMes } from '@/lib/semanas-dos-artistas';
 import { rotuloDoMotivo } from '@/lib/raio-x';
 
 const MESES_CURTOS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
@@ -170,6 +171,8 @@ export default function ComercialCarteiras() {
     venda: linhas.reduce((s, l) => s + l.venda_mes, 0),
     aFaturar: linhas.reduce((s, l) => s + l.a_faturar, 0),
   }), [linhas]);
+  const clientesAFaturar = linhas.filter((l) => l.a_faturar > 0).length;
+  const tenantPath = useTenantPath();
 
   return (
     <div className="flex flex-col min-h-full">
@@ -267,14 +270,14 @@ export default function ComercialCarteiras() {
               </ExplicacaoDoIndicador>
               <ExplicacaoDoIndicador id="carteira.a_faturar">
                 <Card className="p-3 h-full">
-                  <p className="text-[12px] text-muted-foreground">A faturar</p>
+                  <p className="text-[12px] text-muted-foreground">A faturar{clientesAFaturar ? ` · ${clientesAFaturar} ${clientesAFaturar === 1 ? 'cliente' : 'clientes'}` : ''}</p>
                   <p className="text-[18px] font-semibold font-mono">{formatBRL(totais.aFaturar)}</p>
-                  <p className="text-[12px] text-muted-foreground">pedido aprovado sem nota · não conta na meta</p>
+                  <Link to={tenantPath('/comercial/pedidos')} className="text-[12px] text-primary underline">não conta na meta · ver pedidos</Link>
                 </Card>
               </ExplicacaoDoIndicador>
               <div className="col-span-full">
                 <ComposicaoDaVenda de={intervalo?.de ?? competencia} carteira={carteira} filial={filial}
-                  ate={intervalo?.ate ?? toLocalISODate(new Date(fromLocalISODate(competencia).getFullYear(), fromLocalISODate(competencia).getMonth() + 1, 0))} />
+                  ate={intervalo?.ate ?? ultimoDiaDoMes(competencia)} />
               </div>
             </div>
 
@@ -595,8 +598,8 @@ function ComoLer({ corte }: { corte: string | null }) {
         <ul className="mt-2 space-y-1 text-[13px] text-muted-foreground list-disc pl-5">
           <li>
             <strong className="text-foreground">De onde vem a venda:</strong> das notas do Forteplus
-            {corte && <> até <strong className="text-foreground">{formatDateBR(corte)}</strong></>} e, depois disso, dos lançamentos
-            com nota fiscal. Lançamento sem nota não conta. Bonificação, publicidade e cashback não são venda.
+            {corte && <> até <strong className="text-foreground">{formatDateBR(corte)}</strong></>} e, depois disso, das notas
+            informadas pelo comercial. Pedido sem nota não conta. Cliente condição conta pela Venda total. Bonificação, publicidade e cashback não são venda.
           </li>
           <li>
             <strong className="text-foreground">Comprou:</strong> quanto o cliente comprou no mês (ou período) do filtro Período.
