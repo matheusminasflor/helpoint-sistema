@@ -156,8 +156,9 @@ const NoticiaAberta = lazy(() => import('@/telas/NoticiaAberta'));
 
 /** O Meu RH e as Solicitações do RH abrem só com o interruptor ligado (Configurações do RH, 20270205010000). */
 function SeMeuRHLigado({ children }: { children: ReactNode }) {
-  const { data: ligado, isLoading } = useMeuRHLigado();
-  if (isLoading) return null;
+  // `isPending`: sem a empresa ainda a consulta nem começou, e abrir pelo endereço ou no F5 caía no Início.
+  const { data: ligado, isPending } = useMeuRHLigado();
+  if (isPending) return null;
   return ligado ? <>{children}</> : <Navigate to="/inicio" replace />;
 }
 
