@@ -32,8 +32,7 @@ select public.com_importar_vendas(
   ]$items$::jsonb, false);
 select tests.clear_authentication();
 
-update public.com_clientes set carteira = 'X', tabela_preco = case codigo when 'C1' then 'VIP CONDICAO' else 'VIP MAIS' end,
-       tabela_base = 'VIP'
+update public.com_clientes set carteira = 'X', tabela_preco = case codigo when 'C1' then 'VIP CONDICAO' else 'VIP MAIS' end
  where tenant_id = (select a from f);
 insert into public.com_carteira_membros (tenant_id, user_id, carteira, responsavel) values ((select a from f), (select dono from u), 'X', true);
 insert into public.com_faixas_cashback (tenant_id, tabela_base, valor_minimo, percentual) values ((select a from f), 'VIP', 0, 10);
