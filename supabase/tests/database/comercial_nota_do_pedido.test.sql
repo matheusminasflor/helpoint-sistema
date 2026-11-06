@@ -83,6 +83,7 @@ select tests.clear_authentication();
 insert into public.com_vendas_itens
   (tenant_id, importacao_id, filial, emissao, documento, serie, cfop, classe, cliente_codigo, produto_codigo, produto_nome, quantidade, valor_nota)
 select (select a from f), (select id from imp), 'MF', '2026-10-21', '000502', '1', '5102', 'venda', 'C2', 'P1', 'Produto', 1, 200;
+update public.com_vendas_importacoes set status = 'em_andamento' where id = (select id from imp);
 update public.com_vendas_importacoes set status = 'concluida' where id = (select id from imp);
 select is((select nota_fiscal from public.ped_pedidos where numero = 'N1' and valor = 200), '502', 'a importacao concluida dispara o encontro');
 
@@ -95,8 +96,8 @@ select (select a from f), c.id, x.o, 'Venda', 'INBRAS', 'N' || x.o, 80, x.nf, '2
 select tests.authenticate_as('dono@notapedido.test');
 select is((select count(*)::int from public.com_notas_a_confirmar() where nota_fiscal = '901'), 1, 'a mesma nota em dois pedidos soma uma vez');
 select tests.clear_authentication();
-insert into public.ped_decisoes (tenant_id, checklist_id, versao, status)
-select c.tenant_id, c.id, c.versao, 'Recusado' from public.ped_checklists c where c.id = (select id from ck where cliente_codigo = 'C2');
+insert into public.ped_decisoes (tenant_id, checklist_id, versao, status, motivos)
+select c.tenant_id, c.id, c.versao, 'Recusado', array['Teste'] from public.ped_checklists c where c.id = (select id from ck where cliente_codigo = 'C2');
 select tests.authenticate_as('dono@notapedido.test');
 select is((select count(*)::int from public.com_notas_a_confirmar() where nota_fiscal = '901'), 0, 'pedido devolvido nao conta');
 select tests.clear_authentication();

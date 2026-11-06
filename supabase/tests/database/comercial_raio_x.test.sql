@@ -99,7 +99,7 @@ select tests.clear_authentication();
 update public.user_access_profiles set overrides = '{"lancamentos": {"equipe": true, "apagar": true, "corrigir": false}}'::jsonb
  where user_id = (select bia from u) and department = 'comercial';
 select tests.authenticate_as('bia@raiox.test');
-select lives_ok($delete from public.com_interacoes where id = (select id from l where nome = 'falou')$, 'apagar o lancamento nao esbarra na regra do gestor');
+select lives_ok($$delete from public.com_interacoes where id = (select id from l where nome = 'falou')$$, 'apagar o lancamento nao esbarra na regra do gestor');
 select is((select count(*)::int from public.com_interacoes where id = (select id from l where nome = 'falou')), 0, 'o lancamento saiu mesmo');
 
 select * from finish();
