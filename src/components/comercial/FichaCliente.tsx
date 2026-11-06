@@ -48,6 +48,7 @@ import { useVisaoRelatorio } from '@/hooks/useVisaoRelatorio';
 import { useQueryState } from '@/hooks/useQueryState';
 import { ContatosDoCliente } from '@/components/comercial/ContatosDoCliente';
 import { RaioXDaFicha } from '@/components/comercial/RaioXDaFicha';
+import { ComposicaoDaVenda } from '@/components/comercial/ComposicaoDaVenda';
 import type {
   CashbackMensal, CashbackResumo, CriterioCurva, FaixaCurva, Filial, FichaCliente,
   FichaClienteComprou, FichaClienteEvolucaoFaixa, FichaClienteEvolucaoProdutoItem,
@@ -148,6 +149,7 @@ export function FichaClienteSecao({
           cliente precisa do telefone nas duas visões. Vem antes dos números,
           porque é o "quem é" antes do "quanto". */}
       <CadastroDoCliente codigo={codigo} de={de} ate={ate} filial={filial} />
+      <ComposicaoDaVenda de={de} ate={ate} filial={filial} codigo={codigo} />
 
       <div ref={abas} className="inline-flex rounded-md border border-border p-0.5 scroll-mt-20" role="tablist" aria-label="Partes da ficha">
         {(['vendas', 'relacionamento', 'raio-x'] as const).map((a) => (

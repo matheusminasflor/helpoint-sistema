@@ -29,6 +29,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FarolDaMeta } from '@/components/comercial/FarolDaMeta';
+import { ComposicaoDaVenda } from '@/components/comercial/ComposicaoDaVenda';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { SeletorPeriodoDaCompetencia } from '@/components/comercial/SeletorPeriodoDaCompetencia';
 import { SeletorVisao } from '@/components/comercial/SeletorVisao';
@@ -271,6 +272,10 @@ export default function ComercialCarteiras() {
                   <p className="text-[12px] text-muted-foreground">fechado, ainda não faturado</p>
                 </Card>
               </ExplicacaoDoIndicador>
+              <div className="col-span-full">
+                <ComposicaoDaVenda de={intervalo?.de ?? competencia} carteira={carteira} filial={filial}
+                  ate={intervalo?.ate ?? toLocalISODate(new Date(fromLocalISODate(competencia).getFullYear(), fromLocalISODate(competencia).getMonth() + 1, 0))} />
+              </div>
             </div>
 
             {/* ── O ano: meta × venda mês a mês (só no Analítico) ─────────────────────── */}

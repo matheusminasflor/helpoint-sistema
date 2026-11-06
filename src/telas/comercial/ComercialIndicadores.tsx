@@ -22,6 +22,7 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { FarolDaMeta } from '@/components/comercial/FarolDaMeta';
+import { ComposicaoDaVenda } from '@/components/comercial/ComposicaoDaVenda';
 import { SeletorPeriodoDaCompetencia } from '@/components/comercial/SeletorPeriodoDaCompetencia';
 import { useQueryState } from '@/hooks/useQueryState';
 import { useDepartmentPermissions, usePodeGerirCarteiras } from '@/hooks/useAccessProfiles';
@@ -42,7 +43,7 @@ import { formatBRL, formatDateBR } from '@/types/financeiro';
 import { LinhaDaConferencia } from '@/components/financeiro/LinhaDaConferencia';
 import { SeletorVisao } from '@/components/comercial/SeletorVisao';
 import { useVisaoRelatorio } from '@/hooks/useVisaoRelatorio';
-import { toLocalISODate } from '@/lib/dates';
+import { fromLocalISODate, toLocalISODate } from '@/lib/dates';
 import { LancamentosDaVendedora } from '@/components/comercial/LancamentosDaVendedora';
 import { NotasQueNaoBateram } from '@/components/comercial/NotasQueNaoBateram';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -201,6 +202,8 @@ export default function ComercialIndicadores() {
                     <h2 className="text-sm font-semibold">{v.nome}</h2>
                     <span className="text-[13px] text-muted-foreground">{v.carteira ? `Carteira ${v.carteira}` : 'Sem carteira'}</span>
                   </div>
+                  {v.carteira && <ComposicaoDaVenda de={intervalo?.de ?? competencia} carteira={v.carteira}
+                    ate={intervalo?.ate ?? toLocalISODate(new Date(fromLocalISODate(competencia).getFullYear(), fromLocalISODate(competencia).getMonth() + 1, 0))} />}
                   <table className="w-full text-[13px]">
                     <thead>
                       <tr className="text-left text-muted-foreground">
