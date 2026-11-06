@@ -5,7 +5,7 @@
 --   3  a vendedora completa a nota e o valor depois, mesmo no lançamento concluído...
 --   4  ... e aí conta, na data da nota
 --   5  a nota posta não muda depois
---   6  A faturar = o pedido fechado sem nota; Faturado = o lançamento com nota; e o mês passado
+--   6  A faturar = o pedido aprovado sem nota; Faturado = o lançamento com nota; e o mês passado
 --   7  a média dos 3 meses divide por 3, contando o mês sem compra
 --   8  as médias dividem só pelos meses importados (20270126030000)
 --   9  o período, a filial e o cliente mês a mês (20270126030000)
@@ -62,13 +62,17 @@ select throws_ok($$ select public.com_salvar_interacao((select id from l where n
   '42501', null, 'a nota posta nao muda depois');
 select tests.clear_authentication();
 
--- C2: pedido fechado (checklist) de R$ 400, ainda sem nota.
+-- C2: pedido aprovado (checklist) de R$ 400, ainda sem nota.
 insert into public.com_interacoes (tenant_id, vendedor_id, cliente_codigo, data, status)
 select a, (select ana from u), 'C2', '2026-05-06', 'concluido' from f;
 insert into public.ped_checklists (tenant_id, interacao_id, protocolo, vendedor_id, cliente_codigo, cliente_nome, criado_por, contato)
 select a, (select id from public.com_interacoes where cliente_codigo = 'C2'), 'CK-T-1', (select ana from u), 'C2', 'CLIENTE DOIS', (select ana from u), 'Telefone' from f;
 insert into public.ped_pedidos (tenant_id, checklist_id, ordem, tipo, filial, numero, valor)
 select a, (select id from public.ped_checklists where protocolo = 'CK-T-1'), 1, 'Venda', 'MF', 'P-1', 400 from f;
+alter table public.ped_decisoes disable trigger user;
+insert into public.ped_decisoes (tenant_id, checklist_id, versao, status)
+select c.tenant_id, c.id, c.versao, 'Aprovado' from public.ped_checklists c where c.protocolo = 'CK-T-1';
+alter table public.ped_decisoes enable trigger user;
 
 select tests.authenticate_as('ana@notalanc.test');
 select is((select a_faturar || '|' || venda_mes_passado from public.com_acompanhamento_da_carteira('NORTE', '2026-05-01') where grupo_nome = 'CLIENTE DOIS'),

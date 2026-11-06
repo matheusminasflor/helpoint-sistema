@@ -43,7 +43,7 @@ with n as (
   select (select a from f), l.id, 'CK-' || l.cliente_codigo, (select dono from u), l.cliente_codigo, 'Cliente', 'Contato' from l returning id, cliente_codigo
 ) select * from n;
 alter table public.ped_decisoes disable trigger user;
-insert into public.ped_decisoes (tenant_id, checklist_id, status) select (select a from f), id, 'Aprovado' from ck;
+insert into public.ped_decisoes (tenant_id, checklist_id, versao, status) select c.tenant_id, c.id, c.versao, 'Aprovado' from public.ped_checklists c where c.id in (select id from ck);
 alter table public.ped_decisoes enable trigger user;
 
 insert into public.ped_pedidos (tenant_id, checklist_id, ordem, tipo, filial, numero, valor, nota_fiscal, nota_em, nota_valor, nota_origem)
