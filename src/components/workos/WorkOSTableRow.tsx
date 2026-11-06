@@ -3,7 +3,7 @@ import { dataHora, haQuantoTempo } from '@/lib/dates';
 import { cn } from '@/lib/utils';
 import { StatusCell } from './StatusCell';
 import { PriorityCell } from './PriorityCell';
-import { categoriaDoChamado, getSLATimeRemaining } from '@/types/helpdesk';
+import { categoriaDoChamado, getSLATimeRemaining, type TempoUtil } from '@/types/helpdesk';
 import { setorDoModulo } from '@/lib/permissoes';
 import { DEPARTMENT_SCHEMAS } from '@/config/access-profile-schemas';
 import { AlertTriangle, HardDrive, UserPlus, ShoppingCart } from 'lucide-react';
@@ -26,6 +26,7 @@ export const ALTURA_DA_LINHA = 56;
 
 interface WorkOSTableRowProps {
   ticket: TicketWithDetails;
+  tempoUtil?: TempoUtil;
   isSelected: boolean;
   onSelect: () => void;
   onUpdate?: () => void;
@@ -36,7 +37,8 @@ interface WorkOSTableRowProps {
 }
 
 export function WorkOSTableRow({ 
-  ticket, 
+  ticket,
+  tempoUtil,
   isSelected, 
   onSelect,
   onUpdate,
@@ -44,7 +46,7 @@ export function WorkOSTableRow({
   simplified = false,
   asCard = false,
 }: WorkOSTableRowProps) {
-  const sla = getSLATimeRemaining(ticket.sla_due_at, ticket);
+  const sla = getSLATimeRemaining(ticket.sla_due_at, ticket, tempoUtil);
   const { assignToMe, atribuirA } = useTicketActions();
   // Quem a tela já mostra enquanto o banco espera os 8 s do "Desfazer" (regra 1, 2026-10-24).
   const [otimista, setOtimista] = useState<string | null>(null);

@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { unwrap } from '@/lib/supabase-result';
 import { todayISO } from '@/lib/dates';
+import { lerTempoUtil } from '@/hooks/useTempoUtil';
 import { prazosQuePedemAtencao, type ChamadoDoAviso, type Motivo } from '@/lib/prazos-do-aviso';
 
 const CAMPOS = 'id, ticket_number, title, status, sla_due_at, first_response_due_at, first_response_at, agendou_vencido';
@@ -65,7 +66,8 @@ export function AvisoDePrazos() {
         : [];
       const todos = new Map<string, ChamadoDoAviso>();
       for (const t of [...((unwrap(meus) ?? []) as unknown as ChamadoDoAviso[]), ...(deJunto as unknown as ChamadoDoAviso[])]) todos.set(t.id, t);
-      return prazosQuePedemAtencao([...todos.values()], new Date());
+      const tempo = todos.size ? await lerTempoUtil([...todos.keys()]) : new Map();
+      return prazosQuePedemAtencao([...todos.values()], new Date(), new Map([...tempo].map(([id, t]) => [id, t.restantes])));
     },
   });
 

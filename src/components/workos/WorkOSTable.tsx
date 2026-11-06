@@ -15,7 +15,8 @@ import { PRIORITY_LABELS } from '@/lib/automation-flow';
 import { dataHora } from '@/lib/dates';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useIsBelow } from '@/hooks/use-mobile';
-import type { TicketWithDetails } from '@/types/helpdesk';
+import { useTempoUtil } from '@/hooks/useTempoUtil';
+import { isSLAStopped, SLA_PAUSED_STATUSES, type TicketWithDetails } from '@/types/helpdesk';
 
 const PAGE_SIZE = 50;
 
@@ -81,6 +82,10 @@ export function WorkOSTable({
     () => visiveis.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
     [visiveis, page],
   );
+  const idsCorrendo = useMemo(() => (pageTickets as TicketWithDetails[])
+    .filter((t) => t.sla_due_at && !isSLAStopped(t.status) && !(SLA_PAUSED_STATUSES as readonly string[]).includes(t.status))
+    .map((t) => t.id), [pageTickets]);
+  const { data: tempoUtil } = useTempoUtil(idsCorrendo);
 
   const exportar = () => exportarPlanilha('chamados', (visiveis as Linha[]).map((t) => ({
     'Nº': t.ticket_number,
@@ -183,6 +188,7 @@ export function WorkOSTable({
           <WorkOSTableRow
             key={ticket.id}
             ticket={ticket}
+            tempoUtil={tempoUtil?.get(ticket.id)}
             isSelected={selectedTicketId === ticket.id}
             onSelect={() => onSelectTicket(ticket)}
             onUpdate={onUpdate}

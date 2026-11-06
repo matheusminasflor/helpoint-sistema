@@ -2,20 +2,16 @@ import { describe, expect, it } from 'vitest';
 import { fracaoDoPrazo, prazoUsadoMedio } from './prazo-usado';
 
 describe('prazo usado', () => {
-  const aberto = '2026-10-20T08:00:00Z';
-  const prazo = '2026-10-20T16:00:00Z';
-
   it('mede a fração do prazo gasta até resolver', () => {
-    expect(fracaoDoPrazo(aberto, '2026-10-20T12:00:00Z', prazo)).toBe(0.5);
-    expect(fracaoDoPrazo(aberto, '2026-10-20T15:48:00Z', prazo)).toBeCloseTo(0.975);
+    expect(fracaoDoPrazo(240, 480)).toBe(0.5);
   });
 
   it('passa de 1 quando resolveu fora do prazo', () => {
-    expect(fracaoDoPrazo(aberto, '2026-10-20T20:00:00Z', prazo)).toBe(1.5);
+    expect(fracaoDoPrazo(720, 480)).toBe(1.5);
   });
 
-  it('ignora prazo igual ou anterior à abertura', () => {
-    expect(fracaoDoPrazo(aberto, prazo, aberto)).toBeNull();
+  it('ignora prazo sem minutos de expediente', () => {
+    expect(fracaoDoPrazo(10, 0)).toBeNull();
   });
 
   it('dá a média em % e null sem chamados', () => {

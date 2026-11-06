@@ -34,8 +34,8 @@ describe("getSLATimeRemaining — agendado com o prazo vencido (2026-10-19, #146
   });
 
   it("sem saber quando parou, segue o atraso que corre (como antes)", () => {
-    const sla = getSLATimeRemaining(venceEm(-5), { status: "scheduled", agendou_vencido: true, created_at: abertoHa(7) });
-    expect(sla.value).toBe("5h");
+    const sla = getSLATimeRemaining(venceEm(-5), { status: "scheduled", agendou_vencido: true, created_at: abertoHa(7) }, { restantes: -300, total: 120, usados: 420, volta_em: null });
+    expect(sla.value).toBe("5h 00min");
   });
 });
 
@@ -127,5 +127,30 @@ describe("getSLATimeRemaining — relógio parado", () => {
 
     expect(sla.hasSLA).toBe(false);
     expect(sla.label).toBe("Sem SLA");
+  });
+});
+
+describe("getSLATimeRemaining — horas de expediente (#337)", () => {
+  const util = { restantes: 179, total: 240, usados: 61, volta_em: null };
+
+  it("mostra o saldo do expediente, e não o relógio corrido", () => {
+    const sla = getSLATimeRemaining(venceEm(17), { status: "in_progress", created_at: abertoHa(1) }, util);
+    expect(sla.label).toBe("2h 59min de expediente");
+    expect(sla.percentage).toBeCloseTo(25.4, 1);
+  });
+
+  it("diz até quando o relógio fica parado fora do expediente", () => {
+    const sla = getSLATimeRemaining(venceEm(14), { status: "in_progress" }, { ...util, restantes: 59, volta_em: "2026-09-05T11:00:00Z" });
+    expect(sla.label).toMatch(/^59min de expediente · parado até 05\/09 \d\d:00$/);
+  });
+
+  it("sem a conta do banco, mostra a data e não um tempo errado", () => {
+    expect(getSLATimeRemaining(venceEm(17), { status: "in_progress" }).label).toMatch(/^vence /);
+  });
+
+  it("conta o atraso em expediente", () => {
+    const sla = getSLATimeRemaining(venceEm(-15), { status: "in_progress" }, { ...util, restantes: -90 });
+    expect(sla.label).toBe("1h 30min de expediente em atraso");
+    expect(sla.isOverdue).toBe(true);
   });
 });

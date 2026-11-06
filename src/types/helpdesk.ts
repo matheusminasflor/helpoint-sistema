@@ -200,6 +200,16 @@ export const SLA_STOPPED_STATUSES = ['resolved', 'closed', 'cancelled', 'rejecte
 export const isSLAStopped = (status?: string | null): boolean =>
   !!status && (SLA_STOPPED_STATUSES as readonly string[]).includes(status);
 
+/** O prazo em minutos de expediente do setor, vindo do banco (`chamados_tempo_util`). `restantes` negativo é atraso. */
+export interface TempoUtil { restantes: number; total: number; usados: number; volta_em: string | null }
+
+const horasEMinutos = (minutos: number) => {
+  const h = Math.floor(minutos / 60);
+  const m = minutos % 60;
+  return h ? `${h}h ${String(m).padStart(2, '0')}min` : `${m}min`;
+};
+const dataCurta = (d: Date) => `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')} às ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+
 interface SLAContext {
   status?: string | null;
   resolved_at?: string | null;
@@ -249,6 +259,8 @@ const slaConsumedPercentage = (createdAt: string | null | undefined, due: Date, 
 export const getSLATimeRemaining = (
   slaDueAt: string | null,
   ticket?: SLAContext | null,
+  /** Sem ele (ainda carregando, ou lista que só quer saber se venceu), a tela mostra a data: relógio corrido conta a noite (#337). */
+  util?: TempoUtil | null,
 ): SLATimeRemaining => {
   if (!slaDueAt) return { label: 'Sem SLA', value: 'Sem SLA', isOverdue: false, hasSLA: false, percentage: 0, isFrozen: false };
 
@@ -304,23 +316,21 @@ export const getSLATimeRemaining = (
   const diff = due.getTime() - now.getTime();
 
   if (diff < 0) {
-    const overdueMins = Math.abs(Math.floor(diff / 60000));
-    const value = overdueMins < 60 ? `${overdueMins}min` : `${Math.floor(overdueMins / 60)}h`;
-    return { label: `${value} em atraso`, value, isOverdue: true, hasSLA: true, percentage: 100, isFrozen: false };
+    if (!util) return { label: `venceu ${dataCurta(due)}`, value: dataCurta(due), isOverdue: true, hasSLA: true, percentage: 100, isFrozen: false };
+    const value = horasEMinutos(Math.abs(util.restantes));
+    return { label: `${value} de expediente em atraso`, value, isOverdue: true, hasSLA: true, percentage: 100, isFrozen: false };
   }
 
 
-  const percentage = slaConsumedPercentage(ticket?.created_at, due, now);
-  const remainingMins = Math.floor(diff / 60000);
-  if (remainingMins < 60) {
-    const value = `${remainingMins}min`;
-    return { label: `${value} restantes`, value, isOverdue: false, hasSLA: true, percentage, isFrozen: false };
+  if (!util) {
+    const percentage = slaConsumedPercentage(ticket?.created_at, due, now);
+    return { label: `vence ${dataCurta(due)}`, value: dataCurta(due), isOverdue: false, hasSLA: true, percentage, isFrozen: false };
   }
-  if (remainingMins < 1440) {
-    const value = `${Math.floor(remainingMins / 60)}h`;
-    return { label: `${value} restantes`, value, isOverdue: false, hasSLA: true, percentage, isFrozen: false };
-  }
-  const value = `${Math.floor(remainingMins / 1440)}d`;
-  return { label: `${value} restantes`, value, isOverdue: false, hasSLA: true, percentage, isFrozen: false };
+  const percentage = util.total > 0 ? Math.min(Math.max((1 - util.restantes / util.total) * 100, 0), 100) : 100;
+  const value = horasEMinutos(util.restantes);
+  // Fora do expediente o saldo não anda: a tela diz quando volta a contar.
+  const volta = util.volta_em ? new Date(util.volta_em) : null;
+  const parado = volta ? ` · parado até ${dataCurta(volta).replace(' às ', ' ')}` : '';
+  return { label: `${value} de expediente${parado}`, value, isOverdue: false, hasSLA: true, percentage, isFrozen: false };
 };
 

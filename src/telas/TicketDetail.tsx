@@ -43,6 +43,7 @@ import {
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useTempoUtil } from '@/hooks/useTempoUtil';
 import { categoriaDoChamado, getTicketPriorityLabel, getSLATimeRemaining, SLA_PAUSED_STATUSES } from '@/types/helpdesk';
 import { ChipDoSetor } from '@/components/ui/ChipDoSetor';
 import { EtapasParaQuemPediu } from '@/components/request/EtapasParaQuemPediu';
@@ -60,6 +61,7 @@ export default function TicketDetail() {
   const tenantPath = useTenantPath();
   const { user, role } = useAuth();
   const { ticket, isLoading, refetch, patch } = useTicketDetail(id || null);
+  const { data: tempoUtil } = useTempoUtil(ticket ? [ticket.id] : []);
   // Quem atende junto (2026-10-13) age no chamado mesmo sem perfil no setor dele.
   const euAtendoJunto = useEuAtendoJunto(ticket?.id);
   const { pode, atende } = usePodeNoChamado(ticket?.module, euAtendoJunto);
@@ -124,7 +126,7 @@ export default function TicketDetail() {
     );
   }
 
-  const sla = getSLATimeRemaining(ticket.sla_due_at, ticket);
+  const sla = getSLATimeRemaining(ticket.sla_due_at, ticket, tempoUtil?.get(ticket.id));
   const primeiraResposta = rotuloDaPrimeiraResposta(ticket);
 
   if (!isTechnician) {

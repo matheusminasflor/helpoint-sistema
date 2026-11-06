@@ -324,7 +324,8 @@ export function useCreateTicket() {
       if (data.assigned_to) {
         insertData.assigned_to = data.assigned_to;
         insertData.status = 'in_progress';
-        insertData.first_response_at = new Date().toISOString();
+        // Só quem abre e já atende assumiu. Escolher o atendente não é resposta: marcava 187 de 338 chamados (dono, 2026-11-06).
+        if (data.assigned_to === user.id) insertData.first_response_at = new Date().toISOString();
       }
 
       const { data: ticket, error } = await supabase

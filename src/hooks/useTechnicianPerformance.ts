@@ -5,6 +5,7 @@ import { MetricsFilter, getDateRangeFromPeriod } from './useHelpdeskMetrics';
 import { useAuth } from '@/contexts/AuthContext';
 import { unwrap } from '@/lib/supabase-result';
 import { fracaoDoPrazo, prazoUsadoMedio } from '@/lib/prazo-usado';
+import { lerTempoUtil } from './useTempoUtil';
 import { concessaoDoModulo } from './useMembrosDoSetor';
 import type { ChamadoNoHover } from '@/components/dashboard/ListaDeChamadosNoHover';
 
@@ -138,6 +139,9 @@ export function useTechnicianPerformance(filter?: MetricsFilter) {
         });
       });
 
+      const comPrazo = (tickets ?? []).filter((t) => (t.status === 'resolved' || t.status === 'closed') && t.sla_due_at && t.resolved_at);
+      const tempoUtil = comPrazo.length ? await lerTempoUtil(comPrazo.map((t) => t.id)) : new Map();
+
       // Calculate metrics
       Object.entries(techTickets).forEach(([techId, techTicketList]) => {
         const metrics = metricsMap[techId];
@@ -187,7 +191,8 @@ export function useTechnicianPerformance(filter?: MetricsFilter) {
               } else if (ticket.resolved_at) {
                 metrics.chamadosForaDoPrazo.push(noHover);
               }
-              const fracao = ticket.resolved_at ? fracaoDoPrazo(ticket.created_at, ticket.resolved_at, ticket.sla_due_at) : null;
+              const util = tempoUtil.get(ticket.id);
+              const fracao = util ? fracaoDoPrazo(util.usados, util.total) : null;
               if (fracao !== null) fracoes.push(fracao);
             }
           }

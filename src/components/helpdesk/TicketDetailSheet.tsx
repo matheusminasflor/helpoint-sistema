@@ -26,6 +26,7 @@ import {
   Clock,
   AlertTriangle
 } from 'lucide-react';
+import { useTempoUtil } from '@/hooks/useTempoUtil';
 import { categoriaDoChamado, getTicketPriorityLabel, getSLATimeRemaining } from '@/types/helpdesk';
 import { rotuloDaPrimeiraResposta } from '@/lib/primeira-resposta';
 import { ticketDetailPath } from '@/lib/ticket-route';
@@ -56,7 +57,8 @@ export function TicketDetailSheet({
   const isTechnician = atende || pode('view_all');
   const showTechFeatures = isTechnician && !simplified;
   
-  const sla = ticket ? getSLATimeRemaining(ticket.sla_due_at, ticket) : null;
+  const { data: tempoUtil } = useTempoUtil(ticket ? [ticket.id] : []);
+  const sla = ticket ? getSLATimeRemaining(ticket.sla_due_at, ticket, tempoUtil?.get(ticket.id)) : null;
   const primeiraResposta = ticket ? rotuloDaPrimeiraResposta(ticket) : null;
 
   const openFullPage = () => {
