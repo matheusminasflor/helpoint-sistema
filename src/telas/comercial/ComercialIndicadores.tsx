@@ -23,6 +23,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { FarolDaMeta } from '@/components/comercial/FarolDaMeta';
 import { ComposicaoDaVenda } from '@/components/comercial/ComposicaoDaVenda';
+import { TresRespostas } from '@/components/comercial/TresRespostas';
 import { SeletorPeriodoDaCompetencia } from '@/components/comercial/SeletorPeriodoDaCompetencia';
 import { useQueryState } from '@/hooks/useQueryState';
 import { useDepartmentPermissions, usePodeGerirCarteiras } from '@/hooks/useAccessProfiles';
@@ -203,7 +204,14 @@ export default function ComercialIndicadores() {
                     <h2 className="text-sm font-semibold">{v.nome}</h2>
                     <span className="text-[13px] text-muted-foreground">{v.carteira ? `Carteira ${v.carteira}` : 'Sem carteira'}</span>
                   </div>
-                  {v.carteira && <ComposicaoDaVenda de={intervalo?.de ?? competencia} carteira={v.carteira}
+                  {v.carteira && !analitico && (
+                    <TresRespostas carteira={v.carteira} competencia={competencia} intervalo={intervalo}
+                      de={intervalo?.de ?? competencia} ate={intervalo?.ate ?? ultimoDiaDoMes(competencia)}
+                      vendido={v.linhas.find((l) => eValor(l.metrica))?.realizado ?? 0}
+                      meta={v.linhas.find((l) => eValor(l.metrica))?.meta ?? null}
+                      foraDoAlvo={v.linhas.filter((l) => !eValor(l.metrica) && l.metrica !== 'pct_meta' && (l.cor === 'vermelho' || l.cor === 'amarelo')).length} />
+                  )}
+                  {v.carteira && analitico && <ComposicaoDaVenda de={intervalo?.de ?? competencia} carteira={v.carteira}
                     ate={intervalo?.ate ?? ultimoDiaDoMes(competencia)} />}
                   <table className="w-full text-[13px]">
                     <thead>
@@ -258,15 +266,19 @@ export default function ComercialIndicadores() {
               ))}
             </div>
 
-            {/* Simplificado (2026-10-15): os cartões de cada vendedora. O Analítico soma o farol de ações, o resumo
-                das carteiras e os lançamentos. */}
-            {analitico && (<>
+            {/* Simplificado: as três respostas, os cartões e o resumo curto das carteiras. O Analítico soma o farol de
+                ações e os lançamentos, em blocos que abrem e fecham. */}
+            {analitico && (
+            <details open className="group">
+              <summary className="cursor-pointer text-sm font-semibold mb-2 print:hidden">Farol de ações</summary>
             {/* ── 2. FAROL de ações ──────────────────────────────────────────── */}
             <FarolDeAcoes
               linhas={escolhida ? farol.filter((f) => f.vendedor_id === escolhida[0]) : farol}
               vendedoras={mostradas.map(([id, v]) => ({ id, nome: v.nome }))}
               noRecorte={intervalo ? 'no período' : 'no mês'}
             />
+            </details>
+            )}
 
             {/* ── 3. Resumo das carteiras ────────────────────────────────────── */}
             <ResumoDasCarteiras
@@ -276,8 +288,12 @@ export default function ComercialIndicadores() {
             />
 
             {/* ── 4. Os lançamentos dela (só quando uma vendedora está escolhida) ── */}
-            {escolhida && <LancamentosDaVendedora vendedorId={escolhida[0]} nome={escolhida[1].nome} competencia={competencia} intervalo={intervalo} />}
-            </>)}
+            {analitico && escolhida && (
+              <details open>
+                <summary className="cursor-pointer text-sm font-semibold mb-2 print:hidden">Lançamentos de {escolhida[1].nome}</summary>
+                <LancamentosDaVendedora vendedorId={escolhida[0]} nome={escolhida[1].nome} competencia={competencia} intervalo={intervalo} />
+              </details>
+            )}
           </>
         )}
 

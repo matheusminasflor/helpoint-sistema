@@ -8,11 +8,11 @@ import { formatBRL } from '@/types/financeiro';
 
 interface Composicao { faturado: number; condicao: number; venda_total: number; clientes: number; a_confirmar: number }
 
-export function ComposicaoDaVenda({ de, ate, carteira, filial, codigo }: {
-  de: string; ate: string; carteira?: string | null; filial?: string | null; codigo?: string;
-}) {
+interface Recorte { de: string; ate: string; carteira?: string | null; filial?: string | null; codigo?: string }
+
+export function useComposicaoDaVenda({ de, ate, carteira, filial, codigo }: Recorte) {
   const { tenantId } = useAuth();
-  const { data } = useQuery({
+  return useQuery({
     queryKey: ['comercial', 'composicao-da-venda', tenantId, de, ate, carteira ?? null, filial ?? null, codigo ?? null],
     enabled: !!tenantId,
     queryFn: async (): Promise<Composicao | null> => {
@@ -23,6 +23,10 @@ export function ComposicaoDaVenda({ de, ate, carteira, filial, codigo }: {
       return l ? { faturado: Number(l.faturado), condicao: Number(l.condicao), venda_total: Number(l.venda_total), clientes: l.clientes, a_confirmar: Number(l.a_confirmar) } : null;
     },
   });
+}
+
+export function ComposicaoDaVenda(recorte: Recorte) {
+  const { data } = useComposicaoDaVenda(recorte);
   if (!data || (data.condicao === 0 && data.a_confirmar === 0)) return null;
   return (
     <p className="text-[13px] rounded-md badge-purple px-2 py-1.5">

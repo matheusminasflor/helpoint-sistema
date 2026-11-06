@@ -59,6 +59,7 @@ export interface Interacao {
   data: string;
   status: StatusInteracao;
   valor_venda: number | null;
+  pedido_cancelado?: boolean | null;
   /** Nº e data da nota (20270123010000): o valor só existe com eles, e conta na data da nota. */
   nota_fiscal?: string | null;
   nota_em?: string | null;
@@ -260,7 +261,7 @@ type InteracaoCrua = Omit<Interacao, 'marcas' | 'valor_venda'> & {
 };
 
 /** A consulta dos lançamentos de `de` a `ate` (os dois dias incluídos), mais novos primeiro. */
-const COLUNAS_DA_INTERACAO = `id, vendedor_id, cliente_codigo, data, status, valor_venda, nota_fiscal, nota_em, nota_filial, prazo, observacoes, fora_da_carteira,
+const COLUNAS_DA_INTERACAO = `id, vendedor_id, cliente_codigo, data, status, valor_venda, pedido_cancelado, nota_fiscal, nota_em, nota_filial, prazo, observacoes, fora_da_carteira,
              marcas:com_interacao_marcas(indicador_id),
              cliente:com_clientes(razao_social, cidade, estado, telefone),
              pessoa:profiles!com_interacoes_pessoa_interna_id_fkey(full_name)`;
