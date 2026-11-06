@@ -53,6 +53,8 @@ interface Props {
   catalogo: IndicadorCatalogo[];
   /** Nulo = lançamento novo. */
   editando: Interacao | null;
+  /** Lançamento novo que já chega com o cliente escolhido (a janela do cliente na Carteira). */
+  clienteInicial?: ClienteParaLancar | null;
 }
 
 interface Form {
@@ -80,7 +82,12 @@ function formVazio(): Form {
   };
 }
 
-export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo, editando }: Props) {
+// Fora da minha carteira é TODO cliente que não está nela — o de outra carteira E o do Histórico (sem carteira). Até
+// 2026-09-29 o do Histórico ia como "da minha carteira", e o banco recusava sem exceção: a policy só aceita cliente da
+// carteira ou o escape marcado.
+const foraDaMinha = (c: ClienteParaLancar, minhas: string[]) => !c.carteira || !minhas.includes(c.carteira);
+
+export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo, editando, clienteInicial = null }: Props) {
   const [form, setForm] = useState<Form>(formVazio);
   const [buscaFora, setBuscaFora] = useState('');
   const [procurandoFora, setProcurandoFora] = useState(false);
@@ -157,7 +164,10 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
     setFiltroCarteira('');
     setPasso(1);
     setVerTodos(false);
-    if (!editando) { setForm(formVazio()); return; }
+    if (!editando) {
+      setForm({ ...formVazio(), cliente: clienteInicial, foraDaCarteira: !!clienteInicial && foraDaMinha(clienteInicial, minhasCarteiras) });
+      return;
+    }
     setForm({
       cliente: editando.cliente_codigo
         ? {
@@ -170,6 +180,8 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
             carteira: editando.fora_da_carteira ? null : (minhasCarteiras[0] ?? null),
           }
         : null,
+      comPessoa: false,
+      pessoaId: editando.pessoa_interna_id ?? '',
       data: editando.data,
       status: editando.status,
       valor: editando.valor_venda === null ? '' : String(editando.valor_venda),
@@ -181,7 +193,7 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
       foraDaCarteira: editando.fora_da_carteira,
       marcas: new Set(editando.marcas),
     });
-  }, [open, editando, minhasCarteiras]);
+  }, [open, editando, minhasCarteiras, clienteInicial]);
 
   const indicadores = useMemo(() => catalogo.filter((c) => c.tipo === 'indicador' && (c.ativo || form.marcas.has(c.id))), [catalogo, form.marcas]);
   const acoes = useMemo(() => catalogo.filter((c) => c.tipo === 'acao' && (c.ativo || form.marcas.has(c.id))), [catalogo, form.marcas]);
@@ -220,11 +232,7 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
   }, [daCarteira, filtroCarteira]);
 
   const escolher = (c: ClienteParaLancar) => {
-    // Fora da minha carteira é TODO cliente que não está nela — o de outra carteira E o do
-    // Histórico (sem carteira). Até 2026-09-29 o do Histórico ia como "da minha carteira", e o
-    // banco recusava sem exceção: a policy só aceita cliente da carteira ou o escape marcado.
-    const foraDaMinha = !c.carteira || !minhasCarteiras.includes(c.carteira);
-    setForm((f) => ({ ...f, cliente: c, foraDaCarteira: foraDaMinha }));
+    setForm((f) => ({ ...f, cliente: c, foraDaCarteira: foraDaMinha(c, minhasCarteiras) }));
     setProcurandoFora(false);
   };
 
@@ -235,10 +243,13 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
   });
 
   const enviaChecklist = temPedido && !checklistTravado;
-  const { data: daCarteiraDoCliente = [] } = useAcompanhamentoDaCarteira(open && !editando ? form.cliente?.carteira ?? null : null, `${todayISO().slice(0, 7)}-01`);
+  // A vendedora não lê a carteira de outra pessoa: o contato fora da carteira não tem a pergunta do Raio-X.
+  const carteiraDoAlerta = open && !editando && (!form.foraDaCarteira || podeGerirCarteiras) ? form.cliente?.carteira ?? null : null;
+  const { data: daCarteiraDoCliente = [], isLoading: lendoAlerta } = useAcompanhamentoDaCarteira(carteiraDoAlerta, `${todayISO().slice(0, 7)}-01`);
   const linhaDoCliente = daCarteiraDoCliente.find((l) => form.cliente && l.codigos.includes(form.cliente.codigo));
   const alerta = !editando && !temPedido && !valorNumero && linhaDoCliente ? alertaDoCliente(linhaDoCliente) : null;
-  const faltaRaioX = !!alerta && faltaNaResposta(resposta);
+  // Enquanto a conta não volta, ainda não se sabe se a pergunta aparece.
+  const faltaRaioX = lendoAlerta || (!!alerta && faltaNaResposta(resposta));
 
   const ligarPedido = (ligado: boolean) => {
     setTemPedido(ligado);

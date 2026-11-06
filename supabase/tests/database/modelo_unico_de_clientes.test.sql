@@ -54,8 +54,8 @@ select lives_ok(
 );
 select is((select tabela_preco from public.com_clientes where codigo = '100'), 'ATACADO', 'a planilha muda a tabela');
 select is((select cidade from public.com_clientes where codigo = '100'), 'BH', 'e a célula vazia não mexeu na cidade');
-select is((select count(*)::int from public.com_clientes_tabela_historico where cliente_codigo = '100'), 1,
-  'a tabela trocada ficou no histórico');
+select is((select count(*)::int from public.com_clientes_tabela_historico where cliente_codigo = '100'), 2,
+  'a tabela trocada ficou no histórico, depois da tabela com que o cliente nasceu');
 select is((select carteira from public.com_clientes where codigo = '200'), 'SP', 'o cliente novo nasceu já na carteira');
 
 -- ═══ 10. Rodar o mesmo arquivo de novo não muda nada. ═══

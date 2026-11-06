@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { IdCard, Pencil, Headset, UserRound, AlertTriangle } from 'lucide-react';
 import {
-  useCliente, useVendedoresDoCliente, useSacsDoCliente, useAtendimentoDoCliente,
+  useCliente, useHistoricoDaTabela, useVendedoresDoCliente, useSacsDoCliente, useAtendimentoDoCliente,
 } from '@/hooks/useComercialCliente';
 import { useVisibleModules } from '@/hooks/useVisibleModules';
 import { podeAcessarComercial } from '@/lib/acesso-comercial';
@@ -32,6 +32,7 @@ interface Props {
 
 export function CadastroDoCliente({ codigo, de, ate, filial }: Props) {
   const { data: cliente, isLoading } = useCliente(codigo);
+  const { data: tabelas = [] } = useHistoricoDaTabela(codigo);
   const [editando, setEditando] = useState(false);
 
   // A MESMA régua da policy de UPDATE (leva G): `has_comercial_access` — módulo
@@ -79,6 +80,11 @@ export function CadastroDoCliente({ codigo, de, ate, filial }: Props) {
           </Linha>
           <Linha rotulo="Tabela de preço">
             {cliente.tabela_preco ?? <span className="text-muted-foreground italic">sem tabela</span>}
+            {tabelas.length > 1 && tabelas.map((t) => (
+              <span key={`${t.vigente_desde}-${t.tabela_preco}`} className="block text-[12px] text-muted-foreground">
+                {t.tabela_preco ?? 'sem tabela'} desde {formatDateBR(t.vigente_desde)}
+              </span>
+            ))}
           </Linha>
           <Linha rotulo="Telefone">
             {cliente.telefone ?? <span className="text-muted-foreground italic">não informado</span>}

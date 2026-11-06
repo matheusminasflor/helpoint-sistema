@@ -75,6 +75,21 @@ export interface ClienteParaSalvar {
 const CAMPOS = `id, codigo, razao_social, fantasia, tabela_preco, tabela_base, ativo,
                 em_condicao, origem, documento, telefone, email, endereco, cidade, estado, carteira, grupo`;
 
+/** As tabelas pelas quais o cliente passou, da mais recente para a mais antiga. A Venda total lê a tabela do dia da venda. */
+export function useHistoricoDaTabela(codigo: string | null) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['comercial', 'historico-da-tabela', tenantId, codigo],
+    enabled: !!tenantId && !!codigo,
+    queryFn: async () => unwrap(await supabase
+      .from('com_clientes_tabela_historico')
+      .select('tabela_preco, vigente_desde')
+      .eq('cliente_codigo', codigo!)
+      .order('vigente_desde', { ascending: false })
+      .order('created_at', { ascending: false })) as Array<{ tabela_preco: string | null; vigente_desde: string }>,
+  });
+}
+
 export function useCliente(codigo: string | null) {
   const { tenantId } = useAuth();
   return useQuery({

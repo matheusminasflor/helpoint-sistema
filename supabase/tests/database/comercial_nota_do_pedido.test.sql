@@ -12,10 +12,12 @@
 --  12    pedido devolvido não conta
 --  13    nota digitada em pedido finalizado continua na lista
 --  14    pedido finalizado sem nota é encontrado pela importação
+--  15    a Carteira conta os pedidos por faturar
+--  16    a nota acompanha o pedido quando a posição muda
 begin;
 \ir _helpers.psql
 
-select plan(14);
+select plan(16);
 
 create temporary table f on commit drop as select tests.create_tenant('pgtap-nota-pedido', 'Nota Pedido', false) as a;
 create temporary table u on commit drop as select tests.create_user('dono@notapedido.test', (select a from f)) as dono;
@@ -69,6 +71,7 @@ select is((select count(*)::int from public.com_notas_a_confirmar() where nota_f
 select is((select situacao from public.ped_notas_do_comercial() where nota_fiscal = '888'), 'corrigir', 'nota nao encontrada pede correcao');
 select is((select count(*)::int from public.ped_notas_do_comercial() where situacao = 'falta_nota'), 3, 'pedido aprovado sem nota fica pendente');
 select is((select sum(a_faturar)::numeric from public.com_acompanhamento_da_carteira('X', '2026-10-01')), 2400::numeric, 'A faturar com a parte da condicao');
+select is((select sum(pedidos_a_faturar)::int from public.com_acompanhamento_da_carteira('X', '2026-10-01')), 3, 'a Carteira conta os pedidos por faturar');
 select tests.clear_authentication();
 
 select public.ped_achar_notas_importadas((select a from f));
@@ -111,6 +114,32 @@ insert into public.com_vendas_itens
 select (select a from f), (select id from imp), 'MF', '2026-10-21', '000503', '1', '5102', 'venda', 'C1', 'P1', 'Produto', 1, 1000;
 select public.ped_achar_notas_importadas((select a from f));
 select is((select nota_fiscal from public.ped_pedidos where numero = 'N6'), '503', 'pedido finalizado sem nota e encontrado');
+
+-- 16: regravar com os pedidos em outra ordem não deixa a nota para trás.
+create temporary table r on commit drop as
+with n as (
+  insert into public.com_interacoes (tenant_id, vendedor_id, cliente_codigo, data, status)
+  select a, (select dono from u), 'C1', '2026-10-03', 'em_andamento' from f returning id
+) select id from n;
+create temporary table rc on commit drop as
+with n as (
+  insert into public.ped_checklists (tenant_id, interacao_id, protocolo, vendedor_id, cliente_codigo, cliente_nome, contato)
+  select (select a from f), r.id, 'CK-R', (select dono from u), 'C1', 'Cliente', 'Contato' from r returning id
+) select id from n;
+insert into public.ped_pedidos (tenant_id, checklist_id, ordem, tipo, serie, filial, numero, valor, nota_fiscal, nota_em, nota_valor, nota_origem)
+values ((select a from f), (select id from rc), 1, 'Venda', '1', 'MF', 'R1', 10, '555', '2026-10-25', 10, 'digitada'),
+       ((select a from f), (select id from rc), 2, 'Venda', '1', 'MF', 'R2', 20, null, null, null, null);
+grant select on r to authenticated;
+select tests.authenticate_as('dono@notapedido.test');
+select public.ped_salvar_checklist((select id from r), jsonb_build_object('contato', 'Contato', 'pedidos', (
+  select jsonb_agg(jsonb_build_object('ordem', o, 'tipo', 'Venda', 'serie', '1', 'filial', 'MF', 'numero', n, 'valor', v, 'respostas', (
+    select coalesce(jsonb_agg(jsonb_build_object('item_id', i.id,
+             'resposta', case when i.pede_justificativa or i.regra = 'st' then 'Não se aplica' else 'Sim' end)), '[]'::jsonb)
+      from public.ped_itens i where i.ativo)))
+    from (values (1, 'R2', 20), (2, 'R1', 10)) x(o, n, v))));
+select tests.clear_authentication();
+select is((select string_agg(numero || '=' || coalesce(nota_fiscal, '-'), ',' order by ordem) from public.ped_pedidos where checklist_id = (select id from rc)),
+  'R2=-,R1=555', 'a nota acompanha o pedido quando a posicao muda');
 
 select * from finish();
 rollback;

@@ -27,8 +27,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useQueryState } from '@/hooks/useQueryState';
 import { usePodeNoLancamento } from '@/hooks/useAccessProfiles';
 import {
-  STATUS_INTERACAO, buscarInteracao, useApagarInteracao, useIndicadoresCatalogo, useInteracoes, useMinhasCarteiras,
-  type Interacao,
+  STATUS_INTERACAO, buscarClienteParaLancar, buscarInteracao, useApagarInteracao, useIndicadoresCatalogo, useInteracoes, useMinhasCarteiras,
+  type ClienteParaLancar, type Interacao,
 } from '@/hooks/useComercialLancamentos';
 import { useChecklists } from '@/hooks/usePedidosChecklist';
 import { competenciaAtual, lerCompetencia } from '@/lib/competencia-comercial';
@@ -47,6 +47,7 @@ export default function ComercialLancamentos() {
   const podeApagar = usePodeNoLancamento().apagar;
   const [aberto, setAberto] = useState(false);
   const [editando, setEditando] = useState<Interacao | null>(null);
+  const [clienteInicial, setClienteInicial] = useState<ClienteParaLancar | null>(null);
 
   const nomePorId = useMemo(() => new Map(catalogo.map((c) => [c.id, c])), [catalogo]);
   // O checklist de pedidos de cada lançamento (LEVA S): a vendedora vê aqui o que o Financeiro fez.
@@ -65,8 +66,8 @@ export default function ComercialLancamentos() {
       && checklistPorLancamento.get(l.id)?.situacao !== 'Cancelado')
     .reduce((s, l) => s + (l.valor_venda ?? 0), 0);
 
-  const abrirNovo = () => { setEditando(null); setAberto(true); };
-  const abrirEdicao = (l: Interacao) => { setEditando(l); setAberto(true); };
+  const abrirNovo = () => { setClienteInicial(null); setEditando(null); setAberto(true); };
+  const abrirEdicao = (l: Interacao) => { setClienteInicial(null); setEditando(l); setAberto(true); };
 
   // Devolvido pelo Financeiro aparece aqui em qualquer mês: o lançamento de outubro não estava na lista de novembro, e a
   // vendedora não achava como corrigir (chamado #303, 2026-11-04).
@@ -86,6 +87,20 @@ export default function ComercialLancamentos() {
     void corrigir(pedeCorrigir);
     setPedeCorrigir('');
   }, [pedeCorrigir, corrigir, setPedeCorrigir]);
+  // A janela do cliente na Carteira manda para cá já com o cliente.
+  const [pedeCliente, setPedeCliente] = useQueryState('cliente', '');
+  useEffect(() => {
+    if (!pedeCliente || carregandoCarteira) return;
+    setPedeCliente('');
+    buscarClienteParaLancar(pedeCliente)
+      .then((c) => {
+        if (!c) { toast.error('Cliente não encontrado.'); return; }
+        setClienteInicial(c);
+        setEditando(null);
+        setAberto(true);
+      })
+      .catch((e) => toast.error(mensagemDeErro(e)));
+  }, [pedeCliente, carregandoCarteira, setPedeCliente]);
 
   return (
     <div className="flex flex-col min-h-full">
@@ -256,6 +271,7 @@ export default function ComercialLancamentos() {
         onOpenChange={setAberto}
         minhasCarteiras={minhasCarteiras}
         catalogo={catalogo}
+        clienteInicial={clienteInicial}
         editando={editando}
       />
     </div>

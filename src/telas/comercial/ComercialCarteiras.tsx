@@ -184,17 +184,17 @@ export default function ComercialCarteiras() {
     venda: linhas.reduce((s, l) => s + l.venda_mes, 0),
     aFaturar: linhas.reduce((s, l) => s + l.a_faturar, 0),
   }), [linhas]);
-  const clientesAFaturar = linhas.filter((l) => l.a_faturar > 0).length;
-  const paraExportar = visiveis.map((l) => ({
-    Cliente: l.grupo_nome, Situação: ROTULO_SITUACAO[l.situacao], Comprou: l.venda_mes, 'Média mensal': l.media_12m,
-    'A faturar': l.a_faturar, 'Último contato': l.ultimo_contato,
-  }));
+  const pedidosAFaturar = linhas.reduce((s, l) => s + l.pedidos_a_faturar, 0);
   // Ordenar por qualquer coluna: o clique no título alterna maior, menor e a ordem original.
   const [ordem, setOrdem] = useState<Ordem | null>(null);
   const ordenadas = useMemo(() => {
     const valor = ordem ? ORDENAR[ordem.coluna] : undefined;
     return valor && ordem ? ordenarPor(visiveis, valor, ordem.direcao) : visiveis;
   }, [visiveis, ordem]);
+  const paraExportar = ordenadas.map((l) => ({
+    Cliente: l.grupo_nome, Situação: ROTULO_SITUACAO[l.situacao], Comprou: l.venda_mes, 'Média mensal': l.media_12m,
+    'A faturar': l.a_faturar, 'Último contato': l.ultimo_contato,
+  }));
   const ordena = (coluna: string) => ({ ativa: ordem?.coluna === coluna ? ordem.direcao : null, alternar: () => setOrdem((o) => proximaOrdem(o, coluna)) });
   const tenantPath = useTenantPath();
 
@@ -294,7 +294,7 @@ export default function ComercialCarteiras() {
               </ExplicacaoDoIndicador>
               <ExplicacaoDoIndicador id="carteira.a_faturar">
                 <Card className="p-3 h-full">
-                  <p className="text-[12px] text-muted-foreground">A faturar{clientesAFaturar ? ` · ${clientesAFaturar} ${clientesAFaturar === 1 ? 'cliente' : 'clientes'}` : ''}</p>
+                  <p className="text-[12px] text-muted-foreground">A faturar{pedidosAFaturar ? ` · ${pedidosAFaturar} ${pedidosAFaturar === 1 ? 'pedido' : 'pedidos'}` : ''}</p>
                   <p className="text-[18px] font-semibold font-mono">{formatBRL(totais.aFaturar)}</p>
                   <Link to={tenantPath('/comercial/pedidos')} className="text-[12px] text-primary underline">não conta na meta · ver pedidos</Link>
                 </Card>
@@ -698,7 +698,7 @@ function ClienteMesAMes({ linha, onClose, carteira, competencia, intervalo, fili
             <div className="flex flex-wrap gap-2">
               <Button asChild size="sm"><Link to={tenantPath(linkRaioX(linha.codigos[0]))}>Abrir Raio-X</Link></Button>
               <Button asChild variant="outline" size="sm"><Link to={tenantPath(linkFichaCliente(linha.codigos[0]))}>Abrir ficha completa</Link></Button>
-              <Button asChild variant="outline" size="sm"><Link to={tenantPath('/comercial/lancamentos')}>Novo lançamento</Link></Button>
+              <Button asChild variant="outline" size="sm"><Link to={tenantPath(`/comercial/lancamentos?cliente=${encodeURIComponent(linha.codigos[0])}`)}>Novo lançamento</Link></Button>
             </div>
           </>
         )}

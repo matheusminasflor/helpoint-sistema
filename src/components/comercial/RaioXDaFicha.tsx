@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { useDepartmentPermissions, usePodeNoLancamento } from '@/hooks/useAccessProfiles';
-import { todayISO } from '@/lib/dates';
+import { toLocalISODate, todayISO } from '@/lib/dates';
 import { gerarRelatorioPdf } from '@/lib/relatorio-pdf';
 import { mensagemDeErro } from '@/lib/supabase-result';
 import {
@@ -60,7 +60,7 @@ export function RaioXDaFicha({ codigo, nome }: { codigo: string; nome: string })
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h3 className="text-sm font-semibold">
             Perfil <span className="font-normal text-[12px] text-muted-foreground">
-              {perfil ? `atualizado em ${formatDateBR(perfil.created_at.slice(0, 10))}${perfil.autor ? ` por ${perfil.autor}` : ''} · ` : ''}{camposPreenchidos(perfil)} de {TOTAL_DE_CAMPOS} preenchidos
+              {perfil ? `atualizado em ${formatDateBR(toLocalISODate(new Date(perfil.created_at)))}${perfil.autor ? ` por ${perfil.autor}` : ''} · ` : ''}{camposPreenchidos(perfil)} de {TOTAL_DE_CAMPOS} preenchidos
             </span>
           </h3>
           <Button variant="outline" size="sm" onClick={() => setPerfilAberto(true)}>{perfil ? 'Atualizar perfil' : 'Preencher perfil'}</Button>
@@ -71,7 +71,7 @@ export function RaioXDaFicha({ codigo, nome }: { codigo: string; nome: string })
           <Campo nome="Melhor contato" valor={perfil?.melhor_contato} />
           <Campo nome="O que mais pesa" valor={perfil?.o_que_pesa} />
           <Campo nome="Situação hoje" valor={rotuloDaSituacao(perfil?.situacao ?? null)} />
-          <Campo nome="Situação antes" valor={anterior ? `${rotuloDaSituacao(anterior.situacao)}, até ${formatDateBR(anterior.ate.slice(0, 10))}` : null} />
+          <Campo nome="Situação antes" valor={anterior ? `${rotuloDaSituacao(anterior.situacao)}, até ${formatDateBR(toLocalISODate(new Date(anterior.ate)))}` : null} />
         </dl>
       </section>
 
@@ -147,7 +147,7 @@ function CartaoDaDor({ dor }: { dor: DorDoCliente }) {
         <div key={p.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-muted/50 px-2 py-1.5 text-[13px]">
           <span>
             <strong>{rotuloDoTipoDeProposta(p.tipo)}:</strong> {p.proposta}{' '}
-            <span className="text-[12px] text-muted-foreground">{formatDateBR(p.created_at.slice(0, 10))}{p.autor ? ` · ${p.autor}` : ''}</span>
+            <span className="text-[12px] text-muted-foreground">{formatDateBR(toLocalISODate(new Date(p.created_at)))}{p.autor ? ` · ${p.autor}` : ''}</span>
             {corrigir && <button type="button" className="ml-2 text-[12px] text-primary underline" onClick={() => { setTextoCorrigido(p.proposta); setCorrigindoProposta(p.id); }}>Corrigir</button>}
           </span>
           <Select value={p.resultado} onValueChange={(v) => mudarProposta.mutate({ id: p.id, resultado: v as ResultadoDaProposta })}>

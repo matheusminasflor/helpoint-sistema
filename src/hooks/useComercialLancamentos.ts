@@ -231,6 +231,11 @@ export function useClientesDaCarteira(carteiras: string[]) {
   });
 }
 
+/** Um cliente pelo código: o "Novo lançamento" que já chega com o cliente escolhido. */
+export async function buscarClienteParaLancar(codigo: string): Promise<ClienteParaLancar | null> {
+  return unwrap(await supabase.from('com_clientes').select(COLUNAS_CLIENTE).eq('codigo', codigo).maybeSingle()) as ClienteParaLancar | null;
+}
+
 /**
  * Busca em TODA a base — é o escape ("fora da minha carteira") e o caminho para trazer
  * cliente do Histórico. Só busca com 2 letras ou mais: 450 clientes num select não se
@@ -499,6 +504,7 @@ export interface LinhaAcompanhamento {
   media_3m: number;
   meses_3: number;
   a_faturar: number;
+  pedidos_a_faturar: number;
   contatos_mes: number;
   ultimo_contato: string | null;
   status_ultimo_contato: StatusInteracao | null;
