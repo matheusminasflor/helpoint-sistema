@@ -41,8 +41,8 @@ export function slaDoChamado(
   // Exceção (2026-10-15; 20270115010000): agendado com o prazo JÁ vencido continua atrasado — agendar não apaga o atraso.
   if (ticket.status === 'scheduled' && ticket.agendou_vencido) return { cumpriu: false, estourado: agora > prazo };
   if ((SLA_PAUSED_STATUSES as readonly string[]).includes(ticket.status ?? '')) return { cumpriu: true, estourado: false };
-  // Sem resolução: só o que ainda corre tem veredito. Cancelado e reprovado sem
-  // resolução não cumpriram nem violaram — o relógio parou sem entrega.
-  if (!correndo) return { cumpriu: false, estourado: false };
+  // Sem resolução: só o que ainda corre tem veredito. Cancelado e reprovado sem resolução ficam fora da conta, nos
+  // dois lados: devolver "não cumpriu" os punha no denominador e derrubava o SLA da equipe (dono, 2026-11-06, #369).
+  if (!correndo) return null;
   return { cumpriu: agora <= prazo, estourado: agora > prazo };
 }

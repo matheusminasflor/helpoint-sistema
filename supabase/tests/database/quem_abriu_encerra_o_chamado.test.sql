@@ -2,6 +2,8 @@
 --   1-3  cancelar exige o motivo, registra na conversa e avisa o atendente
 --   4-5  resolver depois da resposta da equipe conta como resolvido
 --   6    resolver sem resposta termina cancelado: não conta para ninguém
+--  13    atendente escolhido na abertura não é resposta: também termina cancelado
+--  14    comentário interno não é resposta
 --   7    sem atendente, a equipe do setor não recebe o registro
 --   8    outra pessoa não encerra
 --   9    item obrigatório do checklist segura o "resolvido"
@@ -11,7 +13,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(12);
+select plan(14);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-quem-abriu', 'Quem Abriu', false) as a;
@@ -31,6 +33,8 @@ with t as (
     from f, (values ('cancela', 'tickets', 'in_progress', true, true),
                     ('resolve', 'tickets', 'in_progress', true, true),
                     ('sem_resposta', 'tickets', 'in_progress', true, false),
+                    ('escolhido', 'tickets', 'in_progress', true, true),
+                    ('interno', 'tickets', 'in_progress', true, true),
                     ('sem_atendente', 'tickets', 'open', false, false),
                     ('etapa', 'tickets', 'in_progress', true, true),
                     ('compra', 'compras', 'in_progress', true, true)) v(nome, modulo, situacao, com_atendente, respondido)
@@ -44,6 +48,10 @@ with l as (
 )
 insert into public.ticket_checklist_items (tenant_id, ticket_checklist_id, description, is_required, is_completed)
 select (select a from f), id, 'Conferir', true, false from l;
+
+insert into public.ticket_comments (tenant_id, ticket_id, author_id, content, is_internal)
+select (select a from f), id, (select yuri from u), 'Resposta da equipe', title = 'interno'
+  from c where title in ('resolve', 'interno');
 
 select tests.authenticate_as('ana@quemabriu.test');
 
@@ -67,6 +75,11 @@ select ok((select resolved_at is not null and resolution_notes = 'Marcado como r
 select tests.authenticate_as('ana@quemabriu.test');
 select is(public.chamado_encerrar_como_solicitante((select id from c where title = 'sem_resposta'), 'resolver', null), 'cancelled',
   'sem resposta da equipe, termina cancelado e nao conta para ninguem');
+
+select is(public.chamado_encerrar_como_solicitante((select id from c where title = 'escolhido'), 'resolver', null), 'cancelled',
+  'atendente escolhido na abertura, sem resposta, nao conta');
+select is(public.chamado_encerrar_como_solicitante((select id from c where title = 'interno'), 'resolver', null), 'cancelled',
+  'comentario interno nao e resposta');
 
 select public.chamado_encerrar_como_solicitante((select id from c where title = 'sem_atendente'), 'cancelar', 'Abri repetido');
 select tests.clear_authentication();

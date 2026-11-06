@@ -36,6 +36,11 @@ export function EncerrarComoSolicitante({ ticket, onUpdate, onPatch }: {
   const minha = ticket.requester_id === user?.id && ticket.module !== 'compras';
   const aberto = !['resolved', 'closed', 'cancelled', 'rejected'].includes(ticket.status);
   const nome = ehPedido(ticket.module) ? 'pedido' : 'chamado';
+  const { data: respondeu } = useQuery({
+    queryKey: ['chamado-equipe-respondeu', tenantId, ticket.id],
+    enabled: minha && aberto,
+    queryFn: async () => unwrap(await supabase.rpc('chamado_equipe_respondeu' as never, { p_ticket: ticket.id } as never)) as unknown as boolean,
+  });
   const { data: temEtapa = true } = useQuery({
     queryKey: ['chamado-etapa-pendente', tenantId, ticket.id],
     enabled: minha && aberto,
@@ -51,10 +56,10 @@ export function EncerrarComoSolicitante({ ticket, onUpdate, onPatch }: {
   const confirmar = () => {
     const pedido = { p_ticket: ticket.id, p_acao: acao, p_motivo: acao === 'cancelar' ? motivo : null, p_detalhe: detalhe.trim() || null };
     const antes = { status: ticket.status };
-    onPatch?.({ status: acao === 'cancelar' || !ticket.first_response_at ? 'cancelled' : 'resolved' });
+    onPatch?.({ status: acao === 'cancelar' || !respondeu ? 'cancelled' : 'resolved' });
     feitoComDesfazer({
       chave: `chamado:${ticket.id}`,
-      mensagem: acao === 'cancelar' ? `${nome === 'pedido' ? 'Pedido cancelado' : 'Chamado cancelado'}` : 'Marcado como resolvido',
+      mensagem: acao === 'cancelar' ? `${nome === 'pedido' ? 'Pedido cancelado' : 'Chamado cancelado'}` : respondeu ? 'Marcado como resolvido' : 'Encerrado sem atendimento',
       gravar: async () => unwrap(await supabase.rpc('chamado_encerrar_como_solicitante' as never, pedido as never)),
       aoDesfazer: () => onPatch?.(antes),
       depois: (erro) => {
@@ -95,6 +100,7 @@ export function EncerrarComoSolicitante({ ticket, onUpdate, onPatch }: {
               ))}
             </div>
           )}
+          {acao === 'resolver' && !respondeu && <p className="text-[14px] text-muted-foreground">A equipe ainda não respondeu: o {nome} será encerrado sem contar como atendimento.</p>}
           <div className="space-y-1.5">
             <Label htmlFor="detalhe-encerrar">{acao === 'cancelar' ? 'Quer explicar? (opcional)' : 'O que resolveu? (opcional)'}</Label>
             <Textarea id="detalhe-encerrar" rows={2} value={detalhe} onChange={(e) => setDetalhe(e.target.value)} />
