@@ -108,7 +108,7 @@ begin
     v_etapa := case new.status when 'aprovada' then 'concluida' when 'validado' then 'concluida'
       when 'recusada' then 'recusada' when 'rejeitado' then 'recusada' when 'cancelada' then 'cancelada' end;
     if v_etapa is not null then
-      v_motivo := case when tg_table_name = 'rh_vacation_requests' then new.decision_notes else new.validation_notes end;
+      v_motivo := to_jsonb(new) ->> case when tg_table_name = 'rh_vacation_requests' then 'decision_notes' else 'validation_notes' end;
       update public.solicitacoes
          set etapa = v_etapa, atualizada_em = now(),
              motivo_recusa = case when v_etapa = 'recusada' then coalesce(nullif(btrim(v_motivo), ''), 'Recusado pelo RH.') end
@@ -218,3 +218,25 @@ revoke all on function public.solicitacao_guarda_o_prazo() from public, anon;
 revoke all on function public.solicitacoes_tempo_util(uuid[]) from public, anon;
 revoke all on function public.rh_nao_recebe_chamado() from public, anon;
 grant execute on function public.solicitacoes_tempo_util(uuid[]) to authenticated;
+
+-- As categorias de chamado saem das Configurações do RH.
+create or replace function public.abas_de_configuracao(p_setor text)
+returns text[]
+language sql
+immutable
+set search_path to 'public'
+as $$
+  select case p_setor
+    when 'ti'          then array['chamados', 'cadastros', 'checklists', 'alertas']
+    when 'qualidade'   then array['chamados', 'sac_link', 'sac_produtos', 'sac_categorias', 'sac_campos']
+    when 'rh'          then array['empresas', 'departamentos', 'folha', 'feriados', 'holerites']
+    when 'marketing'   then array['chamados', 'beneficio']
+    when 'financeiro'  then array['chamados', 'importacoes', 'conferencia']
+    when 'compras'     then array['chamados', 'teto', 'comprador']
+    when 'comercial'   then array['chamados', 'equipe', 'indicadores', 'cashback', 'familias', 'diretrizes']
+    when 'educacional' then array['chamados']
+    when 'expedicao'   then array['chamados']
+    when 'producao'    then array['chamados']
+    else array[]::text[]
+  end;
+$$;

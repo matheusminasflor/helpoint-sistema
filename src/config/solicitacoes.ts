@@ -115,6 +115,8 @@ export const TIPOS: Record<TipoDeSolicitacao, ConfigDoTipo> = {
 };
 
 /** Novo › RH, na ordem da proposta aprovada em 2026-11-06: o RH atende só por Solicitações. */
+export const TIPOS_DO_FORMULARIO_DO_RH: TipoDeSolicitacao[] = ['rh_ferias', 'rh_atestado', 'rh_ponto', 'rh_admissao', 'rh_desligamento'];
+
 export const ASSUNTOS_DO_RH: TipoDeSolicitacao[] = [
   'rh_ferias', 'rh_atestado', 'rh_ponto', 'rh_duvida', 'rh_beneficio', 'rh_documento', 'rh_dados', 'rh_confidencial',
   'rh_admissao', 'rh_desligamento', 'rh_outro',

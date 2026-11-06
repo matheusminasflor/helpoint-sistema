@@ -11,12 +11,12 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ListaDeSolicitacoes } from '@/components/solicitacoes/ListaDeSolicitacoes';
 import { NovoPedidoDialog } from '@/components/solicitacoes/NovoPedidoDialog';
-import { NovoPedidoDoRH, TIPOS_DO_FORMULARIO_DO_RH } from '@/components/solicitacoes/NovoPedidoDoRH';
+import { NovoPedidoDoRH } from '@/components/solicitacoes/NovoPedidoDoRH';
 import { PedirCompraDialog } from '@/components/solicitacoes/PedirCompraDialog';
 import { useMinhasSolicitacoes, useParaEuAprovar } from '@/hooks/useSolicitacoes';
 import { useQueryState } from '@/hooks/useQueryState';
 import { useTenantPath } from '@/hooks/useTenantPath';
-import { ASSUNTOS_DO_RH, TIPOS, TIPOS_DA_PORTA, terminou, type TipoDeSolicitacao } from '@/config/solicitacoes';
+import { ASSUNTOS_DO_RH, TIPOS, TIPOS_DA_PORTA, TIPOS_DO_FORMULARIO_DO_RH, terminou, type TipoDeSolicitacao } from '@/config/solicitacoes';
 
 export default function Pedidos() {
   const navigate = useNavigate();

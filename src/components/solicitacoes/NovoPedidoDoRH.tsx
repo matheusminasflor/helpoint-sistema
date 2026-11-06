@@ -19,7 +19,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { todayISO } from '@/lib/dates';
 import { unwrap } from '@/lib/supabase-result';
 
-export const TIPOS_DO_FORMULARIO_DO_RH: TipoDeSolicitacao[] = ['rh_ferias', 'rh_atestado', 'rh_ponto', 'rh_admissao', 'rh_desligamento'];
 
 const OCORRENCIAS = ['Esqueci de bater', 'Batida errada', 'Outro'];
 const CLASSE_DO_SELECT = 'h-10 w-full rounded-md border border-border bg-background px-2 text-sm';

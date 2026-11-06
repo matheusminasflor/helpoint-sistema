@@ -42,6 +42,11 @@ describe('categoria que virou pedido (2026-10-25)', () => {
   });
   it('o resto continua chamado', () => {
     expect(categoriaVirouPedido('marketing', 'Rótulos/Embalagens')).toBeNull();
-    expect(categoriaVirouPedido('rh', 'Reembolso')).toBeNull();
+    expect(categoriaVirouPedido('comercial', 'Pedido')).toBeNull();
+  });
+
+  it('no RH, toda categoria leva a um assunto', () => {
+    expect(categoriaVirouPedido('rh', 'Férias e Folgas')).toBe('rh_ferias');
+    expect(categoriaVirouPedido('rh', 'Relacionamento')).toBe('rh_outro');
   });
 });
