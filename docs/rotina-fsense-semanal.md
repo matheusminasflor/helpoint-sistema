@@ -14,14 +14,14 @@ no FSENSE e no Helpoint, com a aba do FSENSE dentro do grupo do Claude.
 1. **FSENSE**, `https://app.fsense.com/app/index.html#!/summary` (Resumo). No filtro **Data**, escolher de segunda até
    hoje (sexta). Não mexer em mais nada.
 2. **Ler pelo gráfico, não pela imagem.** O gráfico "Atividades por pessoa" é Highcharts; os números exatos (horas por
-   categoria, por pessoa) estão em `Highcharts.charts.filter(Boolean)[1]`: o nome de cada barra no rótulo do eixo X
+   categoria, por pessoa) estão no gráfico que tem a série "Estação de trabalho bloqueada" (a posição em `Highcharts.charts` muda): o nome de cada barra no rótulo do eixo X
    (`xAxis[0].ticks[t].label.textStr`) e uma série por categoria (`series[].name`, `data[i].y` em horas).
 3. **As contas, como o FSENSE e a planilha**: horas = trabalho + bloqueada + suspenso + ocioso (as séries "Uso de
    trabalho", "Estação de trabalho bloqueada", "Suspenso", "Tempo ocioso"); cada % sobre essa soma. "Uso pessoal",
    "Não classificado" e as outras ficam fora (é o mesmo total que aparece em cima de cada barra).
 4. **Nomes**: trocar o login do FSENSE pelo nome do histórico (tabela abaixo). **Login que não está na tabela: não
    adivinhar** — lançar com o login e avisar o dono, que diz quem é (e a tabela ganha a linha).
-5. **Helpoint**, TI › Indicadores › Visão Geral › bloco **Equipe** › **Lançar semana do FSENSE**: "Um dia da semana"
+5. **Helpoint**, TI › Indicadores › **Lançamentos** › **Lançar semana**. Se a semana já estiver lançada, parar e avisar o dono: lançar de novo substitui os números dele. "Um dia da semana"
    já vem com o domingo desta semana, e o sistema grava sempre no domingo (20270212180000), então lançar de novo
    substitui em vez de duplicar. Colar a tabela (`Nome⇥horas⇥%trabalho⇥%bloqueada⇥%ocioso⇥%suspenso`, uma pessoa por
    linha) em qualquer célula da grade — quem já está nela é preenchido, quem não está entra numa linha nova; conferir a

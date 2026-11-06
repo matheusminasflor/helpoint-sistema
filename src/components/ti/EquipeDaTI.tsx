@@ -277,7 +277,8 @@ function Secao({ titulo, aberta, children, acao }: { titulo: string; aberta: boo
  */
 export function LancamentosDaTI({ onFechar }: { onFechar: () => void }) {
   const hoje = todayISO();
-  const { data: linhas = [], isLoading } = useFsense({ de: somarDias(hoje, -56), ate: somarDias(hoje, 1) });
+  // A semana é gravada no domingo, ainda à frente de hoje: o limite vai até ele, senão a semana atual some e não se confirma.
+  const { data: linhas = [], isLoading } = useFsense({ de: somarDias(hoje, -56), ate: somarDias(hoje, 8) });
   const [lancando, setLancando] = useState(false);
   return (
     <Sheet open onOpenChange={(o) => !o && onFechar()}>
