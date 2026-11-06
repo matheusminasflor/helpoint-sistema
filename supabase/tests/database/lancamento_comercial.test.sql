@@ -18,7 +18,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(22);
+select plan(25);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-lancamento', 'Lançamento Comercial', false) as a;
@@ -94,18 +94,36 @@ select lives_ok($$
     array[(select id from public.com_indicadores where nome = 'Contato para venda' and tenant_id = (select a from f))])
 $$, 'a vendedora lanca contato para cliente da propria carteira');
 
--- 3. O GANCHO: cliente da colega, sem o escape, é recusado.
+-- 3. O GANCHO: cliente da colega é recusado.
 select throws_ok($$
   select public.com_salvar_interacao(null,
     '{"cliente_codigo":"C-S","data":"2026-08-10"}'::jsonb, null)
 $$, '42501', null,
-  'a vendedora NAO lanca cliente de outra carteira sem marcar "fora da minha carteira"');
+  'a vendedora NAO lanca cliente de outra carteira');
 
--- 4. Com o escape, entra — e fica registrado como fora da carteira.
-select lives_ok($$
+-- 4. Marcar "fora da minha carteira" não abre mais a porta (dono, 2026-11-06), nem pela tela nem direto na tabela.
+select throws_ok($$
   select public.com_salvar_interacao(null,
     '{"cliente_codigo":"C-S","data":"2026-08-11","fora_da_carteira":true}'::jsonb, null)
-$$, 'com o escape "fora da minha carteira", o lancamento para cliente da colega entra');
+$$, '42501', null, 'marcar fora da carteira nao deixa a vendedora lancar cliente da colega');
+select throws_ok($$
+  insert into public.com_interacoes (tenant_id, vendedor_id, cliente_codigo, data, fora_da_carteira)
+  values ((select a from f), auth.uid(), 'C-S', '2026-08-11', true) returning id
+$$, '42501', null, 'nem gravando direto na tabela');
+
+-- 4b. O lançamento antigo, feito quando valia o escape, a vendedora ainda completa.
+select tests.clear_authentication();
+insert into public.com_carteira_membros (tenant_id, user_id, carteira) values ((select a from f), (select ana from u), 'SUL');
+select tests.authenticate_as('ana@lanc.test');
+select public.com_salvar_interacao(null, '{"cliente_codigo":"C-S","data":"2026-08-11","fora_da_carteira":true}'::jsonb, null);
+select tests.clear_authentication();
+delete from public.com_carteira_membros where user_id = (select ana from u) and carteira = 'SUL';
+select tests.authenticate_as('ana@lanc.test');
+select lives_ok($$
+  select public.com_salvar_interacao(
+    (select id from public.com_interacoes where cliente_codigo = 'C-S' and vendedor_id = auth.uid()),
+    '{"cliente_codigo":"C-S","data":"2026-08-11","fora_da_carteira":true,"observacoes":"completou"}'::jsonb, null)
+$$, 'o lancamento antigo fora da carteira a vendedora ainda completa');
 
 -- 5. Indicador exige cliente (§3.1).
 select throws_ok($$
@@ -169,11 +187,13 @@ select public.com_salvar_interacao(null, '{"cliente_codigo":"C02","data":"2026-0
 select public.com_salvar_interacao(null, '{"cliente_codigo":"C03","data":"2026-05-14","status":"agendado"}'::jsonb, null);
 select public.com_salvar_interacao(null, '{"cliente_codigo":"C04","data":"2026-05-15","status":"concluido","valor_venda":"0"}'::jsonb, null);
 
--- E a reativação: C-121 estava inativo pelo histórico; Ana vende a ele em julho (fora da
--- carteira dela, porque ele é da Bia).
-select public.com_salvar_interacao(null, '{"cliente_codigo":"C-121","data":"2026-07-10","status":"concluido","valor_venda":"500","nota_filial":"MF","nota_fiscal":"NF-2026-07-10","nota_em":"2026-07-10","fora_da_carteira":true}'::jsonb, null);
-
+-- E a reativação: C-121 estava inativo pelo histórico; Ana vendeu a ele em julho, quando ainda lançava fora da carteira.
 select tests.clear_authentication();
+insert into public.com_carteira_membros (tenant_id, user_id, carteira) values ((select a from f), (select ana from u), 'SUL');
+select tests.authenticate_as('ana@lanc.test');
+select public.com_salvar_interacao(null, '{"cliente_codigo":"C-121","data":"2026-07-10","status":"concluido","valor_venda":"500","nota_filial":"MF","nota_fiscal":"NF-2026-07-10","nota_em":"2026-07-10","fora_da_carteira":true}'::jsonb, null);
+select tests.clear_authentication();
+delete from public.com_carteira_membros where user_id = (select ana from u) and carteira = 'SUL';
 
 -- ── Bia lança e lê ────────────────────────────────────────────────────────────
 select tests.authenticate_as('bia@lanc.test');
@@ -236,6 +256,11 @@ select is(
   array['vermelho', 'amarelo', 'verde', 'sem_meta'],
   'farol: abaixo de 70% vermelho, a partir de 70% amarelo, na meta verde, e meta zero sem cor'
 );
+
+-- 16b. Quem gere carteiras lança em qualquer uma.
+select lives_ok($$
+  select public.com_salvar_interacao(null, '{"cliente_codigo":"C-S","data":"2026-08-20","fora_da_carteira":true}'::jsonb, null)
+$$, 'quem gere carteiras lanca cliente de qualquer carteira');
 
 select tests.clear_authentication();
 

@@ -59,14 +59,16 @@ values ((select a from f), (select id from imp), 'MF', '2026-04-10', 'H1', '1', 
 insert into public.com_metas (tenant_id, ano, mes, carteira, valor)
 values ((select a from f), 2026, 5, 'NORTE', 3000);
 
--- Ana vende R$ 1.000 a um CNPJ do grupo; a Bia, pelo escape, R$ 500 a outro CNPJ do mesmo grupo.
+-- Ana vende R$ 1.000 a um CNPJ do grupo; a Bia, de quando valia o escape, R$ 500 a outro CNPJ do mesmo grupo.
 select tests.authenticate_as('ana@acomp.test');
 select public.com_salvar_interacao(null, '{"cliente_codigo":"G1a","data":"2026-05-10","status":"concluido","valor_venda":"1000","nota_filial":"MF","nota_fiscal":"NF-2026-05-10","nota_em":"2026-05-10"}'::jsonb, null);
 select public.com_salvar_interacao(null, '{"cliente_codigo":"N2","data":"2026-05-11","status":"agendado"}'::jsonb, null);
 select tests.clear_authentication();
+insert into public.com_carteira_membros (tenant_id, user_id, carteira) values ((select a from f), (select bia from u), 'NORTE');
 select tests.authenticate_as('bia@acomp.test');
 select public.com_salvar_interacao(null, '{"cliente_codigo":"G1c","data":"2026-05-12","status":"concluido","valor_venda":"500","nota_filial":"MF","nota_fiscal":"NF-2026-05-12","nota_em":"2026-05-12","fora_da_carteira":true}'::jsonb, null);
 select tests.clear_authentication();
+delete from public.com_carteira_membros where user_id = (select bia from u) and carteira = 'NORTE';
 
 select tests.authenticate_as('ana@acomp.test');
 

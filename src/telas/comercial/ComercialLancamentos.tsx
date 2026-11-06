@@ -145,7 +145,7 @@ export default function ComercialLancamentos() {
           <Card className="p-3 badge-warning text-[14px]">
             <strong>Você ainda não está em nenhuma carteira.</strong> Seus indicadores só aparecem no painel quando o
             gestor colocar você numa carteira (Comercial › Configurações › Equipe e carteiras). Até lá, dá para registrar ações
-            internas e atender cliente de outra carteira.
+            internas.
           </Card>
         )}
 

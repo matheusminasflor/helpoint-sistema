@@ -82,9 +82,8 @@ function formVazio(): Form {
   };
 }
 
-// Fora da minha carteira é TODO cliente que não está nela — o de outra carteira E o do Histórico (sem carteira). Até
-// 2026-09-29 o do Histórico ia como "da minha carteira", e o banco recusava sem exceção: a policy só aceita cliente da
-// carteira ou o escape marcado.
+// Fora da minha carteira é TODO cliente que não está nela — o de outra carteira E o do Histórico (sem carteira). Só quem
+// gere carteiras lança esse cliente (dono, 2026-11-06); a vendedora traz o do Histórico para a carteira dela antes.
 const foraDaMinha = (c: ClienteParaLancar, minhas: string[]) => !c.carteira || !minhas.includes(c.carteira);
 
 export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo, editando, clienteInicial = null }: Props) {
@@ -212,7 +211,8 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
 
   const semCliente = form.cliente === null;
   // Lançamento novo diz com quem foi: cliente ou pessoa da empresa (dono, 2026-11-05). O banco recusa o mesmo.
-  const faltaCliente = !editando && semCliente && !form.pessoaId;
+  const clienteBloqueado = !editando && !podeGerirCarteiras && !!form.cliente && foraDaMinha(form.cliente, minhasCarteiras);
+  const faltaCliente = !editando && ((semCliente && !form.pessoaId) || clienteBloqueado);
   const faltaAcaoInterna = !editando && form.comPessoa && !acoes.some((a) => form.marcas.has(a.id));
   // O valor da venda só com a nota fiscal (dono, 2026-10-15): o pedido fechado é "A faturar" — o valor dele fica
   // no checklist e aparece na Carteira, mas não é venda até a nota.
@@ -243,7 +243,7 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
   });
 
   const enviaChecklist = temPedido && !checklistTravado;
-  // A vendedora não lê a carteira de outra pessoa: o contato fora da carteira não tem a pergunta do Raio-X.
+  // A vendedora não lê a carteira de outra pessoa: sem isto, a conta recusaria o cliente que ela acabou de ver bloqueado.
   const carteiraDoAlerta = open && !editando && (!form.foraDaCarteira || podeGerirCarteiras) ? form.cliente?.carteira ?? null : null;
   const { data: daCarteiraDoCliente = [], isLoading: lendoAlerta } = useAcompanhamentoDaCarteira(carteiraDoAlerta, `${todayISO().slice(0, 7)}-01`);
   const linhaDoCliente = daCarteiraDoCliente.find((l) => form.cliente && l.codigos.includes(form.cliente.codigo));
@@ -367,7 +367,17 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
                     <X className="w-4 h-4" aria-hidden="true" />
                   </Button>
                 </div>
-                {form.foraDaCarteira && (
+                {clienteBloqueado && form.cliente.carteira && (
+                  <p className="text-[13px] rounded-md badge-warning px-2 py-1">
+                    Este cliente é da carteira <strong>{form.cliente.carteira}</strong>. Peça ao gestor para mudá-lo de carteira, se for atender.
+                  </p>
+                )}
+                {clienteBloqueado && !form.cliente.carteira && minhasCarteiras.length === 0 && (
+                  <p className="text-[13px] rounded-md badge-warning px-2 py-1">
+                    Este cliente está no <strong>Histórico</strong>. Peça ao gestor para colocar você em uma carteira.
+                  </p>
+                )}
+                {form.foraDaCarteira && !clienteBloqueado && (
                   <p className="text-[13px] rounded-md badge-warning px-2 py-1">
                     {form.cliente.carteira
                       ? <>Cliente da carteira <strong>{form.cliente.carteira}</strong>.</>
@@ -381,7 +391,7 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
                     um botão por carteira dela. */}
                 {noHistorico && minhasCarteiras.length > 0 && (
                   <div className="flex flex-wrap items-center gap-2 rounded-md badge-info px-2 py-1.5 text-[13px]">
-                    <span>Este cliente está no <strong>Histórico</strong> — ainda não é de ninguém.</span>
+                    <span>Este cliente está no <strong>Histórico</strong> — ainda não é de ninguém.{clienteBloqueado && ' Traga para a sua carteira para lançar.'}</span>
                     {minhasCarteiras.map((destino) => (
                       <Button key={destino} size="sm" variant="secondary" className="h-7" disabled={trazer.isPending}
                         onClick={() => trazer.mutate(
@@ -407,15 +417,19 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
                     <li className="px-3 py-2 text-[13px] text-muted-foreground">Digite pelo menos duas letras.</li>
                   ) : achados.length === 0 ? (
                     <li className="px-3 py-2 text-[13px] text-muted-foreground">Nenhum cliente encontrado.</li>
-                  ) : achados.map((c) => (
-                    <li key={c.codigo}>
-                      <button type="button" onClick={() => escolher(c)}
-                        className="w-full text-left px-3 py-2 hover:bg-muted/60 text-[13px]">
-                        <span className="font-medium">{c.razao_social}</span>
-                        <span className="text-muted-foreground"> · {c.carteira ?? 'Histórico'}</span>
-                      </button>
-                    </li>
-                  ))}
+                  ) : achados.map((c) => {
+                    const deOutraCarteira = !podeGerirCarteiras && !!c.carteira && !minhasCarteiras.includes(c.carteira);
+                    return (
+                      <li key={c.codigo}>
+                        <button type="button" disabled={deOutraCarteira} onClick={() => escolher(c)}
+                          className="w-full text-left px-3 py-2 enabled:hover:bg-muted/60 text-[13px]">
+                          <span className="font-medium">{c.razao_social}</span>
+                          <span className="text-muted-foreground"> · {c.carteira ?? 'Histórico'}</span>
+                          {deOutraCarteira && <span className="block text-muted-foreground">De outra carteira. Peça ao gestor para mudá-lo de carteira, se for atender.</span>}
+                        </button>
+                      </li>
+                    );
+                  })}
                 </ul>
                 <Button variant="ghost" size="sm" onClick={() => setProcurandoFora(false)}>Voltar para a minha carteira</Button>
               </div>
@@ -446,12 +460,12 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
                 ) : (
                   <p className="text-[13px] rounded-md badge-warning px-2 py-1.5">
                     Você ainda não está em nenhuma carteira. Peça ao gestor para colocá-la em uma em
-                    Comercial › Configurações › Equipe e carteiras. Enquanto isso, dá para atender cliente de outra carteira.
+                    Comercial › Configurações › Equipe e carteiras.
                   </p>
                 )}
                 <div className="flex flex-wrap gap-2">
                   <Button variant="outline" size="sm" onClick={() => setProcurandoFora(true)}>
-                    Cliente do Histórico ou de outra carteira…
+                    {podeGerirCarteiras ? 'Cliente do Histórico ou de outra carteira…' : 'Cliente do Histórico…'}
                   </Button>
                   <span className="text-[12px] text-muted-foreground self-center">
                     Campanha, evento, treinamento ou reunião interna? Use Pessoa da empresa, acima.
