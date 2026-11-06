@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { TicketConversation } from '@/components/helpdesk/TicketConversation';
 import { TicketStatusBadge } from '@/components/helpdesk/TicketStatusBadge';
 import { TicketActionsBar } from '@/components/helpdesk/TicketActionsBar';
+import { EncerrarComoSolicitante } from '@/components/helpdesk/EncerrarComoSolicitante';
 import { TicketComplianceChecklist } from '@/components/helpdesk/TicketComplianceChecklist';
 import { TicketFormAnswers } from '@/components/helpdesk/TicketFormAnswers';
 import { InterrupcaoDoChamado } from '@/components/helpdesk/InterrupcaoDoChamado';
@@ -144,6 +145,9 @@ export default function TicketDetail() {
           <section className="mb-4 rounded-xl border border-border bg-card p-4">
             <EtapasParaQuemPediu estado={estadoVisto} />
           </section>
+          <div className="mb-4 px-1">
+            <EncerrarComoSolicitante ticket={ticket} onUpdate={refetch} onPatch={patch} />
+          </div>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground mb-4 px-1">
             <span className="flex items-center gap-1.5">
               <Calendar className="w-3.5 h-3.5" />
@@ -441,6 +445,7 @@ export default function TicketDetail() {
         actions={
           <div className="flex items-center gap-2">
             <ManualAutomationsMenu entity="ticket" subjectId={ticket.id} compact />
+            {!pode('close') && <EncerrarComoSolicitante ticket={ticket} onUpdate={refetch} onPatch={patch} />}
             <TicketActionsBar ticket={ticket} onUpdate={refetch} onPatch={patch} compact />
           </div>
         }
