@@ -31,6 +31,7 @@
 // consulta nova por ser conta de outra função.
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { SeloCondicao } from '@/components/comercial/SeloCondicao';
 import { Button } from '@/components/ui/button';
 import { ArrowDownRight, ArrowUpRight, Minus, X } from 'lucide-react';
 import { useCashbackDoCliente, useFichaCliente } from '@/hooks/useComercialCashback';
@@ -117,9 +118,7 @@ export function FichaClienteSecao({
           <span className="ml-1.5 text-[12px] font-normal text-muted-foreground">código {codigo}</span>
           {/* Mesmo indicador que DiretoriaClientes.tsx já usa na lista — a
               mesma marca nos dois lugares (§11 linha 325). */}
-          {ficha?.identificacao.em_condicao && (
-            <span className="ml-1.5 text-[12px] font-normal text-muted-foreground">(condição)</span>
-          )}
+          {ficha?.identificacao.em_condicao && <SeloCondicao />}
         </h2>
         <div className="flex items-center gap-2">
           <SeletorVisao visao={visao} onChange={setVisao} />

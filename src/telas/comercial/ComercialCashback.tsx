@@ -8,6 +8,7 @@
 // já devolvem tudo pronto.
 import { useMemo, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
+import { SeloCondicao } from '@/components/comercial/SeloCondicao';
 import { AlertTriangle, ChevronRight, PhoneCall, Wallet } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FiltrosComerciais } from '@/components/comercial/FiltrosComerciais';
@@ -530,7 +531,7 @@ function LinhaDoCliente({ cliente }: { cliente: ClienteDoCashback }) {
         <CollapsibleTrigger className={`group grid w-full ${GRADE_DO_CLIENTE} items-center gap-x-3 gap-y-1 px-4 py-2.5 text-left hover:bg-secondary/40`}>
           <ChevronRight className="w-4 h-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" aria-hidden="true" />
           <span className="min-w-0">
-            <span className="block truncate text-[14px] font-medium text-foreground" title={r.nome}>{limparNomeCliente(r.nome)}</span>
+            <span className="block truncate text-[14px] font-medium text-foreground" title={r.nome}>{limparNomeCliente(r.nome)}{/CONDI/i.test(r.tabela_base ?? '') && <SeloCondicao />}</span>
             <span className="block text-[12px] text-muted-foreground">{rotuloTabela(r)}</span>
           </span>
           <Valor valor={r.comprado} />

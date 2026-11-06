@@ -14,9 +14,9 @@ import {
 
 const SELO: Record<SituacaoDaNota, { rotulo: string; classe: string }> = {
   sem_nota: { rotulo: 'Falta a nota', classe: 'badge-warning' },
-  aguardando_importacao: { rotulo: 'Aguardando importação', classe: 'badge-neutral' },
+  aguardando_importacao: { rotulo: 'A confirmar', classe: 'badge-warning' },
   divergente: { rotulo: 'Série ou tipo errado', classe: 'badge-danger' },
-  ok: { rotulo: 'Conferida', classe: 'badge-success' },
+  ok: { rotulo: 'Confirmada', classe: 'badge-success' },
 };
 
 export function NotasDosPedidos({ checklistId, pedidos, podeEditar }: {

@@ -1,4 +1,10 @@
 import { Inbox } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { SeloCondicao } from '@/components/comercial/SeloCondicao';
+import { useClientesEmCondicao } from '@/hooks/useComercialCliente';
+import { useTenantPath } from '@/hooks/useTenantPath';
+import { diasDesde, esperaDaNota } from '@/lib/notas-para-resolver';
+import { todayISO } from '@/lib/dates';
 import { useChecklists, useNotasDoComercial } from '@/hooks/usePedidosChecklist';
 import { formatBRL } from '@/types/financeiro';
 
@@ -12,6 +18,8 @@ export function FilaDoGestor() {
   const devolvidos = checklists.filter((c) => c.situacao === 'Recusado');
   const { data: notas = [] } = useNotasDoComercial();
   const semNota = notas.filter((n) => n.situacao === 'falta_nota');
+  const { data: emCondicao } = useClientesEmCondicao();
+  const tenantPath = useTenantPath();
 
   if (isError) return <p className="text-[13px] text-status-danger">Não consegui carregar a fila do gestor.</p>;
   if (devolvidos.length === 0 && semNota.length === 0) return null;
@@ -38,13 +46,18 @@ export function FilaDoGestor() {
         <div>
           <p className="text-[13px] mb-1 text-muted-foreground">Falta informar a nota ({semNota.length})</p>
           <ul className="space-y-1 text-[13px]">
-            {semNota.slice(0, 6).map((p, i) => (
-              <li key={p.pedido_id} className={`min-w-0 ${i >= 3 ? 'max-sm:hidden' : ''}`}>
-                <span className="font-medium">Pedido {p.numero}</span> ({p.filial}) · {p.cliente} · {p.vendedor ?? '—'}
-                <span className="tabular-nums text-muted-foreground"> · {formatBRL(p.valor_pedido)}</span>
-              </li>
-            ))}
+            {semNota.slice(0, 6).map((p, i) => {
+              const espera = p.aprovado_em ? esperaDaNota(diasDesde(p.aprovado_em, todayISO())) : null;
+              return (
+                <li key={p.pedido_id} className={`min-w-0 ${i >= 3 ? 'max-sm:hidden' : ''}`}>
+                  <span className="font-medium">Pedido {p.numero}</span> ({p.filial}) · {p.cliente}{emCondicao?.has(p.cliente_codigo) && <SeloCondicao />} · {p.vendedor ?? '—'}
+                  <span className="tabular-nums text-muted-foreground"> · {formatBRL(p.valor_pedido)}</span>
+                  {espera && <span className={espera.atrasada ? 'text-status-danger font-semibold' : 'text-muted-foreground'}> · {espera.rotulo.toLowerCase()}</span>}
+                </li>
+              );
+            })}
           </ul>
+          {semNota.length > 0 && <Link to={tenantPath('/comercial/pedidos')} className="text-[13px] text-primary underline">Ver todos os {semNota.length} pedidos</Link>}
         </div>
       </div>
     </section>

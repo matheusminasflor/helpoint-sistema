@@ -599,6 +599,17 @@ export function usePainelDoGestor(competencia: string, intervalo?: IntervaloDeDi
  * carteira de cada vendedora até a última nota importada + o lançado depois disso, como prévia. A
  * tela usa isto para dizer até quando há nota e quanto do número ainda é prévia.
  */
+/** As notas digitadas que já contam e esperam a importação: o selo "A confirmar" (`com_notas_a_confirmar`). */
+export function useNotasAConfirmar(de: string, ate: string) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['comercial', 'notas-a-confirmar', tenantId, de, ate],
+    enabled: !!tenantId,
+    queryFn: async () => new Set(((unwrap(await supabase.rpc('com_notas_a_confirmar' as never, { p_de: de, p_ate: ate } as never)) ?? []) as unknown as
+      { cliente_codigo: string }[]).map((n) => n.cliente_codigo)),
+  });
+}
+
 export interface VendaAtribuida { faturado: number; previa: number; corte: string | null; previaPorVendedora: Map<string, number> }
 
 export function useVendaAtribuida(competencia: string, intervalo?: IntervaloDeDias | null) {

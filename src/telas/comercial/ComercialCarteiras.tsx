@@ -31,16 +31,17 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FarolDaMeta } from '@/components/comercial/FarolDaMeta';
 import { ComposicaoDaVenda } from '@/components/comercial/ComposicaoDaVenda';
+import { GradeDoAno } from '@/components/comercial/GradeDoAno';
+import { SeloAConfirmar, SeloCondicao } from '@/components/comercial/SeloCondicao';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { SeletorPeriodoDaCompetencia } from '@/components/comercial/SeletorPeriodoDaCompetencia';
 import { SeletorVisao } from '@/components/comercial/SeletorVisao';
 import { useVisaoRelatorio } from '@/hooks/useVisaoRelatorio';
 import { usePeriodoDaCompetencia } from '@/hooks/usePeriodoDaCompetencia';
 import { useQueryState } from '@/hooks/useQueryState';
-import { usePodeGerirCarteiras } from '@/hooks/useAccessProfiles';
 import { useCarteiras } from '@/hooks/useComercialCarteirasMetas';
 import {
-  STATUS_INTERACAO, useAcompanhamentoDaCarteira, useCarteiraMesAMes, useClienteMesAMes, useMinhasCarteiras, useVendaAtribuida,
+  STATUS_INTERACAO, useAcompanhamentoDaCarteira, useCarteiraMesAMes, useClienteMesAMes, useMinhasCarteiras, useNotasAConfirmar, useVendaAtribuida,
   type FiltroFilial, type LinhaAcompanhamento,
 } from '@/hooks/useComercialLancamentos';
 import { competenciaAtual } from '@/lib/competencia-comercial';
@@ -52,7 +53,9 @@ import { Link } from 'react-router-dom';
 import { useDoresEmAberto } from '@/hooks/useRaioX';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { linkFichaCliente, linkRaioX } from '@/config/comercial-insights';
-import { useCashbackDoCliente } from '@/hooks/useComercialCashback';
+import { useCashbackDoGrupo } from '@/hooks/useComercialCashback';
+import { useDepartmentPermissions, usePodeGerirCarteiras } from '@/hooks/useAccessProfiles';
+import { useNotasDoComercial } from '@/hooks/usePedidosChecklist';
 import { ordenarPor, proximaOrdem, type Ordem } from '@/lib/tabela';
 import { ultimoDiaDoMes } from '@/lib/semanas-dos-artistas';
 import { rotuloDoMotivo } from '@/lib/raio-x';
@@ -113,12 +116,9 @@ const FILIAIS = [
 // Os direcionais (dono, 2026-10-15): "ter apontamento dos seus clientes e facilitar o comercial a quem procurar".
 // Cartões que filtram a lista; passar o mouse mostra quais. "Comprou menos": o recorte contra o anterior inteiro.
 const emCondicao = (l: LinhaAcompanhamento) => /CONDI/i.test(l.tabelas ?? '');
-function SeloCondicao() {
-  return <span className="ml-1.5 inline-block rounded px-1.5 text-[12px] font-normal badge-purple">Condição</span>;
-}
 
 const ORDENAR: Record<string, (l: LinhaAcompanhamento) => string | number | null> = {
-  cliente: (l) => l.grupo_nome, venda: (l) => l.venda_mes, media: (l) => l.media_12m, media3: (l) => l.media_3m,
+  cliente: (l) => l.grupo_nome, venda: (l) => l.venda_mes, anterior: (l) => l.venda_mes_passado, media: (l) => l.media_12m, media3: (l) => l.media_3m,
   ritmo: (l) => (l.media_12m > 0 ? l.media_3m / l.media_12m : null), aFaturar: (l) => l.a_faturar, venda12: (l) => l.venda_12m,
   contatos: (l) => l.contatos_mes, ultimo: (l) => l.ultimo_contato, prazo: (l) => l.proximo_prazo,
 };
@@ -163,6 +163,8 @@ export default function ComercialCarteiras() {
   const noRecorte = intervalo ? 'no período' : 'no mês';
   const recorteRotulo = rotuloDoRecorte(competencia, intervalo, hoje);
   const { data: vendaAtribuida } = useVendaAtribuida(competencia, intervalo);
+  const { data: aConfirmar } = useNotasAConfirmar(intervalo?.de ?? competencia, intervalo?.ate ?? ultimoDiaDoMes(competencia));
+  const temAConfirmar = (l: LinhaAcompanhamento) => l.codigos.some((c) => aConfirmar?.has(c));
 
   const [direcional, setDirecional] = useQueryState<string>('direcional', '');
   const ativo = DIRECIONAIS.find((d) => d.id === direcional) ?? null;
@@ -198,7 +200,7 @@ export default function ComercialCarteiras() {
     return valor && ordem ? ordenarPor(visiveis, valor, ordem.direcao) : visiveis;
   }, [visiveis, ordem]);
   const paraExportar = ordenadas.map((l) => ({
-    Cliente: l.grupo_nome, Situação: ROTULO_SITUACAO[l.situacao], Comprou: l.venda_mes, 'Média mensal': l.media_12m,
+    Cliente: l.grupo_nome, Situação: ROTULO_SITUACAO[l.situacao], Comprou: l.venda_mes, 'Mês anterior': l.venda_mes_passado, 'Média mensal': l.media_12m,
     'A faturar': l.a_faturar, 'Último contato': l.ultimo_contato,
   }));
   const ordena = (coluna: string) => ({ ativa: ordem?.coluna === coluna ? ordem.direcao : null, alternar: () => setOrdem((o) => proximaOrdem(o, coluna)) });
@@ -321,7 +323,7 @@ export default function ComercialCarteiras() {
             {!analitico ? (
               isLoading ? <Skeleton className="h-64 w-full" /> : (
                 <AQuemProcurar linhas={situacao ? linhas.filter((l) => l.situacao === situacao) : linhas} noRecorte={noRecorte}
-                  aoAbrir={setClienteAberto} />
+                  aoAbrir={setClienteAberto} temAConfirmar={temAConfirmar} />
               )
             ) : (<>
             {/* A tabela de clientes vem primeiro; o ano mês a mês é a outra aba (proposta de 2026-11-05). */}
@@ -332,31 +334,7 @@ export default function ComercialCarteiras() {
               </TabsList>
             </Tabs>
             {aba === 'ano' ? (
-              <Card className="p-4 overflow-x-auto">
-                <h2 className="text-sm font-semibold mb-2">
-                  {ano}, mês a mês{filial ? ` · ${filial}` : ''}
-                </h2>
-                <table className="w-full text-[13px]">
-                  <thead>
-                    <tr className="text-muted-foreground">
-                      <th className="py-1 pr-2 text-left font-medium" />
-                      {MESES_CURTOS.map((m, i) => (
-                        <th key={m} className={`py-1 px-1.5 text-right font-medium ${!intervalo && i + 1 === mesIndice ? 'text-foreground' : ''}`}>{m}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr className="border-t border-border">
-                      <td className="py-1.5 pr-2 text-muted-foreground">Meta</td>
-                      {meses.map((m) => <td key={m.mes} className="py-1.5 px-1.5 text-right font-mono">{m.meta === null ? '—' : formatBRL(m.meta)}</td>)}
-                    </tr>
-                    <tr className="border-t border-border">
-                      <td className="py-1.5 pr-2 text-muted-foreground">Venda</td>
-                      {meses.map((m) => <td key={m.mes} className="py-1.5 px-1.5 text-right font-mono">{m.venda ? formatBRL(m.venda) : '—'}</td>)}
-                    </tr>
-                  </tbody>
-                </table>
-              </Card>
+              <GradeDoAno titulo={`${ano}, mês a mês${filial ? ` · ${filial}` : ''}`} meses={meses} mesEmDestaque={intervalo ? null : mesIndice} />
             ) : (<>
             {/* ── A quem procurar: os direcionais ─────────────────────────────────────── */}
             <h2 className="text-sm font-semibold print:hidden">
@@ -417,7 +395,7 @@ export default function ComercialCarteiras() {
                       <button type="button" onClick={() => setClienteAberto(l)} className="w-full rounded-lg border border-border bg-card p-3 text-left">
                         <span className="flex items-center gap-2 text-[14px] font-medium">
                           <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${COR_SITUACAO[l.situacao]}`} aria-hidden="true" />
-                          {l.grupo_nome}{emCondicao(l) && <SeloCondicao />}
+                          {l.grupo_nome}{emCondicao(l) && <SeloCondicao />}{temAConfirmar(l) && <SeloAConfirmar />}
                         </span>
                         <span className="mt-1 block text-[13px]">
                           Comprou <strong className="font-mono">{l.venda_mes ? formatBRL(l.venda_mes) : '—'}</strong>
@@ -439,15 +417,17 @@ export default function ComercialCarteiras() {
                   <span><span className="inline-block h-2 w-2 rounded-full bg-status-danger mr-1" />parado: sem compra há mais de 120 dias</span>
                   <span><span className="text-status-danger font-semibold">valor vermelho</span>: comprou menos que no mês anterior</span>
                   <span><span className="text-status-success font-semibold">valor verde</span>: comprou mais</span>
-                  <span>clique no nome do cliente para ver tudo dele · toque ou passe o mouse no título da coluna para a explicação</span>
+                  <span>clique no nome do cliente para ver tudo dele · clique na seta do título para ordenar · toque ou passe o mouse no título da coluna para a explicação</span>
                 </p>
                 <table className="w-full text-[13px]">
                   <thead>
                     <tr className="bg-secondary/60 text-left text-muted-foreground">
                       <th className="px-3 py-2 font-semibold">Cliente <Seta {...ordena('cliente')} rotulo="Cliente" /></th>
                       <Coluna id="carteira.venda_cliente_mes" direita ordem={ordena('venda')}
-                        titulo={`Comprou ${recorteRotulo.curto}`}
-                        sub={intervalo ? rotuloDoIntervalo(intervalo) : 'embaixo: o mês anterior'} />
+                        titulo={`Comprou ${recorteRotulo.curto}`} sub={intervalo ? rotuloDoIntervalo(intervalo) : undefined} />
+                      <th className="px-3 py-2 font-semibold text-right">
+                        {intervalo ? 'Período anterior' : 'Mês anterior'} <Seta {...ordena('anterior')} rotulo={intervalo ? 'Período anterior' : 'Mês anterior'} />
+                      </th>
                       <Coluna id="carteira.media_12m" direita ordem={ordena('media')} titulo="Média mensal"
                         sub={`${janelaAntes(base, meses12)}${meses12 < 12 ? ` (${meses12} ${meses12 === 1 ? 'mês' : 'meses'})` : ''}`} />
                       {analitico && <Coluna id="carteira.media_3m" direita ordem={ordena('media3')} titulo="Média 3 meses" sub={janelaAntes(base, meses3)} />}
@@ -474,6 +454,7 @@ export default function ComercialCarteiras() {
                                 aria-label={ROTULO_SITUACAO[l.situacao]} title={ROTULO_SITUACAO[l.situacao]} />
                               <span className="font-medium">{l.grupo_nome}</span>
                               {emCondicao(l) && <SeloCondicao />}
+                              {temAConfirmar(l) && <SeloAConfirmar />}
                             </button>
                             <p className="text-muted-foreground pl-[18px]">
                               {ROTULO_SITUACAO[l.situacao]}{l.ultima_compra ? ` · última compra ${formatDateBR(l.ultima_compra)}` : ''}
@@ -486,10 +467,8 @@ export default function ComercialCarteiras() {
                           </td>
                           <td className={`px-3 py-2 text-right font-mono whitespace-nowrap ${caiu ? 'text-status-danger' : subiu ? 'text-status-success' : ''}`}>
                             {l.venda_mes ? formatBRL(l.venda_mes) : '—'}
-                            <p className="text-muted-foreground font-sans">
-                              {intervalo ? 'período anterior' : 'mês anterior'}: {l.venda_mes_passado ? formatBRL(l.venda_mes_passado) : '—'}
-                            </p>
                           </td>
+                          <td className="px-3 py-2 text-right font-mono whitespace-nowrap">{l.venda_mes_passado ? formatBRL(l.venda_mes_passado) : '—'}</td>
                           <td className="px-3 py-2 text-right font-mono whitespace-nowrap">{l.media_12m ? formatBRL(l.media_12m) : '—'}</td>
                           {analitico && <td className="px-3 py-2 text-right font-mono whitespace-nowrap">{l.media_3m ? formatBRL(l.media_3m) : '—'}</td>}
                           <td className="px-3 py-2 whitespace-nowrap">
@@ -560,12 +539,14 @@ const MOSTRA_NA_LISTA = 20;
  * cada cliente uma vez, pelo primeiro motivo. Os filtros são os mesmos cartões do Analítico, para a contagem ser igual
  * nas duas visões; a ordem põe primeiro quem costumava comprar mais.
  */
-function AQuemProcurar({ linhas, noRecorte, aoAbrir }: {
+function AQuemProcurar({ linhas, noRecorte, aoAbrir, temAConfirmar }: {
   linhas: LinhaAcompanhamento[];
   noRecorte: string;
   aoAbrir: (l: LinhaAcompanhamento) => void;
+  temAConfirmar: (l: LinhaAcompanhamento) => boolean;
 }) {
   const { data: abertas = [] } = useDoresEmAberto();
+  const { data: notas = [] } = useNotasDoComercial();
   const tenantPath = useTenantPath();
   const [filtro, setFiltro] = useState<string | null>(null);
   const [limite, setLimite] = useState(MOSTRA_NA_LISTA);
@@ -575,9 +556,18 @@ function AQuemProcurar({ linhas, noRecorte, aoAbrir }: {
   };
   const contato = (l: LinhaAcompanhamento) => (l.ultimo_contato ? `último contato ${formatDateBR(l.ultimo_contato)}` : 'nenhum contato');
   const direcional = (id: string) => DIRECIONAIS.find((d) => d.id === id)!.filtro;
+  // O pedido aparece como foi digitado e, no cliente condição, com o total que entra na venda (banco, `a_faturar`).
+  const aFaturar = (l: LinhaAcompanhamento) => {
+    const pedidos = notas.filter((n) => n.situacao === 'falta_nota' && l.codigos.includes(n.cliente_codigo));
+    const noPedido = pedidos.reduce((s, n) => s + n.valor_pedido, 0);
+    const valor = emCondicao(l) && noPedido > 0 && Math.abs(noPedido - l.a_faturar) > 0.01
+      ? `Pedido ${formatBRL(noPedido)} · total ${formatBRL(l.a_faturar)}` : formatBRL(l.a_faturar);
+    const desde = pedidos[0]?.aprovado_em;
+    return `${valor} · ${l.pedidos_a_faturar} ${l.pedidos_a_faturar === 1 ? 'pedido' : 'pedidos'}${desde ? ` · aprovado em ${formatDateBR(toLocalISODate(new Date(desde)))}` : ''}`;
+  };
   const motivos = [
     { id: 'a_faturar', titulo: 'A faturar', alerta: true,
-      porque: (l: LinhaAcompanhamento) => `${formatBRL(l.a_faturar)} · ${l.pedidos_a_faturar} ${l.pedidos_a_faturar === 1 ? 'pedido' : 'pedidos'}` },
+      porque: aFaturar },
     { id: 'nao_comprou', titulo: `Não comprou ${noRecorte}`, alerta: false,
       porque: (l: LinhaAcompanhamento) => `${l.ultima_compra ? `última compra ${formatDateBR(l.ultima_compra)}` : 'nunca comprou'}${l.media_12m ? ` · comprava ${formatBRL(l.media_12m)}/mês` : ''} · ${contato(l)}` },
     { id: 'esfriando', titulo: 'Comprando menos', alerta: false,
@@ -618,7 +608,7 @@ function AQuemProcurar({ linhas, noRecorte, aoAbrir }: {
               return (
                 <li key={l.grupo_chave} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-3 py-2 hover:bg-muted/50">
                   <button type="button" onClick={() => aoAbrir(l)} className="min-w-0 flex-1 text-left">
-                    <span className="block text-[14px] font-medium">{l.grupo_nome}{emCondicao(l) && <SeloCondicao />}</span>
+                    <span className="block text-[14px] font-medium">{l.grupo_nome}{emCondicao(l) && <SeloCondicao />}{temAConfirmar(l) && <SeloAConfirmar />}</span>
                     <span className="block text-[12px] text-muted-foreground">{m.porque(l)}</span>
                   </button>
                   {m.id === 'a_faturar' ? (
@@ -687,7 +677,7 @@ function ComoLer({ corte }: { corte: string | null }) {
           </li>
           <li>
             <strong className="text-foreground">Comprou:</strong> quanto o cliente comprou no mês (ou período) do filtro Período.
-            Embaixo, o mês anterior, para comparar.
+            Ao lado, o mês anterior, para comparar.
           </li>
           <li>
             <strong className="text-foreground">Média mensal:</strong> o normal do cliente, só com os meses antes do escolhido.{' '}
@@ -741,23 +731,38 @@ function ClienteMesAMes({ linha, onClose, carteira, competencia, intervalo, fili
   const tenantPath = useTenantPath();
   const { data: abertas = [] } = useDoresEmAberto();
   const dor = abertas.find((d) => linha?.codigos.includes(d.cliente_codigo));
-  const { data: cashback } = useCashbackDoCliente(linha?.codigos[0] ?? null, Number(ate.slice(0, 4)), filial || null);
+  const { data: cashback } = useCashbackDoGrupo(linha?.codigos ?? null, Number(ate.slice(0, 4)), filial || null);
+  const { can } = useDepartmentPermissions('comercial');
+  const { data: notas = [] } = useNotasDoComercial();
+  const pedidos = notas.filter((n) => n.situacao === 'falta_nota' && linha?.codigos.includes(n.cliente_codigo));
   const maior = Math.max(0, ...meses.map((m) => m.venda));
   const total = meses.reduce((s, m) => s + m.venda, 0);
   return (
     <Dialog open={!!linha} onOpenChange={(v) => { if (!v) onClose(); }}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>{linha?.grupo_nome}</DialogTitle>
+          <DialogTitle>{linha?.grupo_nome}{linha && emCondicao(linha) && <SeloCondicao />}</DialogTitle>
         </DialogHeader>
         {linha?.codigos[0] && (
           <>
             <dl className="grid grid-cols-2 gap-2 text-[13px]">
-              <div className="rounded-md border border-border p-2"><dt className="text-muted-foreground">A faturar</dt><dd className="font-mono font-semibold">{formatBRL(linha.a_faturar)}</dd></div>
-              <div className="rounded-md border border-border p-2"><dt className="text-muted-foreground">Cashback liberado no ano</dt><dd className="font-mono font-semibold">{formatBRL(cashback?.resumo?.cashback_liberado ?? 0)}</dd></div>
+              <div className="rounded-md border border-border p-2"><dt className="text-muted-foreground">Pedidos em aberto</dt><dd className="font-mono font-semibold">{linha.pedidos_a_faturar} · {formatBRL(linha.a_faturar)}</dd></div>
+              <div className="rounded-md border border-border p-2"><dt className="text-muted-foreground">Cashback liberado no ano</dt><dd className="font-mono font-semibold">{formatBRL(cashback?.liberado ?? 0)}</dd>
+                {(cashback?.aguardando ?? 0) > 0 && <dd className="text-muted-foreground">aguardando {formatBRL(cashback?.aguardando ?? 0)}</dd>}
+                {can('cashback', 'view') && <dd><Link to={tenantPath('/comercial/cashback')} className="text-primary underline">ver cashback</Link></dd>}</div>
               <div className="rounded-md border border-border p-2"><dt className="text-muted-foreground">Dor em aberto</dt><dd className={dor ? 'text-status-danger font-semibold' : ''}>{dor ? rotuloDoMotivo(dor) : 'Nenhuma'}</dd></div>
               <div className="rounded-md border border-border p-2"><dt className="text-muted-foreground">Próximo retorno</dt><dd>{linha.proximo_prazo ? formatDateBR(linha.proximo_prazo) : 'Sem retorno'}</dd></div>
             </dl>
+            {pedidos.length > 0 && (
+              <ul className="divide-y divide-border rounded-md border border-border text-[13px]">
+                {pedidos.map((p) => (
+                  <li key={p.pedido_id} className="flex flex-wrap items-center justify-between gap-2 px-2 py-1.5">
+                    <span>Pedido {p.numero} · {p.filial} · <span className="font-mono">{formatBRL(p.valor_pedido)}</span></span>
+                    <Link to={tenantPath('/comercial/pedidos')} className="text-primary underline">Informar nota</Link>
+                  </li>
+                ))}
+              </ul>
+            )}
             <div className="flex flex-wrap gap-2">
               <Button asChild size="sm"><Link to={tenantPath(linkRaioX(linha.codigos[0]))}>Abrir Raio-X</Link></Button>
               <Button asChild variant="outline" size="sm"><Link to={tenantPath(linkFichaCliente(linha.codigos[0]))}>Abrir ficha completa</Link></Button>

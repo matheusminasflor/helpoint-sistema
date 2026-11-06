@@ -16,6 +16,8 @@ import { mensagemDeErro } from '@/lib/supabase-result';
 import { AlertTriangle, ClipboardList, Pencil, Plus, Trash2 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { FluxoDoLancamento } from '@/components/comercial/FluxoDoLancamento';
+import { SeloCondicao } from '@/components/comercial/SeloCondicao';
+import { useClientesEmCondicao } from '@/hooks/useComercialCliente';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -52,6 +54,7 @@ export default function ComercialLancamentos() {
   const nomePorId = useMemo(() => new Map(catalogo.map((c) => [c.id, c])), [catalogo]);
   // O checklist de pedidos de cada lançamento (LEVA S): a vendedora vê aqui o que o Financeiro fez.
   const { data: checklists = [] } = useChecklists();
+  const { data: emCondicao } = useClientesEmCondicao();
   const checklistPorLancamento = useMemo(() => new Map(checklists.map((c) => [c.interacao_id, c])), [checklists]);
   const hoje = todayISO();
 
@@ -200,6 +203,7 @@ export default function ComercialLancamentos() {
                         {l.cliente ? (
                           <>
                             <span className="font-medium">{l.cliente.razao_social}</span>
+                            {l.cliente_codigo && emCondicao?.has(l.cliente_codigo) && <SeloCondicao />}
                             {l.fora_da_carteira && <Badge className="ml-1.5 text-[12px] badge-warning">fora da carteira</Badge>}
                             {ck && (
                               <Badge className={`ml-1.5 text-[12px] ${ck.situacao === 'Recusado' || ck.situacao === 'Cancelado' ? 'badge-danger' : 'badge-info'}`}

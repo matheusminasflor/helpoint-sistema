@@ -8,16 +8,19 @@ import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { SeloCondicao } from '@/components/comercial/SeloCondicao';
 import { useAuth } from '@/contexts/AuthContext';
+import { useClientesEmCondicao } from '@/hooks/useComercialCliente';
 import { useInformarNota, useNotasDoComercial, type NotaParaResolver } from '@/hooks/usePedidosChecklist';
 import { useTenantPath } from '@/hooks/useTenantPath';
-import { TITULOS, diasDesde } from '@/lib/notas-para-resolver';
+import { TITULOS, diasDesde, esperaDaNota } from '@/lib/notas-para-resolver';
 import { lerValor } from '@/lib/checklist-de-pedidos';
 import { todayISO } from '@/lib/dates';
 import { formatBRL, formatDateBR } from '@/types/financeiro';
 
 export function NotasParaResolver() {
   const { data: notas = [], isError } = useNotasDoComercial();
+  const { data: emCondicao } = useClientesEmCondicao();
   const [aberta, setAberta] = useState<NotaParaResolver | null>(null);
   if (isError) return <p className="text-[13px] text-status-danger">Não consegui carregar as notas pendentes.</p>;
   if (notas.length === 0) return null;
@@ -29,16 +32,16 @@ export function NotasParaResolver() {
       <ul className="divide-y divide-border">
         {notas.map((n) => {
           const t = TITULOS[n.situacao];
-          const dias = n.aprovado_em ? diasDesde(n.aprovado_em, todayISO()) : null;
+          const espera = n.situacao === 'falta_nota' && n.aprovado_em ? esperaDaNota(diasDesde(n.aprovado_em, todayISO())) : null;
           return (
             <li key={n.pedido_id} className="py-2 flex flex-wrap items-center justify-between gap-2 text-[13px]">
               <span>
-                <strong>{n.cliente}</strong> · pedido {n.numero} · {n.filial} · {formatBRL(n.valor_pedido)}
+                <strong>{n.cliente}</strong>{emCondicao?.has(n.cliente_codigo) && <SeloCondicao />} · pedido {n.numero} · {n.filial} · {formatBRL(n.valor_pedido)}
                 {n.vendedor && <span className="text-muted-foreground"> · {n.vendedor}</span>}
               </span>
               <span className="flex flex-wrap items-center gap-2">
-                <Badge variant="outline" className={`text-[12px] ${t.classe}`}>
-                  {t.rotulo}{n.situacao === 'falta_nota' && dias !== null ? ` · aprovado há ${dias} ${dias === 1 ? 'dia' : 'dias'}` : ''}
+                <Badge variant="outline" className={`text-[12px] ${espera?.atrasada ? 'badge-danger' : t.classe}`}>
+                  {espera?.rotulo ?? t.rotulo}
                 </Badge>
                 {n.situacao === 'valor_diferente'
                   ? <span className="text-muted-foreground">Digitado {formatBRL(n.nota_valor ?? 0)}, Forteplus {formatBRL(n.forteplus_valor ?? 0)}</span>
@@ -48,12 +51,12 @@ export function NotasParaResolver() {
           );
         })}
       </ul>
-      {aberta && <DialogoDaNota nota={aberta} onClose={() => setAberta(null)} />}
+      {aberta && <DialogoDaNota nota={aberta} condicao={!!emCondicao?.has(aberta.cliente_codigo)} onClose={() => setAberta(null)} />}
     </Card>
   );
 }
 
-function DialogoDaNota({ nota, onClose }: { nota: NotaParaResolver; onClose: () => void }) {
+function DialogoDaNota({ nota, condicao, onClose }: { nota: NotaParaResolver; condicao: boolean; onClose: () => void }) {
   const informar = useInformarNota();
   const [numero, setNumero] = useState(nota.nota_fiscal ?? '');
   const [valor, setValor] = useState(nota.nota_valor ? String(nota.nota_valor).replace('.', ',') : '');
@@ -71,6 +74,7 @@ function DialogoDaNota({ nota, onClose }: { nota: NotaParaResolver; onClose: () 
             <Input id="nota-valor" inputMode="decimal" className="font-mono" value={valor} onChange={(e) => setValor(e.target.value)} /></div>
           <div className="space-y-1.5"><Label htmlFor="nota-emissao">Data de emissão</Label>
             <Input id="nota-emissao" type="date" max={todayISO()} value={emissao} onChange={(e) => setEmissao(e.target.value)} /></div>
+          {condicao && <p className="text-[13px] rounded-md badge-purple px-2 py-1.5">Cliente condição: digite só o valor da nota. O sistema soma a parte da condição na Venda total.</p>}
           {nota.nota_em && <p className="text-[13px] text-muted-foreground">Digitada em {formatDateBR(nota.nota_em)}: a importação não encontrou essa nota.</p>}
         </div>
         <DialogFooter>

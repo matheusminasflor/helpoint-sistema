@@ -9,6 +9,7 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Search, Users } from 'lucide-react';
+import { SeloCondicao } from '@/components/comercial/SeloCondicao';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -267,7 +268,7 @@ function ResumoClientesQuePararam({
                 <button type="button" onClick={() => onEscolher(c.cliente_codigo)} className="text-primary hover:underline text-left" title={c.nome}>
                   {limparNomeCliente(c.nome)}
                 </button>
-                {c.em_condicao && <span className="ml-1.5 text-[12px] text-muted-foreground">(condição)</span>}
+                {c.em_condicao && <SeloCondicao />}
                 <span className="ml-1.5 text-[12px] text-muted-foreground">
                   última compra {formatDateBR(c.ultima_compra)}
                 </span>
@@ -329,7 +330,7 @@ function ListaClientesATrabalhar({
                       da MESMA coluna (`com_clientes.em_condicao`) de onde as outras
                       três funções leem, e a marca é a mesma frase nos dois lugares:
                       cliente com dois nomes para a mesma coisa é defeito novo. */}
-                  {c.em_condicao && <span className="ml-1.5 text-[12px] text-muted-foreground">(condição)</span>}
+                  {c.em_condicao && <SeloCondicao />}
                 </td>
                 <td className="px-3 py-1.5 text-muted-foreground">{c.tabela_preco ?? '—'}</td>
                 <td className="px-3 py-1.5">{formatDateBR(c.ultima_compra)}</td>

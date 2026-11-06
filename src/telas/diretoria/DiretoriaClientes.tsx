@@ -18,6 +18,7 @@ import { useSearchParams } from 'react-router-dom';
 import { Users } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { TutorialDoRelatorio } from '@/components/ajuda/TutorialDoRelatorio';
+import { SeloCondicao } from '@/components/comercial/SeloCondicao';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FiltrosComerciais } from '@/components/comercial/FiltrosComerciais';
@@ -159,7 +160,7 @@ export default function DiretoriaClientes() {
                 <tr key={c.cliente_codigo} className="border-t border-border">
                   <td className="px-3 py-1.5">
                     <button type="button" onClick={() => escolherCliente(c.cliente_codigo)} className="text-primary hover:underline text-left" title={c.nome}>{limparNomeCliente(c.nome)}</button>
-                    {c.em_condicao && <span className="ml-1.5 text-[12px] text-muted-foreground">(condição)</span>}
+                    {c.em_condicao && <SeloCondicao />}
                   </td>
                   <td className="px-3 py-1.5 text-muted-foreground">{c.tabela_preco ?? '—'}</td>
                   <td className="px-3 py-1.5 text-right font-mono">{formatBRL(c.faturamento)}</td>

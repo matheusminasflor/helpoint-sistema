@@ -11,7 +11,7 @@
 // módulo próprio. Nenhum código navegava para ela; o endereço que alguém esperaria para
 // "indicadores do comercial" passa a ser, enfim, os indicadores do comercial.
 import { FonteDoNumero } from '@/components/comercial/FonteDoNumero';
-import { useMemo, useState } from 'react';
+import { Fragment, useMemo, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { BarChart3, Info, Printer, Users } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -22,15 +22,15 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { FarolDaMeta } from '@/components/comercial/FarolDaMeta';
-import { ComposicaoDaVenda } from '@/components/comercial/ComposicaoDaVenda';
-import { TresRespostas } from '@/components/comercial/TresRespostas';
+import { GradeDoAno } from '@/components/comercial/GradeDoAno';
+import { LinhaDoAFaturar, PartesDaVenda, TresRespostas } from '@/components/comercial/TresRespostas';
 import { SeletorPeriodoDaCompetencia } from '@/components/comercial/SeletorPeriodoDaCompetencia';
 import { useQueryState } from '@/hooks/useQueryState';
 import { useDepartmentPermissions, usePodeGerirCarteiras } from '@/hooks/useAccessProfiles';
 import { useLacunasDoCadastro } from '@/hooks/useComercialCliente';
 import { usePeriodoImportado } from '@/hooks/useComercialPainel';
 import {
-  useFarolDeAcoes, useNotasQueNaoBateram, usePainelDoGestor, useResumoDaCarteira, useRitmoDoMes, useSalvarMetaIndicador, useVendaAtribuida,
+  useCarteiraMesAMes, useFarolDeAcoes, useNotasQueNaoBateram, usePainelDoGestor, useResumoDaCarteira, useRitmoDoMes, useSalvarMetaIndicador, useVendaAtribuida,
   type LinhaPainel, type ResumoCarteira,
 } from '@/hooks/useComercialLancamentos';
 import { projecaoDoMes, type RitmoDoMes } from '@/lib/projecao-do-mes';
@@ -197,6 +197,7 @@ export default function ComercialIndicadores() {
         ) : (
           <>
             {/* ── 1. Indicadores por vendedora ───────────────────────────────── */}
+            <Bloco titulo="Por vendedora" ativo={analitico}>
             <div className="grid gap-4 xl:grid-cols-2">
               {mostradas.map(([id, v]) => (
                 <Card key={id} className="p-4 space-y-3">
@@ -209,11 +210,12 @@ export default function ComercialIndicadores() {
                       de={intervalo?.de ?? competencia} ate={intervalo?.ate ?? ultimoDiaDoMes(competencia)}
                       vendido={v.linhas.find((l) => eValor(l.metrica))?.realizado ?? 0}
                       meta={v.linhas.find((l) => eValor(l.metrica))?.meta ?? null}
-                      foraDoAlvo={v.linhas.filter((l) => !eValor(l.metrica) && l.metrica !== 'pct_meta' && (l.cor === 'vermelho' || l.cor === 'amarelo')).length} />
+                      indicadores={v.linhas.filter((l) => !eValor(l.metrica) && l.metrica !== 'pct_meta').length}
+                      abaixoDaMeta={v.linhas.filter((l) => !eValor(l.metrica) && l.metrica !== 'pct_meta' && (l.cor === 'vermelho' || l.cor === 'amarelo')).length} />
                   )}
-                  {v.carteira && analitico && <ComposicaoDaVenda de={intervalo?.de ?? competencia} carteira={v.carteira}
-                    ate={intervalo?.ate ?? ultimoDiaDoMes(competencia)} />}
-                  <table className="w-full text-[13px]">
+                  {/* A tabela fica no celular (proposta de 2026-11-05): antes o resumo do celular a tirava do cartão. */}
+                  <div className="overflow-x-auto">
+                  <table className="w-full text-[13px]" data-celular="tabela">
                     <thead>
                       <tr className="text-left text-muted-foreground">
                         <th className="py-1 font-medium">Indicador</th>
@@ -224,8 +226,12 @@ export default function ComercialIndicadores() {
                     </thead>
                     <tbody>
                       {linhasDoCartao(id, v.linhas).map((l) => (
-                        <tr key={l.metrica} className="border-t border-border">
-                          <td className="py-1.5 pr-2">{l.rotulo}</td>
+                        <Fragment key={l.metrica}>
+                        {analitico && eValor(l.metrica) && v.carteira && (
+                          <PartesDaVenda carteiras={v.carteira.split(', ')} de={intervalo?.de ?? competencia} ate={intervalo?.ate ?? ultimoDiaDoMes(competencia)} />
+                        )}
+                        <tr className="border-t border-border">
+                          <td className={`py-1.5 pr-2 ${eValor(l.metrica) ? 'font-semibold' : ''}`}>{eValor(l.metrica) ? 'Venda total' : l.rotulo}</td>
                           <td className="py-1.5 text-right">
                             {l.metrica === 'pct_meta' ? (
                               <span className="text-muted-foreground">{l.meta === null ? '—' : '100%'}</span>
@@ -245,9 +251,14 @@ export default function ComercialIndicadores() {
                           <td className="py-1.5 text-right font-mono">{formatar(l, l.realizado)}</td>
                           <td className="py-1.5 text-right"><FarolDaMeta cor={l.cor} /></td>
                         </tr>
+                        {analitico && eValor(l.metrica) && v.carteira && (
+                          <LinhaDoAFaturar carteiras={v.carteira.split(', ')} competencia={competencia} intervalo={intervalo} />
+                        )}
+                        </Fragment>
                       ))}
                     </tbody>
                   </table>
+                  </div>
                   {!analitico && !abertas.has(id) && v.linhas.length > linhasDoCartao(id, v.linhas).length && (
                     <button type="button" className="text-[13px] text-primary hover:underline"
                       onClick={() => setAbertas((s) => new Set(s).add(id))}>
@@ -261,38 +272,55 @@ export default function ComercialIndicadores() {
                       ? ' No período, cada meta é a soma dos meses inteiros que ele toca (a semanal, das semanas inteiras). Para editar uma meta, escolha "Um mês".'
                       : podeDefinirMeta && ` As demais valem a partir de ${competenciaCurta(competencia)} e continuam nos meses seguintes até serem mudadas.`}
                   </p>
-                  <NotasQueNaoBateram linhas={notasErradas.filter((n) => n.vendedor_id === id)} />
+                  {!analitico && <NotasQueNaoBateram linhas={notasErradas.filter((n) => n.vendedor_id === id)} />}
                 </Card>
               ))}
             </div>
+            </Bloco>
 
             {/* Simplificado: as três respostas, os cartões e o resumo curto das carteiras. O Analítico soma o farol de
                 ações e os lançamentos, em blocos que abrem e fecham. */}
             {analitico && (
-            <details open className="group">
-              <summary className="cursor-pointer text-sm font-semibold mb-2 print:hidden">Farol de ações</summary>
+            <Bloco titulo="Farol de ações" ativo>
             {/* ── 2. FAROL de ações ──────────────────────────────────────────── */}
             <FarolDeAcoes
               linhas={escolhida ? farol.filter((f) => f.vendedor_id === escolhida[0]) : farol}
               vendedoras={mostradas.map(([id, v]) => ({ id, nome: v.nome }))}
               noRecorte={intervalo ? 'no período' : 'no mês'}
             />
-            </details>
+            </Bloco>
+            )}
+
+            {analitico && (
+              <Bloco titulo="Evolução mês a mês" ativo>
+                <div className="space-y-3">
+                  {[...new Set(mostradas.flatMap(([, v]) => v.carteira?.split(', ') ?? []))].map((c) => (
+                    <EvolucaoDaCarteira key={c} carteira={c} competencia={competencia} destacar={!intervalo} />
+                  ))}
+                </div>
+              </Bloco>
             )}
 
             {/* ── 3. Resumo das carteiras ────────────────────────────────────── */}
+            <Bloco titulo="Resumo das carteiras" ativo={analitico}>
             <ResumoDasCarteiras
               linhas={escolhida ? resumo.filter((r) => r.vendedor_id === escolhida[0]) : resumo}
               mostrarTotal={visaoDeEquipe && !escolhida}
               simplificado={!analitico}
             />
+            </Bloco>
 
             {/* ── 4. Os lançamentos dela (só quando uma vendedora está escolhida) ── */}
             {analitico && escolhida && (
-              <details open>
-                <summary className="cursor-pointer text-sm font-semibold mb-2 print:hidden">Lançamentos de {escolhida[1].nome}</summary>
+              <Bloco titulo={`Lançamentos de ${escolhida[1].nome}`} ativo>
                 <LancamentosDaVendedora vendedorId={escolhida[0]} nome={escolhida[1].nome} competencia={competencia} intervalo={intervalo} />
-              </details>
+              </Bloco>
+            )}
+
+            {analitico && notasErradas.some((n) => mostradas.some(([id]) => id === n.vendedor_id)) && (
+              <Bloco titulo="Notas que não bateram" ativo>
+                <NotasQueNaoBateram linhas={notasErradas.filter((n) => mostradas.some(([id]) => id === n.vendedor_id))} />
+              </Bloco>
             )}
           </>
         )}
@@ -318,6 +346,23 @@ export default function ComercialIndicadores() {
       </div>
     </div>
   );
+}
+
+/** No Analítico, cada parte da tela abre e fecha (proposta de 2026-11-05); no Simplificado, nada muda. */
+function Bloco({ titulo, ativo, children }: { titulo: string; ativo: boolean; children: ReactNode }) {
+  if (!ativo) return <>{children}</>;
+  return (
+    <details open>
+      <summary className="cursor-pointer text-sm font-semibold mb-2 print:hidden">{titulo}</summary>
+      {children}
+    </details>
+  );
+}
+
+function EvolucaoDaCarteira({ carteira, competencia, destacar }: { carteira: string; competencia: string; destacar: boolean }) {
+  const ano = Number(competencia.slice(0, 4));
+  const { data: meses = [] } = useCarteiraMesAMes(carteira, ano);
+  return <GradeDoAno titulo={`${carteira}, ${ano}`} meses={meses} mesEmDestaque={destacar ? Number(competencia.slice(5, 7)) : null} />;
 }
 
 /** Meta editável ali mesmo, como a coluna C da planilha. Grava ao sair do campo. */

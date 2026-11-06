@@ -171,6 +171,17 @@ export function useClientesCadastro(filtro: FiltroCadastro, busca: string, carte
  * de contagem o que interessa vem em `count`, fora do `data`. O `error` é tratado à
  * mão, que é a outra metade da regra 1 das cinco.
  */
+/** Quem é cliente condição (`com_clientes.em_condicao`): a etiqueta roxa das listas que não trazem o campo. */
+export function useClientesEmCondicao() {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['comercial', 'clientes-em-condicao', tenantId],
+    enabled: !!tenantId,
+    queryFn: async () => new Set(((unwrap(await supabase.from('com_clientes').select('codigo')
+      .eq('tenant_id', tenantId!).eq('em_condicao', true)) ?? []) as { codigo: string }[]).map((c) => c.codigo)),
+  });
+}
+
 export function useLacunasDoCadastro() {
   const { tenantId } = useAuth();
   return useQuery({

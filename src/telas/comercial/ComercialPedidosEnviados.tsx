@@ -23,6 +23,9 @@ import { AbasSegmentadas } from '@/components/ui/abas-segmentadas';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChecklistPreenchido, ResumoDaConferencia } from '@/components/financeiro/ResumoDaConferencia';
+import { NotasDosPedidos } from '@/components/financeiro/NotasDosPedidos';
+import { SeloCondicao } from '@/components/comercial/SeloCondicao';
+import { useClientesEmCondicao } from '@/hooks/useComercialCliente';
 import { HistoricoDeReajustes } from '@/components/financeiro/HistoricoDeReajustes';
 import { AvisoDeCancelado } from '@/components/financeiro/CancelarChecklist';
 import { PedidoDeReajuste } from '@/components/comercial/PedidoDeReajuste';
@@ -139,6 +142,7 @@ function Situacao({ c }: { c: ChecklistResumo }) {
 }
 
 function Tabela({ linhas, mostrarVendedora, onAbrir }: { linhas: ChecklistResumo[]; mostrarVendedora: boolean; onAbrir: (c: ChecklistResumo) => void }) {
+  const { data: emCondicao } = useClientesEmCondicao();
   return (
     <div className="panel overflow-x-auto">
       <table className="w-full text-[14px]">
@@ -158,7 +162,7 @@ function Tabela({ linhas, mostrarVendedora, onAbrir }: { linhas: ChecklistResumo
             <tr key={c.id} className="border-t border-border align-middle hover:bg-primary/5 cursor-pointer" onClick={() => onAbrir(c)}>
               <td className="px-4 py-3 font-semibold tabular-nums whitespace-nowrap">{c.protocolo}</td>
               <td className="px-4 py-3 tabular-nums whitespace-nowrap">{formatDateBR(c.enviado_em)}</td>
-              <td className="px-4 py-3"><span className="font-semibold">{c.cliente_nome}</span> <span className="text-muted-foreground">· {c.cliente_codigo}</span></td>
+              <td className="px-4 py-3"><span className="font-semibold">{c.cliente_nome}</span>{emCondicao?.has(c.cliente_codigo) && <SeloCondicao />} <span className="text-muted-foreground">· {c.cliente_codigo}</span></td>
               {mostrarVendedora && <td className="px-4 py-3">{c.vendedor_nome ?? '—'}</td>}
               <td className="px-4 py-3 text-right font-semibold tabular-nums">{formatBRL(Number(c.valor_total))}</td>
               <td className="px-4 py-3"><Situacao c={c} /></td>
@@ -201,6 +205,9 @@ function DetalheDoPedido({ c: linha, onClose, podePedirReajuste }: { c: Checklis
             </div>
           )}
           <PedidoDeReajuste resumo={c} podePedir={podePedirReajuste} />
+          {data && (c.situacao === 'Aprovado' || c.situacao === 'Finalizado') && (
+            <NotasDosPedidos checklistId={c.id} pedidos={data.pedidos} podeEditar={c.situacao === 'Aprovado' && c.vendedor_id === user?.id} />
+          )}
           {data ? (
             <>
               <div className="space-y-1">

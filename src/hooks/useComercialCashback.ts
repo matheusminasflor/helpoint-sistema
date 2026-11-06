@@ -209,6 +209,24 @@ export function useCashbackDoCliente(codigo: string | null, ano: number, filial:
   });
 }
 
+/** O cashback do grupo: o cliente da Carteira pode ter mais de um código. */
+export function useCashbackDoGrupo(codigos: string[] | null, ano: number, filial: Filial | null) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['comercial', 'cashback-cliente', tenantId, 'grupo', codigos, ano, filial],
+    enabled: !!tenantId && !!codigos?.length,
+    queryFn: async () => {
+      const resumos = await Promise.all(codigos!.map(async (codigo) => (unwrap(await supabase.rpc('com_cashback_resumo', {
+        p_ano: ano, p_filial: filial, p_codigo: codigo,
+      })) as unknown as CashbackResumo[])[0]));
+      return {
+        liberado: resumos.reduce((s, r) => s + Number(r?.cashback_liberado ?? 0), 0),
+        aguardando: resumos.reduce((s, r) => s + Number(r?.cashback_aguardando ?? 0), 0),
+      };
+    },
+  });
+}
+
 function invalidarCashback(qc: ReturnType<typeof useQueryClient>, tenantId?: string) {
   qc.invalidateQueries({ queryKey: ['comercial', 'faixas-cashback', tenantId] });
   qc.invalidateQueries({ queryKey: ['comercial', 'cashback-mensal', tenantId] });
