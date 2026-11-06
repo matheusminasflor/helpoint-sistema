@@ -34,7 +34,7 @@ export function FluxoDoLancamento() {
         <CircleHelp className="w-4 h-4" aria-hidden="true" />
       </Button>
       <Dialog open={aberto} onOpenChange={(v) => { if (!v) fechar(); }}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="sm:max-w-3xl">
           <DialogHeader><DialogTitle>Como funciona, do lançamento à sexta-feira</DialogTitle></DialogHeader>
           <ol className="grid gap-2 sm:grid-cols-5">
             {PASSOS.map((p, i) => (
