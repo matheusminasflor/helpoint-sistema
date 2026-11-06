@@ -590,7 +590,7 @@ function AQuemProcurar({ linhas, noRecorte, aoAbrir, temAConfirmar }: {
           return (
             <button key={m.id} type="button" aria-pressed={marcado}
               onClick={() => { setFiltro(marcado ? null : m.id); setLimite(MOSTRA_NA_LISTA); }}
-              className={`rounded-lg border p-3 text-left transition-colors ${marcado ? 'border-primary bg-primary/10' : m.alerta && m.itens.length > 0 ? 'border-destructive bg-card hover:bg-muted/50' : 'border-border bg-card hover:bg-muted/50'}`}>
+              className={`rounded-lg border p-3 text-left transition-colors ${marcado ? 'border-primary bg-primary/10' : m.alerta && m.itens.length > 0 ? 'border-status-danger bg-status-danger/5 hover:bg-status-danger/10' : 'border-border bg-card hover:bg-muted/50'}`}>
               <span className="block text-[13px] text-muted-foreground">{m.titulo}</span>
               <span className="block text-[20px] font-semibold">{m.itens.length} {m.itens.length === 1 ? 'cliente' : 'clientes'}</span>
               <span className="block text-[12px] text-primary">{marcado ? 'filtrando · clique para tirar' : 'clique para filtrar'}</span>

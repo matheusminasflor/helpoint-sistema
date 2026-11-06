@@ -95,7 +95,7 @@ export function AvisoDeNotasNoInicio() {
   const minhas = notas.filter((n) => n.vendedor_id === user?.id && n.situacao !== 'valor_diferente').length;
   if (minhas === 0) return null;
   return (
-    <Link to={tenantPath('/comercial/pedidos')} className="block rounded-lg border border-status-warning bg-card px-3 py-2 text-[14px] font-medium">
+    <Link to={tenantPath('/comercial/pedidos')} className="block rounded-lg border border-status-warning bg-status-warning/5 px-3 py-2 text-[14px] font-medium">
       Você tem {minhas} {minhas === 1 ? 'pedido com nota para informar' : 'pedidos com nota para informar'}. Abrir pedidos
     </Link>
   );

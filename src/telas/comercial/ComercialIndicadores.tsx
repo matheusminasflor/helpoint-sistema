@@ -210,7 +210,7 @@ export default function ComercialIndicadores() {
                       de={intervalo?.de ?? competencia} ate={intervalo?.ate ?? ultimoDiaDoMes(competencia)}
                       vendido={v.linhas.find((l) => eValor(l.metrica))?.realizado ?? 0}
                       meta={v.linhas.find((l) => eValor(l.metrica))?.meta ?? null}
-                      indicadores={v.linhas.filter((l) => !eValor(l.metrica) && l.metrica !== 'pct_meta').length}
+                      indicadores={v.linhas.filter((l) => !eValor(l.metrica) && l.metrica !== 'pct_meta' && l.cor !== 'sem_meta').length}
                       abaixoDaMeta={v.linhas.filter((l) => !eValor(l.metrica) && l.metrica !== 'pct_meta' && (l.cor === 'vermelho' || l.cor === 'amarelo')).length} />
                   )}
                   {/* A tabela fica no celular (proposta de 2026-11-05): antes o resumo do celular a tirava do cartão. */}

@@ -63,7 +63,7 @@ export function TresRespostas({ carteiras, competencia, intervalo, de, ate, vend
           <Resposta rotulo={aFaturar.pedidos ? `A faturar · ${rotuloDosPedidos(aFaturar.pedidos)}` : 'A faturar'} valor={formatBRL(aFaturar.valor)}
             nota="Não conta na meta · ver pedidos" />
         </Link>
-        <Resposta rotulo="Indicadores abaixo da meta" valor={`${abaixoDaMeta} de ${indicadores}`} alerta={abaixoDaMeta > 0} />
+        <Resposta rotulo="Indicadores abaixo da meta" valor={indicadores ? `${abaixoDaMeta} de ${indicadores}` : 'Sem meta definida'} alerta={abaixoDaMeta > 0} />
       </div>
     </section>
   );
