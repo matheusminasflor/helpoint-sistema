@@ -19,8 +19,9 @@ const jaEntendeu = () => {
   try { return localStorage.getItem(CHAVE) === '1'; } catch { return false; }
 };
 
-export function FluxoDoLancamento() {
-  const [aberto, setAberto] = useState(() => !jaEntendeu());
+// `comecaFechado`: quem chega para lançar um cliente ou corrigir um lançamento não ganha duas janelas uma sobre a outra.
+export function FluxoDoLancamento({ comecaFechado }: { comecaFechado: boolean }) {
+  const [aberto, setAberto] = useState(() => !comecaFechado && !jaEntendeu());
   const [naoMostrar, setNaoMostrar] = useState(false);
   const fechar = () => {
     if (naoMostrar) {

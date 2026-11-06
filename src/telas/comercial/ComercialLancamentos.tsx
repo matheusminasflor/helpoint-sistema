@@ -117,7 +117,7 @@ export default function ComercialLancamentos() {
           {/* No celular fica preso embaixo, no alcance do polegar (dono, 2026-10-28, Lei de Fitts): é o que a vendedora faz o
               dia todo. */}
           <span className="flex items-center gap-2">
-          <FluxoDoLancamento />
+          <FluxoDoLancamento comecaFechado={!!pedeCorrigir || !!pedeCliente} />
           <Button onClick={abrirNovo} size="lg"
             className="max-[860px]:fixed max-[860px]:inset-x-4 max-[860px]:bottom-[calc(68px+env(safe-area-inset-bottom))] max-[860px]:z-30 max-[860px]:shadow-elevated">
             <Plus className="w-4 h-4 mr-1.5" aria-hidden="true" /> Novo lançamento
