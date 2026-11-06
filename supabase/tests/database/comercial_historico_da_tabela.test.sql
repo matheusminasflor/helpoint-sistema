@@ -11,7 +11,7 @@
 --  10  salvar o cliente sem trocar a tabela não grava linha
 --  11  quem só tem o Comercial troca a tabela e o histórico grava
 begin;
-ir _helpers.psql
+\ir _helpers.psql
 
 select plan(11);
 
