@@ -40,7 +40,7 @@ grant select on c to authenticated;
 
 select tests.authenticate_as('gestor-rh@cfg.test');
 select lives_ok(
-  format($$ insert into public.ti_categories (tenant_id, module, name) values (%L, 'marketing', 'Evento') returning id $$, (select a from f)),
+  format($$ insert into public.ti_categories (tenant_id, module, name) values (%L, 'marketing', 'Feira nacional') returning id $$, (select a from f)),
   'Gestor do Marketing cria categoria do Marketing');
 select throws_ok(
   format($$ insert into public.ti_categories (tenant_id, module, name) values (%L, 'tickets', 'Impressora') returning id $$, (select a from f)),
@@ -71,7 +71,7 @@ with t as (
 select is((select n from alteradas where caso = 'renomeia'), 1::bigint, 'Gestor do Marketing renomeia categoria do Marketing');
 with t as (
   delete from public.ti_categories
-   where tenant_id = (select a from f) and module = 'marketing' and name = 'Evento' returning id
+   where tenant_id = (select a from f) and module = 'marketing' and name = 'Feira nacional' returning id
 ) insert into alteradas select 'apaga', count(*) from t;
 select is((select n from alteradas where caso = 'apaga'), 1::bigint, 'Gestor do Marketing apaga categoria do Marketing');
 with t as (
