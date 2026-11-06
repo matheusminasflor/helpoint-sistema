@@ -10,10 +10,14 @@
 --   9  a primeira tabela de quem chegou sem tabela vale desde sempre
 --  10  salvar o cliente sem trocar a tabela não grava linha
 --  11  quem só tem o Comercial troca a tabela e o histórico grava
+--  12  quem não corrige lançamento é recusado
+--  13  corrigir a data da troca muda a venda daquele dia
+--  14  a data não passa da tabela seguinte
+--  15  a primeira tabela não tem data
 begin;
 \ir _helpers.psql
 
-select plan(11);
+select plan(15);
 
 create temporary table f on commit drop as select tests.create_tenant('pgtap-historico', 'Historico', false) as a;
 create temporary table u on commit drop as select tests.create_user('dono@historico.test', (select a from f)) as dono;
@@ -65,5 +69,22 @@ update public.com_clientes set tabela_preco = 'VIP' where codigo = 'C';
 select tests.clear_authentication();
 select is((select count(*)::int from public.com_clientes_tabela_historico where cliente_codigo = 'C'), 2,
   'quem só tem o Comercial troca a tabela e o histórico grava');
+select tests.authenticate_as('ana@historico.test');
+select throws_ok($$ select public.com_corrigir_data_da_tabela(
+  (select id from public.com_clientes_tabela_historico where cliente_codigo = 'B' order by vigente_desde desc limit 1), '2026-10-20') $$,
+  '42501', null, 'quem não corrige lançamento é recusado');
+select tests.clear_authentication();
+
+select tests.authenticate_as('dono@historico.test');
+select public.com_corrigir_data_da_tabela(
+  (select id from public.com_clientes_tabela_historico where cliente_codigo = 'B' order by vigente_desde desc limit 1), '2026-10-20');
+select is(public.com_parte_do_cliente('B', '2026-10-25'), 1::numeric, 'corrigir a data da troca muda a venda daquele dia');
+select throws_ok($$ select public.com_corrigir_data_da_tabela(
+  (select id from public.com_clientes_tabela_historico where cliente_codigo = 'A' and vigente_desde = '2026-11-01'), '2026-12-05') $$,
+  '22023', null, 'a data não passa da tabela seguinte');
+select throws_ok($$ select public.com_corrigir_data_da_tabela(
+  (select id from public.com_clientes_tabela_historico where cliente_codigo = 'B' order by vigente_desde limit 1), '2026-10-05') $$,
+  '22023', null, 'a primeira tabela não tem data');
+select tests.clear_authentication();
 select * from finish();
 rollback;
