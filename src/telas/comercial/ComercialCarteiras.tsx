@@ -600,7 +600,7 @@ function AQuemProcurar({ linhas, noRecorte, aoAbrir }: {
           return (
             <button key={m.id} type="button" aria-pressed={marcado}
               onClick={() => { setFiltro(marcado ? null : m.id); setLimite(MOSTRA_NA_LISTA); }}
-              className={`rounded-lg border p-3 text-left transition-colors ${marcado ? 'border-primary bg-primary/10' : m.alerta && m.itens.length > 0 ? 'border-status-danger bg-card hover:bg-muted/50' : 'border-border bg-card hover:bg-muted/50'}`}>
+              className={`rounded-lg border p-3 text-left transition-colors ${marcado ? 'border-primary bg-primary/10' : m.alerta && m.itens.length > 0 ? 'border-destructive bg-card hover:bg-muted/50' : 'border-border bg-card hover:bg-muted/50'}`}>
               <span className="block text-[13px] text-muted-foreground">{m.titulo}</span>
               <span className="block text-[20px] font-semibold">{m.itens.length} {m.itens.length === 1 ? 'cliente' : 'clientes'}</span>
               <span className="block text-[12px] text-primary">{marcado ? 'filtrando · clique para tirar' : 'clique para filtrar'}</span>
@@ -622,7 +622,7 @@ function AQuemProcurar({ linhas, noRecorte, aoAbrir }: {
                     <span className="block text-[12px] text-muted-foreground">{m.porque(l)}</span>
                   </button>
                   {m.id === 'a_faturar' ? (
-                    <Link to={tenantPath('/comercial/pedidos')} className="rounded px-2 py-0.5 text-[12px] font-semibold badge-warning">Informar nota</Link>
+                    <Button asChild size="sm"><Link to={tenantPath('/comercial/pedidos')}>Informar nota</Link></Button>
                   ) : dor ? (
                     <span className="rounded px-2 py-0.5 text-[12px] badge-danger">Motivo: {dor}</span>
                   ) : (
