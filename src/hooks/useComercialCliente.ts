@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { unwrap, expectRows } from '@/lib/supabase-result';
+import { unwrap, expectRows, mensagemDeErro } from '@/lib/supabase-result';
 import { soDigitos, extrairDocumentoDoNome } from '@/lib/documento';
 import { buscarComTeto, type ConsultaComLimite } from '@/lib/listas';
 
@@ -83,10 +83,22 @@ export function useHistoricoDaTabela(codigo: string | null) {
     enabled: !!tenantId && !!codigo,
     queryFn: async () => unwrap(await supabase
       .from('com_clientes_tabela_historico')
-      .select('tabela_preco, vigente_desde')
+      .select('id, tabela_preco, vigente_desde')
       .eq('cliente_codigo', codigo!)
       .order('vigente_desde', { ascending: false })
-      .order('created_at', { ascending: false })) as Array<{ tabela_preco: string | null; vigente_desde: string }>,
+      .order('created_at', { ascending: false })) as Array<{ id: string; tabela_preco: string | null; vigente_desde: string }>,
+  });
+}
+
+/** Acertar o dia em que a tabela mudou. A Venda total inteira depende dele. */
+export function useCorrigirDataDaTabela() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: string }) => {
+      unwrap(await supabase.rpc('com_corrigir_data_da_tabela' as never, { p_id: id, p_data: data } as never));
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['comercial'] }); toast.success('Data da tabela corrigida.'); },
+    onError: (e: unknown) => toast.error(mensagemDeErro(e)),
   });
 }
 

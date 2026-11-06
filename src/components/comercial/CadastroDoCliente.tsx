@@ -5,11 +5,13 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { IdCard, Pencil, Headset, UserRound, AlertTriangle } from 'lucide-react';
 import {
-  useCliente, useHistoricoDaTabela, useVendedoresDoCliente, useSacsDoCliente, useAtendimentoDoCliente,
+  useCliente, useCorrigirDataDaTabela, useHistoricoDaTabela, useVendedoresDoCliente, useSacsDoCliente, useAtendimentoDoCliente,
 } from '@/hooks/useComercialCliente';
+import { usePodeNoLancamento } from '@/hooks/useAccessProfiles';
 import { useVisibleModules } from '@/hooks/useVisibleModules';
 import { podeAcessarComercial } from '@/lib/acesso-comercial';
 import { FormularioCliente } from '@/components/comercial/FormularioCliente';
+import { todayISO } from '@/lib/dates';
 import { formatarDocumento, rotuloDoDocumento } from '@/lib/documento';
 import { formatBRL, formatDateBR } from '@/types/financeiro';
 import type { Filial } from '@/types/comercial';
@@ -47,6 +49,7 @@ export function CadastroDoCliente({ codigo, de, ate, filial }: Props) {
   // ele leva um erro vermelho por uma tela que prometeu o que não podia cumprir.
   const { showComercial, isManagerOrHigher } = useVisibleModules();
   const podeEditar = podeAcessarComercial(showComercial, isManagerOrHigher);
+  const podeCorrigir = usePodeNoLancamento().corrigir;
 
   if (isLoading) return <Card className="p-4"><Skeleton className="h-24 w-full" /></Card>;
   if (!cliente) return null;
@@ -80,10 +83,8 @@ export function CadastroDoCliente({ codigo, de, ate, filial }: Props) {
           </Linha>
           <Linha rotulo="Tabela de preço">
             {cliente.tabela_preco ?? <span className="text-muted-foreground italic">sem tabela</span>}
-            {tabelas.length > 1 && tabelas.map((t) => (
-              <span key={`${t.vigente_desde}-${t.tabela_preco}`} className="block text-[12px] text-muted-foreground">
-                {t.tabela_preco ?? 'sem tabela'} desde {formatDateBR(t.vigente_desde)}
-              </span>
+            {tabelas.length > 1 && tabelas.map((t, i) => (
+              <TrocaDeTabela key={t.id} troca={t} podeCorrigir={podeCorrigir && i < tabelas.length - 1} />
             ))}
           </Linha>
           <Linha rotulo="Telefone">
@@ -119,6 +120,31 @@ export function CadastroDoCliente({ codigo, de, ate, filial }: Props) {
         />
       )}
     </>
+  );
+}
+
+/** Uma tabela do histórico. A troca chega na importação de sexta; quem corrige lançamento acerta o dia em que ela valeu. */
+function TrocaDeTabela({ troca, podeCorrigir }: {
+  troca: { id: string; tabela_preco: string | null; vigente_desde: string }; podeCorrigir: boolean;
+}) {
+  const [data, setData] = useState<string | null>(null);
+  const corrigir = useCorrigirDataDaTabela();
+  return (
+    <span className="flex flex-wrap items-center justify-end sm:justify-start gap-2 text-[12px] text-muted-foreground">
+      {troca.tabela_preco ?? 'sem tabela'} desde {formatDateBR(troca.vigente_desde)}
+      {podeCorrigir && data === null && (
+        <button type="button" className="text-primary underline" onClick={() => setData(troca.vigente_desde)}>Corrigir data</button>
+      )}
+      {data !== null && (
+        <>
+          <input type="date" aria-label="Dia em que a tabela passou a valer" value={data} max={todayISO()} onChange={(e) => setData(e.target.value)}
+            className="rounded border border-border bg-background px-1 min-h-8" />
+          <Button size="sm" disabled={!data || corrigir.isPending}
+            onClick={() => corrigir.mutate({ id: troca.id, data }, { onSuccess: () => setData(null) })}>Salvar</Button>
+          <Button size="sm" variant="ghost" onClick={() => setData(null)}>Cancelar</Button>
+        </>
+      )}
+    </span>
   );
 }
 
