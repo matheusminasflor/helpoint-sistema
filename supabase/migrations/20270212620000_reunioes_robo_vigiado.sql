@@ -20,8 +20,8 @@ begin
   end if;
   update public.reuniao_robo set caiu_em = now() where tenant_id = p_tenant;
 
-  insert into public.notifications (tenant_id, user_id, type, reference_type, title, message)
-  select distinct p_tenant, p.id, 'ligacao_caiu'::public.notification_type, 'ligacao_meta', 'A leitura das reuniões parou', p_motivo
+  insert into public.notifications (tenant_id, user_id, type, reference_type, reference_id, title, message)
+  select distinct p_tenant, p.id, 'ligacao_caiu'::public.notification_type, 'ligacao_meta', p_tenant, 'A leitura das reuniões parou', p_motivo
     from public.profiles p
     join public.user_roles r on r.user_id = p.id and r.role in ('owner', 'admin')
    where p.tenant_id = p_tenant and coalesce(p.is_active, true);
