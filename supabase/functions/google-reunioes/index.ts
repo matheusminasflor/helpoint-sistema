@@ -256,8 +256,8 @@ async function rodada(db: SupabaseClient, tenant: string, corpo: { desde?: strin
       // A presença: quem foi convidado e quem entrou, ligados às pessoas do Helpoint.
       const entraram: Map<string, Tempo> = m.sala && terminou ? await quemEntrou(token, m.sala, inicio, fim)
         : lista ? pessoasDaLista(lista, inicio) : new Map();
-      // Sala sem documento e só com robô dentro não foi reunião.
-      if (!m.sala && !documento && entraram.size === 0) continue;
+      // Sala sem evento, sem pauta e com uma pessoa só (ou só o robô) não foi reunião: alguém abriu o link e saiu.
+      if (!m.sala && !documento && entraram.size <= 1) continue;
       if (!m.sala) {
         const saidas = [...entraram.values()].flatMap((p) => (p.saida ? [p.saida] : [])).sort();
         fim = saidas.at(-1) ? new Date(saidas.at(-1)!).toISOString() : fim;
