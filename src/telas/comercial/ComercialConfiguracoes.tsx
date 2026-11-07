@@ -12,6 +12,7 @@ import { CarteirasVendedorasTab } from '@/components/comercial/CarteirasVendedor
 import { IndicadoresCatalogoTab } from '@/components/comercial/IndicadoresCatalogoTab';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { ConfirmarExclusao } from '@/components/ui/ConfirmarExclusao';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -77,6 +78,7 @@ function GradeCashbackTab() {
   const { data: tabelasExistentes } = useTabelasBase();
   const salvar = useSalvarFaixaCashback();
   const apagar = useApagarFaixaCashback();
+  const [apagando, setApagando] = useState<{ id: string; tabela_base: string } | null>(null);
 
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [form, setForm] = useState(FORM_VAZIO);
@@ -169,7 +171,7 @@ function GradeCashbackTab() {
                   {podeConfigurar && (
                     <td className="px-3 py-1.5 text-right">
                       <Button size="sm" variant="ghost" onClick={() => iniciarEdicao(f)}>Editar</Button>
-                      <Button aria-label="Excluir faixa" size="sm" variant="ghost" onClick={() => apagar.mutate(f.id)} disabled={apagar.isPending}>
+                      <Button aria-label="Excluir faixa" size="sm" variant="ghost" onClick={() => setApagando(f)} disabled={apagar.isPending}>
                         <Trash2 aria-hidden="true" className="w-3.5 h-3.5" />
                       </Button>
                     </td>
@@ -182,6 +184,14 @@ function GradeCashbackTab() {
             </tbody>
           </table>
         </div>
+        <ConfirmarExclusao
+          aberto={!!apagando}
+          titulo="Excluir esta faixa de cashback?"
+          descricao={`A faixa da tabela ${apagando?.tabela_base ?? ''} deixa de valer para os próximos cálculos.`}
+          enviando={apagar.isPending}
+          onCancelar={() => setApagando(null)}
+          onConfirmar={() => { if (apagando) apagar.mutate(apagando.id, { onSuccess: () => setApagando(null) }); }}
+        />
 
         {!podeConfigurar && (
           <p className="text-xs text-muted-foreground">Mudar a grade exige "Configurações › Cashback: Alterar" no perfil de acesso do Comercial.</p>

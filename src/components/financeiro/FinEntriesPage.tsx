@@ -1,3 +1,4 @@
+import { marcaNaLista, type ListaDeLancamentos } from '@/lib/lista-de-lancamentos';
 import { useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { feitoComDesfazer } from '@/lib/desfazer';
@@ -110,8 +111,7 @@ export function FinEntriesPage({ kind, description }: Props) {
   // "Feito · Desfazer" (regra 1, 2026-10-24): a linha já aparece paga; o banco grava em 8 s.
   const qc = useQueryClient();
   const marcaNaTela = (id: string, mudanca: Partial<FinEntry>) =>
-    qc.setQueriesData<{ linhas: FinEntry[]; cortou: boolean }>({ queryKey: ['fin-entries'] }, (atual) =>
-      atual && { ...atual, linhas: atual.linhas.map((l) => (l.id === id ? { ...l, ...mudanca } : l)) });
+    qc.setQueriesData<ListaDeLancamentos<FinEntry>>({ queryKey: ['fin-entries'] }, (atual) => marcaNaLista(atual, id, mudanca));
   const confirmarLiquidacao = () => {
     if (!liquidando || !dataDoPagamento) return;
     const e = liquidando;

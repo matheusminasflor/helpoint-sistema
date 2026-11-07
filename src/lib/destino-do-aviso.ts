@@ -45,6 +45,8 @@ const TELA_DO_REGISTRO: Record<string, (id: string) => string> = {
   project: (id) => `/projetos/${id}`,
   // Atualização do sistema (2026-10-14): o mural do Jornal.
   jornal: () => '/jornal?aba=atualizacoes',
+  // Turma cancelada (20270212560000).
+  training_session: () => '/meus-treinamentos',
   // Solicitação (etapa 4b): todo aviso dela abre o pedido.
   solicitacao: (id) => `/solicitacoes/${id}`,
   // Distribuidor pediu acesso ao portal (etapa 6): a lista da TI.

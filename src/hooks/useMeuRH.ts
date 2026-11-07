@@ -1,3 +1,4 @@
+import { differenceInCalendarDays, parseISO } from 'date-fns';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -109,9 +110,7 @@ export function useCreateVacationRequest() {
   return useMutation({
     mutationFn: async (input: { start_date: string; end_date: string; type: VacationType; notes?: string }) => {
       if (!user?.id || !tenantId) throw new Error('Sem sessão');
-      const start = new Date(input.start_date);
-      const end = new Date(input.end_date);
-      const days = Math.floor((end.getTime() - start.getTime()) / 86400000) + 1;
+      const days = differenceInCalendarDays(parseISO(input.end_date), parseISO(input.start_date)) + 1;
       const { data, error } = await supabase
         .from('rh_vacation_requests')
         .insert({
@@ -188,7 +187,7 @@ export function useUploadCertificate() {
       cid_code?: string;
     }) => {
       if (!user?.id || !tenantId) throw new Error('Sem sessão');
-      const year = new Date(input.issue_date).getFullYear();
+      const year = input.issue_date.slice(0, 4);
       const ext = input.file.name.split('.').pop() || 'bin';
       const path = `${tenantId}/${user.id}/${year}/atestados/${Date.now()}.${ext}`;
       conferirTamanhoDoArquivoRH(input.file);

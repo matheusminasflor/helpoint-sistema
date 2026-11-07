@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Calendar as CalendarIcon, Download, FileText, Plane, Stethoscope, Receipt, Clock, User, Briefcase, HeartPulse, FolderLock, AlertTriangle, Send } from 'lucide-react';
-import { format, differenceInDays, parseISO } from 'date-fns';
+import { format, differenceInCalendarDays, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -306,7 +306,7 @@ export default function MeuRH() {
               ) : (
                 <div className="space-y-2">
                   {documents.map(d => {
-                    const expiresIn = d.expires_at ? differenceInDays(new Date(d.expires_at), new Date()) : null;
+                    const expiresIn = d.expires_at ? differenceInCalendarDays(parseISO(d.expires_at), new Date()) : null;
                     const expiring = expiresIn !== null && expiresIn >= 0 && expiresIn <= 30;
                     const expired = expiresIn !== null && expiresIn < 0;
                     return (
@@ -323,7 +323,7 @@ export default function MeuRH() {
                             <div className="text-xs text-muted-foreground">
                               {DOC_TYPE_LABEL[d.document_type]}
                               {d.issue_date && ` · Emitido em ${format(parseISO(d.issue_date), 'dd/MM/yyyy')}`}
-                              {d.expires_at && ` · Válido até ${format(new Date(d.expires_at), 'dd/MM/yyyy')}`}
+                              {d.expires_at && ` · Válido até ${format(parseISO(d.expires_at), 'dd/MM/yyyy')}`}
                             </div>
                           </div>
                         </div>

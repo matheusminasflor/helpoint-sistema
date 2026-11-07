@@ -14,6 +14,7 @@ import { AlertTriangle, Pencil, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { ConfirmarExclusao } from '@/components/ui/ConfirmarExclusao';
 import { Skeleton } from '@/components/ui/skeleton';
 import { LancamentoDialog } from '@/components/comercial/LancamentoDialog';
 import { usePodeNoLancamento } from '@/hooks/useAccessProfiles';
@@ -47,6 +48,7 @@ export function LancamentosDaVendedora({ vendedorId, nome, competencia, interval
   const { corrigir: podeCorrigir, apagar: podeApagar } = usePodeNoLancamento();
   const apagar = useApagarInteracao();
   const [corrigindo, setCorrigindo] = useState<Interacao | null>(null);
+  const [apagando, setApagando] = useState<Interacao | null>(null);
 
   return (
     <Card className="p-4 space-y-3">
@@ -140,7 +142,7 @@ export function LancamentosDaVendedora({ vendedorId, nome, competencia, interval
                         {/* Com checklist o banco recusa (a conferência do Financeiro iria junto). */}
                         {podeApagar && (
                           <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Apagar lançamento"
-                            disabled={apagar.isPending} onClick={() => apagar.mutate(l.id)}>
+                            disabled={apagar.isPending} onClick={() => setApagando(l)}>
                             <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
                           </Button>
                         )}
@@ -157,6 +159,14 @@ export function LancamentosDaVendedora({ vendedorId, nome, competencia, interval
         <LancamentoDialog open={!!corrigindo} onOpenChange={(aberto) => { if (!aberto) setCorrigindo(null); }}
           minhasCarteiras={[]} catalogo={catalogo} editando={corrigindo} />
       )}
+      <ConfirmarExclusao
+        aberto={!!apagando}
+        titulo="Apagar este lançamento?"
+        descricao={`O contato com ${apagando?.cliente?.razao_social ?? 'este cliente'} sai da contagem e não volta.`}
+        enviando={apagar.isPending}
+        onCancelar={() => setApagando(null)}
+        onConfirmar={() => { if (apagando) apagar.mutate(apagando.id, { onSuccess: () => setApagando(null) }); }}
+      />
     </Card>
   );
 }

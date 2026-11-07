@@ -10,6 +10,7 @@
 // EQUIPE em Comercial › Indicadores. Uma verdade só.
 //
 // Chamados por setor não se repetem aqui: estão no Resumo, com o seletor de período.
+import { lerValor } from '@/lib/checklist-de-pedidos';
 import { ExportarATela } from '@/components/comercial/ExportarATela';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -218,8 +219,7 @@ function MetasDosSetores({ aberto, onFechar, indicadores, metas }: {
   const comMeta = indicadores.filter((i) => MELHOR_QUANDO[i.indicador] === 'mais' || MELHOR_QUANDO[i.indicador] === 'menos');
   const gravar = (i: IndicadorDeSetor, texto: string) => {
     const atual = metas.get(`${i.setor}.${i.indicador}`);
-    const limpo = texto.trim().replace(/\./g, '').replace(',', '.');
-    const meta = limpo === '' ? null : Number(limpo);
+    const meta = texto.trim() === '' ? null : lerValor(texto) ?? NaN;
     if (meta !== null && (!Number.isFinite(meta) || meta < 0)) { toast.error('Escreva um número.'); return; }
     if (meta === (atual ?? null)) return;
     salvar.mutate({ setor: i.setor, indicador: i.indicador, meta }, {

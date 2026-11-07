@@ -114,13 +114,14 @@ export function ProductsCatalogTab({ podeAlterar = true }: { podeAlterar?: boole
 
   const removeProduct = async (id: string) => {
     if (!confirm('Remover produto e todos os seus lotes?')) return;
-    const { error } = await supabase.from('sac_products').delete().eq('id', id);
-    if (error) return toast.error(error.message);
+    const { data, error } = await supabase.from('sac_products').delete().eq('id', id).select('id');
+    if (error || !data?.length) return toast.error(error?.message ?? 'Não removeu: confira a sua permissão.');
     toast.success('Removido'); loadProducts();
   };
 
   const toggleProduct = async (p: Product) => {
-    await supabase.from('sac_products').update({ is_active: !p.is_active }).eq('id', p.id);
+    const { data, error } = await supabase.from('sac_products').update({ is_active: !p.is_active }).eq('id', p.id).select('id');
+    if (error || !data?.length) return toast.error(error?.message ?? 'Não gravou: confira a sua permissão.');
     loadProducts();
   };
 
@@ -151,13 +152,14 @@ export function ProductsCatalogTab({ podeAlterar = true }: { podeAlterar?: boole
 
   const removeBatch = async (b: Batch) => {
     if (!confirm('Remover lote?')) return;
-    const { error } = await supabase.from('sac_product_batches').delete().eq('id', b.id);
-    if (error) return toast.error(error.message);
+    const { data, error } = await supabase.from('sac_product_batches').delete().eq('id', b.id).select('id');
+    if (error || !data?.length) return toast.error(error?.message ?? 'Não removeu: confira a sua permissão.');
     loadBatches(b.product_id);
   };
 
   const toggleBatch = async (b: Batch) => {
-    await supabase.from('sac_product_batches').update({ is_active: !b.is_active }).eq('id', b.id);
+    const { data, error } = await supabase.from('sac_product_batches').update({ is_active: !b.is_active }).eq('id', b.id).select('id');
+    if (error || !data?.length) return toast.error(error?.message ?? 'Não gravou: confira a sua permissão.');
     loadBatches(b.product_id);
   };
 

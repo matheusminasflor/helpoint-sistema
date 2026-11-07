@@ -428,8 +428,8 @@ export function QualidadeSACDetail() {
 
           <Card className="p-4">
             <h3 className="font-semibold text-sm mb-3">Status</h3>
-            <select value={ticket.status} onChange={e => updateStatus(e.target.value, ['resolved', 'closed'].includes(e.target.value) ? resolucao : undefined)} className="w-full h-9 rounded-md border px-2 text-sm">
-              {STATUSES.map(st => <option key={st} value={st}>{STATUS_LABEL[st].label}</option>)}
+            <select value={ticket.status} onChange={e => updateStatus(e.target.value)} className="w-full h-9 rounded-md border px-2 text-sm">
+              {STATUSES.filter(st => st === ticket.status || !['resolved', 'closed'].includes(st)).map(st => <option key={st} value={st}>{STATUS_LABEL[st].label}</option>)}
             </select>
             {!['resolved','closed'].includes(ticket.status) ? (
               <div className="mt-3 space-y-1">

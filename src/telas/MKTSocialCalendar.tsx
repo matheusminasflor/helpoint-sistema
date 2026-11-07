@@ -58,10 +58,11 @@ import { fromLocalDateTimeInput, toLocalISODate } from '@/lib/dates';
  * 5 minutos) usa a conta ATIVA da plataforma; sem ela, o post não sai sozinho e quem publica marca à mão. Antes, o
  * cartão só mostrava a hora, e "Marcar publicado" e a publicação automática se confundiam.
  */
-function quandoSai(post: { status: string; scheduled_at?: string | null; platform: string; post_type?: string | null }, contas: { platform: string; is_active?: boolean; account_name: string }[], contaDoPost?: { account_name: string }) {
+function quandoSai(post: { status: string; scheduled_at?: string | null; platform: string; post_type?: string | null }, contas: { platform: string; is_active?: boolean; account_name: string }[], contaDoPost?: { account_name: string; is_active?: boolean }) {
   if (post.status !== 'scheduled' || !post.scheduled_at) return null;
   const hora = format(parseISO(post.scheduled_at), 'HH:mm');
   const ativa = contas.find((a) => a.platform === post.platform && a.is_active !== false);
+  if (contaDoPost?.is_active === false) return { texto: `Às ${hora}: a conta @${contaDoPost.account_name} foi desativada. Escolha outra`, manual: true };
   if (!ativa) return { texto: `Às ${hora}, sem conta conectada: publique à mão e marque como publicado`, manual: true };
   // O robô só publica no feed do Instagram e do Facebook (`mkt-publish-due`): o resto continua sendo à mão.
   if (!['instagram', 'facebook'].includes(post.platform) || (post.post_type ?? 'feed') !== 'feed') {

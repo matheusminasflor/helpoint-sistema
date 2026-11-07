@@ -162,8 +162,8 @@ function CategoriesTab() {
 
   const remove = async (id: string) => {
     if (!confirm('Remover categoria?')) return;
-    const { error } = await supabase.from('sac_categories').delete().eq('id', id);
-    if (error) return toast.error(error.message);
+    const { data, error } = await supabase.from('sac_categories').delete().eq('id', id).select('id');
+    if (error || !data?.length) return toast.error(error?.message ?? 'Não removeu: confira a sua permissão.');
     toast.success('Removida'); load();
   };
 
@@ -267,8 +267,8 @@ function FormFieldsTab() {
   const remove = async (f: SacFormField) => {
     if (f.is_system) { toast.error('Campo do sistema não pode ser removido. Desative-o.'); return; }
     if (!confirm('Remover campo?')) return;
-    const { error } = await supabase.from('sac_form_fields').delete().eq('id', f.id);
-    if (error) return toast.error(error.message);
+    const { data, error } = await supabase.from('sac_form_fields').delete().eq('id', f.id).select('id');
+    if (error || !data?.length) return toast.error(error?.message ?? 'Não removeu: confira a sua permissão.');
     toast.success('Removido'); load();
   };
 

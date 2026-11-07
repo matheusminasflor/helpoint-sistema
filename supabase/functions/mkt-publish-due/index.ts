@@ -179,14 +179,15 @@ serve(async (req) => {
     const { data: account } = await contas.limit(1).maybeSingle();
 
     if (!account) {
+      const semConta = post.account_id ? 'a conta escolhida no post foi desativada' : `nenhuma conta ${post.platform} conectada`;
       await supabase
         .from('mkt_social_posts')
         .update({
           status: 'failed',
-          notes: `${post.notes ?? ''}\n[auto] Nenhuma conta ${post.platform} conectada.`.trim(),
+          notes: `${post.notes ?? ''}\n[auto] ${semConta}.`.trim(),
         })
         .eq('id', post.id);
-      await notifyAuthor(post, false, `nenhuma conta ${post.platform} conectada.`);
+      await notifyAuthor(post, false, `${semConta}.`);
       results.failed++;
       results.details.push({ id: post.id, error: 'no_account' });
       continue;

@@ -9,7 +9,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Trash2, Upload, Download, FolderLock, AlertTriangle } from 'lucide-react';
-import { differenceInDays, format } from 'date-fns';
+import { differenceInCalendarDays, format, parseISO } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { expectRows, unwrap } from '@/lib/supabase-result';
 import { useRHEmployees, type RHEmployee } from '@/hooks/useRH';
@@ -76,7 +76,7 @@ export default function RHDocumentos() {
 
   const expiringSoon = docs.filter((d: any) => {
     if (!d.expires_at) return false;
-    const diff = differenceInDays(new Date(d.expires_at), new Date());
+    const diff = differenceInCalendarDays(parseISO(d.expires_at), new Date());
     return diff >= 0 && diff <= 30;
   });
 
@@ -113,7 +113,7 @@ export default function RHDocumentos() {
           {docs.length === 0 ? (
             <div className="py-6 text-center text-sm text-muted-foreground">Cofre vazio.</div>
           ) : docs.map((d: any) => {
-            const diff = d.expires_at ? differenceInDays(new Date(d.expires_at), new Date()) : null;
+            const diff = d.expires_at ? differenceInCalendarDays(parseISO(d.expires_at), new Date()) : null;
             const expired = diff !== null && diff < 0;
             const expiring = diff !== null && diff >= 0 && diff <= 30;
             return (
@@ -127,7 +127,7 @@ export default function RHDocumentos() {
                   </div>
                   <div className="text-xs text-muted-foreground">
                     {d.employee?.full_name ?? '—'} ·{DOC_TYPE_OPTIONS.find(o => o.value === d.document_type)?.label}
-                    {d.expires_at && ` · válido até ${format(new Date(d.expires_at), 'dd/MM/yyyy')}`}
+                    {d.expires_at && ` · válido até ${format(parseISO(d.expires_at), 'dd/MM/yyyy')}`}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">

@@ -166,8 +166,7 @@ export function useDeleteFinEntry() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from(TABLE).delete().eq('id', id);
-      if (error) throw error;
+      expectRows(await supabase.from(TABLE).delete().eq('id', id).select('id'), 'o lançamento');
     },
     onSuccess: () => { invalidate(); toast.success('Lançamento excluído'); },
     onError: (e: any) => toast.error(e?.message || 'Não foi possível excluir o lançamento'),

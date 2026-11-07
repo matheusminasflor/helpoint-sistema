@@ -34,6 +34,7 @@ import {
   pedidoDoFormulario, useChecklistDoLancamento, useItensDoChecklist, useSalvarChecklist,
 } from '@/hooks/usePedidosChecklist';
 import {
+  lerValor,
   checklistVazio, dadosParaOBanco, problemasDoChecklist, valorDaVenda, type ChecklistEmEdicao,
 } from '@/lib/checklist-de-pedidos';
 import { ChecklistDoLancamento } from '@/components/comercial/ChecklistDoLancamento';
@@ -216,7 +217,7 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
   const faltaAcaoInterna = !editando && form.comPessoa && !acoes.some((a) => form.marcas.has(a.id));
   // O valor da venda só com a nota fiscal (dono, 2026-10-15): o pedido fechado é "A faturar" — o valor dele fica
   // no checklist e aparece na Carteira, mas não é venda até a nota.
-  const valorNumero = form.valor.trim() === '' ? null : Number(form.valor.replace(/\./g, '').replace(',', '.'));
+  const valorNumero = form.valor.trim() === '' ? null : lerValor(form.valor) ?? NaN;
   const valorInvalido = valorNumero !== null && (!Number.isFinite(valorNumero) || valorNumero <= 0);
   const notaIncompleta = (valorNumero !== null) !== (form.nota.trim() !== '') || (form.nota.trim() !== '' && (!form.notaEm || !form.notaFilial));
   // A data da nota nem no futuro nem antes do contato (dono, 2026-10-15): o banco recusa o mesmo (`com_nota_em_confere`).

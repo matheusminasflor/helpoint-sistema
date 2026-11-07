@@ -12,11 +12,12 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useDecidirReajuste, useReajustarCompra, useReajustesDaCompra } from '@/hooks/usePurchases';
 import { formatBRLAmount, type PurchaseQuote, type PurchaseRequest } from '@/types/purchases';
 import { comUnidade, porUnidade } from '@/lib/unidades-de-compra';
+import { lerValor } from '@/lib/checklist-de-pedidos';
 import { dataHora } from '@/lib/dates';
 
 const STATUS = { aplicado: 'badge-success', aguardando: 'badge-warning', recusado: 'badge-danger' } as const;
 const ROTULO = { aplicado: 'Valendo', aguardando: 'Aguardando o aprovador', recusado: 'Recusado' } as const;
-const numero = (s: string) => Number(s.replace(/\./g, '').replace(',', '.'));
+const numero = (s: string) => lerValor(s) ?? NaN;
 
 export function ReajusteDaCompra({ request, quote, podeReajustar, podeDecidir }: {
   request: PurchaseRequest;
