@@ -19,13 +19,43 @@ interface Evento {
   end?: { dateTime?: string };
   attendees?: { email?: string; displayName?: string; resource?: boolean }[];
   hangoutLink?: string;
-  attachments?: { fileId?: string; fileUrl?: string; title?: string; mimeType?: string }[];
 }
+
+interface Arquivo { id: string; name: string; mimeType: string; modifiedTime: string; webViewLink?: string }
+interface ArquivoDaReuniao extends Arquivo { titulo: string; quando: number; tipo: string }
 
 const json = (corpo: unknown, status = 200) =>
   new Response(JSON.stringify(corpo), { status, headers: { 'Content-Type': 'application/json' } });
 
 const normaliza = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
+
+/** O Google nomeia cada arquivo como "<reunião> - 2026/11/06 15:02 GMT-03:00 - Anotações do Gemini". */
+const NOME_DO_ARQUIVO = /^(.*) - (\d{4})\/(\d{2})\/(\d{2}) (\d{2}):(\d{2}) GMT([+-]\d{2}:\d{2}) - (.+)$/;
+
+/**
+ * Os arquivos das reuniões, da conta inteira. Não vêm dos anexos do evento: a reunião repetida acumula os anexos de
+ * todas as semanas, e a lista de presença (Participação) nem é anexada.
+ */
+async function arquivosDasReunioes(token: string, de: string) {
+  const desde = new Date(new Date(de).getTime() - 86400_000).toISOString();
+  const q = `trashed = false and createdTime > '${desde}' and (name contains 'Gemini' or name contains 'Participação' or name contains 'Recording' or name contains 'Gravação')`;
+  const arquivos: ArquivoDaReuniao[] = [];
+  let pagina = '';
+  do {
+    const url = new URL('https://www.googleapis.com/drive/v3/files');
+    url.searchParams.set('q', q);
+    url.searchParams.set('fields', 'nextPageToken,files(id,name,mimeType,modifiedTime,webViewLink)');
+    url.searchParams.set('pageSize', '200');
+    if (pagina) url.searchParams.set('pageToken', pagina);
+    const r = await lerDoGoogle<{ files?: Arquivo[]; nextPageToken?: string }>(token, url.toString());
+    for (const a of r.files ?? []) {
+      const m = NOME_DO_ARQUIVO.exec(a.name);
+      if (m) arquivos.push({ ...a, titulo: normaliza(m[1]), quando: new Date(`${m[2]}-${m[3]}-${m[4]}T${m[5]}:${m[6]}:00${m[7]}`).getTime(), tipo: m[8] });
+    }
+    pagina = r.nextPageToken ?? '';
+  } while (pagina);
+  return arquivos;
+}
 
 /** O limite da edge function: para antes e continua na próxima rodada, porque o que já entrou é pulado. */
 const TEMPO_DA_RODADA = 110_000;
@@ -97,7 +127,7 @@ serve(async (req) => {
   const recusa = requireServiceRole(req);
   if (recusa) return recusa;
 
-  const corpo = await req.json().catch(() => ({})) as { desde?: string; ate?: string; avisar?: boolean; diagnostico?: boolean };
+  const corpo = await req.json().catch(() => ({})) as { desde?: string; avisar?: boolean };
   const avisar = corpo.avisar !== false;
   const agora = new Date();
   const de = corpo.desde ?? new Date(agora.getTime() - 3 * 86400_000).toISOString();
@@ -121,19 +151,8 @@ serve(async (req) => {
   // As próximas duas semanas entram na Agenda; o histórico termina em hoje.
   const horizonte = new Date(agora.getTime() + 14 * 86400_000).toISOString();
 
-  if (corpo.diagnostico) {
-    const lista = await todosOsEventos(token, de, corpo.ate ?? agora.toISOString());
-    const q = encodeURIComponent(`mimeType = 'application/vnd.google-apps.spreadsheet' and modifiedTime > '${new Date(de).toISOString()}'`);
-    const planilhas = await lerDoGoogle<{ files?: { name: string; createdTime: string; owners?: { emailAddress?: string }[] }[] }>(
-      token, `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(name,createdTime,owners(emailAddress))&pageSize=30&includeItemsFromAllDrives=true&supportsAllDrives=true`,
-    );
-    return json({
-      eventos: lista.map((e) => ({ titulo: e.summary, inicio: e.start?.dateTime, anexos: (e.attachments ?? []).map((a) => ({ titulo: a.title, tipo: a.mimeType })) })),
-      planilhas: planilhas.files ?? [],
-    });
-  }
-
   const eventos = await todosOsEventos(token, de, horizonte);
+  const arquivos = await arquivosDasReunioes(token, de);
   const avisarPessoas = async (pessoas: string[], serie: string, title: string, message: string) => {
     if (pessoas.length === 0) return;
     const { error } = await db.from('notifications').insert(pessoas.map((user_id) => ({
@@ -155,20 +174,21 @@ serve(async (req) => {
     const terminou = new Date(fim) <= agora;
     const titulo = (e.summary ?? 'Reunião sem título').trim();
     try {
-      const anexos = e.attachments ?? [];
-      const documento = terminou ? anexos.find((a) => a.mimeType === 'application/vnd.google-apps.document' && /gemini|anota/i.test(a.title ?? '')) : undefined;
-      const gravacao = anexos.find((a) => a.mimeType?.startsWith('video/'));
-      const planilha = terminou ? anexos.find((a) => a.mimeType === 'application/vnd.google-apps.spreadsheet' && /presen|attendance|participa/i.test(a.title ?? '')) : undefined;
-      let documentoEm: string | null = null;
-      if (documento?.fileId) {
-        ({ modifiedTime: documentoEm } = await lerDoGoogle<{ modifiedTime: string }>(token, `https://www.googleapis.com/drive/v3/files/${documento.fileId}?fields=modifiedTime`));
-      }
+      const margem = 2 * 3600_000;
+      const doEncontro = terminou ? arquivos.filter((a) => a.titulo === normaliza(titulo)
+        && a.quando >= new Date(inicio).getTime() - margem && a.quando <= new Date(fim).getTime() + margem) : [];
+      const documentos = doEncontro.filter((a) => a.mimeType === 'application/vnd.google-apps.document' && /gemini|anota/i.test(a.tipo));
+      const gravacao = doEncontro.find((a) => a.mimeType.startsWith('video/'));
+      const planilha = doEncontro.filter((a) => a.mimeType === 'application/vnd.google-apps.spreadsheet' && /particip|presen|attendance/i.test(a.tipo))
+        .sort((a, b) => b.quando - a.quando)[0];
+      // A data mais nova dos arquivos: documento ou lista que mudar faz o robô reler o encontro.
+      const documentoEm = [...documentos, ...(planilha ? [planilha] : [])].map((a) => a.modifiedTime).sort().at(-1) ?? null;
 
       const { data: guardada, error: erroGuardada } = await db.from('reunioes').select('id, documento_em').eq('tenant_id', tenant).eq('google_evento', e.id).maybeSingle();
       if (erroGuardada) throw erroGuardada;
       const mesmoDocumento = guardada?.documento_em && documentoEm && new Date(guardada.documento_em).getTime() === new Date(documentoEm).getTime();
       // Sem documento dois dias depois, o Google não gerou anotações: a reunião fica como está.
-      const semAnotacoes = guardada && !documentoEm && agora.getTime() - new Date(fim).getTime() > 2 * 86400_000;
+      const semAnotacoes = guardada && !guardada.documento_em && !documentoEm && agora.getTime() - new Date(fim).getTime() > 2 * 86400_000;
       if (mesmoDocumento || semAnotacoes) {
         resultado.sem_mudanca++;
         continue;
@@ -233,19 +253,25 @@ serve(async (req) => {
         serieId = nova.id;
       }
 
-      const texto = documento?.fileId ? separar(await textoDoArquivo(token, documento.fileId, 'text/plain')) : null;
-      const lista = planilha?.fileId ? await textoDoArquivo(token, planilha.fileId, 'text/csv') : null;
+      // Sala aberta duas vezes no mesmo horário gera dois documentos: vale o que tem o conteúdo da reunião.
+      const textos = await Promise.all(documentos.map(async (d) => ({ arquivo: d, texto: await textoDoArquivo(token, d.id, 'text/plain') })));
+      const documento = textos.sort((a, b) => b.texto.length - a.texto.length)[0];
+      const texto = documento ? separar(documento.texto) : null;
+      const lista = planilha ? await textoDoArquivo(token, planilha.id, 'text/csv') : null;
 
       const { data: reuniao, error: erroReuniao } = await db.from('reunioes').upsert({
         tenant_id: tenant, serie_id: serieId, google_evento: e.id, titulo, inicio, fim,
-        documento_id: documento?.fileId ?? null, documento_em: documentoEm,
-        link_documento: documento?.fileUrl ?? null, link_gravacao: gravacao?.fileUrl ?? null, link_meet: e.hangoutLink,
+        documento_id: documento?.arquivo.id ?? null, documento_em: documentoEm,
+        link_documento: documento?.arquivo.webViewLink ?? null, link_gravacao: gravacao?.webViewLink ?? null, link_meet: e.hangoutLink,
         pauta: texto?.pauta ?? null, lista_google: lista, updated_at: agora.toISOString(),
       }, { onConflict: 'tenant_id,google_evento' }).select('id').single();
       if (erroReuniao) throw erroReuniao;
 
       if (texto?.transcricao) {
         const { error } = await db.from('reuniao_transcricoes').upsert({ reuniao_id: reuniao.id, tenant_id: tenant, texto: texto.transcricao });
+        if (error) throw error;
+      } else {
+        const { error } = await db.from('reuniao_transcricoes').delete().eq('reuniao_id', reuniao.id);
         if (error) throw error;
       }
       const { error: erroApaga } = await db.from('reuniao_presencas').delete().eq('reuniao_id', reuniao.id);
