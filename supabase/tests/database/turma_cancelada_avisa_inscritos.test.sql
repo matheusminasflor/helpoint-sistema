@@ -42,7 +42,7 @@ select is((select count(*)::int from public.notifications
 
 select ok(not has_function_privilege('anon', 'public.meus_treinamentos()', 'execute'), 'a função não abre para anon');
 
-select tests.authenticate_as((select ana from u));
+select tests.authenticate_as('ana@turma.test');
 select is((select turma_situacao from public.meus_treinamentos()), 'cancelada', 'a pessoa vê a turma cancelada');
 select tests.clear_authentication();
 
