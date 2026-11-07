@@ -3,7 +3,8 @@
 // METADE DE UM PAR. Isto lê as claims, não verifica a assinatura do JWT — quem
 // verifica é o gateway, e só quando a função está com `verify_jwt = true` no
 // `supabase/config.toml`. Quem importar este módulo importa as duas metades ou
-// nenhuma. Consumidores hoje: check-alerts, mkt-publish-due e google-reunioes — todos com
+// nenhuma. Consumidores hoje: check-alerts, mkt-publish-due, google-reunioes e
+// mkt-kommo-coletar — todos com
 // verify_jwt = true.
 
 function parseJwtClaims(token: string): Record<string, unknown> | null {

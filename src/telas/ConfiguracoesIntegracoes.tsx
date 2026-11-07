@@ -20,7 +20,6 @@ import { metaParada, useLigacaoMeta } from '@/hooks/useLigacaoMeta';
 const NOME_DO_TIPO = { instagram: 'Instagram', pagina: 'Página', anuncios: 'Anúncios' } as const;
 
 const FALTA_LIGAR = [
-  { nome: 'Kommo (leads por funil)', situacao: 'Esperando a chave', texto: 'Consumidor final, Salão, Distribuidor e Sem triagem. Até lá, os leads são lançados à mão nos Indicadores.' },
   { nome: 'Bling (vendas)', situacao: 'Esperando a chave', texto: 'Faturado pelas notas fiscais.' },
   { nome: 'Conecta Venda (Portal do Distribuidor)', situacao: 'Esperando a chave', texto: 'As chaves das contas INBRAS e MF entram nos segredos do sistema.' },
 ];
@@ -47,21 +46,22 @@ interface SituacaoDaIA { usos: number; custo_usd: number; teto_mes: number; limi
 
 const dolar = (v: number) => `US$ ${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-interface RoboDeReunioes { ok_em: string | null; caiu_em: string | null; ultimo_erro: string | null }
+interface Robo { ok_em: string | null; caiu_em: string | null; ultimo_erro: string | null }
 
-function CartaoDoGoogle() {
+/** Os sistemas lidos por robô (Google, Kommo): a situação vem da tabela que o robô atualiza a cada leitura. */
+function CartaoDeRobo({ tabela, nome, descricao }: { tabela: 'reuniao_robo' | 'mkt_kommo_robo'; nome: string; descricao: string }) {
   const { tenantId } = useAuth();
   const { data: robo, isError } = useQuery({
-    queryKey: ['reuniao-robo', tenantId],
+    queryKey: [tabela, tenantId],
     enabled: !!tenantId,
-    queryFn: async () => unwrap(await supabase.from('reuniao_robo' as never).select('ok_em, caiu_em, ultimo_erro').maybeSingle()) as unknown as RoboDeReunioes | null,
+    queryFn: async () => unwrap(await supabase.from(tabela as never).select('ok_em, caiu_em, ultimo_erro').maybeSingle()) as unknown as Robo | null,
   });
   const parado = !!robo?.caiu_em;
   const quando = (iso: string) => new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
   return (
-    <Cartao nome="Google Workspace (Agenda, Meet e Drive)" tom={parado || isError ? 'perigo' : robo?.ok_em ? 'ok' : 'neutro'}
+    <Cartao nome={nome} tom={parado || isError ? 'perigo' : robo?.ok_em ? 'ok' : 'neutro'}
       situacao={isError ? 'Sem informação' : parado ? 'Com problema' : robo?.ok_em ? 'Funcionando' : 'Aguardando a primeira leitura'}
-      descricao="As reuniões da conta ti@minasflor.com entram sozinhas em Meu trabalho › Reuniões, a cada 30 minutos.">
+      descricao={descricao}>
       {robo?.ok_em && <p className="text-sm text-muted-foreground">Última leitura: {quando(robo.ok_em)}.</p>}
       {robo?.ultimo_erro && <p className="text-sm font-medium text-aviso">Atenção: {robo.ultimo_erro}.</p>}
     </Cartao>
@@ -119,7 +119,10 @@ export default function ConfiguracoesIntegracoes() {
             {meta && <LigacoesComSistemasDeFora />}
           </Cartao>
         )}
-        <CartaoDoGoogle />
+        <CartaoDeRobo tabela="reuniao_robo" nome="Google Workspace (Agenda, Meet e Drive)"
+          descricao="As reuniões da conta ti@minasflor.com entram sozinhas em Meu trabalho › Reuniões, a cada 30 minutos." />
+        <CartaoDeRobo tabela="mkt_kommo_robo" nome="Kommo (leads por funil)"
+          descricao="Os leads de Consumidor final, Salão, Distribuidor e Sem triagem entram sozinhos nos Indicadores do Marketing, a cada 3 horas." />
         <CartaoDaIA />
         {FALTA_LIGAR.map((i) => <Cartao key={i.nome} nome={i.nome} situacao={i.situacao} tom="neutro" descricao={i.texto} />)}
       </div>
