@@ -2,7 +2,7 @@
 --   1  resolvido guarda a data
 --   2  voltar para em andamento limpa a data
 --   3  resolver de novo grava a data nova
---   4  agendar um resolvido também limpa
+--   4  voltar para aberto também limpa
 begin;
 \ir _helpers.psql
 
@@ -30,7 +30,7 @@ select is((select resolved_at from public.tickets where id = (select id from c))
 update public.tickets set status = 'resolved', resolved_at = now() where id = (select id from c);
 select isnt((select resolved_at from public.tickets where id = (select id from c)), null, 'resolver de novo grava a data');
 
-update public.tickets set status = 'pending' where id = (select id from c);
+update public.tickets set status = 'open' where id = (select id from c);
 select is((select resolved_at from public.tickets where id = (select id from c)), null, 'qualquer saída de resolvido limpa');
 
 select * from finish();
