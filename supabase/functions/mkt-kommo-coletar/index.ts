@@ -108,9 +108,52 @@ async function rodada(db: SupabaseClient, tenant: string) {
   return { desde, chegaram: soma('chegaram'), ganhas: soma('ganhas'), perdidas: soma('perdidas') };
 }
 
+/**
+ * De onde vêm os leads (estudo da proposta v5, 2026-11-07): as fontes que o Kommo conhece, os campos de lead e, nos
+ * leads dos últimos `dias`, quantos por fonte, por etiqueta e por campo preenchido. Só contagens, nenhum nome ou telefone.
+ */
+async function diagnostico(dias: number) {
+  const de = Math.floor((Date.now() - dias * 24 * HORA) / 1000);
+  const fontes = await kommo<{ _embedded?: { sources?: { id: number; name: string; origin_code?: string }[] } }>('sources').catch((e) => ({ erro: String(e) }));
+  const campos = await kommo<{ _embedded: { custom_fields: { id: number; name: string; code?: string }[] } }>('leads/custom_fields?limit=250').catch(() => null);
+  const conta = (m: Map<string, number>, k: string) => m.set(k, (m.get(k) ?? 0) + 1);
+  const porFonte = new Map<string, number>(), porEtiqueta = new Map<string, number>(), porCampo = new Map<string, number>(), formatos = new Map<string, number>();
+  let total = 0;
+  for (let pagina = 1; ; pagina++) {
+    const r = await kommo<{ _embedded: { leads: (Lead & { source_id?: number | null; custom_fields_values?: { field_name: string; values: { value: unknown }[] }[] | null; _embedded?: { tags?: { name: string }[]; source?: { name?: string; type?: string } } })[] }; _links?: { next?: unknown } }>(
+      `leads?limit=250&page=${pagina}&with=source_id,source&filter[created_at][from]=${de}`);
+    for (const l of r?._embedded.leads ?? []) {
+      total++;
+      const s = l._embedded?.source;
+      conta(porFonte, s ? `${s.name ?? '?'} (${s.type ?? '?'})` : l.source_id ? `source_id ${l.source_id}` : 'sem fonte');
+      for (const t of l._embedded?.tags ?? []) conta(porEtiqueta, t.name);
+      for (const c of l.custom_fields_values ?? []) {
+        conta(porCampo, c.field_name);
+        // O valor dos campos de origem (utm, canal) diz por onde veio; os outros campos só contam.
+        if (/utm|origem|canal|source|fonte|referrer/i.test(c.field_name)) conta(formatos, `${c.field_name}: ${String(c.values?.[0]?.value).slice(0, 40)}`);
+      }
+    }
+    if (!r?._links?.next) break;
+  }
+  // As conversas (WhatsApp, Direct, site) dizem o canal em `origin`; as mais recentes bastam para ver quais existem.
+  const porCanal = new Map<string, number>();
+  for (let pagina = 1; pagina <= 4; pagina++) {
+    const r = await kommo<{ _embedded?: { talks?: { origin?: string; created_at?: number }[] }; _links?: { next?: unknown } }>(`talks?limit=250&page=${pagina}`)
+      .catch((e) => { porCanal.set(`erro: ${String(e).slice(0, 80)}`, 1); return null; });
+    for (const t of r?._embedded?.talks ?? []) if ((t.created_at ?? 0) >= de) conta(porCanal, t.origin ?? 'sem canal');
+    if (!r?._links?.next) break;
+  }
+  const lista = (m: Map<string, number>) => Object.fromEntries([...m].sort((a, b) => b[1] - a[1]));
+  return { dias, total, porCanal: lista(porCanal), fontes, campos: campos?._embedded.custom_fields.map((c) => c.name), porFonte: lista(porFonte), porEtiqueta: lista(porEtiqueta), porCampo: lista(porCampo), origens: lista(formatos) };
+}
+
 serve(async (req) => {
   const recusa = requireServiceRole(req);
   if (recusa) return recusa;
+  const corpo = await req.json().catch(() => ({})) as { diagnostico?: number };
+  if (corpo.diagnostico) {
+    try { return json(await diagnostico(Math.min(365, Number(corpo.diagnostico) || 60))); } catch (e) { return json({ error: String(e) }, 500); }
+  }
 
   const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
   const { data: empresa, error: erroEmpresa } = await db.from('tenants').select('id').order('created_at').limit(1).single();
