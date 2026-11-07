@@ -344,7 +344,7 @@ export function RedesSociais({ painel, grafico, conta, publico }: {
   const barras = grafico.map((s) => ({ rotulo: semanaDoGrafico(s.semana), ...Object.fromEntries(visiveis.map((c) => [c, s.saldos[c] ?? null])) }));
   const engajamento = (v: number | null) => (v === null ? '—' : v.toLocaleString('pt-BR', { maximumFractionDigits: 2 }));
   return (
-    <Secao titulo="Redes sociais" icone={Share2} nota="Alcance e visualizações começaram a ser contados em 01/11/2026">
+    <Secao titulo="Redes sociais" icone={Share2}>
       {escolhida ? (
         <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <CartaoDaRede a={escolhida.atual} b={escolhida.anterior} />

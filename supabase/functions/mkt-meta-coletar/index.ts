@@ -204,6 +204,10 @@ async function doInstagram(token: string, ig: Conta, s: Semana, agora: number) {
   const midia = await graphFetch<{ data: Midia[] }>(token, `${ig.id}/media?fields=${campos}&limit=100`);
   const naSemana = (m: Midia) => { const t = Date.parse(m.timestamp); return t >= s.desde && t < s.ate; };
   const daSemana = (midia.data ?? []).filter(naSemana);
+  // A Meta entrega os 100 posts mais recentes: se o mais antigo deles é de depois do início do período, o período é mais
+  // velho que a lista e a contagem sairia zero. Aí feed e reels ficam sem número (refazer meses antigos, 2026-11-07).
+  const lista = midia.data ?? [];
+  const cobre = lista.length < 100 || Date.parse(lista[lista.length - 1].timestamp) <= s.desde;
   const stories = await graphFetch<{ data: Midia[] }>(token, `${ig.id}/stories?fields=${campos}&limit=100`);
   const diasDeStories = [...new Set((stories.data ?? []).map((x) => diaBR(Date.parse(x.timestamp))))];
   const publicacoes = await Promise.all([
@@ -216,8 +220,8 @@ async function doInstagram(token: string, ig: Conta, s: Semana, agora: number) {
   const alcance = valores.get('reach') ?? null;
   const interacoes = valores.get('total_interactions') ?? null;
   return {
-    posts: daSemana.filter((m) => m.media_product_type === 'FEED').length,
-    reels: daSemana.filter((m) => m.media_product_type === 'REELS').length,
+    posts: cobre ? daSemana.filter((m) => m.media_product_type === 'FEED').length : null,
+    reels: cobre ? daSemana.filter((m) => m.media_product_type === 'REELS').length : null,
     visitas_perfil: valores.get('profile_views') ?? null,
     alcance, visualizacoes: valores.get('views') ?? null,
     engajamento: alcance && interacoes !== null ? Math.round((interacoes / alcance) * 10000) / 100 : null,
