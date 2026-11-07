@@ -18,6 +18,8 @@ interface Evento {
 const json = (corpo: unknown, status = 200) =>
   new Response(JSON.stringify(corpo), { status, headers: { 'Content-Type': 'application/json' } });
 
+const normaliza = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
 /** Do título "Próximas etapas" (ou "Next steps") até o fim do bloco. */
 function proximasEtapas(texto: string) {
   const achou = /(pr[oó]ximas etapas|pr[oó]ximos passos|suggested next steps|next steps)/i.exec(texto);
@@ -40,6 +42,7 @@ serve(async (req) => {
   const foraDoWorkspace: string[] = [];
   const falhas: { codigo: string; mensagem: string }[] = [];
   const eventos = new Map<string, Evento>();
+  const documentosDoDia = new Map<string, { titulo: string; dono: string; proximas_etapas: string | null; caracteres: number }>();
 
   for (const conta of contas) {
     try {
@@ -52,6 +55,20 @@ serve(async (req) => {
       const { items = [] } = await lerDoGoogle<{ items?: Evento[] }>(token, url.toString());
       lidas.push(conta);
       for (const e of items) eventos.set(e.id, e);
+
+      // Reunião aberta na hora não tem evento: as anotações do Gemini ficam no Drive de quem organizou.
+      const q = `mimeType = 'application/vnd.google-apps.document' and modifiedTime > '${new Date(de).toISOString()}' and modifiedTime < '${new Date(ate).toISOString()}' and (name contains 'Gemini' or name contains 'Transcri')`;
+      const drive = new URL('https://www.googleapis.com/drive/v3/files');
+      drive.searchParams.set('q', q);
+      drive.searchParams.set('fields', 'files(id,name)');
+      drive.searchParams.set('pageSize', '50');
+      const { files = [] } = await lerDoGoogle<{ files?: { id: string; name: string }[] }>(token, drive.toString());
+      for (const a of files) {
+        if (documentosDoDia.has(a.id)) continue;
+        const achou = normaliza(a.name).includes(normaliza(busca));
+        const texto = achou ? await textoDoDocumento(token, a.id) : '';
+        documentosDoDia.set(a.id, { titulo: a.name, dono: conta, proximas_etapas: achou ? proximasEtapas(texto) : null, caracteres: texto.length });
+      }
     } catch (e) {
       if (e instanceof FalhaDoGoogle && e.codigo === 'invalid_grant') foraDoWorkspace.push(conta);
       else falhas.push({ codigo: e instanceof FalhaDoGoogle ? e.codigo : 'erro', mensagem: String((e as Error).message).slice(0, 200) });
@@ -81,5 +98,5 @@ serve(async (req) => {
     });
   }
 
-  return json({ contas: contas.length, lidas: lidas.length, fora_do_workspace: foraDoWorkspace, falhas: falhas.slice(0, 5), reunioes });
+  return json({ contas: contas.length, lidas: lidas.length, fora_do_workspace: foraDoWorkspace, falhas: falhas.filter((x) => x.codigo !== 'unauthorized_client').slice(0, 5), recusadas: falhas.filter((x) => x.codigo === 'unauthorized_client').length, reunioes, documentos: [...documentosDoDia.values()] });
 });
