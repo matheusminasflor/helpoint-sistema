@@ -256,6 +256,9 @@ export default function QualidadeDashboard() {
   const topClients = useMemo(() => rank(t => t.customer_name), [tickets]);
   const topCategories = useMemo(() => rank(t => t.sac_categories?.name || null, 10), [tickets]);
 
+  // O primeiro produto fica no chamado e também nos itens: quem tem itens conta só por eles, senão ele vale dois.
+  const comItens = useMemo(() => new Set(productItems.map(p => p.ticket_id)), [productItems]);
+
   // Produtos (head + itens multi-produto)
   const topProducts = useMemo(() => {
     const map = new Map<string, { count: number; ticketIds: Set<string> }>();
@@ -265,7 +268,7 @@ export default function QualidadeDashboard() {
       m.count++;
       if (ticket) m.ticketIds.add(ticket.id);
     };
-    tickets.forEach(t => { if (t.product_name) add(t.product_name, t); });
+    tickets.forEach(t => { if (t.product_name && !comItens.has(t.id)) add(t.product_name, t); });
     productItems.forEach(p => {
       if (!p.product_name) return;
       const t = tickets.find(tk => tk.id === p.ticket_id);
@@ -280,7 +283,7 @@ export default function QualidadeDashboard() {
         count: v.count,
         tickets: Array.from(v.ticketIds).map(id => byId.get(id)).filter(Boolean).map(toHover),
       }));
-  }, [tickets, productItems]);
+  }, [tickets, productItems, comItens]);
 
   // Lotes com surto (≥3 em 7 dias)
   const batchAnalysis = useMemo(() => {
@@ -298,7 +301,7 @@ export default function QualidadeDashboard() {
       b.ticketIds.add(ticketId);
     };
     tickets.forEach(t => {
-      if (t.product_name && t.product_batch) push(t.product_name, t.product_batch, new Date(t.created_at), t.id);
+      if (t.product_name && t.product_batch && !comItens.has(t.id)) push(t.product_name, t.product_batch, new Date(t.created_at), t.id);
     });
     productItems.forEach(p => {
       const t = tickets.find(tk => tk.id === p.ticket_id);
@@ -314,7 +317,7 @@ export default function QualidadeDashboard() {
       }
       return { ...b, surge };
     }).sort((a, b) => b.count - a.count).slice(0, 8);
-  }, [tickets, productItems]);
+  }, [tickets, productItems, comItens]);
 
   // Prioridades com tempo médio
   const priorityData = useMemo(() => {

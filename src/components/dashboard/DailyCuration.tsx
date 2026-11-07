@@ -296,7 +296,8 @@ export function DailyCuration({ onEnterFocusMode, onOpenTask }: DailyCurationPro
     if (!user) return;
     if (primeiraCarga) setIsLoadingTasks(true);
     try {
-      const { data, error } = await supabase.from('tasks').select('*').eq('user_id', user.id).in('status', ['pending', 'in_progress']).order('priority', { ascending: true }).order('due_date', { ascending: true, nullsFirst: false }).limit(20);
+      // ponytail: teto de 500 abertas por pessoa (hoje o máximo é 141). A mais atrasada vem primeiro; acima disso, paginar.
+      const { data, error } = await supabase.from('tasks').select('*').eq('user_id', user.id).in('status', ['pending', 'in_progress']).order('due_date', { ascending: true, nullsFirst: false }).order('priority', { ascending: true }).limit(500);
       if (error) throw error;
       setTasks((data || []) as Task[]);
     } catch (e) {

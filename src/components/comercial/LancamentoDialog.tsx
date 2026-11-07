@@ -183,7 +183,7 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
       pessoaId: editando.pessoa_interna_id ?? '',
       data: editando.data,
       status: editando.status,
-      valor: editando.valor_venda === null ? '' : String(editando.valor_venda),
+      valor: editando.valor_venda === null ? '' : String(editando.valor_venda).replace('.', ','),
       nota: editando.nota_fiscal ?? '',
       notaEm: editando.nota_em ?? todayISO(),
       notaFilial: editando.nota_filial ?? '',

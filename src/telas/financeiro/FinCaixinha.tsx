@@ -46,6 +46,7 @@ import { useTenantPath } from '@/hooks/useTenantPath';
 import { todayISO } from '@/lib/dates';
 import { formatBRL, formatDateBR } from '@/types/financeiro';
 import { cn } from '@/lib/utils';
+import { lerValor } from '@/lib/checklist-de-pedidos';
 
 type Lancamento = 'entrada' | 'saida';
 
@@ -300,8 +301,7 @@ function NovoLancamento({ tipo, saldo, valorSemanal, caixinhaId, onFechar }: {
   );
   const escolhido = produtos.find((p) => p.id === produto);
   const qtd = Number(quantidade.replace(',', '.'));
-  // "1.234,50" e "12,50" (vírgula decimal) ou "12.50".
-  const numero = Number(valor.includes(',') ? valor.replace(/\./g, '').replace(',', '.') : valor);
+  const numero = lerValor(valor) ?? 0;
   const valido = numero > 0 && !!data && (tipo === 'entrada' ? descricao.trim() !== '' : !!escolhido && qtd > 0);
   const passaDoSaldo = tipo === 'saida' && numero > saldo;
 

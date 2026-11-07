@@ -55,6 +55,9 @@ describe('valores', () => {
     expect(lerValor('100')).toBe(100);
     expect(lerValor('abc')).toBeNull();
     expect(lerValor('')).toBeNull();
+    expect(lerValor('1.500')).toBe(1500);
+    expect(lerValor('1.234.567')).toBe(1234567);
+    expect(lerValor('12.50')).toBe(12.5);
   });
 
   it('o valor da venda é só a soma dos pedidos tipo Venda', () => {

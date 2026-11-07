@@ -73,11 +73,12 @@ export function checklistVazio(): ChecklistEmEdicao {
   return { contato: '', rota: '', observacao: '', pedidos: [pedidoVazio()] };
 }
 
-/** "1.234,56" → 1234.56; vazio ou inválido → null. */
+/** "1.234,56" → 1234.56; "1.500" → 1500; "12.50" → 12.5; vazio ou inválido → null. */
 export function lerValor(texto: string): number | null {
   const t = texto.trim();
   if (!t) return null;
-  const n = Number(t.includes(',') ? t.replace(/\./g, '').replace(',', '.') : t);
+  const soMilhar = /^\d{1,3}(\.\d{3})+$/.test(t);
+  const n = Number(t.includes(',') || soMilhar ? t.replace(/\./g, '').replace(',', '.') : t);
   return Number.isFinite(n) && n >= 0 ? n : null;
 }
 

@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { unwrap, expectRows, mensagemDeErro } from '@/lib/supabase-result';
-import { toLocalISODate, todayISO } from '@/lib/dates';
+import { fromLocalISODate, toLocalISODate, todayISO } from '@/lib/dates';
 
 // ============= Empresas =============
 export interface RHCompany {
@@ -167,7 +167,7 @@ export function useRHEmployees(filters?: { companyId?: string | null; status?: s
       // Calcula 45/90 dias automaticamente se admissão informada e os campos não vieram
       const payload: any = { tenant_id: tenantId, ...input };
       if (input.admission_date && !input.probation_45) {
-        const adm = new Date(input.admission_date);
+        const adm = fromLocalISODate(input.admission_date);
         payload.probation_45 = toLocalISODate(new Date(adm.getTime() + 45 * 86400000));
         payload.probation_90 = toLocalISODate(new Date(adm.getTime() + 90 * 86400000));
       }

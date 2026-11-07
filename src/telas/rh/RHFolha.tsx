@@ -7,6 +7,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { Banknote, RefreshCw, Trash2, Search } from 'lucide-react';
 import { useRHPayroll } from '@/hooks/useRH';
 import { currentMonth, fmtBRL, MonthPicker, CompanyPicker } from '@/components/rh/shared';
+import { fromLocalISODate } from '@/lib/dates';
 import { useQueryState } from '@/hooks/useQueryState';
 import { usePodeNoRH } from '@/hooks/useAccessProfiles';
 
@@ -120,7 +121,7 @@ export default function RHFolha() {
       <Card>
         <CardHeader className="pb-2">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <CardTitle className="text-base">Folha — {new Date(month).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</CardTitle>
+            <CardTitle className="text-base">Folha — {fromLocalISODate(month).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</CardTitle>
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
               <Input className="pl-8 h-8 w-full sm:w-64" placeholder="Buscar colaborador" value={search} onChange={e => setSearch(e.target.value)} />
@@ -163,7 +164,9 @@ export default function RHFolha() {
                       <td className="px-2 py-1.5"><Badge variant="outline" className="text-[12px]">{r.company?.code || '—'}</Badge></td>
                       {EDITABLE.map(c => (
                         <td key={c.key} className="px-1 py-1">
+                          {/* A chave leva o valor: depois de "Gerar folha" o campo não pode seguir com o número velho. */}
                           <Input
+                            key={String(r[c.key])}
                             type="number"
                             step="0.01"
                             defaultValue={r[c.key]}

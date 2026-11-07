@@ -12,8 +12,8 @@ import { usePedir } from '@/hooks/useSolicitacoes';
 import { TIPOS, TIPOS_DE_ACESSO, type TipoDeSolicitacao } from '@/config/solicitacoes';
 import { unwrap } from '@/lib/supabase-result';
 import { todayISO } from '@/lib/dates';
+import { lerValor } from '@/lib/checklist-de-pedidos';
 
-const numeroDigitado = (t: string) => Number(t.includes(',') ? t.replace(/\./g, '').replace(',', '.') : t);
 
 /**
  * O pedido (etapa 4b): o tipo vem primeiro, e só os campos dele (Hick, Tesler — nome, setor e gestor o sistema já
@@ -47,7 +47,7 @@ export function NovoPedidoDialog({ tipo, onFechar, onEnviado }: {
     },
   });
 
-  const numero = numeroDigitado(valor);
+  const numero = lerValor(valor) ?? 0;
   const falta = !titulo.trim() ? cfg.rotuloDoTitulo.charAt(0).toLowerCase() + cfg.rotuloDoTitulo.slice(1)
     : cfg.valor && !(numero > 0) ? 'o valor'
     : cfg.anexoObrigatorio && anexos.length === 0 ? cfg.anexoObrigatorio.toLowerCase()

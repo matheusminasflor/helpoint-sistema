@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { differenceInYears } from 'date-fns';
+import { fromLocalISODate } from '@/lib/dates';
 import { useRHEmployees, useRHPayroll, useRHAbsences, useRHFuel, useRHTransport, useRHMeal } from '@/hooks/useRH';
 import { currentMonth, fmtBRL } from '@/components/rh/shared';
 import { estaAtivo, estaNaEmpresa } from '@/lib/rh-status';
@@ -93,20 +94,20 @@ export function DetailedRHTable({ tickets, metrics, variations, priorityData }: 
   // trabalhando. Ver `@/lib/rh-status`.
   const activeEmployees = employees.filter((e: any) => estaAtivo(e.status));
   const admissionsInMonth = employees.filter((e: any) =>
-    e.admission_date && new Date(e.admission_date).getMonth() === currMonth
-    && new Date(e.admission_date).getFullYear() === today.getFullYear());
+    e.admission_date && fromLocalISODate(e.admission_date).getMonth() === currMonth
+    && fromLocalISODate(e.admission_date).getFullYear() === today.getFullYear());
   const terminationsInMonth = employees.filter((e: any) =>
-    e.termination_date && new Date(e.termination_date).getMonth() === currMonth
-    && new Date(e.termination_date).getFullYear() === today.getFullYear());
+    e.termination_date && fromLocalISODate(e.termination_date).getMonth() === currMonth
+    && fromLocalISODate(e.termination_date).getFullYear() === today.getFullYear());
   // `estaNaEmpresa` nas duas: desligado entrava em "Aniversariantes do mês" e em
   // "Tempo de casa". Quem saiu não faz aniversário na empresa nem completa ano
   // de casa — e a lista com ele parece maior do que o quadro real.
   const birthdays = employees.filter((e: any) =>
-    estaNaEmpresa(e.status) && e.birth_date && new Date(e.birth_date).getMonth() === currMonth);
+    estaNaEmpresa(e.status) && e.birth_date && fromLocalISODate(e.birth_date).getMonth() === currMonth);
   const tenureMilestones = employees.filter((e: any) => {
     if (!estaNaEmpresa(e.status) || !e.admission_date) return false;
-    const admMonth = new Date(e.admission_date).getMonth();
-    return admMonth === currMonth && differenceInYears(today, new Date(e.admission_date)) >= 1;
+    const admMonth = fromLocalISODate(e.admission_date).getMonth();
+    return admMonth === currMonth && differenceInYears(today, fromLocalISODate(e.admission_date)) >= 1;
   });
 
   const sum = (arr: any[], k: string) => arr.reduce((acc, r) => acc + (Number(r[k]) || 0), 0);
