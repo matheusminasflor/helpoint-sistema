@@ -251,7 +251,7 @@ export function ConversaCanal({ canal, souAdmin }: {
                       {!minha && <p className="text-[12px] font-medium text-foreground/80 mb-0.5">{nome}</p>}
                       {/* Mensagem que o Jornal mandou ao publicar (dono, 2026-10-19): o selo diz que ninguém digitou, e o
                           botão abre a notícia. */}
-                      {m.noticia_id && !m.deleted_at && (
+                      {(m.noticia_id || m.reuniao_id) && !m.deleted_at && (
                         <p className="flex items-center gap-1 text-[12px] text-muted-foreground mb-1">
                           <Bot className="w-3.5 h-3.5" aria-hidden="true" /> Mensagem automática
                         </p>

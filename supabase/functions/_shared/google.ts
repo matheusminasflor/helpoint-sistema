@@ -54,9 +54,9 @@ export async function lerDoGoogle<T>(token: string, url: string): Promise<T> {
   return await r.json() as T
 }
 
-/** O texto de um documento do Google. */
-export async function textoDoDocumento(token: string, id: string): Promise<string> {
-  const r = await fetch(`https://www.googleapis.com/drive/v3/files/${id}/export?mimeType=text/plain`, {
+/** Um documento ou planilha do Google como texto puro, sem mudar o conteúdo. */
+export async function textoDoArquivo(token: string, id: string, formato: 'text/plain' | 'text/csv'): Promise<string> {
+  const r = await fetch(`https://www.googleapis.com/drive/v3/files/${id}/export?mimeType=${encodeURIComponent(formato)}`, {
     headers: { Authorization: `Bearer ${token}` },
   })
   if (!r.ok) throw new FalhaDoGoogle(String(r.status), (await r.text()).slice(0, 300))

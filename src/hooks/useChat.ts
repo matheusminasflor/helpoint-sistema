@@ -17,7 +17,7 @@ import { caminhoDoAnexo, LIMITE_DO_ANEXO } from '@/lib/chat-midia';
 
 export type ChatCanalRow = Database['public']['Tables']['chat_channels']['Row'];
 // `noticia_id` (20270128040000): a mensagem automática do Jornal aponta para a notícia; só o sistema a preenche.
-export type ChatMensagemRow = Database['public']['Tables']['chat_messages']['Row'] & { noticia_id?: string | null };
+export type ChatMensagemRow = Database['public']['Tables']['chat_messages']['Row'] & { noticia_id?: string | null; reuniao_id?: string | null };
 
 export function useCanais() {
   const { tenantId } = useAuth();
