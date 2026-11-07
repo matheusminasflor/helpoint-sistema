@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { alcancePorFormato, comASemanaEmAndamento, faltamLeads, fraseDasRedes, melhoresPosts, type Publicacao, numerosDaConta, numerosDoTrafego, painelDasRedes, ultimasSemanas, type LinhaRedes, type LinhaTrafego } from './redes-e-trafego';
+import { alcancePorFormato, comASemanaEmAndamento, fraseDasRedes, melhoresPosts, type Publicacao, numerosDaConta, numerosDoTrafego, painelDasRedes, ultimasSemanas, type LinhaRedes, type LinhaTrafego } from './redes-e-trafego';
 
 const vazia: Omit<LinhaRedes, 'semana' | 'conta'> = {
   posts: null, reels: null, stories: null, engajamento: null, novos_seguidores: null, quedas_seguidores: null, total_seguidores: null,
@@ -7,8 +7,7 @@ const vazia: Omit<LinhaRedes, 'semana' | 'conta'> = {
 };
 const r = (semana: string, conta: string, x: Partial<LinhaRedes>): LinhaRedes => ({ ...vazia, semana, conta, ...x });
 const t = (semana: string, x: Partial<LinhaTrafego>): LinhaTrafego => ({
-  semana, investimento: null, alcance: null, visitas_perfil: null, campanhas_ativas: null,
-  leads_distribuidor: null, leads_consumidor: null, leads_salao: null, leads_sem_triagem: null, ...x,
+  semana, investimento: null, alcance: null, visitas_perfil: null, campanhas_ativas: null, ...x,
 });
 const SEMANA = { de: '2026-10-26', ate: '2026-11-01' };
 const ANTERIOR = { de: '2026-10-19', ate: '2026-10-25' };
@@ -55,11 +54,6 @@ describe('numerosDoTrafego', () => {
     const contas = [numerosDaConta([r('2026-11-01', '@mf.pro', { investimento: 137.06 })], '@mf.pro', SEMANA)];
     expect(numerosDoTrafego([t('2026-11-01', { investimento: 338.14 })], contas, SEMANA).investimento).toBe(338.14);
     expect(numerosDoTrafego([], contas, SEMANA).investimento).toBe(137.06);
-  });
-
-  it('leads classificados não contam os sem triagem', () => {
-    const n = numerosDoTrafego([t('2026-11-01', { leads_salao: 11, leads_distribuidor: 3, leads_consumidor: 1, leads_sem_triagem: 7 })], [], SEMANA);
-    expect(n.leadsClassificados).toBe(15);
   });
 });
 
@@ -117,29 +111,18 @@ describe('painel e frase', () => {
     r('2026-10-25', '@minasflor', { total_seguidores: 108875 }), r('2026-11-01', '@minasflor', { total_seguidores: 108930 }),
     r('2026-10-25', '@by.mf', { total_seguidores: 4044 }), r('2026-11-01', '@by.mf', { total_seguidores: 4034 }),
   ];
-  const trafego = [t('2026-11-01', { investimento: 338.14, visitas_perfil: 1185, leads_salao: 11, leads_distribuidor: 3, leads_consumidor: 1 })];
+  const trafego = [t('2026-11-01', { investimento: 338.14, visitas_perfil: 1185 })];
 
   it('soma as contas e escreve a frase', () => {
     const p = painelDasRedes(redes, trafego, SEMANA, ANTERIOR);
     expect(p.total.saldo).toBe(45);
     expect(fraseDasRedes(p)).toBe(
       'Nas redes, as contas ganharam 45 seguidores (@minasflor +55, @by.mf −10). '
-      + 'O tráfego pago investiu R$ 338,14 e trouxe 1.185 visitas ao perfil a R$ 0,29 cada. '
-      + 'Chegaram 15 leads classificados, 11 de salão.',
+      + 'O tráfego pago investiu R$ 338,14 e trouxe 1.185 visitas ao perfil a R$ 0,29 cada.',
     );
   });
 
   it('período sem nada lançado não tem frase', () => {
     expect(fraseDasRedes(painelDasRedes(redes, trafego, { de: '2026-11-02', ate: '2026-11-08' }, SEMANA))).toBe('');
-  });
-});
-
-describe('faltamLeads', () => {
-  const t = (leads: number | null) => ({ semana: '2026-11-01', investimento: 10, alcance: null, visitas_perfil: null, campanhas_ativas: null,
-    leads_distribuidor: null, leads_consumidor: leads, leads_salao: null, leads_sem_triagem: null });
-  it('pede os leads quando a semana não tem nenhum funil, mesmo com o robô tendo lançado o resto', () => {
-    expect(faltamLeads([], '2026-11-01')).toBe(true);
-    expect(faltamLeads([t(null)], '2026-11-01')).toBe(true);
-    expect(faltamLeads([t(4)], '2026-11-01')).toBe(false);
   });
 });

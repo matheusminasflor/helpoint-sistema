@@ -23,18 +23,12 @@ export interface LinhaRedes {
   alcance: number | null; visualizacoes: number | null; publicacoes: Publicacao[] | null;
 }
 
+/** O total da conta de anúncios na semana. Os leads saíram daqui: vêm do Kommo, por dia (`lib/leads-e-vendas`). */
 export interface LinhaTrafego {
   semana: string; investimento: number | null; alcance: number | null; visitas_perfil: number | null; campanhas_ativas: number | null;
-  leads_distribuidor: number | null; leads_consumidor: number | null; leads_salao: number | null; leads_sem_triagem: number | null;
 }
 
 export interface Intervalo { de: string; ate: string }
-
-/** Os leads ainda são à mão (até o Kommo ligar): a semana sem nenhum funil preenchido é a pendência do Marketing. */
-export const faltamLeads = (trafego: LinhaTrafego[], semana: string) => {
-  const t = trafego.find((l) => l.semana === semana);
-  return !t || [t.leads_consumidor, t.leads_salao, t.leads_distribuidor, t.leads_sem_triagem].every((v) => v === null);
-};
 
 /** "94,7%"; sem número, "—". A tela e o PDF usam o mesmo texto. */
 export const pctTexto = (v: number | null) => (v === null ? '—' : `${v.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%`);
@@ -42,6 +36,8 @@ export const NOME_DO_FORMATO: Record<Publicacao['tipo'], string> = { REELS: 'Ree
 
 // Os nomes da planilha (aba "MKT - Redes"), que é como o histórico de outubro entrou.
 export const CONTAS = ['@minasflor', '@mf.pro', '@by.mf'];
+/** A escolha "Todas as contas" no topo dos Indicadores (proposta v4). */
+export const TODAS = 'todas';
 
 const dentro = (semana: string, p: Intervalo) => semana >= p.de && semana <= p.ate;
 const porSemana = <T extends { semana: string }>(a: T, b: T) => a.semana.localeCompare(b.semana);
@@ -132,9 +128,6 @@ export function numerosDaConta(linhas: LinhaRedes[], conta: string, p: Intervalo
 export interface NumerosDoTrafego {
   investimento: number | null; alcance: number | null; visitas: number | null; custoPorVisita: number | null;
   campanhasAtivas: number | null;
-  leads: { salao: number | null; distribuidor: number | null; consumidor: number | null; semTriagem: number | null };
-  /** Os que já têm segmento (sem triagem fica de fora). */
-  leadsClassificados: number | null;
 }
 
 /** O total da conta de anúncios; sem o total lançado, o investimento é a soma das contas. */
@@ -142,15 +135,10 @@ export function numerosDoTrafego(linhas: LinhaTrafego[], contas: NumerosDaConta[
   const no = linhas.filter((l) => dentro(l.semana, p)).sort(porSemana);
   const investimento = somaOuNada(no, 'investimento') ?? somarNulos(contas.map((c) => c.investimento));
   const visitas = somaOuNada(no, 'visitas_perfil') ?? somarNulos(contas.map((c) => c.visitasPagas));
-  const leads = {
-    salao: somaOuNada(no, 'leads_salao'), distribuidor: somaOuNada(no, 'leads_distribuidor'),
-    consumidor: somaOuNada(no, 'leads_consumidor'), semTriagem: somaOuNada(no, 'leads_sem_triagem'),
-  };
   return {
     investimento, visitas, custoPorVisita: dividir(investimento, visitas),
     alcance: somaOuNada(no, 'alcance') ?? somarNulos(contas.map((c) => c.alcancePago)),
     campanhasAtivas: ultimo(no, 'campanhas_ativas') ?? somarNulos(contas.map((c) => c.campanhasAtivas)),
-    leads, leadsClassificados: somarNulos([leads.salao, leads.distribuidor, leads.consumidor]),
   };
 }
 
@@ -213,7 +201,8 @@ export function painelDasRedes(redes: LinhaRedes[], trafego: LinhaTrafego[], atu
 
 const sinal = (n: number) => (n > 0 ? `+${n.toLocaleString('pt-BR')}` : n.toLocaleString('pt-BR').replace('-', '−'));
 
-/** "Na semana, as três contas ganharam 78 seguidores (+55, +33 e −10). O tráfego investiu R$ 338,14…". */
+/** "Na semana, as três contas ganharam 78 seguidores (+55, +33 e −10). O tráfego investiu R$ 338,14…". Os leads entram
+ *  na frase pela tela, com os números do Kommo. */
 export function fraseDasRedes(p: Painel): string {
   if (!p.temDados) return '';
   const partes: string[] = [];
@@ -227,11 +216,6 @@ export function fraseDasRedes(p: Painel): string {
   if (t.investimento !== null) {
     const visitas = t.visitas ? ` e trouxe ${t.visitas.toLocaleString('pt-BR')} visitas ao perfil${t.custoPorVisita !== null ? ` a ${formatBRL(t.custoPorVisita)} cada` : ''}` : '';
     partes.push(`O tráfego pago investiu ${formatBRL(t.investimento)}${visitas}.`);
-  }
-  if (t.leadsClassificados !== null) {
-    const maior = (Object.entries({ 'de salão': t.leads.salao, 'de distribuidor': t.leads.distribuidor, 'de consumidor final': t.leads.consumidor }) as [string, number | null][])
-      .filter(([, v]) => v).sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0))[0];
-    partes.push(`Chegaram ${t.leadsClassificados} leads classificados${maior ? `, ${maior[1]} ${maior[0]}` : ''}.`);
   }
   return partes.join(' ');
 }

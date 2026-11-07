@@ -6,6 +6,9 @@
 //     estoque e o Benefício de sexta, as categorias e os abertos × resolvidos;
 //   · Analítico = o detalhe dos chamados, a prioridade, os Artistas mês a mês, as redes sociais e os padrões;
 //   · Apresentar e Exportar PDF, como na TI. Nada que a tela mostrava antes saiu: mudou de lugar.
+// Proposta v4 (2026-11-07, https://claude.ai/artifact/4YkGvumGgu6Z9JmgmwodQr): escolha de conta no topo, três destaques,
+// "do anúncio à venda", leads e vendas do Kommo por segmento, tráfego e redes em tabela por conta; chamados, artistas e
+// operação descem fechados. Mês inteiro usa o mês da Meta (`mkt_redes_mes`); o Kommo é por dia.
 import { COR, COR_ABERTOS, COR_DA_PRIORIDADE, COR_RESOLVIDOS, EIXO } from '@/config/cores-dos-graficos';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -25,14 +28,16 @@ import { PatternsAnalysis } from '@/components/ti/PatternsAnalysis';
 import { CategoriasDosChamados } from '@/components/ti/CategoriasDosChamados';
 import { LinhaAgendaEAjuda } from '@/components/dashboard/AjudaAOutrosSetoresKPI';
 import { OutrosIndicadoresDoMarketing } from '@/components/mkt/OutrosIndicadoresDoMarketing';
-import { LancarSemana, LeadsEInvestimento, NumerosDoTopo, QuemSegue, RedesSociais, TrafegoPorConta } from '@/components/mkt/RedesETrafego';
+import {
+  Compara, Destaques, DoAnuncioAVenda, EscolhaDeConta, LancarSemana, LeadsEVendas, NumerosGrandes, RedesSociais, TrafegoPorConta,
+} from '@/components/mkt/RedesETrafego';
 import { useIndicadoresDoMarketing } from '@/hooks/useIndicadoresDoMarketing';
-import { usePublicoDoInstagram, useRedesETrafego } from '@/hooks/useRedesETrafego';
+import { useKommo, useMesesDaMeta, usePublicoDoInstagram, useRedesETrafego } from '@/hooks/useRedesETrafego';
 import { fatias, horariosTexto, nomeDoPais, publicoDoMes } from '@/lib/publico-do-instagram';
 import {
-  comASemanaEmAndamento, fraseDasRedes, NOME_DO_FORMATO, painelDasRedes, pctTexto, semanaASemana, ultimasSemanas,
-  faltamLeads,
+  comASemanaEmAndamento, fraseDasRedes, NOME_DO_FORMATO, painelDasRedes, pctTexto, semanaASemana, TODAS, ultimasSemanas,
 } from '@/lib/redes-e-trafego';
+import { destaquesDoPeriodo, ehMesInteiro, leadsPorSemana, periodoCurto, resumoDoKommo } from '@/lib/leads-e-vendas';
 import { ArtistasDoMes, ArtistasMesAMes } from '@/components/mkt/ArtistasNosIndicadores';
 import { SeloDaMeta } from '@/components/mkt/SeloDaMeta';
 import { DicaDoGrafico } from '@/components/dashboard/DicaDoGrafico';
@@ -55,7 +60,7 @@ import { useArtistas, useEntregasEntre, useResumoDosArtistas, useReunioesDosArti
 import { META_DA_TI, metaNoDia, notaDaMeta } from '@/config/metas-da-ti';
 import { PERIODOS_DA_REUNIAO, rotuloDoIntervalo, type IntervaloDeDias } from '@/lib/period';
 import { toLocalISODate, todayISO } from '@/lib/dates';
-import { COR_DO_FAROL, diasDoPeriodo, domingoDaSemana, farol, periodoDoIntervalo, somarDias } from '@/lib/ti-equipe';
+import { COR_DO_FAROL, diasDoPeriodo, farol, periodoDoIntervalo, somarDias } from '@/lib/ti-equipe';
 import { fraseDoResumo } from '@/lib/resumo-da-ti';
 import { barrasDaTendencia } from '@/lib/tendencia';
 import { formatarHoras } from '@/lib/horas';
@@ -69,11 +74,11 @@ import { SOCIAL_PLATFORM_LABELS } from '@/types/mkt';
 const PRIORITY_LABEL: Record<string, string> = { critical: 'Crítica', high: 'Alta', medium: 'Média', low: 'Baixa' };
 
 const SECOES_DA_VISAO = [
-  { id: 'mkt-resumo', rotulo: 'Resumo' },
-  { id: 'mkt-redes', rotulo: 'Redes' },
-  { id: 'mkt-publico', rotulo: 'Quem segue' },
+  { id: 'mkt-resumo', rotulo: 'Destaques' },
+  { id: 'mkt-funil', rotulo: 'Do anúncio à venda' },
+  { id: 'mkt-leads', rotulo: 'Leads e vendas' },
   { id: 'mkt-trafego', rotulo: 'Tráfego' },
-  { id: 'mkt-leads', rotulo: 'Leads' },
+  { id: 'mkt-redes', rotulo: 'Redes' },
   { id: 'mkt-artistas', rotulo: 'Artistas' },
   { id: 'mkt-chamados', rotulo: 'Chamados' },
 ];
@@ -92,7 +97,7 @@ const SECOES_DO_ANALITICO = [
 const SECOES_DO_PDF: SectionDef[] = [
   { id: 'cover', label: 'Capa', description: 'Página de capa com título e período', locked: true },
   { id: 'executive_summary', label: 'Resumo', description: 'A frase de resumo e os números de chamado com meta, anterior e status' },
-  { id: 'social', label: 'Redes sociais e tráfego pago', description: 'Cada conta com o período anterior, o tráfego por conta e os leads' },
+  { id: 'social', label: 'Redes, tráfego, leads e vendas', description: 'Cada conta com o período anterior, o tráfego por conta e os leads e vendas do Kommo' },
   { id: 'artists', label: 'Artistas', description: 'A semana do mês dos artistas (ou o mês inteiro), com a bonificação e o anterior' },
   { id: 'others', label: 'Pedidos de arte, estoque e Benefício de sexta', description: 'Os três blocos da Visão Geral' },
   { id: 'category', label: 'Chamados por categoria', description: 'Categorias e subcategorias, como na Visão Geral' },
@@ -100,7 +105,6 @@ const SECOES_DO_PDF: SectionDef[] = [
   { id: 'priority', label: 'Por prioridade', description: 'Chamados agrupados por prioridade' },
 ];
 
-const ddmm = (d: Date) => toLocalISODate(d).split('-').reverse().slice(0, 2).join('/');
 const fimDoMes = (mesISO: string) => {
   const [a, m] = mesISO.split('-').map(Number);
   return `${mesISO.slice(0, 7)}-${String(new Date(a, m, 0).getDate()).padStart(2, '0')}`;
@@ -146,8 +150,27 @@ export default function MKTRelatorios() {
   // O gráfico termina na semana de hoje quando o período ainda não acabou: "Este mês" mostrava as semanas que não vieram.
   const fimDoGrafico = [intervaloDaTela.ate, hoje].sort()[0];
   const semanal = useRedesETrafego(dasSemanas, anteriorISO, fimDoGrafico);
-  const painel = painelDasRedes(semanal.redes, semanal.trafego, dasSemanas, anteriorISO);
-  const grafico = semanaASemana(semanal.redes, semanal.trafego, ultimasSemanas(fimDoGrafico, 5), painel.contas.map((c) => c.atual.conta));
+  // Mês inteiro: o mês da Meta, do dia 1 ao último (as semanas contam no mês do domingo e perdiam os últimos dias). Sem a
+  // linha do mês ainda buscada, ficam as semanas.
+  const mesInteiro = ehMesInteiro(intervaloDaTela) && ehMesInteiro(anteriorISO);
+  const meses = useMesesDaMeta(`${somarDias(anteriorISO.de, -1).slice(0, 8)}01`, intervaloDaTela.de, mesInteiro);
+  const usarMeses = mesInteiro && meses.redes.some((l) => l.semana === intervaloDaTela.ate);
+  const painel = usarMeses
+    ? painelDasRedes(meses.redes, meses.trafego, intervaloDaTela, anteriorISO)
+    : painelDasRedes(semanal.redes, semanal.trafego, dasSemanas, anteriorISO);
+  const domingosDoGrafico = ultimasSemanas(fimDoGrafico, 6);
+  const grafico = semanaASemana(semanal.redes, semanal.trafego, domingosDoGrafico, painel.contas.map((c) => c.atual.conta));
+  const [conta, setConta] = useQueryState<string>('conta', TODAS);
+  // O Kommo é por dia: o período, o anterior e as semanas do gráfico.
+  const kommo = useKommo([anteriorISO.de, somarDias(domingosDoGrafico[0], -6)].sort()[0], [intervaloDaTela.ate, hoje].sort()[1]);
+  const kommoAtual = resumoDoKommo(kommo.linhas, kommo.perdas, intervaloDaTela);
+  const kommoAntes = resumoDoKommo(kommo.linhas, kommo.perdas, anteriorISO);
+  const leadsDasSemanas = leadsPorSemana(kommo.linhas, domingosDoGrafico, somarDias);
+  const destaques = destaquesDoPeriodo(kommoAtual, kommoAntes, {
+    investimento: conta === TODAS ? painel.trafego.atual.investimento : painel.contas.find((c) => c.atual.conta === conta)?.atual.investimento ?? null,
+    investimentoAntes: conta === TODAS ? painel.trafego.anterior.investimento : painel.contas.find((c) => c.atual.conta === conta)?.anterior.investimento ?? null,
+    custoPorVisita: conta === TODAS ? painel.trafego.atual.custoPorVisita : painel.contas.find((c) => c.atual.conta === conta)?.atual.custoPorVisita ?? null,
+  });
   const { data: linhasDoPublico = [] } = usePublicoDoInstagram(intervaloDaTela.ate);
   const podeLancar = perfil.pode('marketing', 'reports', 'lancar');
   const [lancando, setLancando] = useState(false);
@@ -189,8 +212,13 @@ export default function MKTRelatorios() {
   const publico = diasDaTela >= 28 ? publicoDoMes(linhasDoPublico, painel.contas.map((c) => c.atual.conta)) : [];
   const rotuloDaSerie = diasDaTela === 7 ? 'as últimas 8 semanas' : `os últimos 8 períodos de ${diasDaTela} dias`;
 
+  const maiorSegmento = [...kommoAtual.segmentos].sort((a, b) => b.chegaram - a.chegaram)[0];
+  const fraseDoKommo = kommoAtual.temDados
+    ? `Chegaram ${kommoAtual.total.chegaram} leads, ${maiorSegmento.chegaram} de ${maiorSegmento.nome.toLowerCase()}; ${kommoAtual.total.ganhas} vendas ganhas e ${kommoAtual.total.perdidas} perdidas.`
+    : '';
   const frase = [
     fraseDasRedes(painel),
+    fraseDoKommo,
     fraseDoResumo({
       periodo: `De ${rotuloDoIntervalo(intervaloDaTela)}`,
       total: metrics?.total ?? 0, resolvidos: metrics?.resolved ?? 0, sla: metrics ? sla : null, metaSla: meta('sla_cumprido'),
@@ -202,11 +230,8 @@ export default function MKTRelatorios() {
 
   // Só com a semana dos artistas encerrada: com ela em andamento, acusaria todos (revisão de 2026-11-03).
   const semEntrega = doRecorte.semana.ate < hoje ? noRecorte.linhas.filter((l) => (recorte.semana ? l.semana : l.mes).pecas === 0).length : 0;
-  // A última semana fechada do período: a que a reunião de segunda olha.
-  const semanaFechada = somarDias(domingoDaSemana(intervaloDaTela.ate), domingoDaSemana(intervaloDaTela.ate) > intervaloDaTela.ate ? -7 : 0);
   const atencao = [
     metaParada(ligacaoMeta.data) && { texto: 'A ligação com a Meta parou', cor: 'perigo', para: '/configuracoes/integracoes' },
-    podeLancar && faltamLeads(semanal.trafego, semanaFechada) && { texto: `Leads da semana até ${ddmm(new Date(`${semanaFechada}T12:00:00`))} não lançados`, cor: 'aviso', para: '#lancamentos' },
     violados.length > 0 && { texto: `${violados.length} ${violados.length === 1 ? 'chamado fora do prazo' : 'chamados fora do prazo'}`, cor: 'perigo', para: '/mkt/chamados' },
     outros.atrasados > 0 && { texto: `${outros.atrasados} ${outros.atrasados === 1 ? 'pedido de arte passou do prazo' : 'pedidos de arte passaram do prazo'}`, cor: 'aviso', para: '/mkt/pedidos-de-arte' },
     outros.abaixoDoMinimo.length > 0 && { texto: `${outros.abaixoDoMinimo.length} ${outros.abaixoDoMinimo.length === 1 ? 'produto abaixo do mínimo' : 'produtos abaixo do mínimo'}`, cor: 'aviso', para: '/mkt/estoque' },
@@ -223,7 +248,8 @@ export default function MKTRelatorios() {
   }, [pedeExportar, perfil.isLoading, podeExportar, setPedeExportar]);
 
   const rotuloDoPeriodo = PERIODOS_DA_REUNIAO.find((p) => p.value === periodo)?.label;
-  const subtitulo = `${rotuloDoPeriodo ? `${rotuloDoPeriodo}: ` : ''}${rotuloDoIntervalo(intervaloDaTela)} · comparado com ${ddmm(anteriorDaTela.startDate)} a ${ddmm(anteriorDaTela.endDate)}`;
+  // Uma forma só de escrever data, como o Google Analytics (proposta v4): "26 out – 1 nov 2026 · comparado com 19 – 25 out".
+  const subtitulo = `${rotuloDoPeriodo ? `${rotuloDoPeriodo}: ` : ''}${periodoCurto(intervaloDaTela)} · comparado com ${periodoCurto(anteriorISO, false)}`;
   const barras = barrasDaTendencia(trends || []);
 
   const priorityData = Object.entries(metrics?.byPriority || {}).map(([k, v]) => ({ name: PRIORITY_LABEL[k] || k, value: v, fill: COR_DA_PRIORIDADE[k] || COR.eixo }));
@@ -333,10 +359,15 @@ export default function MKTRelatorios() {
           n(painel.trafego.atual.visitas), r$(painel.trafego.atual.custoPorVisita)],
       ],
       larguras: [0.18, 0.3, 0.16, 0.16, 0.2] },
-    { secao: 'social', titulo: 'LEADS POR FUNIL (KOMMO)', cabecalho: ['Funil', 'No período', 'Anterior'],
-      linhas: ([['Salão', 'salao'], ['Distribuidor', 'distribuidor'], ['Consumidor final', 'consumidor'], ['Sem triagem (Entrada)', 'semTriagem']] as const)
-        .map(([rotulo, k]) => [rotulo, n(painel.trafego.atual.leads[k]), n(painel.trafego.anterior.leads[k])]),
-      larguras: [0.5, 0.25, 0.25] },
+    { secao: 'social', titulo: 'LEADS E VENDAS POR SEGMENTO (KOMMO)', cabecalho: ['Segmento', 'Chegaram', 'Ganhas', 'Perdidas', 'Taxa de ganho', 'Valor ganho'],
+      linhas: [...kommoAtual.segmentos, { ...kommoAtual.total, k: 'total', nome: 'Total' }].map((s) => {
+        const b = s.k === 'total' ? kommoAntes.total : kommoAntes.segmentos.find((x) => x.k === s.k)!;
+        return [s.nome, comAnterior(`${s.chegaram}`, `${b.chegaram}`), comAnterior(`${s.ganhas}`, `${b.ganhas}`), comAnterior(`${s.perdidas}`, `${b.perdidas}`),
+          s.taxa === null ? '—' : pct(s.taxa), s.valor ? formatBRL(s.valor) : '—'];
+      }),
+      larguras: [0.26, 0.16, 0.14, 0.14, 0.14, 0.16] },
+    ...(kommoAtual.motivos.length ? [{ secao: 'social' as const, titulo: 'POR QUE PERDEMOS', cabecalho: ['Motivo', 'Vendas perdidas'],
+      linhas: kommoAtual.motivos.map((m) => [m.motivo, `${m.quantos}`]), larguras: [0.75, 0.25] }] : []),
     { secao: 'artists', titulo: `ARTISTAS · ${rotuloDoRecorte(recorte, hoje).titulo.toUpperCase()}`,
       cabecalho: [...(recorte.semana ? ['Artista', 'Na semana (St/Re/Fe)'] : ['Artista']), 'No mês (St/Re/Fe)', 'Bonificação', 'Anterior', 'Situação'],
       linhas: [...noRecorte.linhas.map((l) => [
@@ -415,41 +446,59 @@ export default function MKTRelatorios() {
 
           <nav aria-label="Seções da Visão Geral"
             className="sticky top-0 z-20 -mx-1 flex flex-wrap gap-1.5 bg-background/95 px-1 py-2 backdrop-blur">
-            {SECOES_DA_VISAO.filter((s) => (s.id !== 'mkt-artistas' || temArtistas) && (s.id !== 'mkt-publico' || publico.length > 0)).map((s) => (
+            {SECOES_DA_VISAO.filter((s) => s.id !== 'mkt-artistas' || temArtistas).map((s) => (
               <button key={s.id} type="button" className="rounded-full border px-3 py-1 text-xs font-medium hover:bg-muted"
-                onClick={() => document.getElementById(s.id)?.scrollIntoView({ behavior: 'smooth' })}>{s.rotulo}</button>
+                onClick={() => {
+                  const alvo = document.getElementById(s.id);
+                  // Bloco fechado (artistas, chamados) abre ao ir até ele.
+                  if (alvo instanceof HTMLDetailsElement) alvo.open = true;
+                  alvo?.scrollIntoView({ behavior: 'smooth' });
+                }}>{s.rotulo}</button>
             ))}
           </nav>
 
-          <p id="mkt-resumo" className="scroll-mt-14 rounded-lg bg-muted/60 px-4 py-3 text-[15px] text-foreground" aria-label="Resumo do período">{frase}</p>
+          {/* Proposta v4 (2026-11-07): a conta escolhida vale para a tela toda; os destaques abrem (posição serial). */}
+          <div id="mkt-resumo" className="scroll-mt-14 space-y-3">
+            <EscolhaDeConta contas={painel.contas.map((c) => c.atual.conta)} valor={conta} onEscolher={setConta} />
+            <Destaques itens={destaques} />
+            {usarMeses && <p className="text-xs text-muted-foreground">Redes e tráfego do mês inteiro, direto da Meta.</p>}
+          </div>
+          <div id="mkt-funil" className="scroll-mt-14"><DoAnuncioAVenda painel={painel} conta={conta} kommo={kommoAtual} kommoAntes={kommoAntes} /></div>
+          <div id="mkt-leads" className="scroll-mt-14"><LeadsEVendas atual={kommoAtual} anterior={kommoAntes} semanas={leadsDasSemanas} /></div>
+          <div id="mkt-trafego" className="scroll-mt-14"><TrafegoPorConta painel={painel} conta={conta} grafico={grafico} /></div>
+          <div id="mkt-redes" className="scroll-mt-14"><RedesSociais painel={painel} grafico={grafico} conta={conta} publico={publico} /></div>
 
-          {/* Proposta v3 (2026-11-03): o que o diretor pergunta primeiro sobe — redes, tráfego e leads; chamados e a
-              operação descem (posição serial). */}
-          <NumerosDoTopo painel={painel} />
-          <div id="mkt-redes" className="scroll-mt-14"><RedesSociais painel={painel} grafico={grafico} /></div>
-          <div id="mkt-publico" className="scroll-mt-14"><QuemSegue resumos={publico} /></div>
-          <div id="mkt-trafego" className="scroll-mt-14"><TrafegoPorConta painel={painel} /></div>
-          <div id="mkt-leads" className="scroll-mt-14"><LeadsEInvestimento painel={painel} grafico={grafico} /></div>
+          {temArtistas && (
+            <details id="mkt-artistas" className="scroll-mt-14 rounded-lg border border-border">
+              <summary className="cursor-pointer px-4 py-3 text-base font-semibold">
+                Artistas · semana do mês dos artistas: {rotulo.titulo}
+              </summary>
+              <div className="px-4 pb-4">{artistasDoPeriodo}</div>
+            </details>
+          )}
 
-          <div id="mkt-artistas" className="scroll-mt-14">{artistasDoPeriodo}</div>
-
-          <div id="mkt-chamados" className="scroll-mt-14 space-y-2">
-            <h2 className="text-base font-semibold flex items-center gap-2"><Inbox className="h-4 w-4 text-primary" aria-hidden="true" />Chamados do Marketing</h2>
-            {cartoesDosChamados}
-            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-              <span>A cor do número segue a meta: verde na meta, amarelo perto, vermelho fora. A linha embaixo mostra {rotuloDaSerie}.{!anterior && ' Sem chamados no período anterior para comparar.'}</span>
-              {podeMudarMetas && (
-                <Button asChild size="sm" variant="ghost" className="h-7 text-xs">
-                  <Link to={tenantPath('/mkt/configuracoes?aba=metas')}><Target className="h-3.5 w-3.5 mr-1" />Metas</Link>
-                </Button>
-              )}
+          <details id="mkt-chamados" className="scroll-mt-14 rounded-lg border border-border">
+            <summary className="cursor-pointer px-4 py-3 text-base font-semibold">
+              Chamados do Marketing · {metrics?.total ?? 0} no período, SLA {sla}%
+              {farolSla === 'fora' && <span className="ml-2 rounded-full px-2 py-0.5 text-xs badge-danger">abaixo da meta</span>}
+            </summary>
+            <div className="px-4 pb-4 space-y-4">
+              {cartoesDosChamados}
+              <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                <span>A cor do número segue a meta: verde na meta, amarelo perto, vermelho fora. A linha embaixo mostra {rotuloDaSerie}.{!anterior && ' Sem chamados no período anterior para comparar.'}</span>
+                {podeMudarMetas && (
+                  <Button asChild size="sm" variant="ghost" className="h-7 text-xs">
+                    <Link to={tenantPath('/mkt/configuracoes?aba=metas')}><Target className="h-3.5 w-3.5 mr-1" />Metas</Link>
+                  </Button>
+                )}
+              </div>
+              <LinhaAgendaEAjuda metrics={metrics} modulo="marketing" filter={filter} />
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                {categorias}
+                {abertosResolvidos}
+              </div>
             </div>
-          </div>
-          <LinhaAgendaEAjuda metrics={metrics} modulo="marketing" filter={filter} />
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            {categorias}
-            {abertosResolvidos}
-          </div>
+          </details>
 
           {/* A operação abre ao clicar; o que pede ação já está nos avisos do topo. */}
           <details className="group rounded-lg border border-border">
@@ -504,10 +553,10 @@ export default function MKTRelatorios() {
       </Tabs>
 
       {apresentando && (
-        <ModoApresentacao titulo="Indicadores do Marketing" subtitulo={rotuloDoIntervalo(intervaloDaTela)} onSair={() => setApresentando(false)} telas={[
-          { titulo: 'Resumo', conteudo: (
+        <ModoApresentacao titulo="Indicadores do Marketing" subtitulo={`${periodoCurto(intervaloDaTela)} · comparado com ${periodoCurto(anteriorISO, false)}`} onSair={() => setApresentando(false)} telas={[
+          { titulo: 'Destaques', conteudo: (
             <div className="space-y-6">
-              <p className="text-2xl leading-relaxed text-foreground">{frase}</p>
+              <Destaques itens={destaques} grande />
               {atencao.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {atencao.map((a) => (
@@ -515,14 +564,29 @@ export default function MKTRelatorios() {
                   ))}
                 </div>
               )}
-              <NumerosDoTopo painel={painel} />
             </div>
           ) },
-          // Os lançados à mão entram (dono, 2026-11-03: "em apresentação não aparece os indicadores lançados manualmente").
-          { titulo: 'Redes sociais', conteudo: <RedesSociais painel={painel} grafico={grafico} /> },
-          ...(publico.length ? [{ titulo: 'Quem segue', conteudo: <QuemSegue resumos={publico} /> }] : []),
-          { titulo: 'Tráfego pago por conta', conteudo: <TrafegoPorConta painel={painel} /> },
-          { titulo: 'Leads e investimento', conteudo: <LeadsEInvestimento painel={painel} grafico={grafico} /> },
+          { titulo: 'Do anúncio à venda', conteudo: (
+            <NumerosGrandes numeros={[
+              { rotulo: 'Pessoas alcançadas', valor: n(painel.trafego.atual.alcance), nota: <Compara atual={painel.trafego.atual.alcance} anterior={painel.trafego.anterior.alcance} porcento /> },
+              { rotulo: 'Visitas ao perfil', valor: n(painel.trafego.atual.visitas), nota: <Compara atual={painel.trafego.atual.visitas} anterior={painel.trafego.anterior.visitas} porcento /> },
+              { rotulo: 'Leads que chegaram', valor: n(kommoAtual.total.chegaram), nota: <Compara atual={kommoAtual.total.chegaram} anterior={kommoAntes.total.chegaram} /> },
+              { rotulo: 'Vendas ganhas', valor: n(kommoAtual.total.ganhas), tom: 'bom', nota: <Compara atual={kommoAtual.total.ganhas} anterior={kommoAntes.total.ganhas} /> },
+            ]} frase={`O tráfego pago investiu ${r$(painel.trafego.atual.investimento)}; cada visita ao perfil custou ${r$(painel.trafego.atual.custoPorVisita)}.`} />
+          ) },
+          { titulo: 'Leads e vendas', conteudo: (
+            <div className="space-y-6">
+              <NumerosGrandes numeros={[
+                { rotulo: 'Leads que chegaram', valor: n(kommoAtual.total.chegaram), nota: <Compara atual={kommoAtual.total.chegaram} anterior={kommoAntes.total.chegaram} /> },
+                { rotulo: 'Vendas ganhas', valor: n(kommoAtual.total.ganhas), tom: 'bom', nota: <Compara atual={kommoAtual.total.ganhas} anterior={kommoAntes.total.ganhas} /> },
+                { rotulo: 'Vendas perdidas', valor: n(kommoAtual.total.perdidas), tom: 'ruim', nota: <Compara atual={kommoAtual.total.perdidas} anterior={kommoAntes.total.perdidas} melhor="menos" /> },
+                { rotulo: 'Segmento que mais trouxe', valor: `${maiorSegmento.chegaram}`, nota: maiorSegmento.nome },
+              ]} />
+              <LeadsEVendas atual={kommoAtual} anterior={kommoAntes} semanas={[]} />
+            </div>
+          ) },
+          { titulo: 'Tráfego pago por conta', conteudo: <TrafegoPorConta painel={painel} conta={TODAS} grafico={grafico} /> },
+          { titulo: 'Redes sociais por conta', conteudo: <RedesSociais painel={painel} grafico={grafico} conta={TODAS} publico={[]} /> },
           ...(temArtistas ? [{ titulo: 'Artistas', conteudo: artistasDoPeriodo }] : []),
           { titulo: 'Chamados', conteudo: <div className="[&_.faixa-de-numeros]:lg:grid-cols-3">{cartoesDosChamados}</div> },
           { titulo: 'Pedidos de arte, estoque e Benefício de sexta', conteudo: <OutrosIndicadoresDoMarketing r={outros} /> },
