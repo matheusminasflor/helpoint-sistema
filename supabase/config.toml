@@ -81,6 +81,8 @@ verify_enabled = true
     verify_jwt = false
   [functions.automation-worker]
     verify_jwt = true
+  [functions.google-reunioes]
+    verify_jwt = true
   [functions.ai-ler-anexo]
     verify_jwt = false
   [functions.ai-rascunho-tutorial]
