@@ -179,10 +179,9 @@ serve(async (req) => {
         && a.quando >= new Date(inicio).getTime() - margem && a.quando <= new Date(fim).getTime() + margem) : [];
       const documentos = doEncontro.filter((a) => a.mimeType === 'application/vnd.google-apps.document' && /gemini|anota/i.test(a.tipo));
       const gravacao = doEncontro.find((a) => a.mimeType.startsWith('video/'));
-      const planilha = doEncontro.filter((a) => a.mimeType === 'application/vnd.google-apps.spreadsheet' && /particip|presen|attendance/i.test(a.tipo))
-        .sort((a, b) => b.quando - a.quando)[0];
+      const planilhas = doEncontro.filter((a) => a.mimeType === 'application/vnd.google-apps.spreadsheet' && /particip|presen|attendance/i.test(a.tipo));
       // A data mais nova dos arquivos: documento ou lista que mudar faz o robô reler o encontro.
-      const documentoEm = [...documentos, ...(planilha ? [planilha] : [])].map((a) => a.modifiedTime).sort().at(-1) ?? null;
+      const documentoEm = [...documentos, ...planilhas].map((a) => a.modifiedTime).sort().at(-1) ?? null;
 
       const { data: guardada, error: erroGuardada } = await db.from('reunioes').select('id, documento_em').eq('tenant_id', tenant).eq('google_evento', e.id).maybeSingle();
       if (erroGuardada) throw erroGuardada;
@@ -257,7 +256,9 @@ serve(async (req) => {
       const textos = await Promise.all(documentos.map(async (d) => ({ arquivo: d, texto: await textoDoArquivo(token, d.id, 'text/plain') })));
       const documento = textos.sort((a, b) => b.texto.length - a.texto.length)[0];
       const texto = documento ? separar(documento.texto) : null;
-      const lista = planilha ? await textoDoArquivo(token, planilha.id, 'text/csv') : null;
+      // A sala aberta antes da hora também gera lista: vale a que tem mais gente.
+      const listas = await Promise.all(planilhas.map((p) => textoDoArquivo(token, p.id, 'text/csv')));
+      const lista = listas.sort((a, b) => b.split('\n').length - a.split('\n').length)[0] ?? null;
 
       const { data: reuniao, error: erroReuniao } = await db.from('reunioes').upsert({
         tenant_id: tenant, serie_id: serieId, google_evento: e.id, titulo, inicio, fim,
