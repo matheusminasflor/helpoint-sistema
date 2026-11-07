@@ -170,6 +170,12 @@ serve(async (req) => {
           continue;
         }
         const user = (ligacao?.user_id as string | null) ?? porNome.get(normaliza(nomeGoogle))?.id ?? pessoaPeloNome(nomeGoogle, ativos)?.id ?? null;
+        // O nome ligado sozinho sai da lista do administrador.
+        if (user && ligacao && !ligacao.user_id) {
+          const { error } = await db.from('reuniao_nomes').update({ user_id: user }).eq('tenant_id', tenant).eq('nome_google', nomeGoogle);
+          if (error) throw error;
+          ligados.set(nomeGoogle, { ...ligacao, user_id: user });
+        }
         const k = chave(user, nomeGoogle);
         const atual = linhas.get(k);
         linhas.set(k, { nome: atual?.nome ?? nomeGoogle, user_id: user, convidado: atual?.convidado ?? false, entrou: true, ...tempo });

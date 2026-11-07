@@ -83,7 +83,7 @@ function PresencaDoEncontro({ reuniao }: { reuniao: Reuniao }) {
       </div>
     );
   }
-  const situacao = (p: PresencaNaReuniao) => (!p.entrou ? 'Convidada, não entrou' : p.convidado ? 'Convidada' : 'Entrou sem convite');
+  const situacao = (p: PresencaNaReuniao) => (!p.entrou ? 'Com convite, não entrou' : p.convidado ? 'Com convite' : 'Entrou sem convite');
   const linhas: (string | number)[][] = [
     ['Pessoa', 'Entrou', 'Saiu', 'Minutos', 'Convite'],
     ...pessoas.map((p) => [p.nome, hora(p.entrada), hora(p.saida), minutosEntre(p.entrada, p.saida) ?? '', situacao(p)]),

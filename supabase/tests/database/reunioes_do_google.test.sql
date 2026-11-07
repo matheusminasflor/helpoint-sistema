@@ -7,10 +7,11 @@
 --   9    só o administrador liga nomes
 --  10-11 ligar o nome dá acesso à reunião e ao canal
 --  12    as funções não abrem para anon
+--  13    ligar o nome junta o convite e quem entrou em uma linha só
 begin;
 \ir _helpers.psql
 
-select plan(12);
+select plan(13);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-reuniao', 'Reuniao', false) as a;
@@ -41,6 +42,9 @@ with canal as (
 ), z as (
   insert into public.reuniao_presencas (tenant_id, reuniao_id, nome, entrou)
   select tenant_id, id, 'Dora Google', true from r returning reuniao_id
+), y as (
+  insert into public.reuniao_presencas (tenant_id, reuniao_id, nome, user_id, convidado)
+  select tenant_id, id, 'Dora Helpoint', (select dora from u), true from r returning reuniao_id
 )
 select r.id as reuniao, s.canal_id as canal from r, s;
 grant select on c to authenticated;
@@ -51,7 +55,7 @@ select (select a from f), (select canal from c), x from unnest(array[(select ana
 select tests.authenticate_as('ana@reuniao.test');
 select is((select count(*)::int from public.reunioes), 1, 'quem é do canal vê a pauta');
 select is((select count(*)::int from public.reuniao_transcricoes), 1, 'quem participou vê a transcrição');
-select is((select count(*)::int from public.reuniao_presencas), 2, 'quem participou vê a presença');
+select is((select count(*)::int from public.reuniao_presencas), 3, 'quem participou vê a presença');
 select tests.clear_authentication();
 
 select tests.authenticate_as('bia@reuniao.test');
@@ -81,6 +85,7 @@ select tests.grant_role((select dora from u), 'admin');
 select tests.authenticate_as('dora@reuniao.test');
 select public.reuniao_ligar_nome('Dora Google', (select dora from u));
 select is((select user_id from public.reuniao_presencas where nome = 'Dora Google'), (select dora from u), 'ligar o nome leva às reuniões guardadas');
+select is((select count(*)::int from public.reuniao_presencas where user_id = (select dora from u) and convidado and entrou), 1, 'o convite e a entrada viram uma linha só');
 select ok(public.chat_sou_membro((select canal from c)), 'ligar o nome coloca a pessoa no canal');
 select tests.clear_authentication();
 
