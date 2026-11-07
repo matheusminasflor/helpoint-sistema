@@ -39,6 +39,20 @@ Compare os encontros em ordem e separe os assuntos:
 Cada assunto leva as datas exatas dos encontros, no formato AAAA-MM-DD.
 Escreva no máximo 8 assuntos por grupo e frases curtas. Responda chamando a ferramenta preencher_leitura.`;
 
+interface Assunto { assunto: string; datas: string[] }
+const MAX_POR_GRUPO = 8;
+
+/** A regra é do sistema, não da IA: só volta à pauta o que aparece em duas datas ou mais, e nenhum grupo fica sem vir. */
+function conferida(l: { resumo?: string; avancou?: Assunto[]; voltou?: Assunto[]; sem_definicao?: Assunto[] }) {
+  const voltou = l.voltou ?? [];
+  return {
+    resumo: l.resumo ?? '',
+    avancou: (l.avancou ?? []).slice(0, MAX_POR_GRUPO),
+    voltou: voltou.filter((a) => new Set(a.datas).size >= 2).slice(0, MAX_POR_GRUPO),
+    sem_definicao: [...(l.sem_definicao ?? []), ...voltou.filter((a) => new Set(a.datas).size < 2)].slice(0, MAX_POR_GRUPO),
+  };
+}
+
 const ASSUNTOS = {
   type: "array",
   items: {
@@ -88,12 +102,12 @@ serve(async (req) => {
         },
       }],
       forcarFerramenta: "preencher_leitura",
-      maxTokens: 1500,
+      maxTokens: 4000,
       temperature: 0.1,
     });
     const bruto = resposta.tool_calls?.[0]?.function.arguments;
     if (!bruto) throw new Error("A IA não devolveu a leitura.");
-    const conteudo = JSON.parse(bruto);
+    const conteudo = conferida(JSON.parse(bruto));
 
     const servico = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     const { error: erroGrava } = await servico.from("reuniao_leituras").upsert({

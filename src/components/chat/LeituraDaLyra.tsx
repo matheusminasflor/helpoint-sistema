@@ -54,9 +54,9 @@ export function LeituraDaLyra({ serieId, encontros, onAbrir }: { serieId: string
             {GRUPOS.map(([chave, titulo, cor]) => (
               <div key={chave} className="space-y-2 min-w-0">
                 <Badge variant="outline" className={cor}>{titulo}</Badge>
-                {leitura.conteudo[chave].length === 0
+                {(leitura.conteudo[chave] ?? []).length === 0
                   ? <p className="text-[13px] text-muted-foreground">Nenhum assunto.</p>
-                  : <ul className="space-y-2">{leitura.conteudo[chave].map(linha)}</ul>}
+                  : <ul className="space-y-2">{(leitura.conteudo[chave] ?? []).map(linha)}</ul>}
               </div>
             ))}
           </div>
