@@ -23,7 +23,7 @@ import { cn } from '@/lib/utils';
 // A Agenda única (etapa 4, 2026-10-25): os eventos de sempre e, junto, o que vinha só no Início — os meus chamados
 // agendados e os prazos — mais as férias de quem é do meu setor. Esses três não se editam aqui: o chamado abre no
 // clique, e as férias são do RH.
-const rotuloExtra: Record<ItemDaAgenda['tipo'], string> = { agendado: 'Chamado agendado', prazo: 'Prazo', ferias: 'Férias' };
+const rotuloExtra: Record<ItemDaAgenda['tipo'], string> = { agendado: 'Chamado agendado', prazo: 'Prazo', ferias: 'Férias', reuniao: 'Reunião do Google' };
 
 // `meeting` nasce das reuniões marcadas no negócio (CRM-3b). Sem entrada aqui,
 // a etiqueta saía literalmente "MEETING", em inglês. A cor fica na semântica
@@ -87,10 +87,10 @@ export default function Agenda() {
   const tenantPath = useTenantPath();
   const de = toLocalISODate(range.from);
   const ate = toLocalISODate(range.to);
-  const { chamados, ferias } = useAgendaUnica(de, ate);
+  const { chamados, ferias, reunioes } = useAgendaUnica(de, ate);
   const extrasPorDia = useMemo(
-    () => itensDaAgenda(chamados.data ?? [], ferias.data ?? [], de, ate, user?.id),
-    [chamados.data, ferias.data, de, ate, user?.id],
+    () => itensDaAgenda(chamados.data ?? [], ferias.data ?? [], de, ate, user?.id, reunioes.data ?? []),
+    [chamados.data, ferias.data, reunioes.data, de, ate, user?.id],
   );
   const extrasDoMes = useMemo(() => [...extrasPorDia.values()].flat(), [extrasPorDia]);
   const [editando, setEditando] = useState<EventoEditavel | null>(null);
@@ -132,7 +132,7 @@ export default function Agenda() {
     const todos = (extrasPorDia.get(toLocalISODate(selectedDate)) ?? [])
       .slice().sort((a, b) => (a.hora ?? '').localeCompare(b.hora ?? ''));
     if (filterType === 'all') return todos;
-    if (filterType === 'chamados') return todos.filter((i) => i.tipo !== 'ferias');
+    if (filterType === 'chamados') return todos.filter((i) => i.tipo === 'agendado' || i.tipo === 'prazo');
     if (filterType === 'ferias') return todos.filter((i) => i.tipo === 'ferias');
     return [];
   }, [extrasPorDia, selectedDate, filterType]);
@@ -172,10 +172,10 @@ export default function Agenda() {
     }
     for (const [dia, itens] of extrasPorDia) {
       for (const item of itens) {
-        if (filterType === 'chamados' && item.tipo === 'ferias') continue;
+        if (filterType === 'chamados' && (item.tipo === 'ferias' || item.tipo === 'reuniao')) continue;
         if (filterType === 'ferias' && item.tipo !== 'ferias') continue;
         if (filterType !== 'all' && filterType !== 'chamados' && filterType !== 'ferias') continue;
-        por(dia).push({ titulo: item.titulo, classe: item.tipo === 'ferias' ? FAIXA_DO_TIPO.ferias : FAIXA_DO_TIPO.prazo });
+        por(dia).push({ titulo: item.titulo, classe: item.tipo === 'ferias' ? FAIXA_DO_TIPO.ferias : item.tipo === 'reuniao' ? FAIXA_DO_TIPO.meeting : FAIXA_DO_TIPO.prazo });
       }
     }
     return mapa;
@@ -281,7 +281,7 @@ export default function Agenda() {
                 const corpo = (
                   <>
                     <span className="text-[13px] font-bold text-muted-foreground w-12 shrink-0 pt-0.5 tabular-nums">{item.hora ?? 'o dia'}</span>
-                    <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${item.tipo === 'prazo' ? 'bg-status-info' : 'bg-muted-foreground'}`} />
+                    <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${item.tipo === 'reuniao' ? 'bg-status-success' : item.tipo === 'prazo' ? 'bg-status-info' : 'bg-muted-foreground'}`} />
                     <div className="flex-1 min-w-0">
                       <span className="block text-[14px] font-bold text-foreground">{item.titulo}</span>
                       <span className="block text-[12px] font-semibold text-muted-foreground">{rotuloExtra[item.tipo]}</span>
@@ -289,6 +289,14 @@ export default function Agenda() {
                     </div>
                   </>
                 );
+                if (item.tipo === 'reuniao') {
+                  return (
+                    <div key={item.chave} className="flex flex-wrap items-start gap-3 px-5 py-3">
+                      <Link to={tenantPath(`/chat?aba=reunioes&reuniao=${item.serieId}`)} className="flex flex-1 min-w-[200px] items-start gap-3 hover:underline">{corpo}</Link>
+                      {item.linkMeet && <Button asChild size="sm" variant="outline"><a href={item.linkMeet} target="_blank" rel="noreferrer">Entrar no Meet</a></Button>}
+                    </div>
+                  );
+                }
                 return item.chamadoId ? (
                   <Link key={item.chave} to={tenantPath(`/helpdesk/${item.chamadoId}`)}
                     className="flex items-start gap-3 px-5 py-3 hover:bg-muted/40 transition-colors">{corpo}</Link>

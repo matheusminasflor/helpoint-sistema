@@ -83,6 +83,8 @@ verify_enabled = true
     verify_jwt = true
   [functions.google-reunioes]
     verify_jwt = true
+  [functions.reuniao-leitura]
+    verify_jwt = false
   [functions.ai-ler-anexo]
     verify_jwt = false
   [functions.ai-rascunho-tutorial]

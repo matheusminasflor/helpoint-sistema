@@ -1,8 +1,9 @@
 // O canal de uma reunião no Chat (dono, 2026-11-07): as pautas de cada encontro, o texto do Google como veio, a
 // transcrição, a presença e a conversa. Nada aqui cria chamado, tarefa ou projeto.
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, Download, ExternalLink, Search, UserRound } from 'lucide-react';
+import { ArrowLeft, Download, ExternalLink, Search, UserRound, Video } from 'lucide-react';
 import { ConversaCanal } from '@/components/chat/ConversaCanal';
+import { LeituraDaLyra } from '@/components/chat/LeituraDaLyra';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -141,7 +142,7 @@ function Encontro({ reuniao }: { reuniao: Reuniao }) {
   );
 }
 
-function DoInicioAoFim({ reunioes }: { reunioes: Reuniao[] }) {
+function DoInicioAoFim({ serieId, reunioes, onAbrir }: { serieId: string; reunioes: Reuniao[]; onAbrir: (dia: string) => void }) {
   const comPauta = reunioes.filter((r) => r.pauta);
   const media = mediaDeMinutos(reunioes);
   const numeros: [string, string][] = [
@@ -156,6 +157,7 @@ function DoInicioAoFim({ reunioes }: { reunioes: Reuniao[] }) {
           <div key={rotulo} className="rounded-md border border-border p-2"><dt className="text-[13px] text-muted-foreground">{rotulo}</dt><dd className="text-[20px] font-semibold tabular-nums">{valor}</dd></div>
         ))}
       </dl>
+      <LeituraDaLyra serieId={serieId} encontros={reunioes} onAbrir={onAbrir} />
       <p className="text-[13px] text-muted-foreground">Texto do Google, do primeiro encontro ao mais recente.</p>
       {[...comPauta].reverse().map((r) => {
         const resumo = secaoDaPauta(r.pauta!, 'Resumo');
@@ -212,7 +214,17 @@ function NomesDoGoogle() {
 }
 
 export function CanalDeReuniao({ serie, canal, onVoltar }: { serie: SerieDeReuniao; canal: ChatCanalRow | null; onVoltar: () => void }) {
-  const { data: reunioes = [], isLoading, isError, refetch } = useReunioesDaSerie(serie.id);
+  const { data: todas = [], isLoading, isError, refetch } = useReunioesDaSerie(serie.id);
+  const agora = new Date().toISOString();
+  // A lista vem da mais recente para a mais antiga: a próxima é a última das que ainda não aconteceram.
+  const reunioes = todas.filter((r) => r.inicio <= agora);
+  const proxima = todas.filter((r) => r.inicio > agora).at(-1) ?? null;
+  const [visao, setVisao] = useState('pautas');
+  const abrirNoDia = (dia: string) => {
+    const achou = reunioes.find((r) => toLocalISODate(new Date(r.inicio)) === dia);
+    if (achou) setEscolhida(achou.id);
+    setVisao('pautas');
+  };
   const entrar = useEntrarNoCanal();
   const [escolhida, setEscolhida] = useState<string | null>(null);
   const atual = reunioes.find((r) => r.id === escolhida) ?? reunioes[0] ?? null;
@@ -229,11 +241,17 @@ export function CanalDeReuniao({ serie, canal, onVoltar }: { serie: SerieDeReuni
           {serie.avulsa ? <p className="text-[13px] text-muted-foreground">Reunião avulsa</p> : <p className="text-[13px] text-muted-foreground">Reunião repetida · {reunioes.length} {reunioes.length === 1 ? 'encontro' : 'encontros'}</p>}
         </div>
       </div>
+      {proxima && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border px-3 py-2 text-[14px]">
+          <span>Próxima: {dia(proxima.inicio)}, {hora(proxima.inicio)}</span>
+          {proxima.link_meet && <Button asChild size="sm" variant="outline"><a href={proxima.link_meet} target="_blank" rel="noreferrer"><Video className="w-4 h-4 mr-1.5" aria-hidden="true" />Entrar no Meet</a></Button>}
+        </div>
+      )}
       <NomesDoGoogle />
       {isError ? <ErroDeCarga mensagem="Não consegui ler as reuniões." onTentar={() => void refetch()} />
         : isLoading ? <Skeleton className="h-64 w-full" />
           : (
-            <Tabs defaultValue="pautas">
+            <Tabs value={visao} onValueChange={setVisao}>
               <TabsList>
                 <TabsTrigger value="pautas">Pautas</TabsTrigger>
                 <TabsTrigger value="fio">Do início ao fim</TabsTrigger>
@@ -251,7 +269,7 @@ export function CanalDeReuniao({ serie, canal, onVoltar }: { serie: SerieDeReuni
                 )}
                 {atual ? <Encontro key={atual.id} reuniao={atual} /> : <p className="text-[14px] text-muted-foreground">Nenhuma reunião guardada ainda.</p>}
               </TabsContent>
-              <TabsContent value="fio" className="mt-3"><DoInicioAoFim reunioes={reunioes} /></TabsContent>
+              <TabsContent value="fio" className="mt-3"><DoInicioAoFim serieId={serie.id} reunioes={reunioes} onAbrir={abrirNoDia} /></TabsContent>
               {canal && (
                 <TabsContent value="conversa" className="mt-3">
                   <div className="h-[60dvh] flex flex-col border border-border rounded-md overflow-hidden"><ConversaCanal canal={{ ...canal, nome: serie.titulo }} souAdmin={false} /></div>

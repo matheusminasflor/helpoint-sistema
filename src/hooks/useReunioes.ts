@@ -3,18 +3,45 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { invokeEdge } from '@/lib/edge-function';
 import { mensagemDeErro, unwrap } from '@/lib/supabase-result';
 
 export interface SerieDeReuniao { id: string; titulo: string; avulsa: boolean; canal_id: string }
 
 export interface Reuniao {
   id: string; serie_id: string; titulo: string; inicio: string; fim: string | null; pauta: string | null;
-  link_documento: string | null; link_gravacao: string | null; lista_google: string | null;
+  link_documento: string | null; link_gravacao: string | null; lista_google: string | null; link_meet: string | null;
 }
 
 export interface PresencaNaReuniao {
   id: string; nome: string; user_id: string | null; convidado: boolean; entrou: boolean;
   entrada: string | null; saida: string | null;
+}
+
+export interface AssuntoDaLeitura { assunto: string; datas: string[] }
+export interface LeituraDaSerie {
+  ate_reuniao: string | null;
+  gerado_em: string;
+  conteudo: { resumo: string; avancou: AssuntoDaLeitura[]; voltou: AssuntoDaLeitura[]; sem_definicao: AssuntoDaLeitura[] };
+}
+
+export function useLeituraDaSerie(serieId: string) {
+  const { tenantId, user } = useAuth();
+  return useQuery({
+    queryKey: ['reuniao-leitura', tenantId, user?.id, serieId],
+    enabled: !!tenantId,
+    queryFn: async () => unwrap(await supabase.from('reuniao_leituras' as never)
+      .select('ate_reuniao, gerado_em, conteudo').eq('serie_id', serieId).maybeSingle()) as unknown as LeituraDaSerie | null,
+  });
+}
+
+export function useGerarLeitura(serieId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => invokeEdge('reuniao-leitura', { serie_id: serieId }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['reuniao-leitura'] }),
+    onError: (e: unknown) => toast.error(mensagemDeErro(e)),
+  });
 }
 
 export function useSeriesDeReuniao() {
@@ -34,7 +61,7 @@ export function useReunioesDaSerie(serieId: string | null) {
     queryKey: ['reunioes', tenantId, user?.id, serieId],
     enabled: !!tenantId && !!serieId,
     queryFn: async () => (unwrap(await supabase.from('reunioes' as never)
-      .select('id, serie_id, titulo, inicio, fim, pauta, link_documento, link_gravacao, lista_google')
+      .select('id, serie_id, titulo, inicio, fim, pauta, link_documento, link_gravacao, lista_google, link_meet')
       .eq('serie_id', serieId!).order('inicio', { ascending: false })) ?? []) as unknown as Reuniao[],
   });
 }

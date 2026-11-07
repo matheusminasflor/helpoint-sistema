@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { unwrap } from '@/lib/supabase-result';
 import { SLA_STOPPED_STATUSES } from '@/types/helpdesk';
-import type { ChamadoDaAgenda, FeriasDaAgenda } from '@/lib/agenda-unica';
+import type { ChamadoDaAgenda, FeriasDaAgenda, ReuniaoDaAgenda } from '@/lib/agenda-unica';
 
 /**
  * O que a Agenda única mostra além dos eventos (etapa 4, 2026-10-25): os MEUS chamados (sou o atendente) agendados ou
@@ -32,7 +32,13 @@ export function useAgendaUnica(de: string, ate: string) {
     queryFn: async (): Promise<FeriasDaAgenda[]> =>
       (unwrap(await supabase.rpc('ferias_do_meu_setor' as never, { p_de: de, p_ate: ate } as never)) ?? []) as FeriasDaAgenda[],
   });
-  return { chamados, ferias };
+  const reunioes = useQuery({
+    queryKey: ['agenda-unica', 'reunioes', tenantId, user?.id, de, ate],
+    enabled: !!user?.id && !!tenantId,
+    queryFn: async (): Promise<ReuniaoDaAgenda[]> =>
+      (unwrap(await supabase.rpc('minhas_reunioes' as never, { p_de: inicio, p_ate: fim } as never)) ?? []) as ReuniaoDaAgenda[],
+  });
+  return { chamados, ferias, reunioes };
 }
 
 /**

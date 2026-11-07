@@ -29,6 +29,9 @@ import { useTenantPath } from '@/hooks/useTenantPath';
  * não o arquivo — nada daqui comenta em chamado (§2 do plano). No celular,
  * lista OU conversa, nunca as duas (decisão 10).
  */
+const naoLidasPorCanalDe = (naoLidas: { channel_id: string; qtd: number }[], canal: string) =>
+  naoLidas.find((n) => n.channel_id === canal)?.qtd ?? 0;
+
 export default function Chat() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -51,6 +54,7 @@ export default function Chat() {
   const [abaNaUrl] = useQueryState<string>('aba', '');
   const serieAtiva = series.find((s) => s.id === serieNaUrl) ?? null;
   const emReunioes = abaNaUrl === 'reunioes' && series.length > 0;
+  const novasEmReunioes = series.reduce((soma, s) => soma + (naoLidasPorCanalDe(naoLidas, s.canal_id)), 0);
   const canalAtivo = canais.find((c) => c.id === id) ?? null;
   const mostrarLista = !isMobile || (!id && !serieAtiva);
   const mostrarConversa = !isMobile || !!id || !!serieAtiva;
@@ -92,7 +96,7 @@ export default function Chat() {
             {series.length > 0 && (
               <div className="flex gap-2 px-5 pb-2" role="group" aria-label="O que ver no Chat">
                 <Button size="sm" variant={emReunioes ? 'outline' : 'default'} aria-pressed={!emReunioes} onClick={() => navigate(tenantPath('/chat'))}>Conversas</Button>
-                <Button size="sm" variant={emReunioes ? 'default' : 'outline'} aria-pressed={emReunioes} onClick={() => navigate(tenantPath('/chat?aba=reunioes'))}>Reuniões</Button>
+                <Button size="sm" variant={emReunioes ? 'default' : 'outline'} aria-pressed={emReunioes} onClick={() => navigate(tenantPath('/chat?aba=reunioes'))}>Reuniões{novasEmReunioes > 0 ? ` (${novasEmReunioes})` : ''}</Button>
               </div>
             )}
             {emReunioes ? (

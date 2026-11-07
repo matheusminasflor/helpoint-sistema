@@ -47,6 +47,8 @@ const TELA_DO_REGISTRO: Record<string, (id: string) => string> = {
   jornal: () => '/jornal?aba=atualizacoes',
   // Turma cancelada (20270212560000).
   training_session: () => '/meus-treinamentos',
+  // Pauta nova e lembrete da reunião (20270212600000): o canal dela.
+  reuniao: (id) => `/chat?aba=reunioes&reuniao=${id}`,
   // Solicitação (etapa 4b): todo aviso dela abre o pedido.
   solicitacao: (id) => `/solicitacoes/${id}`,
   // Distribuidor pediu acesso ao portal (etapa 6): a lista da TI.

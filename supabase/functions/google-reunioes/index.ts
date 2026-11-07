@@ -97,7 +97,7 @@ serve(async (req) => {
   const recusa = requireServiceRole(req);
   if (recusa) return recusa;
 
-  const corpo = await req.json().catch(() => ({})) as { desde?: string; avisar?: boolean };
+  const corpo = await req.json().catch(() => ({})) as { desde?: string; ate?: string; avisar?: boolean; diagnostico?: boolean };
   const avisar = corpo.avisar !== false;
   const agora = new Date();
   const de = corpo.desde ?? new Date(agora.getTime() - 3 * 86400_000).toISOString();
@@ -118,7 +118,29 @@ serve(async (req) => {
   const ligados = new Map(nomes.map((n) => [n.nome_google as string, n]));
 
   const token = await tokenDoGoogle(CONTA);
-  const eventos = await todosOsEventos(token, de, agora.toISOString());
+  // As próximas duas semanas entram na Agenda; o histórico termina em hoje.
+  const horizonte = new Date(agora.getTime() + 14 * 86400_000).toISOString();
+
+  if (corpo.diagnostico) {
+    const lista = await todosOsEventos(token, de, corpo.ate ?? agora.toISOString());
+    const q = encodeURIComponent(`mimeType = 'application/vnd.google-apps.spreadsheet' and modifiedTime > '${new Date(de).toISOString()}'`);
+    const planilhas = await lerDoGoogle<{ files?: { name: string; createdTime: string; owners?: { emailAddress?: string }[] }[] }>(
+      token, `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(name,createdTime,owners(emailAddress))&pageSize=30&includeItemsFromAllDrives=true&supportsAllDrives=true`,
+    );
+    return json({
+      eventos: lista.map((e) => ({ titulo: e.summary, inicio: e.start?.dateTime, anexos: (e.attachments ?? []).map((a) => ({ titulo: a.title, tipo: a.mimeType })) })),
+      planilhas: planilhas.files ?? [],
+    });
+  }
+
+  const eventos = await todosOsEventos(token, de, horizonte);
+  const avisarPessoas = async (pessoas: string[], serie: string, title: string, message: string) => {
+    if (pessoas.length === 0) return;
+    const { error } = await db.from('notifications').insert(pessoas.map((user_id) => ({
+      tenant_id: tenant, user_id, type: 'reminder', reference_type: 'reuniao', reference_id: serie, title, message,
+    })));
+    if (error) throw error;
+  };
   const resultado = { eventos: eventos.length, guardadas: 0, sem_pauta: 0, sem_mudanca: 0, parou_no_tempo: false, falhas: [] as string[] };
 
   for (const e of eventos) {
@@ -128,14 +150,15 @@ serve(async (req) => {
     }
     const inicio = e.start?.dateTime;
     const fim = e.end?.dateTime;
-    // Só reunião com sala do Meet, que já terminou.
-    if (e.status === 'cancelled' || !e.hangoutLink || !inicio || !fim || new Date(fim) > agora) continue;
+    // Só reunião com sala do Meet. A que ainda não terminou entra sem pauta, para a Agenda e o lembrete.
+    if (e.status === 'cancelled' || !e.hangoutLink || !inicio || !fim) continue;
+    const terminou = new Date(fim) <= agora;
     const titulo = (e.summary ?? 'Reunião sem título').trim();
     try {
       const anexos = e.attachments ?? [];
-      const documento = anexos.find((a) => a.mimeType === 'application/vnd.google-apps.document' && /gemini|anota/i.test(a.title ?? ''));
+      const documento = terminou ? anexos.find((a) => a.mimeType === 'application/vnd.google-apps.document' && /gemini|anota/i.test(a.title ?? '')) : undefined;
       const gravacao = anexos.find((a) => a.mimeType?.startsWith('video/'));
-      const planilha = anexos.find((a) => a.mimeType === 'application/vnd.google-apps.spreadsheet' && /presen|attendance|participa/i.test(a.title ?? ''));
+      const planilha = terminou ? anexos.find((a) => a.mimeType === 'application/vnd.google-apps.spreadsheet' && /presen|attendance|participa/i.test(a.title ?? '')) : undefined;
       let documentoEm: string | null = null;
       if (documento?.fileId) {
         ({ modifiedTime: documentoEm } = await lerDoGoogle<{ modifiedTime: string }>(token, `https://www.googleapis.com/drive/v3/files/${documento.fileId}?fields=modifiedTime`));
@@ -153,7 +176,7 @@ serve(async (req) => {
 
       // A presença: quem foi convidado e quem entrou, ligados às pessoas do Helpoint.
       const sala = e.hangoutLink.split('/').pop()!;
-      const entraram = await quemEntrou(token, sala, inicio, fim);
+      const entraram = terminou ? await quemEntrou(token, sala, inicio, fim) : new Map<string, { entrada: string | null; saida: string | null }>();
       const linhas = new Map<string, { nome: string; user_id: string | null; convidado: boolean; entrou: boolean; entrada: string | null; saida: string | null }>();
       const chave = (user: string | null, nome: string) => user ?? `nome:${nome}`;
       for (const a of e.attendees ?? []) {
@@ -216,7 +239,7 @@ serve(async (req) => {
       const { data: reuniao, error: erroReuniao } = await db.from('reunioes').upsert({
         tenant_id: tenant, serie_id: serieId, google_evento: e.id, titulo, inicio, fim,
         documento_id: documento?.fileId ?? null, documento_em: documentoEm,
-        link_documento: documento?.fileUrl ?? null, link_gravacao: gravacao?.fileUrl ?? null,
+        link_documento: documento?.fileUrl ?? null, link_gravacao: gravacao?.fileUrl ?? null, link_meet: e.hangoutLink,
         pauta: texto?.pauta ?? null, lista_google: lista, updated_at: agora.toISOString(),
       }, { onConflict: 'tenant_id,google_evento' }).select('id').single();
       if (erroReuniao) throw erroReuniao;
@@ -233,7 +256,7 @@ serve(async (req) => {
         .upsert(membros.map((m) => ({ tenant_id: tenant, channel_id: canalId, user_id: m })), { onConflict: 'channel_id,user_id', ignoreDuplicates: true });
       if (erroMembros) throw erroMembros;
 
-      if (texto) resultado.guardadas++; else resultado.sem_pauta++;
+      if (texto) resultado.guardadas++; else if (terminou) resultado.sem_pauta++;
       // A mensagem sai uma vez, quando a pauta chega. Atualização do documento não repete o aviso.
       if (avisar && texto && !guardada?.documento_em) {
         const dia = new Date(inicio).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
@@ -242,9 +265,44 @@ serve(async (req) => {
           conteudo: `Pauta de ${dia}: ${titulo}`,
         });
         if (error) throw error;
+        await avisarPessoas(membros, serieId!, `Pauta de ${dia}: ${titulo}`, 'A pauta da reunião já está no Helpoint.');
       }
     } catch (erro) {
       resultado.falhas.push(`${titulo}: ${String((erro as Error).message).slice(0, 200)}`);
+    }
+  }
+
+  // Reunião cancelada no Google some da Agenda. A lista só vale completa, sem parada por tempo.
+  if (!resultado.parou_no_tempo) {
+    const vivas = eventos.map((e) => e.id);
+    const { data: futuras, error } = await db.from('reunioes').select('id, google_evento').eq('tenant_id', tenant).gt('inicio', agora.toISOString());
+    if (error) resultado.falhas.push(error.message);
+    const canceladas = (futuras ?? []).filter((r) => !vivas.includes(r.google_evento)).map((r) => r.id);
+    if (canceladas.length) {
+      const { error: erroApaga } = await db.from('reunioes').delete().in('id', canceladas);
+      if (erroApaga) resultado.falhas.push(erroApaga.message);
+    }
+  }
+
+  // Meia hora antes: quem vai à reunião recebe o aviso, uma vez.
+  const limite = new Date(agora.getTime() + 35 * 60_000).toISOString();
+  const { data: proximas, error: erroProximas } = await db.from('reunioes').select('id, serie_id, titulo, inicio')
+    .eq('tenant_id', tenant).is('lembrete_em', null).gt('inicio', agora.toISOString()).lte('inicio', limite);
+  if (erroProximas) resultado.falhas.push(erroProximas.message);
+  for (const r of proximas ?? []) {
+    try {
+      const { data: presencas, error } = await db.from('reuniao_presencas').select('user_id').eq('reuniao_id', r.id).not('user_id', 'is', null);
+      if (error) throw error;
+      const { count, error: erroConta } = await db.from('reunioes').select('id', { count: 'exact', head: true })
+        .eq('serie_id', r.serie_id).lt('inicio', r.inicio).not('pauta', 'is', null);
+      if (erroConta) throw erroConta;
+      const hora = new Date(r.inicio).toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' });
+      await avisarPessoas(presencas.map((p) => p.user_id as string), r.serie_id, `Reunião às ${hora}: ${r.titulo}`,
+        count ? 'Veja no canal onde a última parou.' : 'A reunião começa em breve.');
+      const { error: erroMarca } = await db.from('reunioes').update({ lembrete_em: agora.toISOString() }).eq('id', r.id);
+      if (erroMarca) throw erroMarca;
+    } catch (erro) {
+      resultado.falhas.push(`Lembrete de ${r.titulo}: ${String((erro as Error).message).slice(0, 200)}`);
     }
   }
   return json(resultado);

@@ -15,14 +15,19 @@ export interface ChamadoDaAgenda {
 
 export interface FeriasDaAgenda { user_id: string; nome: string; start_date: string; end_date: string }
 
+export interface ReuniaoDaAgenda { id: string; serie_id: string; titulo: string; inicio: string; fim: string | null; link_meet: string | null }
+
 export interface ItemDaAgenda {
   chave: string;
-  tipo: 'agendado' | 'prazo' | 'ferias';
+  tipo: 'agendado' | 'prazo' | 'ferias' | 'reuniao';
   /** "HH:mm" no dia; nulo nas férias, que ocupam o dia inteiro. */
   hora: string | null;
   titulo: string;
   detalhe: string;
   chamadoId?: string;
+  /** Reunião do Google: o canal dela e a sala do Meet. */
+  serieId?: string;
+  linkMeet?: string | null;
 }
 
 const hhmm = (iso: string) => {
@@ -31,7 +36,7 @@ const hhmm = (iso: string) => {
 };
 
 /** Dia (local, `aaaa-mm-dd`) → os itens dele, de `de` a `ate`. */
-export function itensDaAgenda(chamados: ChamadoDaAgenda[], ferias: FeriasDaAgenda[], de: string, ate: string, euId?: string) {
+export function itensDaAgenda(chamados: ChamadoDaAgenda[], ferias: FeriasDaAgenda[], de: string, ate: string, euId?: string, reunioes: ReuniaoDaAgenda[] = []) {
   const porDia = new Map<string, ItemDaAgenda[]>();
   const poeNoDia = (dia: string, item: ItemDaAgenda) => {
     if (dia < de || dia > ate) return;
@@ -60,6 +65,12 @@ export function itensDaAgenda(chamados: ChamadoDaAgenda[], ferias: FeriasDaAgend
         detalhe: `De ${f.start_date.slice(8, 10)}/${f.start_date.slice(5, 7)} a ${f.end_date.slice(8, 10)}/${f.end_date.slice(5, 7)}`,
       });
     }
+  }
+  for (const r of reunioes) {
+    poeNoDia(toLocalISODate(new Date(r.inicio)), {
+      chave: `re-${r.id}`, tipo: 'reuniao', hora: hhmm(r.inicio), titulo: r.titulo,
+      detalhe: r.fim ? `Até ${hhmm(r.fim)}` : '', serieId: r.serie_id, linkMeet: r.link_meet,
+    });
   }
   return porDia;
 }
