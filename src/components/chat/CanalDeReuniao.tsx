@@ -54,12 +54,13 @@ function PresencaDoEncontro({ reuniao }: { reuniao: Reuniao }) {
   const { data: listaDoGoogle, isLoading: lendoLista } = useListaDoGoogle(reuniao.id);
   if (isError) return <ErroDeCarga mensagem="Não consegui ler a presença." onTentar={() => void refetch()} />;
   if (isLoading || lendoLista) return <Skeleton className="h-40 w-full" />;
-  if (pessoas.length === 0 && !listaDoGoogle) {
+  const linhasDoGoogle = listaDoGoogle ? lerCsv(listaDoGoogle) : [];
+  if (pessoas.length === 0 && linhasDoGoogle.length < 2) {
     return <p className="text-[14px] text-muted-foreground">A presença fica com quem participou deste encontro e com a Diretoria.</p>;
   }
   const arquivo = `presenca-${reuniao.titulo.replace(/[^\p{L}\p{N}]+/gu, '-').toLowerCase()}-${toLocalISODate(new Date(reuniao.inicio))}.xlsx`;
-  if (listaDoGoogle) {
-    const linhas = lerCsv(listaDoGoogle);
+  if (linhasDoGoogle.length > 1) {
+    const linhas = linhasDoGoogle;
     return (
       <div className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">

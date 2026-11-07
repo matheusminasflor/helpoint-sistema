@@ -250,8 +250,10 @@ async function rodada(db: SupabaseClient, tenant: string, corpo: { desde?: strin
       const documento = textos.sort((a, b) => b.texto.length - a.texto.length)[0];
       const texto = documento ? separar(documento.texto) : null;
       // A sala aberta antes da hora também gera lista: vale a que tem mais gente.
-      const listas = await Promise.all(planilhas.map((p) => textoDoArquivo(token, p.id, 'text/csv')));
-      const lista = listas.sort((a, b) => b.split('\n').length - a.split('\n').length)[0] ?? null;
+      // O robô de anotação de terceiros não é pessoa: fica fora da lista (dono, 2026-11-07).
+      const listas = (await Promise.all(planilhas.map((p) => textoDoArquivo(token, p.id, 'text/csv'))))
+        .map((csv) => csv.split('\n').filter((l) => !/notetaker|fireflies|read\.ai|otter\.ai/i.test(l)).join('\n'));
+      const lista = listas.sort((a, b) => b.split('\n').length - a.split('\n').length).find((csv) => csv.trim().includes('\n')) ?? null;
 
       // A presença: quem foi convidado e quem entrou, ligados às pessoas do Helpoint.
       const entraram: Map<string, Tempo> = m.sala && terminou ? await quemEntrou(token, m.sala, inicio, fim)
