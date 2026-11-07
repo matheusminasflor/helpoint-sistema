@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { falasCom, lerCsv, mediaDeMinutos, minutosEntre, secaoDaPauta } from './reunioes';
+import { falasCom, lerCsv, mediaDeMinutos, minutosEntre, nomesDaEquipe, secaoDaPauta } from './reunioes';
 
 const pauta = 'Registros da reunião\n\nResumo\nFoco na expansão.\n\nDecisões\nAlinhada\n\nPróximas etapas\n* [Ana] Enviar\n\nDetalhes\nTexto longo.';
 
@@ -42,5 +42,11 @@ describe('lista de presença do Google', () => {
     expect(lerCsv('Nome,Tempo\n"Silva, Ana",59 min\r\n\nBia,48 min\n')).toEqual([
       ['Nome', 'Tempo'], ['Silva, Ana', '59 min'], ['Bia', '48 min'],
     ]);
+  });
+});
+
+describe('nomes do Google sem pessoa', () => {
+  it('mostra quem pode ser da equipe e tira o cliente do treinamento', () => {
+    expect(nomesDaEquipe(['Silvana Melo', 'Regina Falabella', 'marcus'], ['Silvana Moraes', 'Marcus Carvalho'])).toEqual(['Silvana Melo', 'marcus']);
   });
 });

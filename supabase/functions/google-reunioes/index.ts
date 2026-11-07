@@ -25,7 +25,21 @@ interface Evento {
 const json = (corpo: unknown, status = 200) =>
   new Response(JSON.stringify(corpo), { status, headers: { 'Content-Type': 'application/json' } });
 
-const normaliza = (t: string) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase();
+const normaliza = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
+
+/** O limite da edge function: para antes e continua na próxima rodada, porque o que já entrou é pulado. */
+const TEMPO_DA_RODADA = 110_000;
+
+/** "Jacqueline Cardoso" é "Jacqueline Dias Cardoso": um nome contém o outro, com pelo menos dois nomes e um só candidato. */
+function pessoaPeloNome<T extends { full_name: unknown }>(nome: string, perfis: T[]): T | null {
+  const partes = normaliza(nome).split(' ');
+  if (partes.length < 2) return null;
+  const candidatos = perfis.filter((p) => {
+    const dele = normaliza(String(p.full_name)).split(' ');
+    return dele.length >= 2 && dele[0] === partes[0] && (dele.every((x) => partes.includes(x)) || partes.every((x) => dele.includes(x)));
+  });
+  return candidatos.length === 1 ? candidatos[0] : null;
+}
 
 /** O documento do Gemini traz a transcrição depois da linha "<título> - Transcrição". */
 function separar(texto: string) {
@@ -105,9 +119,13 @@ serve(async (req) => {
 
   const token = await tokenDoGoogle(CONTA);
   const eventos = await todosOsEventos(token, de, agora.toISOString());
-  const resultado = { eventos: eventos.length, guardadas: 0, sem_pauta: 0, sem_mudanca: 0, falhas: [] as string[] };
+  const resultado = { eventos: eventos.length, guardadas: 0, sem_pauta: 0, sem_mudanca: 0, parou_no_tempo: false, falhas: [] as string[] };
 
   for (const e of eventos) {
+    if (Date.now() - agora.getTime() > TEMPO_DA_RODADA) {
+      resultado.parou_no_tempo = true;
+      break;
+    }
     const inicio = e.start?.dateTime;
     const fim = e.end?.dateTime;
     // Só reunião com sala do Meet, que já terminou.
@@ -126,7 +144,9 @@ serve(async (req) => {
       const { data: guardada, error: erroGuardada } = await db.from('reunioes').select('id, documento_em').eq('tenant_id', tenant).eq('google_evento', e.id).maybeSingle();
       if (erroGuardada) throw erroGuardada;
       const mesmoDocumento = guardada?.documento_em && documentoEm && new Date(guardada.documento_em).getTime() === new Date(documentoEm).getTime();
-      if (mesmoDocumento) {
+      // Sem documento dois dias depois, o Google não gerou anotações: a reunião fica como está.
+      const semAnotacoes = guardada && !documentoEm && agora.getTime() - new Date(fim).getTime() > 2 * 86400_000;
+      if (mesmoDocumento || semAnotacoes) {
         resultado.sem_mudanca++;
         continue;
       }
@@ -149,7 +169,7 @@ serve(async (req) => {
           linhas.set(chave(null, nomeGoogle), { nome: nomeGoogle, user_id: null, convidado: false, entrou: true, ...tempo });
           continue;
         }
-        const user = (ligacao?.user_id as string | null) ?? porNome.get(normaliza(nomeGoogle))?.id ?? null;
+        const user = (ligacao?.user_id as string | null) ?? porNome.get(normaliza(nomeGoogle))?.id ?? pessoaPeloNome(nomeGoogle, ativos)?.id ?? null;
         const k = chave(user, nomeGoogle);
         const atual = linhas.get(k);
         linhas.set(k, { nome: atual?.nome ?? nomeGoogle, user_id: user, convidado: atual?.convidado ?? false, entrou: true, ...tempo });
@@ -163,12 +183,16 @@ serve(async (req) => {
       const membros = [...new Set(pessoas.flatMap((p) => (p.user_id ? [p.user_id] : [])))];
       if (membros.length === 0) continue;
 
-      // Um canal por série do Google; a reunião avulsa ganha o seu, só para quem participou.
-      const googleSerie = e.recurringEventId ?? e.id;
-      const { data: serie, error: erroSerie } = await db.from('reuniao_series').select('id, canal_id').eq('tenant_id', tenant).eq('google_serie', googleSerie).maybeSingle();
+      // Um canal por nome de reunião: o Google divide a mesma reunião em séries quando alguém a edita.
+      const googleSerie = `titulo:${normaliza(titulo)}`;
+      const { data: serie, error: erroSerie } = await db.from('reuniao_series').select('id, canal_id, avulsa').eq('tenant_id', tenant).eq('google_serie', googleSerie).maybeSingle();
       if (erroSerie) throw erroSerie;
       let canalId = serie?.canal_id as string | undefined;
       let serieId = serie?.id as string | undefined;
+      if (serie?.avulsa && (e.recurringEventId || !guardada)) {
+        const { error } = await db.from('reuniao_series').update({ avulsa: false }).eq('id', serie.id);
+        if (error) throw error;
+      }
       if (!canalId) {
         const { data: canal, error } = await db.from('chat_channels')
           .insert({ tenant_id: tenant, nome: `reuniao-${crypto.randomUUID().slice(0, 13)}`, privado: true, tipo: 'reuniao' }).select('id').single();

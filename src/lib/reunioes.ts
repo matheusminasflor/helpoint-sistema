@@ -49,3 +49,10 @@ export function lerCsv(texto: string): string[][] {
   if (campo || linha.length) { linha.push(campo.replace(/\r$/, '')); linhas.push(linha); }
   return linhas.filter((l) => l.some((v) => v.trim()));
 }
+
+/** Dos nomes sem pessoa, os que têm o primeiro nome de alguém do Helpoint. O resto é convidado de fora. */
+export function nomesDaEquipe(nomes: string[], pessoas: string[]): string[] {
+  const primeiro = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase().split(/\s+/)[0];
+  const daEquipe = new Set(pessoas.map(primeiro));
+  return nomes.filter((n) => daEquipe.has(primeiro(n)));
+}

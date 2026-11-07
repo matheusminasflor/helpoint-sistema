@@ -18,7 +18,7 @@ import {
   type PresencaNaReuniao, type Reuniao, type SerieDeReuniao,
 } from '@/hooks/useReunioes';
 import { dataHora, toLocalISODate } from '@/lib/dates';
-import { falasCom, lerCsv, mediaDeMinutos, minutosEntre, secaoDaPauta } from '@/lib/reunioes';
+import { falasCom, lerCsv, mediaDeMinutos, minutosEntre, nomesDaEquipe, secaoDaPauta } from '@/lib/reunioes';
 
 const dia = (iso: string) => new Date(iso).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' });
 const hora = (iso: string | null) => (iso ? new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '—');
@@ -174,8 +174,10 @@ function DoInicioAoFim({ reunioes }: { reunioes: Reuniao[] }) {
 }
 
 function NomesDoGoogle() {
-  const { data: nomes = [] } = useNomesSemPessoa();
+  const { data: todos = [] } = useNomesSemPessoa();
   const { profiles: pessoas = [] } = useProfiles();
+  // Clientes dos treinamentos também entram na chamada: a lista mostra só quem pode ser da equipe.
+  const nomes = nomesDaEquipe(todos, pessoas.map((p) => p.full_name ?? ''));
   const ligar = useLigarNome();
   const [aberto, setAberto] = useState(false);
   if (nomes.length === 0) return null;
