@@ -28,9 +28,8 @@ no FSENSE e no Helpoint, com a aba do FSENSE dentro do grupo do Claude.
    grade (a soma dos % de cada pessoa tem de dar 100%) e **Gravar**.
 6. **Nunca clicar em "Confirmar semana".** Mandar ao dono a tabela lida (login → nome, horas e os quatro %) e avisar
    que está "A confirmar".
-7. **Terminar perguntando das quedas** (rodada 2, 2026-11-02): "Teve queda de luz, internet, sistema ou intranet
-   nesta semana?". O FSENSE não mostra isso; se teve, o dono registra em "Registrar interrupção" (ou diz o dia, a
-   hora e o tipo para o Claude registrar).
+
+A rotina não pergunta de quedas (dono, 2026-11-06): queda de luz, internet, sistema e intranet já vêm dos chamados.
 
 ## Logins do FSENSE → nome no Helpoint
 

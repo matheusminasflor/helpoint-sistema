@@ -6,11 +6,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { expectRows, unwrap } from '@/lib/supabase-result';
 import { META_DA_TI, metaNoDia, notaDaMeta } from '@/config/metas-da-ti';
 import { useMetasDaTI } from '@/hooks/useMetasDaTI';
-import { toLocalISODate } from '@/lib/dates';
+import { toLocalISODate, todayISO } from '@/lib/dates';
 import type { IntervaloDeDias } from '@/lib/period';
 import {
   dentro, diasDoPeriodo, farol, horasParadas, mediaAnteriorDosMesmos, mediaDaEquipe, metaDoPeriodo, periodoAnterior,
-  periodoDoIntervalo, piorFarol, porColaborador,
+  periodoDoFsense, periodoDoIntervalo, piorFarol, porColaborador,
   type DoColaborador, type Farol, type LinhaColada, type Periodo,
 } from '@/lib/ti-equipe';
 
@@ -188,7 +188,8 @@ export function useEquipeDoPeriodo(intervalo: IntervaloDeDias, podeVerEquipe: bo
   const atual = periodoDoIntervalo(intervalo);
   const anterior = periodoAnterior(atual);
   const dias = diasDoPeriodo(atual);
-  const fsense = useFsense({ de: anterior.de, ate: atual.ate });
+  const atualDoFsense = periodoDoFsense(atual, todayISO());
+  const fsense = useFsense({ de: anterior.de, ate: atualDoFsense.ate });
   const interrupcoes = useInterrupcoes({ de: anterior.de, ate: atual.ate });
   const metas = useMetasDaTI();
   // A meta é a do degrau em vigor no último dia do período (rodada 3).
@@ -196,7 +197,7 @@ export function useEquipeDoPeriodo(intervalo: IntervaloDeDias, podeVerEquipe: bo
 
   // O FSENSE conta pela semana lançada (o dia que a fecha cai no período) e só depois de confirmada.
   const confirmadas = (fsense.data ?? []).filter((l) => l.confirmado_em);
-  const doAtual = porColaborador(confirmadas, atual);
+  const doAtual = porColaborador(confirmadas, atualDoFsense);
   const doAnterior = porColaborador(confirmadas, anterior);
   const lista = interrupcoes.data ?? [];
   const doPeriodo = (p: Periodo) => lista.filter((i) => dentro(toLocalISODate(new Date(i.inicio)), p));
@@ -231,9 +232,9 @@ export function useEquipeDoPeriodo(intervalo: IntervaloDeDias, podeVerEquipe: bo
 
   return {
     doAtual, doAnterior, numeros, statusDa, metaTrabalho, metaOcioso,
-    lancamentos: (fsense.data ?? []).filter((l) => dentro(l.data, atual)),
+    lancamentos: (fsense.data ?? []).filter((l) => dentro(l.data, atualDoFsense)),
     /** Há semana lançada e não confirmada no período: só então a Visão Geral mostra os lançamentos (rodada 3). */
-    aConfirmar: (fsense.data ?? []).some((l) => dentro(l.data, atual) && !l.confirmado_em),
+    aConfirmar: (fsense.data ?? []).some((l) => dentro(l.data, atualDoFsense) && !l.confirmado_em),
     interrupcoesDoPeriodo: doPeriodo(atual),
   };
 }

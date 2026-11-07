@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   comparar, diasDoPeriodo, domingoDaSemana, farol, horasParadas, lerColagem, mediaAnteriorDosMesmos, mediaDaEquipe, metaDoPeriodo,
-  lerNumero, periodoAnterior, periodoDoIntervalo, piorFarol, porColaborador, somaDosPercentuais,
+  lerNumero, periodoAnterior, periodoDoFsense, periodoDoIntervalo, piorFarol, porColaborador, somaDosPercentuais,
 } from './ti-equipe';
 
 const S4_OUTUBRO = { de: '2026-10-22', ate: '2026-11-01' };
@@ -21,6 +21,25 @@ describe('período do filtro da tela', () => {
   it('compara com o período anterior do mesmo tamanho, colado antes', () => {
     expect(periodoAnterior({ de: '2026-10-26', ate: '2026-11-02' })).toEqual({ de: '2026-10-19', ate: '2026-10-26' });
     expect(periodoAnterior({ de: '2026-10-01', ate: '2026-11-01' })).toEqual({ de: '2026-08-31', ate: '2026-10-01' });
+  });
+});
+
+describe('período do FSENSE', () => {
+  it('"Esta semana" alcança o domingo em que a semana corrente é gravada', () => {
+    const estaSemana = periodoDoIntervalo({ de: '2026-11-02', ate: '2026-11-06' });
+    const p = periodoDoFsense(estaSemana, '2026-11-06');
+    expect(p).toEqual({ de: '2026-11-02', ate: '2026-11-09' });
+    expect(porColaborador([{ data: '2026-11-08', colaborador: 'Ana', horas: 40, trabalho: 60, ocioso: 5 }], p)).toHaveLength(1);
+  });
+
+  it('período que já acabou não estica: a semana não conta em dois meses', () => {
+    const outubro = periodoDoIntervalo({ de: '2026-10-01', ate: '2026-10-31' });
+    expect(periodoDoFsense(outubro, '2026-11-06')).toEqual(outubro);
+  });
+
+  it('o mês inteiro, que já passa do domingo, fica como está', () => {
+    const novembro = periodoDoIntervalo({ de: '2026-11-01', ate: '2026-11-30' });
+    expect(periodoDoFsense(novembro, '2026-11-06')).toEqual(novembro);
   });
 });
 

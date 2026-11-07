@@ -24,6 +24,16 @@ export const domingoDaSemana = (iso: string) => somarDias(iso, (7 - fromLocalISO
 /** O intervalo da tela (último dia incluído) → período com `ate` exclusivo. */
 export const periodoDoIntervalo = ({ de, ate }: IntervaloDeDias): Periodo => ({ de, ate: somarDias(ate, 1) });
 
+/**
+ * O período que vale para o FSENSE: a semana é gravada no domingo que a fecha, e esse domingo ainda não chegou enquanto
+ * ela corre. Sem isto, "Esta semana" (segunda até hoje) não acha a semana já confirmada. Só o período que chega a hoje
+ * estica, para semana fechada não contar em dois meses.
+ */
+export function periodoDoFsense(p: Periodo, hoje: string): Periodo {
+  const depoisDoDomingo = somarDias(domingoDaSemana(hoje), 1);
+  return dentro(hoje, p) && depoisDoDomingo > p.ate ? { de: p.de, ate: depoisDoDomingo } : p;
+}
+
 export const diasDoPeriodo = ({ de, ate }: Periodo) =>
   Math.round((fromLocalISODate(ate).getTime() - fromLocalISODate(de).getTime()) / 86_400_000);
 
