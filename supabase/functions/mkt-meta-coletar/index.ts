@@ -9,7 +9,7 @@
 //     o público do mês (quem segue, quando fica online) só na passada das 06h;
 //   · o botão "Buscar agora" dos Indicadores (gestor ou acima): a empresa de quem clicou, esta semana e a anterior.
 //   · e o mês inteiro em `mkt_redes_mes` / `mkt_trafego_mes` (20270212660000): o em andamento, o anterior na primeira
-//     semana do mês e no "Buscar agora"; `{ meses_desde: 'AAAA-MM' }` refaz os meses desde aquele.
+//     semana do mês e no "Buscar agora"; `{ meses: ['AAAA-MM'], semanas: ['AAAA-MM-DD'] }` refaz os que passaram.
 //
 // Regras:
 //   · o coletor só grava número que a Meta deu: nunca apaga o que foi lançado à mão (campo nulo não sobrescreve);
@@ -365,13 +365,6 @@ const proximoMes = (mes: string) => { const [a, m] = mes.split('-').map(Number);
 /** O mês inteiro (dia 1 até o último, ou até agora no mês em andamento), no formato da semana. */
 const doMes = (mes: string, agora: number): Semana =>
   ({ domingo: somarDias(proximoMes(mes), -1), desde: inicioBR(mes), ate: Math.min(agora, inicioBR(proximoMes(mes))), fechando: false });
-/** Os meses de `de` (dia 1) até o mês de hoje. */
-function mesesDesde(de: string, agora: number): string[] {
-  const meses: string[] = [];
-  for (let m = `${de.slice(0, 7)}-01`; m <= `${diaBR(agora).slice(0, 7)}-01`; m = proximoMes(m)) meses.push(m);
-  return meses;
-}
-
 async function coletarEmpresa(tenantId: string, semanas: Semana[], agora: number, comPublico: boolean, meses: string[] = []) {
   const admin = adminClient();
   const { data: lig, error: e1 } = await admin.from('mkt_meta_ligacao').select('contas').eq('tenant_id', tenantId).maybeSingle();
@@ -553,11 +546,16 @@ serve(async (req) => {
       // Na segunda, a semana que acabou é buscada de novo o dia todo (a Meta fecha os números com atraso), mas o total de
       // seguidores dela só sai das passadas da madrugada, 0h e 3h. ponytail: a das 3h cobre a da meia-noite se ela falhar,
       // ao custo de o total levar 3 h de segunda-feira; se as duas falharem, a semana fica sem total (lançar à mão).
-      const semanas = [semana(domingo, agora, false), ...(segunda ? [semana(anterior, agora, horaBR < 6)] : [])];
-      const comPublico = horaBR >= 6 && horaBR < 9;
-      const corpo = await req.json().catch(() => ({})) as { meses_desde?: string };
+      const corpo = await req.json().catch(() => ({})) as { meses?: string[]; semanas?: string[] };
+      // Refazer o que passou (só a chave de serviço): `{ meses: ['2026-08'] }` e/ou `{ semanas: ['2026-11-01'] }` (domingos),
+      // poucos por vez — a função tem uns 150 s; 11 meses de uma vez estouraram (2026-11-07).
+      const refazer = Array.isArray(corpo.meses) || Array.isArray(corpo.semanas);
+      const semanas = refazer
+        ? (corpo.semanas ?? []).filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d)).map((d) => semana(domingoDe(d), agora, false))
+        : [semana(domingo, agora, false), ...(segunda ? [semana(anterior, agora, horaBR < 6)] : [])];
+      const comPublico = !refazer && horaBR >= 6 && horaBR < 9;
       const esteMes = `${hoje.slice(0, 7)}-01`;
-      const meses = /^\d{4}-\d{2}$/.test(corpo.meses_desde ?? '') ? mesesDesde(`${corpo.meses_desde}-01`, agora)
+      const meses = refazer ? (corpo.meses ?? []).filter((m) => /^\d{4}-\d{2}$/.test(m)).map((m) => `${m}-01`)
         : Number(hoje.slice(8, 10)) <= 7 ? [somarDias(esteMes, -1).slice(0, 8) + '01', esteMes] : [esteMes];
       const { data: ligacoes, error } = await admin.from('mkt_meta_ligacao').select('tenant_id');
       if (error) throw error;
