@@ -292,7 +292,7 @@ export default function Agenda() {
                 if (item.tipo === 'reuniao') {
                   return (
                     <div key={item.chave} className="flex flex-wrap items-start gap-3 px-5 py-3">
-                      <Link to={tenantPath(`/chat?aba=reunioes&reuniao=${item.serieId}`)} className="flex flex-1 min-w-[200px] items-start gap-3 hover:underline">{corpo}</Link>
+                      <Link to={tenantPath(`/reunioes/${item.serieId}`)} className="flex flex-1 min-w-[200px] items-start gap-3 hover:underline">{corpo}</Link>
                       {item.linkMeet && <Button asChild size="sm" variant="outline"><a href={item.linkMeet} target="_blank" rel="noreferrer">Entrar no Meet</a></Button>}
                     </div>
                   );

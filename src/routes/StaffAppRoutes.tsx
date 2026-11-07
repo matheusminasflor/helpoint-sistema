@@ -52,6 +52,7 @@ const MKTArtistas = lazy(() => import('@/telas/MKTArtistas'));
 const MKTBeneficioDeSexta = lazy(() => import('@/telas/MKTBeneficioDeSexta'));
 const TIRelatorios = lazy(() => import('@/telas/TIRelatorios'));
 const Agenda = lazy(() => import('@/telas/Agenda'));
+const Reunioes = lazy(() => import('@/telas/Reunioes'));
 const Rotinas = lazy(() => import('@/telas/Rotinas'));
 const Metas = lazy(() => import('@/telas/Metas'));
 const Chat = lazy(() => import('@/telas/Chat'));
@@ -386,6 +387,8 @@ export function StaffAppRoutes() {
       {/* Rodada 3, etapa B: os meus chamados e pedidos num lugar só (a barra de baixo e o menu levam aqui). */}
       <Route path="meus" element={S(<MeusPedidosEChamados />)} />
       <Route path="agenda" element={S(<Agenda />)} />
+      <Route path="reunioes" element={S(<Reunioes />)} />
+      <Route path="reunioes/:id" element={S(<Reunioes />)} />
       {/* Rotinas do dia (dono, 2026-10-30): o cadastro; marcar é no Início. */}
       <Route path="rotinas" element={S(<Rotinas />)} />
       <Route path="meus-treinamentos" element={S(<MeusTreinamentos />)} />

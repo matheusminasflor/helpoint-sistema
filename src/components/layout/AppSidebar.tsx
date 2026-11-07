@@ -4,7 +4,7 @@ import {
   Ticket, BookOpen, HardDrive, Monitor,
   BarChart3, Settings, Plus, PieChart,
   Inbox, FileText, Key, Wrench, Lightbulb, Megaphone,
-  Calendar, Share2, Sparkles, Truck, Home, Target, FolderKanban,
+  Calendar, Video, Share2, Sparkles, Truck, Home, Target, FolderKanban,
   ShieldCheck, MessageSquare, ChevronDown, ChevronRight, Search, Users,
   CheckCircle2, Receipt, HeartPulse, FolderLock, Palette,
   Gift, FileSignature, Banknote, CalendarOff, PanelLeftClose, PanelLeftOpen, X, Wallet, TrendingUp, PiggyBank, FileBarChart,
@@ -266,6 +266,7 @@ const inicioMenuItems = (showPortal: boolean): MenuItem[] => ([
   // Rotinas do dia (dono, 2026-10-30): o cadastro; marcar é no próprio Início.
   { to: '/rotinas', icon: ListChecks, label: 'Rotinas', title: 'O que se repete no seu dia: manhã, tarde e fim do dia' },
   { to: '/agenda', icon: Calendar, label: 'Agenda' },
+  { to: '/reunioes', icon: Video, label: 'Reuniões', title: 'As reuniões de que você participa: pauta, transcrição e presença' },
   { to: '/metas', icon: Target, label: 'Metas', title: 'Objetivos da empresa e o que se mede embaixo deles' },
   { to: '/projetos', icon: FolderKanban, label: 'Projetos', title: 'Projetos por setor: briefing, cronograma e as suas tarefas' },
   { to: '/meus-treinamentos', icon: GraduationCap, label: 'Treinamentos', title: 'As turmas em que você está inscrito e as horas que já concluiu' },

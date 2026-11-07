@@ -34,11 +34,14 @@ const EMOJIS = [
  * importar nada de lá: a janela de 24h, modelo de mensagem e reengajamento
  * são coisa da Meta, não deste chat interno.
  */
-export function ConversaCanal({ canal, souAdmin }: {
+export function ConversaCanal({ canal, souAdmin, serieDaReuniao }: {
   canal: ChatCanalRow;
   souAdmin: boolean;
+  /** No aviso da reunião dentro do Chat: o botão leva à reunião em Meu trabalho. */
+  serieDaReuniao?: string;
 }) {
   const { user } = useAuth();
+  const tenantPath = useTenantPath();
   const { data: participantes = [] } = useParticipantesDoCanal(canal.id);
   // As mais novas primeiro, com "Mensagens anteriores" e busca no canal (etapa 4 · Chat, 2026-10-24).
   const [limite, setLimite] = useState(200);
@@ -267,6 +270,11 @@ export function ConversaCanal({ canal, souAdmin }: {
                           <Link to={`/jornal/${m.noticia_id}`}>
                             <Newspaper className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" /> Ler a notícia
                           </Link>
+                        </Button>
+                      )}
+                      {m.reuniao_id && serieDaReuniao && !m.deleted_at && (
+                        <Button asChild size="sm" variant="outline" className="mt-2 h-8 bg-background">
+                          <Link to={tenantPath(`/reunioes/${serieDaReuniao}`)}>Abrir a pauta</Link>
                         </Button>
                       )}
                       <div className="flex items-center justify-end gap-1 mt-1">

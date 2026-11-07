@@ -12,9 +12,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { PageHeader } from '@/components/layout/PageHeader';
 import { NovoCanalDialog } from '@/components/chat/NovoCanalDialog';
 import { ConversarComDialog } from '@/components/chat/ConversarComDialog';
-import { CanalDeReuniao } from '@/components/chat/CanalDeReuniao';
 import { ConversaCanal } from '@/components/chat/ConversaCanal';
-import { useQueryState } from '@/hooks/useQueryState';
 import { useSeriesDeReuniao } from '@/hooks/useReunioes';
 import {
   useCanais, useApagarCanal, useContadoresAoVivo, useNaoLidas, useRotuloDoCanal, useUltimasMensagens, type ChatCanalRow, type UltimaMensagem,
@@ -29,9 +27,6 @@ import { useTenantPath } from '@/hooks/useTenantPath';
  * não o arquivo — nada daqui comenta em chamado (§2 do plano). No celular,
  * lista OU conversa, nunca as duas (decisão 10).
  */
-const naoLidasPorCanalDe = (naoLidas: { channel_id: string; qtd: number }[], canal: string) =>
-  naoLidas.find((n) => n.channel_id === canal)?.qtd ?? 0;
-
 export default function Chat() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -48,22 +43,21 @@ export default function Chat() {
   const [novoCanal, setNovoCanal] = useState(false);
   const [conversarCom, setConversarCom] = useState(false);
 
-  // Reuniões do Google (dono, 2026-11-07): cada uma é um canal próprio, em uma aba que só aparece para quem tem alguma.
+  // O canal da reunião mora em Meu trabalho › Reuniões. Aqui fica só o aviso da pauta, com o nome da reunião.
   const { data: series = [] } = useSeriesDeReuniao();
-  const [serieNaUrl] = useQueryState('reuniao', '');
-  const [abaNaUrl] = useQueryState<string>('aba', '');
-  const serieAtiva = series.find((s) => s.id === serieNaUrl) ?? null;
-  const emReunioes = abaNaUrl === 'reunioes' && series.length > 0;
-  const novasEmReunioes = series.reduce((soma, s) => soma + (naoLidasPorCanalDe(naoLidas, s.canal_id)), 0);
-  const canalAtivo = canais.find((c) => c.id === id) ?? null;
-  const mostrarLista = !isMobile || (!id && !serieAtiva);
-  const mostrarConversa = !isMobile || !!id || !!serieAtiva;
+  const serieDoCanal = new Map(series.map((s) => [s.canal_id, s]));
+  const comNomeDaReuniao = (c: ChatCanalRow) => ({ ...c, nome: serieDoCanal.get(c.id)?.titulo ?? 'Reunião' });
+  const achado = canais.find((c) => c.id === id) ?? null;
+  const canalAtivo = achado?.tipo === 'reuniao' ? comNomeDaReuniao(achado) : achado;
+  const mostrarLista = !isMobile || !id;
+  const mostrarConversa = !isMobile || !!id;
   const naoLidasPorCanal = new Map(naoLidas.map((n) => [n.channel_id, n.qtd]));
 
   // Quem falou por último fica em cima, como no WhatsApp (dono, 2026-10-28); sem mensagem, pelo nome.
   const recentes = (a: ChatCanalRow, b: ChatCanalRow) =>
     (ultimas?.get(b.id)?.created_at ?? '').localeCompare(ultimas?.get(a.id)?.created_at ?? '') || (a.nome ?? '').localeCompare(b.nome ?? ''); // conversa direta não tem nome
   const canaisDeSetor = canais.filter((c) => c.tipo === 'canal').sort(recentes);
+  const avisosDeReuniao = canais.filter((c) => c.tipo === 'reuniao' && ultimas?.has(c.id)).sort(recentes);
   const conversasDiretas = canais.filter((c) => c.tipo === 'direta').sort(recentes);
 
   const irPara = (channelId: string) => navigate(tenantPath(`/chat/${channelId}`));
@@ -93,39 +87,7 @@ export default function Chat() {
       <div className="flex-1 flex overflow-hidden min-h-0 min-[861px]:gap-6 min-[861px]:px-4 lg:px-8 min-[861px]:pb-6">
         {mostrarLista && (
           <div className={`${isMobile ? 'w-full' : 'w-72 panel py-3'} flex flex-col overflow-y-auto`}>
-            {series.length > 0 && (
-              <div className="flex gap-2 px-5 pb-2" role="group" aria-label="O que ver no Chat">
-                <Button size="sm" variant={emReunioes ? 'outline' : 'default'} aria-pressed={!emReunioes} onClick={() => navigate(tenantPath('/chat'))}>Conversas</Button>
-                <Button size="sm" variant={emReunioes ? 'default' : 'outline'} aria-pressed={emReunioes} onClick={() => navigate(tenantPath('/chat?aba=reunioes'))}>Reuniões{novasEmReunioes > 0 ? ` (${novasEmReunioes})` : ''}</Button>
-              </div>
-            )}
-            {emReunioes ? (
-              <>
-                {[false, true].map((avulsas) => {
-                  const grupo = series.filter((s) => s.avulsa === avulsas);
-                  if (grupo.length === 0) return null;
-                  return (
-                    <div key={String(avulsas)}>
-                      <p className="px-5 pt-3 pb-2 text-[16px] font-bold text-foreground">{avulsas ? 'Reuniões avulsas' : 'Reuniões'}</p>
-                      <ul className="py-1 px-3 space-y-1">
-                        {grupo.map((s) => {
-                          const novas = naoLidasPorCanal.get(s.canal_id) ?? 0;
-                          return (
-                            <li key={s.id}>
-                              <button type="button" onClick={() => navigate(tenantPath(`/chat?aba=reunioes&reuniao=${s.id}`))} aria-current={s.id === serieAtiva?.id}
-                                className={`w-full min-h-11 rounded-md px-3 py-2 text-left text-[14px] flex items-center justify-between gap-2 hover:bg-muted ${s.id === serieAtiva?.id ? 'bg-muted font-semibold' : ''}`}>
-                                <span className="min-w-0 break-words">{s.titulo}</span>
-                                {novas > 0 && <span className="shrink-0 rounded-full bg-primary px-1.5 text-[12px] text-primary-foreground">{novas}</span>}
-                              </button>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    </div>
-                  );
-                })}
-              </>
-            ) : isLoading ? (
+            {isLoading ? (
               <div className="p-3 space-y-2">
                 <Skeleton className="h-9 w-full" />
                 <Skeleton className="h-9 w-full" />
@@ -161,6 +123,26 @@ export default function Chat() {
                     </ul>
                   </>
                 )}
+                {avisosDeReuniao.length > 0 && (
+                  <>
+                    <p className="px-5 pt-4 pb-2 text-[16px] font-bold text-foreground">Avisos de reunião</p>
+                    <ul className="py-1">
+                      {avisosDeReuniao.map((c) => (
+                        <ItemDaLista
+                          key={c.id}
+                          canal={comNomeDaReuniao(c)}
+                          ativo={c.id === id}
+                          naoLidas={naoLidasPorCanal.get(c.id) ?? 0}
+                          ultima={ultimas?.get(c.id)}
+                          souEu={ultimas?.get(c.id)?.author_id === user?.id}
+                          podeApagar={false}
+                          onAbrir={() => irPara(c.id)}
+                          onApagar={() => undefined}
+                        />
+                      ))}
+                    </ul>
+                  </>
+                )}
                 {conversasDiretas.length > 0 && (
                   <>
                     <p className="px-5 pt-4 pb-2 text-[16px] font-bold text-foreground">Conversas</p>
@@ -188,11 +170,8 @@ export default function Chat() {
 
         {mostrarConversa && (
           <div className="flex-1 flex flex-col overflow-hidden min-[861px]:panel">
-            {serieAtiva ? (
-              <CanalDeReuniao key={serieAtiva.id} serie={serieAtiva} canal={canais.find((c) => c.id === serieAtiva.canal_id) ?? null}
-                onVoltar={() => navigate(tenantPath('/chat?aba=reunioes'))} />
-            ) : canalAtivo ? (
-              <ConversaCanal canal={canalAtivo} souAdmin={isOwnerOrAdmin} />
+            {canalAtivo ? (
+              <ConversaCanal canal={canalAtivo} souAdmin={isOwnerOrAdmin} serieDaReuniao={serieDoCanal.get(canalAtivo.id)?.id} />
             ) : id ? (
               <div className="flex-1 flex items-center justify-center p-8 text-center">
                 <p className="text-[13px] text-muted-foreground">
@@ -201,7 +180,7 @@ export default function Chat() {
               </div>
             ) : !isMobile && canais.length > 0 ? (
               <div className="flex-1 flex items-center justify-center p-8 text-center">
-                <p className="text-[13px] text-muted-foreground">{emReunioes ? 'Escolha uma reunião à esquerda.' : 'Escolha um canal à esquerda.'}</p>
+                <p className="text-[13px] text-muted-foreground">Escolha um canal à esquerda.</p>
               </div>
             ) : null}
           </div>
