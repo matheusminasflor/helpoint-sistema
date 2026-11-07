@@ -20,6 +20,28 @@ const json = (corpo: unknown, status = 200) =>
 
 const normaliza = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
+/** As seções do documento e quem fala na transcrição, sem devolver o conteúdo. */
+function estruturaDoDocumento(texto: string) {
+  const linhas = texto.split(/\r?\n/).map((l) => l.trim());
+  const secoes = linhas.filter((l) => l.length > 0 && l.length < 50 && !/[.:,;]$/.test(l) && !l.startsWith('*')).slice(0, 40);
+  const falas = new Map<string, number>();
+  for (const m of texto.matchAll(/^\s*([\p{Lu}][\p{L}]+(?: [\p{L}]+){1,3}):/gmu)) falas.set(m[1], (falas.get(m[1]) ?? 0) + 1);
+  const transcricao = texto.search(/transcri[cç][aã]o/i);
+  return { secoes, falas: Object.fromEntries(falas), inicio_da_transcricao: transcricao, formato: texto.slice(transcricao, transcricao + 500) };
+}
+
+/** Quem entrou de fato na chamada, convidado ou não. */
+async function quemEntrou(token: string, sala: string) {
+  const filtro = encodeURIComponent(`space.meeting_code="${sala}"`);
+  const { conferenceRecords = [] } = await lerDoGoogle<{ conferenceRecords?: { name: string; startTime: string }[] }>(token, `https://meet.googleapis.com/v2/conferenceRecords?filter=${filtro}`);
+  const saida = [];
+  for (const r of conferenceRecords.slice(0, 3)) {
+    const { participants = [] } = await lerDoGoogle<{ participants?: { signedinUser?: { displayName?: string }; anonymousUser?: { displayName?: string } }[] }>(token, `https://meet.googleapis.com/v2/${r.name}/participants?pageSize=50`);
+    saida.push({ inicio: r.startTime, pessoas: participants.map((p) => p.signedinUser?.displayName ?? p.anonymousUser?.displayName ?? 'Sem nome') });
+  }
+  return saida;
+}
+
 /** Do título "Próximas etapas" (ou "Next steps") até o fim do bloco. */
 function proximasEtapas(texto: string) {
   const achou = /(pr[oó]ximas etapas|pr[oó]ximos passos|suggested next steps|next steps)/i.exec(texto);
@@ -65,9 +87,7 @@ serve(async (req) => {
       const { files = [] } = await lerDoGoogle<{ files?: { id: string; name: string }[] }>(token, drive.toString());
       for (const a of files) {
         if (documentosDoDia.has(a.id)) continue;
-        const achou = normaliza(a.name).includes(normaliza(busca));
-        const texto = achou ? await textoDoDocumento(token, a.id) : '';
-        documentosDoDia.set(a.id, { titulo: a.name, dono: conta, proximas_etapas: achou ? proximasEtapas(texto) : null, caracteres: texto.length });
+        documentosDoDia.set(a.id, { titulo: a.name, dono: conta, proximas_etapas: null, caracteres: 0 });
       }
     } catch (e) {
       if (e instanceof FalhaDoGoogle && e.codigo === 'invalid_grant') foraDoWorkspace.push(conta);
@@ -85,13 +105,23 @@ serve(async (req) => {
         const token = await tokenDoGoogle(organizador);
         for (const a of anexos) {
           const texto = await textoDoDocumento(token, a.fileId!);
-          documentos.push({ titulo: a.title, caracteres: texto.length, proximas_etapas: proximasEtapas(texto) });
+          documentos.push({ titulo: a.title, caracteres: texto.length, estrutura: estruturaDoDocumento(texto) });
         }
       } catch (erro) {
         documentos.push({ erro: String((erro as Error).message).slice(0, 200) });
       }
     }
+    let entraram: unknown = null;
+    const sala = e.hangoutLink?.split('/').pop();
+    if (organizador && sala) {
+      try {
+        entraram = await quemEntrou(await tokenDoGoogle(organizador), sala);
+      } catch (erro) {
+        entraram = String((erro as Error).message).slice(0, 200);
+      }
+    }
     reunioes.push({
+      entraram,
       titulo: e.summary, inicio: e.start?.dateTime ?? e.start?.date, organizador,
       convidados: e.attendees?.length ?? 0, meet: !!e.hangoutLink,
       anexos: (e.attachments ?? []).map((a) => a.title), documentos,
