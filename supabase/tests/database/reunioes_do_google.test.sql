@@ -8,10 +8,12 @@
 --  10-11 ligar o nome dá acesso à reunião e ao canal
 --  12    as funções não abrem para anon
 --  13    ligar o nome junta o convite e quem entrou em uma linha só
+--  14-15 a lista do Google: quem participou vê, quem entrou depois não
+--  16    colaborador não grava pelo navegador
 begin;
 \ir _helpers.psql
 
-select plan(13);
+select plan(16);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-reuniao', 'Reuniao', false) as a;
@@ -37,6 +39,8 @@ with canal as (
 ), p as (
   insert into public.reuniao_presencas (tenant_id, reuniao_id, nome, user_id, convidado, entrou)
   select tenant_id, id, 'Ana', (select ana from u), true, true from r returning reuniao_id
+), lista as (
+  insert into public.reuniao_listas (reuniao_id, tenant_id, csv) select id, tenant_id, 'Nome' from r returning reuniao_id
 ), n as (
   insert into public.reuniao_nomes (tenant_id, nome_google) select a, 'Dora Google' from f returning id
 ), z as (
@@ -55,12 +59,15 @@ select (select a from f), (select canal from c), x from unnest(array[(select ana
 select tests.authenticate_as('ana@reuniao.test');
 select is((select count(*)::int from public.reunioes), 1, 'quem é do canal vê a pauta');
 select is((select count(*)::int from public.reuniao_transcricoes), 1, 'quem participou vê a transcrição');
+select is((select count(*)::int from public.reuniao_listas), 1, 'quem participou vê a lista do Google');
+select ok(not has_table_privilege('authenticated', 'public.reunioes', 'update'), 'colaborador não grava pelo navegador');
 select is((select count(*)::int from public.reuniao_presencas), 3, 'quem participou vê a presença');
 select tests.clear_authentication();
 
 select tests.authenticate_as('bia@reuniao.test');
 select is((select count(*)::int from public.reunioes), 1, 'quem entrou depois vê a pauta antiga');
 select is((select count(*)::int from public.reuniao_transcricoes), 0, 'quem entrou depois não vê a transcrição');
+select is((select count(*)::int from public.reuniao_listas), 0, 'quem entrou depois não vê a lista');
 select tests.clear_authentication();
 
 select tests.authenticate_as('caio@reuniao.test');

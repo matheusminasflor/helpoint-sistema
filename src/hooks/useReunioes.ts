@@ -10,7 +10,7 @@ export interface SerieDeReuniao { id: string; titulo: string; avulsa: boolean; c
 
 export interface Reuniao {
   id: string; serie_id: string; titulo: string; inicio: string; fim: string | null; pauta: string | null;
-  link_documento: string | null; link_gravacao: string | null; lista_google: string | null; link_meet: string | null;
+  link_documento: string | null; link_gravacao: string | null; link_meet: string | null;
 }
 
 export interface PresencaNaReuniao {
@@ -61,7 +61,7 @@ export function useReunioesDaSerie(serieId: string | null) {
     queryKey: ['reunioes', tenantId, user?.id, serieId],
     enabled: !!tenantId && !!serieId,
     queryFn: async () => (unwrap(await supabase.from('reunioes' as never)
-      .select('id, serie_id, titulo, inicio, fim, pauta, link_documento, link_gravacao, lista_google, link_meet')
+      .select('id, serie_id, titulo, inicio, fim, pauta, link_documento, link_gravacao, link_meet')
       .eq('serie_id', serieId!).order('inicio', { ascending: false })) ?? []) as unknown as Reuniao[],
   });
 }
@@ -76,6 +76,20 @@ export function useTranscricao(reuniaoId: string | null) {
       const linha = unwrap(await supabase.from('reuniao_transcricoes' as never)
         .select('texto').eq('reuniao_id', reuniaoId!).maybeSingle()) as unknown as { texto: string } | null;
       return linha?.texto ?? null;
+    },
+  });
+}
+
+/** A lista que o Google gerou, com nome e e-mail: só para quem participou e a Diretoria. */
+export function useListaDoGoogle(reuniaoId: string | null) {
+  const { tenantId, user } = useAuth();
+  return useQuery({
+    queryKey: ['reuniao-lista', tenantId, user?.id, reuniaoId],
+    enabled: !!tenantId && !!reuniaoId,
+    queryFn: async () => {
+      const linha = unwrap(await supabase.from('reuniao_listas' as never)
+        .select('csv').eq('reuniao_id', reuniaoId!).maybeSingle()) as unknown as { csv: string } | null;
+      return linha?.csv ?? null;
     },
   });
 }

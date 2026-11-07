@@ -25,14 +25,6 @@ export function mediaDeMinutos(reunioes: { inicio: string; fim: string | null }[
   return tempos.length ? Math.round(tempos.reduce((a, b) => a + b, 0) / tempos.length) : null;
 }
 
-/** Busca na transcrição: as falas que contêm o termo, sem diferença de acento ou maiúscula, em ordem. */
-export function falasCom(transcricao: string, termo: string): string[] {
-  const limpa = (t: string) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
-  const alvo = limpa(termo.trim());
-  const linhas = transcricao.split('\n');
-  return alvo ? linhas.filter((l) => limpa(l).includes(alvo)) : linhas;
-}
-
 /** Lê o CSV que o Google exporta da lista de presença, respeitando aspas. */
 export function lerCsv(texto: string): string[][] {
   const linhas: string[][] = [];
@@ -55,4 +47,48 @@ export function nomesDaEquipe(nomes: string[], pessoas: string[]): string[] {
   const primeiro = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase().split(/\s+/)[0];
   const daEquipe = new Set(pessoas.map(primeiro));
   return nomes.filter((n) => daEquipe.has(primeiro(n)));
+}
+
+/** Os blocos de uma seção. Linha curta sozinha antes do texto é o subtítulo que o Gemini escreve; sobrando "____", some. */
+export function paragrafosDaSecao(texto: string): { titulo: string | null; corpo: string }[] {
+  const blocos = texto.split(/\n\s*\n/).map((b) => b.split('\n').filter((l) => !/^_+$/.test(l.trim())).join('\n').trim()).filter(Boolean);
+  return blocos.flatMap((b) => {
+    const linhas = b.split('\n');
+    const curta = linhas.length > 1 && linhas[0].length <= 70 && !/[.:;!?]$/.test(linhas[0].trim());
+    if (curta) return [{ titulo: linhas[0].trim(), corpo: linhas.slice(1).join('\n').trim() }];
+    const prefixo = /^([^.:]{3,90}): (.+)$/s.exec(b);
+    return [prefixo ? { titulo: prefixo[1], corpo: prefixo[2] } : { titulo: null, corpo: b }];
+  });
+}
+
+/** "* [Ana, Bia] Enviar: fazer tal coisa." vira pessoas, título e texto. Linha fora desse formato vai inteira no texto. */
+export function proximasEtapas(texto: string): { pessoas: string[]; titulo: string | null; texto: string }[] {
+  return texto.split('\n').map((l) => l.trim().replace(/^[*•-]\s*/, '')).filter(Boolean).map((l) => {
+    const m = /^\[([^\]]+)\]\s*(?:([^:]{2,70}):\s*)?(.*)$/.exec(l);
+    if (!m) return { pessoas: [], titulo: null, texto: l };
+    return { pessoas: m[1].split(',').map((p) => p.trim().replace(/^The group$/i, 'Grupo')).filter(Boolean), titulo: m[2] ?? null, texto: m[3] };
+  });
+}
+
+/** Separa as marcas de tempo "(00:09:01)" do texto, para virarem link da transcrição. */
+export function temposDoTexto(texto: string): { texto: string; hora?: string }[] {
+  return texto.split(/\((\d{2}:\d{2}:\d{2})\)/).flatMap((p, i) => (i % 2 ? [{ texto: p, hora: p }] : p ? [{ texto: p }] : []));
+}
+
+export interface FalaDaTranscricao { id: number; hora: string | null; nome: string; fala: string }
+
+/** A transcrição em falas por pessoa, juntando as linhas seguidas de quem continua falando. */
+export function falasDaTranscricao(transcricao: string): FalaDaTranscricao[] {
+  const falas: FalaDaTranscricao[] = [];
+  let hora: string | null = null;
+  for (const linha of transcricao.split('\n').map((l) => l.trim()).filter(Boolean)) {
+    if (/^\d{2}:\d{2}:\d{2}$/.test(linha)) { hora = linha; continue; }
+    const m = /^([\p{L}][\p{L} .'-]{1,50}): (.*)$/u.exec(linha);
+    const ultima = falas.at(-1);
+    if (m && ultima?.nome === m[1]) ultima.fala += ` ${m[2]}`;
+    else if (m) falas.push({ id: falas.length, hora, nome: m[1], fala: m[2] });
+    else if (ultima && falas.length) ultima.fala += ` ${linha}`;
+    else falas.push({ id: falas.length, hora, nome: '', fala: linha });
+  }
+  return falas;
 }

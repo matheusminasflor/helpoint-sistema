@@ -325,7 +325,7 @@ async function rodada(db: SupabaseClient, tenant: string, corpo: { desde?: strin
         tenant_id: tenant, serie_id: serieId, google_evento: id, titulo, inicio, fim,
         documento_id: documento?.arquivo.id ?? null, documento_em: documentoEm,
         link_documento: documento?.arquivo.webViewLink ?? null, link_gravacao: gravacao?.webViewLink ?? null, link_meet: m.linkMeet,
-        pauta: texto?.pauta || null, lista_google: lista, updated_at: agora.toISOString(),
+        pauta: texto?.pauta || null, updated_at: agora.toISOString(),
         ...(remarcada ? { lembrete_em: null } : {}),
       }, { onConflict: 'tenant_id,google_evento' }).select('id').single();
       if (erroReuniao) throw erroReuniao;
@@ -335,6 +335,10 @@ async function rodada(db: SupabaseClient, tenant: string, corpo: { desde?: strin
         if (error) throw error;
       } else {
         const { error } = await db.from('reuniao_transcricoes').delete().eq('reuniao_id', reuniao.id);
+        if (error) throw error;
+      }
+      if (lista) {
+        const { error } = await db.from('reuniao_listas').upsert({ reuniao_id: reuniao.id, tenant_id: tenant, csv: lista });
         if (error) throw error;
       }
       const { error: erroApaga } = await db.from('reuniao_presencas').delete().eq('reuniao_id', reuniao.id);

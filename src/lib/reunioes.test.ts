@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { falasCom, lerCsv, mediaDeMinutos, minutosEntre, nomesDaEquipe, secaoDaPauta } from './reunioes';
+import { falasDaTranscricao, lerCsv, mediaDeMinutos, minutosEntre, nomesDaEquipe, paragrafosDaSecao, proximasEtapas, secaoDaPauta, temposDoTexto } from './reunioes';
 
 const pauta = 'Registros da reunião\n\nResumo\nFoco na expansão.\n\nDecisões\nAlinhada\n\nPróximas etapas\n* [Ana] Enviar\n\nDetalhes\nTexto longo.';
 
@@ -27,13 +27,30 @@ describe('tempo da reunião', () => {
   });
 });
 
-describe('busca na transcrição', () => {
-  const t = '00:01:16\nMarcus Carvalho: Querem que eu compartilhe então?\nMairon Sena: Planejamento';
-  it('ignora acento e maiúscula', () => {
-    expect(falasCom(t, 'ENTAO')).toEqual(['Marcus Carvalho: Querem que eu compartilhe então?']);
+describe('leitura da pauta', () => {
+  it('separa responsáveis, título e texto', () => {
+    expect(proximasEtapas('* [Ana, The group] Enviar: mandar hoje.\n* Sem nome')).toEqual([
+      { pessoas: ['Ana', 'Grupo'], titulo: 'Enviar', texto: 'mandar hoje.' },
+      { pessoas: [], titulo: null, texto: 'Sem nome' },
+    ]);
   });
-  it('sem termo, mostra tudo', () => {
-    expect(falasCom(t, ' ')).toHaveLength(3);
+  it('acha subtítulo e prefixo sem mudar o texto', () => {
+    expect(paragrafosDaSecao('Ferramentas e migracao\nTeste em 1 semana.\n\n________________\n\nPlano: foco em canais.')).toEqual([
+      { titulo: 'Ferramentas e migracao', corpo: 'Teste em 1 semana.' },
+      { titulo: 'Plano', corpo: 'foco em canais.' },
+    ]);
+  });
+  it('separa as marcas de tempo', () => {
+    expect(temposDoTexto('Plano (00:01:16) (00:09:01).').filter((p) => p.hora).map((p) => p.hora)).toEqual(['00:01:16', '00:09:01']);
+  });
+});
+
+describe('transcrição por fala', () => {
+  it('guarda a hora e junta quem continua falando', () => {
+    expect(falasDaTranscricao('00:01:16\nAna Lima: Bom dia\nAna Lima: pessoal\nBia Reis: Oi\n00:02:00\nBia Reis: Certo')).toEqual([
+      { id: 0, hora: '00:01:16', nome: 'Ana Lima', fala: 'Bom dia pessoal' },
+      { id: 1, hora: '00:01:16', nome: 'Bia Reis', fala: 'Oi Certo' },
+    ]);
   });
 });
 

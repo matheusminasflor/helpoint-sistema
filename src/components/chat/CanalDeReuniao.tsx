@@ -1,7 +1,8 @@
 // O canal de uma reunião no Chat (dono, 2026-11-07): as pautas de cada encontro, o texto do Google como veio, a
 // transcrição, a presença e a conversa. Nada aqui cria chamado, tarefa ou projeto.
-import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, Download, ExternalLink, Search, UserRound, Video } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { ArrowLeft, Download, ExternalLink, UserRound, Video } from 'lucide-react';
+import { PautaLegivel, TranscricaoLegivel } from '@/components/chat/TextoDaReuniao';
 import { ConversaCanal } from '@/components/chat/ConversaCanal';
 import { LeituraDaLyra } from '@/components/chat/LeituraDaLyra';
 import { Badge } from '@/components/ui/badge';
@@ -15,11 +16,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useEntrarNoCanal, type ChatCanalRow } from '@/hooks/useChat';
 import { useProfiles } from '@/hooks/useInventory';
 import {
-  useLigarNome, useNomesSemPessoa, usePresenca, useReunioesDaSerie, useTranscricao,
+  useLigarNome, useListaDoGoogle, useNomesSemPessoa, usePresenca, useReunioesDaSerie, useTranscricao,
   type PresencaNaReuniao, type Reuniao, type SerieDeReuniao,
 } from '@/hooks/useReunioes';
 import { dataHora, toLocalISODate } from '@/lib/dates';
-import { falasCom, lerCsv, mediaDeMinutos, minutosEntre, nomesDaEquipe, secaoDaPauta } from '@/lib/reunioes';
+import { lerCsv, mediaDeMinutos, minutosEntre, nomesDaEquipe, secaoDaPauta } from '@/lib/reunioes';
 
 const dia = (iso: string) => new Date(iso).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' });
 const hora = (iso: string | null) => (iso ? new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '—');
@@ -35,40 +36,30 @@ function Texto({ children }: { children: string }) {
   return <p className="text-[14px] whitespace-pre-wrap break-words max-w-[75ch]">{children}</p>;
 }
 
-function PautaDoEncontro({ reuniao }: { reuniao: Reuniao }) {
+function PautaDoEncontro({ reuniao, onHora }: { reuniao: Reuniao; onHora: (hora: string) => void }) {
   if (!reuniao.pauta) return <p className="text-[14px] text-muted-foreground">Esta reunião não teve anotações do Google.</p>;
-  return <Texto>{reuniao.pauta}</Texto>;
+  return <PautaLegivel pauta={reuniao.pauta} onHora={onHora} />;
 }
 
-function TranscricaoDoEncontro({ reuniao }: { reuniao: Reuniao }) {
+function TranscricaoDoEncontro({ reuniao, horaAlvo }: { reuniao: Reuniao; horaAlvo: string | null }) {
   const { data: texto, isLoading, isError, refetch } = useTranscricao(reuniao.id);
-  const [busca, setBusca] = useState('');
-  const falas = useMemo(() => falasCom(texto ?? '', busca), [texto, busca]);
   if (isError) return <ErroDeCarga mensagem="Não consegui ler a transcrição." onTentar={() => void refetch()} />;
   if (isLoading) return <Skeleton className="h-40 w-full" />;
   if (!texto) return <p className="text-[14px] text-muted-foreground">A transcrição fica com quem participou deste encontro e com a Diretoria. Se você participou, este encontro não teve transcrição.</p>;
-  return (
-    <div className="space-y-3">
-      <div className="relative max-w-sm">
-        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
-        <Input className="pl-8" aria-label="Buscar na transcrição" placeholder="Buscar na transcrição" value={busca} onChange={(e) => setBusca(e.target.value)} />
-      </div>
-      {busca.trim() && <p className="text-[13px] text-muted-foreground">{falas.length} {falas.length === 1 ? 'trecho' : 'trechos'}</p>}
-      <Texto>{falas.join('\n')}</Texto>
-    </div>
-  );
+  return <TranscricaoLegivel texto={texto} horaAlvo={horaAlvo} />;
 }
 
 function PresencaDoEncontro({ reuniao }: { reuniao: Reuniao }) {
   const { data: pessoas = [], isLoading, isError, refetch } = usePresenca(reuniao.id);
+  const { data: listaDoGoogle, isLoading: lendoLista } = useListaDoGoogle(reuniao.id);
   if (isError) return <ErroDeCarga mensagem="Não consegui ler a presença." onTentar={() => void refetch()} />;
-  if (isLoading) return <Skeleton className="h-40 w-full" />;
-  if (pessoas.length === 0 && !reuniao.lista_google) {
+  if (isLoading || lendoLista) return <Skeleton className="h-40 w-full" />;
+  if (pessoas.length === 0 && !listaDoGoogle) {
     return <p className="text-[14px] text-muted-foreground">A presença fica com quem participou deste encontro e com a Diretoria.</p>;
   }
   const arquivo = `presenca-${reuniao.titulo.replace(/[^\p{L}\p{N}]+/gu, '-').toLowerCase()}-${toLocalISODate(new Date(reuniao.inicio))}.xlsx`;
-  if (reuniao.lista_google) {
-    const linhas = lerCsv(reuniao.lista_google);
+  if (listaDoGoogle) {
+    const linhas = lerCsv(listaDoGoogle);
     return (
       <div className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -119,6 +110,10 @@ function PresencaDoEncontro({ reuniao }: { reuniao: Reuniao }) {
 }
 
 function Encontro({ reuniao }: { reuniao: Reuniao }) {
+  const [aba, setAba] = useState('pauta');
+  const [horaAlvo, setHoraAlvo] = useState<string | null>(null);
+  // A marca de tempo da pauta abre a transcrição naquele momento.
+  const irParaHora = (h: string) => { setHoraAlvo(h); setAba('transcricao'); };
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -128,14 +123,14 @@ function Encontro({ reuniao }: { reuniao: Reuniao }) {
           {reuniao.link_gravacao && <Button asChild size="sm" variant="ghost"><a href={reuniao.link_gravacao} target="_blank" rel="noreferrer"><ExternalLink className="w-4 h-4 mr-1.5" aria-hidden="true" />Abrir a gravação</a></Button>}
         </div>
       </div>
-      <Tabs defaultValue="pauta">
+      <Tabs value={aba} onValueChange={setAba}>
         <TabsList>
           <TabsTrigger value="pauta">Pauta</TabsTrigger>
           <TabsTrigger value="transcricao">Transcrição</TabsTrigger>
           <TabsTrigger value="presenca">Presença</TabsTrigger>
         </TabsList>
-        <TabsContent value="pauta" className="mt-3"><PautaDoEncontro reuniao={reuniao} /></TabsContent>
-        <TabsContent value="transcricao" className="mt-3"><TranscricaoDoEncontro reuniao={reuniao} /></TabsContent>
+        <TabsContent value="pauta" className="mt-3"><PautaDoEncontro reuniao={reuniao} onHora={irParaHora} /></TabsContent>
+        <TabsContent value="transcricao" className="mt-3"><TranscricaoDoEncontro reuniao={reuniao} horaAlvo={horaAlvo} /></TabsContent>
         <TabsContent value="presenca" className="mt-3"><PresencaDoEncontro reuniao={reuniao} /></TabsContent>
       </Tabs>
     </div>
