@@ -38,6 +38,7 @@ import { SeletorPeriodoDaCompetencia } from '@/components/comercial/SeletorPerio
 import { SeletorVisao } from '@/components/comercial/SeletorVisao';
 import { useVisaoRelatorio } from '@/hooks/useVisaoRelatorio';
 import { usePeriodoDaCompetencia } from '@/hooks/usePeriodoDaCompetencia';
+import { ErroDeCarga } from '@/components/ui/ErroDeCarga';
 import { useQueryState } from '@/hooks/useQueryState';
 import { useCarteiras } from '@/hooks/useComercialCarteirasMetas';
 import {
@@ -155,8 +156,8 @@ export default function ComercialCarteiras() {
   const ano = Number(competencia.slice(0, 4));
   const mesIndice = Number(competencia.slice(5, 7));
 
-  const { data: linhas = [], isLoading } = useAcompanhamentoDaCarteira(carteira, competencia, intervalo, filial);
-  const { data: meses = [] } = useCarteiraMesAMes(carteira, ano, filial);
+  const { data: linhas = [], isLoading, isError: erroNasLinhas, refetch: lerLinhas } = useAcompanhamentoDaCarteira(carteira, competencia, intervalo, filial);
+  const { data: meses = [], isError: erroNosMeses, refetch: lerMeses } = useCarteiraMesAMes(carteira, ano, filial);
   const doMes = intervalo ? null : meses.find((m) => m.mes === mesIndice);
   const meta = doMes?.meta ?? null;
   const hoje = todayISO();
@@ -219,6 +220,9 @@ export default function ComercialCarteiras() {
       <div className="px-4 lg:px-8 pb-6 space-y-5 print:block">
         {/* Quem monta as carteiras vê a fila dele aqui (etapa 4 · Comercial, 2026-10-24). */}
         {geraCarteiras && <FilaDoGestor />}
+        {(erroNasLinhas || erroNosMeses) && (
+          <ErroDeCarga mensagem="Não consegui ler a carteira: os valores abaixo estão incompletos." onTentar={() => { void lerLinhas(); void lerMeses(); }} />
+        )}
         <div className="flex flex-wrap items-center justify-between gap-3">
           {/* Cada filtro com o nome em cima (dono, 2026-10-16: "saibam usar os filtros"). */}
           <div className="flex flex-wrap items-end gap-3 print:hidden">
@@ -749,7 +753,7 @@ function ClienteMesAMes({ linha, onClose, carteira, competencia, intervalo, fili
               <div className="rounded-md border border-border p-2"><dt className="text-muted-foreground">Pedidos em aberto</dt><dd className="font-mono font-semibold">{linha.pedidos_a_faturar} · {formatBRL(linha.a_faturar)}</dd></div>
               <div className="rounded-md border border-border p-2"><dt className="text-muted-foreground">Cashback liberado no ano</dt><dd className="font-mono font-semibold">{formatBRL(cashback?.liberado ?? 0)}</dd>
                 {(cashback?.aguardando ?? 0) > 0 && <dd className="text-muted-foreground">aguardando {formatBRL(cashback?.aguardando ?? 0)}</dd>}
-                {can('cashback', 'view') && <dd><Link to={tenantPath('/comercial/cashback')} className="text-primary underline">ver cashback</Link></dd>}</div>
+                {can('cashback', 'view') && <dd><Link to={tenantPath(`/comercial/cashback?carteira=${encodeURIComponent(carteira ?? '')}`)} className="text-primary underline">ver cashback</Link></dd>}</div>
               <div className="rounded-md border border-border p-2"><dt className="text-muted-foreground">Dor em aberto</dt><dd className={dor ? 'text-status-danger font-semibold' : ''}>{dor ? rotuloDoMotivo(dor) : 'Nenhuma'}</dd></div>
               <div className="rounded-md border border-border p-2"><dt className="text-muted-foreground">Próximo retorno</dt><dd>{linha.proximo_prazo ? formatDateBR(linha.proximo_prazo) : 'Sem retorno'}</dd></div>
             </dl>

@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { SeloCondicao } from '@/components/comercial/SeloCondicao';
 import { useAuth } from '@/contexts/AuthContext';
 import { useClientesEmCondicao } from '@/hooks/useComercialCliente';
-import { useInformarNota, useNotasDoComercial, type NotaParaResolver } from '@/hooks/usePedidosChecklist';
+import { useInformarNota, useNotasDoComercial, usePodeInformarNotaDeOutro, type NotaParaResolver } from '@/hooks/usePedidosChecklist';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { TITULOS, diasDesde, esperaDaNota } from '@/lib/notas-para-resolver';
 import { lerValor } from '@/lib/checklist-de-pedidos';
@@ -22,6 +22,8 @@ export function NotasParaResolver() {
   const { data: notas = [], isError } = useNotasDoComercial();
   const { data: emCondicao } = useClientesEmCondicao();
   const [aberta, setAberta] = useState<NotaParaResolver | null>(null);
+  const { user } = useAuth();
+  const { data: doFinanceiro = false } = usePodeInformarNotaDeOutro();
   if (isError) return <p className="text-[13px] text-status-danger">Não consegui carregar as notas pendentes.</p>;
   if (notas.length === 0) return null;
   const pendentes = notas.filter((n) => n.situacao !== 'valor_diferente').length;
@@ -45,7 +47,9 @@ export function NotasParaResolver() {
                 </Badge>
                 {n.situacao === 'valor_diferente'
                   ? <span className="text-muted-foreground">Digitado {formatBRL(n.nota_valor ?? 0)}, Forteplus {formatBRL(n.forteplus_valor ?? 0)}</span>
-                  : <Button size="sm" onClick={() => setAberta(n)}>{n.situacao === 'corrigir' ? 'Corrigir nota' : 'Informar nota'}</Button>}
+                  : n.vendedor_id === user?.id || doFinanceiro
+                    ? <Button size="sm" onClick={() => setAberta(n)}>{n.situacao === 'corrigir' ? 'Corrigir nota' : 'Informar nota'}</Button>
+                    : <span className="text-muted-foreground">Quem informa: {n.vendedor ?? 'a vendedora'} ou o Financeiro</span>}
               </span>
             </li>
           );

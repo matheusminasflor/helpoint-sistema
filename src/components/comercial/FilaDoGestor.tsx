@@ -37,8 +37,10 @@ export function FilaDoGestor() {
           <ul className="space-y-1 text-[13px]">
             {devolvidos.slice(0, 6).map((c, i) => (
               <li key={c.id} className={`min-w-0 ${i >= 3 ? 'max-sm:hidden' : ''}`}>
-                <span className="font-medium">{c.protocolo}</span> · {c.cliente_nome} · {c.vendedor_nome ?? '—'}
-                {c.retorno_motivos?.length ? <span className="text-muted-foreground"> — {c.retorno_motivos.join(', ')}</span> : null}
+                <Link to={tenantPath('/comercial/pedidos?aba=devolvidos')} className="hover:underline">
+                  <span className="font-medium">{c.protocolo}</span> · {c.cliente_nome} · {c.vendedor_nome ?? '—'}
+                  {c.retorno_motivos?.length ? <span className="text-muted-foreground"> — {c.retorno_motivos.join(', ')}</span> : null}
+                </Link>
               </li>
             ))}
           </ul>

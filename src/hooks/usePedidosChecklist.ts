@@ -509,6 +509,19 @@ export function useNotasDoComercial() {
   });
 }
 
+/** A mesma pergunta de `ped_informar_nota`, além de quem fez o pedido. */
+export function usePodeInformarNotaDeOutro() {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ['ped-pode-informar-nota', user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const decide = unwrap(await supabase.rpc('ped_pode_decidir' as never)) as unknown as boolean;
+      return decide || (unwrap(await supabase.rpc('ped_pode_registrar_pagamento' as never)) as unknown as boolean);
+    },
+  });
+}
+
 export function useInformarNota() {
   const qc = useQueryClient();
   return useMutation({

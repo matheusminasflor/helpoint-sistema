@@ -46,6 +46,7 @@ import { ptBR } from 'date-fns/locale';
 import { useTempoUtil } from '@/hooks/useTempoUtil';
 import { categoriaDoChamado, getTicketPriorityLabel, getSLATimeRemaining, SLA_PAUSED_STATUSES } from '@/types/helpdesk';
 import { ChipDoSetor } from '@/components/ui/ChipDoSetor';
+import { ErroDeCarga } from '@/components/ui/ErroDeCarga';
 import { EtapasParaQuemPediu } from '@/components/request/EtapasParaQuemPediu';
 import { ehPedido, estadoDoChamadoParaQuemPediu } from '@/lib/estado-para-quem-pediu';
 import { rotuloDaPrimeiraResposta } from '@/lib/primeira-resposta';
@@ -60,7 +61,7 @@ export default function TicketDetail() {
   const navigate = useNavigate();
   const tenantPath = useTenantPath();
   const { user, role } = useAuth();
-  const { ticket, isLoading, refetch, patch } = useTicketDetail(id || null);
+  const { ticket, isLoading, erro, refetch, patch } = useTicketDetail(id || null);
   const { data: tempoUtil } = useTempoUtil(ticket ? [ticket.id] : []);
   // Quem atende junto (2026-10-13) age no chamado mesmo sem perfil no setor dele.
   const euAtendoJunto = useEuAtendoJunto(ticket?.id);
@@ -110,6 +111,14 @@ export default function TicketDetail() {
         <div className="max-w-6xl mx-auto p-4">
           <Skeleton className="h-[600px] w-full rounded-2xl" />
         </div>
+      </div>
+    );
+  }
+
+  if (!ticket && erro) {
+    return (
+      <div className="p-6 max-w-xl mx-auto">
+        <ErroDeCarga mensagem="Não consegui abrir o chamado." onTentar={() => void refetch()} />
       </div>
     );
   }

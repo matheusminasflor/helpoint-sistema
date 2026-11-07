@@ -233,14 +233,14 @@ export function useTicketActions() {
       await comentar(ticketId, `@${technicianName}, ${message}`, isInternal, 'a menção');
 
       // Insert into ticket_mentions for visibility control
-      await supabase
+      unwrap(await supabase
         .from('ticket_mentions')
         .insert({
           ticket_id: ticketId,
           mentioned_user_id: technicianId,
           mentioned_by: user.id,
           message: message,
-        } as any);
+        } as any));
 
       const ticketData = unwrap(await supabase
         .from('tickets')
@@ -250,7 +250,7 @@ export function useTicketActions() {
 
       if (ticketData) {
         const userName = user.user_metadata?.full_name || user.email;
-        await supabase
+        unwrap(await supabase
           .from('notifications')
           .insert({
             tenant_id: ticketData.tenant_id,
@@ -260,7 +260,7 @@ export function useTicketActions() {
             message: `${userName} mencionou você: "${message.substring(0, 100)}${message.length > 100 ? '…' : ''}"`,
             reference_type: 'ticket',
             reference_id: ticketId,
-          });
+          }));
       }
     } finally {
       setIsLoading(false);
@@ -313,15 +313,15 @@ export function useTicketActions() {
     if (!user) throw new Error('User not authenticated');
     setIsLoading(true);
     try {
-      const { error } = await supabase
+      expectRows(await supabase
         .from('tickets')
         .update({
           status: 'in_progress',
           resolved_at: null,
           closed_at: null,
         } as never)
-        .eq('id', ticketId);
-      if (error) throw error;
+        .eq('id', ticketId)
+        .select('id'), 'o chamado');
 
       // Comentário público do solicitante: o trigger do banco avisa o
       // responsável — ou a equipe do módulo, se ninguém assumiu.
@@ -335,11 +335,11 @@ export function useTicketActions() {
     if (!user) throw new Error('User not authenticated');
     setIsLoading(true);
     try {
-      const { error } = await supabase
+      expectRows(await supabase
         .from('tickets')
         .delete()
-        .eq('id', ticketId);
-      if (error) throw error;
+        .eq('id', ticketId)
+        .select('id'), 'o chamado');
     } finally {
       setIsLoading(false);
     }

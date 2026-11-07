@@ -145,17 +145,17 @@ function CategoriesTab() {
   const save = async () => {
     if (!editing?.name) { toast.error('Nome obrigatório'); return; }
     if (editing.id) {
-      const { error } = await supabase.from('sac_categories').update({
+      const { data, error } = await supabase.from('sac_categories').update({
         name: editing.name, description: editing.description, color: editing.color,
         is_active: editing.is_active ?? true,
-      }).eq('id', editing.id);
-      if (error) return toast.error(error.message);
+      }).eq('id', editing.id).select('id');
+      if (error || !data?.length) return toast.error(error?.message ?? 'Não gravou: confira a sua permissão.');
     } else {
-      const { error } = await supabase.from('sac_categories').insert({
+      const { data, error } = await supabase.from('sac_categories').insert({
         tenant_id: tenantId!, name: editing.name, description: editing.description || null,
         color: editing.color || '#00c875', sort_order: items.length + 1, is_active: true,
-      });
-      if (error) return toast.error(error.message);
+      }).select('id');
+      if (error || !data?.length) return toast.error(error?.message ?? 'Não gravou: confira a sua permissão.');
     }
     toast.success('Salvo'); setEditing(null); load();
   };
@@ -243,23 +243,23 @@ function FormFieldsTab() {
   const save = async () => {
     if (!editing?.label) { toast.error('Rótulo obrigatório'); return; }
     if (editing.id) {
-      const { error } = await supabase.from('sac_form_fields').update({
+      const { data, error } = await supabase.from('sac_form_fields').update({
         label: editing.label, field_type: editing.field_type,
         placeholder: editing.placeholder, help_text: editing.help_text,
         is_required: editing.is_required ?? false, is_active: editing.is_active ?? true,
         options: editing.options || [],
-      }).eq('id', editing.id);
-      if (error) return toast.error(error.message);
+      }).eq('id', editing.id).select('id');
+      if (error || !data?.length) return toast.error(error?.message ?? 'Não gravou: confira a sua permissão.');
     } else {
       const key = editing.field_key || `custom_${Date.now()}`;
-      const { error } = await supabase.from('sac_form_fields').insert({
+      const { data, error } = await supabase.from('sac_form_fields').insert({
         tenant_id: tenantId!, field_key: key, label: editing.label,
         field_type: editing.field_type || 'text', placeholder: editing.placeholder || null,
         help_text: editing.help_text || null, is_required: editing.is_required ?? false,
         is_active: true, is_system: false, options: editing.options || [],
         sort_order: items.length + 1,
-      });
-      if (error) return toast.error(error.message);
+      }).select('id');
+      if (error || !data?.length) return toast.error(error?.message ?? 'Não gravou: confira a sua permissão.');
     }
     toast.success('Salvo'); setEditing(null); load();
   };

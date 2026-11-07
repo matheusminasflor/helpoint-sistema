@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
+import { ErroDeCarga } from '@/components/ui/ErroDeCarga';
 import { TutorialDoRelatorio } from '@/components/ajuda/TutorialDoRelatorio';
 import { ExplicacaoDoIndicador } from '@/components/ajuda/ExplicacaoDoIndicador';
 import {
@@ -83,10 +84,14 @@ export default function QualidadeDashboard() {
   const [comments, setComments] = useState<any[]>([]);
   const [productItems, setProductItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [falhou, setFalhou] = useState(false);
+  const [tentativa, setTentativa] = useState(0);
 
   useEffect(() => {
     (async () => {
       setLoading(true);
+      setFalhou(false);
+      try {
       const { inicio: start, fim } = recorte;
       const now = new Date();
 
@@ -97,7 +102,7 @@ export default function QualidadeDashboard() {
       if (start) q = q.gte('created_at', start.toISOString());
       if (fim) q = q.lte('created_at', fim.toISOString());
       const { data: cur, error: curError } = await q;
-      if (curError) { console.error(curError); setLoading(false); return; }
+      if (curError) throw curError;
       const curr = cur || [];
       setTickets(curr);
 
@@ -117,7 +122,7 @@ export default function QualidadeDashboard() {
           .select('id, status, priority, created_at, resolved_at, first_response_at, sla_due_at, satisfaction_resolved, category_id, sac_categories(name)')
           .gte('created_at', prevStart.toISOString())
           .lt('created_at', start.toISOString());
-        if (prevError) { console.error(prevError); setLoading(false); return; }
+        if (prevError) throw prevError;
         setPrevTickets(prev || []);
       } else {
         setPrevTickets([]);
@@ -138,10 +143,14 @@ export default function QualidadeDashboard() {
       } else {
         setComments([]); setProductItems([]);
       }
-
-      setLoading(false);
+      } catch (e) {
+        console.error(e);
+        setFalhou(true);
+      } finally {
+        setLoading(false);
+      }
     })();
-  }, [recorte]);
+  }, [recorte, tentativa]);
 
   // ============ KPIs Visão Geral ============
   const kpis = useMemo(() => {
@@ -484,7 +493,11 @@ export default function QualidadeDashboard() {
           <div className="flex justify-center p-12"><Loader2 className="w-6 h-6 animate-spin" /></div>
         )}
 
-        {!loading && (
+        {!loading && falhou && (
+          <ErroDeCarga mensagem="Não consegui ler os indicadores da Qualidade." onTentar={() => setTentativa((t) => t + 1)} />
+        )}
+
+        {!loading && !falhou && (
           <>
             {/* VISÃO GERAL */}
             <TabsContent value="overview" className="space-y-6 mt-4">

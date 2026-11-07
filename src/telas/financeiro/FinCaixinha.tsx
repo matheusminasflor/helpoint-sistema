@@ -216,7 +216,7 @@ export default function FinCaixinha() {
                         {m.compra?.solicitacao_id && (
                           <Link to={tenantPath(`/solicitacoes/${m.compra.solicitacao_id}`)} className="ml-2 text-[12px] text-primary underline">ver o pedido de compra</Link>
                         )}
-                        {m.fin_entry_id && (
+                        {m.fin_entry_id && can('payables', 'view') && (
                           <Link to={tenantPath(`/financeiro/contas-a-pagar?conta=${m.fin_entry_id}`)} className="ml-2 text-[12px] text-primary underline">ver a conta</Link>
                         )}
                       </td>

@@ -8,6 +8,7 @@
 //
 // A tela mostra SÓ os lançamentos de quem está logada, mesmo para o gestor: esta é a aba de
 // trabalho de cada um. O gestor lê a equipe em Comercial › Indicadores.
+import { ConfirmarExclusao } from '@/components/ui/ConfirmarExclusao';
 import { MeusRetornos } from '@/components/comercial/MeusRetornos';
 import { FonteDoNumero } from '@/components/comercial/FonteDoNumero';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -49,6 +50,7 @@ export default function ComercialLancamentos() {
   const podeApagar = usePodeNoLancamento().apagar;
   const [aberto, setAberto] = useState(false);
   const [editando, setEditando] = useState<Interacao | null>(null);
+  const [apagando, setApagando] = useState<Interacao | null>(null);
   const [clienteInicial, setClienteInicial] = useState<ClienteParaLancar | null>(null);
 
   const nomePorId = useMemo(() => new Map(catalogo.map((c) => [c.id, c])), [catalogo]);
@@ -256,7 +258,7 @@ export default function ComercialLancamentos() {
                         {podeApagar && (
                           <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="Apagar lançamento"
                             title={ck ? 'Tem checklist de pedido: não pode ser apagado.' : undefined}
-                            disabled={apagar.isPending || !!ck} onClick={() => apagar.mutate(l.id)}>
+                            disabled={apagar.isPending || !!ck} onClick={() => setApagando(l)}>
                             <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
                           </Button>
                         )}
@@ -277,6 +279,14 @@ export default function ComercialLancamentos() {
         catalogo={catalogo}
         clienteInicial={clienteInicial}
         editando={editando}
+      />
+      <ConfirmarExclusao
+        aberto={!!apagando}
+        titulo="Apagar este lançamento?"
+        descricao={`O contato com ${apagando?.cliente?.razao_social ?? 'este cliente'} sai da contagem e não volta.`}
+        enviando={apagar.isPending}
+        onCancelar={() => setApagando(null)}
+        onConfirmar={() => { if (apagando) apagar.mutate(apagando.id, { onSuccess: () => setApagando(null) }); }}
       />
     </div>
   );

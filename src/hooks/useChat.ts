@@ -77,6 +77,24 @@ export function useMensagens(channelId: string | undefined, limite = 200, busca 
   });
 }
 
+/** Na tela do Chat: mensagem de outra conversa também muda os contadores da lista. O RLS entrega só as conversas da pessoa. */
+export function useContadoresAoVivo() {
+  const { tenantId } = useAuth();
+  const qc = useQueryClient();
+  useEffect(() => {
+    const channel = supabase
+      .channel('chat-contadores')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, () => {
+        qc.invalidateQueries({ queryKey: ['chat-nao-lidas', tenantId] });
+        qc.invalidateQueries({ queryKey: ['chat-ultimas', tenantId] });
+      })
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [tenantId, qc]);
+}
+
 export interface NovaMensagemInput {
   conteudo: string;
   /** Quem foi citado com `@Nome` — decisão 8 (L11b): vira aviso no sino de quem participa do canal. */

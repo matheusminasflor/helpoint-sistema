@@ -38,8 +38,8 @@ export const TUTORIAIS = {
     oQueE: 'Onde a Diretoria define a meta de cada carteira por mês e acompanha o realizado, com o simulador e a comparação com o ano anterior.',
     deOndeVem: 'A meta é digitada aqui. O realizado NÃO se digita: é a venda dos clientes de cada carteira — notas importadas do Forteplus até a última importação e, depois, os lançamentos com Nº da nota (o mesmo número do Comercial).',
     comoLer: [
-      'Simplificado (abre assim na primeira vez): as carteiras, o simulador e o ano por carteira, com a cobertura em cores.',
-      'Analítico: a grade editável de meta, quem responde por cada carteira, as carteiras mês a mês (venda, peso, meta e cobertura de cada mês) e o comparativo com os anos anteriores.',
+      'Acompanhar: escolha o período e veja cada carteira no período, mês a mês e na comparação com outros anos.',
+      'Definir o ano: siga os passos da aba, das carteiras e de quem responde por elas até a meta de cada mês.',
       'Peso = quanto a carteira representa da venda da empresa. Toque ou passe o mouse no título das colunas para a explicação.',
       'Renomear uma carteira aqui muda o nome em tudo (clientes, vendedoras e metas).',
     ],

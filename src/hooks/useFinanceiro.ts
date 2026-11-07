@@ -144,23 +144,9 @@ export function useAtualizarContaFixa() {
 }
 
 /** Baixa da fatura do cartão (2026-10-14): todas as parcelas que vencem naquela fatura, de uma vez. */
-export function useBaixarFatura() {
-  const invalidate = useInvalidate();
-  return useMutation({
-    mutationFn: async (ids: string[]) => {
-      expectRows(
-        await supabase.from(TABLE).update({ status: 'paid', settled_at: todayISO() } as never).in('id', ids).select('id'),
-        'a baixa da fatura',
-      );
-    },
-    onSuccess: () => { invalidate(); toast.success('Fatura baixada: as parcelas dela estão pagas.'); },
-    onError: (e: Error) => toast.error(`Não baixou a fatura: ${e.message}`),
-  });
-}
-
 /**
- * Pagar várias contas de uma vez, com a data do pagamento (etapa 4 · Financeiro, 2026-10-24): só existia a baixa da
- * fatura do cartão. Regra 2: prova que gravou todas.
+ * Pagar várias contas de uma vez, com a data do pagamento (etapa 4 · Financeiro, 2026-10-24): a fatura do cartão
+ * usa o mesmo caminho. Regra 2: prova que gravou todas.
  */
 export function usePagarSelecionadas() {
   const invalidate = useInvalidate();

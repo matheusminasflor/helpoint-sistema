@@ -71,17 +71,17 @@ export function ProductsCatalogTab({ podeAlterar = true }: { podeAlterar?: boole
   const saveProduct = async () => {
     if (!editingProd?.name) return toast.error('Nome obrigatório');
     if (editingProd.id) {
-      const { error } = await supabase.from('sac_products').update({
+      const { data, error } = await supabase.from('sac_products').update({
         name: editingProd.name, sku: editingProd.sku || null, is_active: editingProd.is_active ?? true,
         image_url: editingProd.image_url ?? null,
-      }).eq('id', editingProd.id);
-      if (error) return toast.error(error.message);
+      }).eq('id', editingProd.id).select('id');
+      if (error || !data?.length) return toast.error(error?.message ?? 'Não gravou: confira a sua permissão.');
     } else {
-      const { error } = await supabase.from('sac_products').insert({
+      const { data, error } = await supabase.from('sac_products').insert({
         tenant_id: tenantId!, name: editingProd.name, sku: editingProd.sku || null, is_active: true,
         image_url: editingProd.image_url ?? null,
-      });
-      if (error) return toast.error(error.message);
+      }).select('id');
+      if (error || !data?.length) return toast.error(error?.message ?? 'Não gravou: confira a sua permissão.');
     }
     toast.success('Salvo'); setEditingProd(null); loadProducts();
   };
@@ -127,22 +127,22 @@ export function ProductsCatalogTab({ podeAlterar = true }: { podeAlterar?: boole
   const saveBatch = async () => {
     if (!editingBatch?.batch_code) return toast.error('Código do lote obrigatório');
     if (editingBatch.id) {
-      const { error } = await supabase.from('sac_product_batches').update({
+      const { data, error } = await supabase.from('sac_product_batches').update({
         batch_code: editingBatch.batch_code,
         manufactured_at: editingBatch.manufactured_at || null,
         expires_at: editingBatch.expires_at || null,
         is_active: editingBatch.is_active ?? true,
-      }).eq('id', editingBatch.id);
-      if (error) return toast.error(error.message);
+      }).eq('id', editingBatch.id).select('id');
+      if (error || !data?.length) return toast.error(error?.message ?? 'Não gravou: confira a sua permissão.');
     } else {
-      const { error } = await supabase.from('sac_product_batches').insert({
+      const { data, error } = await supabase.from('sac_product_batches').insert({
         tenant_id: tenantId!, product_id: editingBatch.product_id,
         batch_code: editingBatch.batch_code,
         manufactured_at: editingBatch.manufactured_at || null,
         expires_at: editingBatch.expires_at || null,
         is_active: true,
-      });
-      if (error) return toast.error(error.message);
+      }).select('id');
+      if (error || !data?.length) return toast.error(error?.message ?? 'Não gravou: confira a sua permissão.');
     }
     toast.success('Salvo');
     const pid = editingBatch.product_id;

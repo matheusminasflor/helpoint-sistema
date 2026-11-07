@@ -4,7 +4,7 @@
 // clientes sem problema."
 //
 // Três passos, na ordem em que se monta: criar a carteira com quem responde por ela; e
-// atribuir os clientes (em Comercial › Cadastro de clientes, em lote). Nenhum nome de carteira
+// atribuir os clientes (em Configurações › Cadastro de clientes, em lote). Nenhum nome de carteira
 // vem semeado — semente é exemplo, nunca regra, e aqui nem exemplo o dono quis.
 import { Link } from 'react-router-dom';
 import { FileSpreadsheet } from 'lucide-react';
@@ -13,10 +13,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { QuemRespondePorCarteira } from '@/components/comercial/QuemRespondePorCarteira';
 import { useCarteiras } from '@/hooks/useComercialCarteirasMetas';
 import { useLacunasDoCadastro } from '@/hooks/useComercialCliente';
-import { usePodeGerirCarteiras } from '@/hooks/useAccessProfiles';
+import { useDepartmentPermissions, usePodeGerirCarteiras } from '@/hooks/useAccessProfiles';
+import { useTenantPath } from '@/hooks/useTenantPath';
 
 export function CarteirasVendedorasTab() {
   const podeGerir = usePodeGerirCarteiras();
+  const podeCadastrar = useDepartmentPermissions('comercial').canComoOBanco('clientes', 'cadastrar');
+  const tenantPath = useTenantPath();
   const { data: carteiras = [] } = useCarteiras();
   const { data: lacunas } = useLacunasDoCadastro();
 
@@ -43,7 +46,9 @@ export function CarteirasVendedorasTab() {
           <p className="text-muted-foreground">
             {lacunas ? <><strong className="text-foreground">{lacunas.semCarteira}</strong> de {lacunas.total} clientes estão no Histórico. </> : null}
             Atribua em lote em{' '}
-            <Link to="/comercial/clientes" className="underline">Cadastro de clientes</Link>
+            {podeCadastrar
+              ? <Link to={tenantPath('/configuracoes/clientes')} className="underline">Cadastro de clientes</Link>
+              : 'Cadastro de clientes, com um administrador'}
             {' '}(filtro "Sem carteira"). A vendedora também pode trazer para a própria carteira um cliente do Histórico
             na hora de lançar — tirar cliente da carteira de outra pessoa é só do gestor.
           </p>

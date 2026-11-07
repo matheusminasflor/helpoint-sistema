@@ -28,6 +28,7 @@ import { useTicketActions } from '@/hooks/useTicketActions';
 import { useDepartmentPermissions, usePodeNoChamado } from '@/hooks/useAccessProfiles';
 import { useIALigada } from '@/hooks/useAssistantName';
 import { useTenantPath } from '@/hooks/useTenantPath';
+import { ticketQueuePath } from '@/lib/ticket-route';
 import { invokeEdge } from '@/lib/edge-function';
 import { mensagemDeErro } from '@/lib/supabase-result';
 import { useEuAtendoJunto } from '@/hooks/useAtenderJunto';
@@ -126,9 +127,9 @@ export function TicketActionsBar({
       toast.success('Chamado excluído');
       setDeleteOpen(false);
       onUpdate?.();
-      // se estiver na página completa do chamado, voltar
-      if (window.location.pathname.includes('/chamado')) {
-        navigate(-1);
+      // Na página do próprio chamado, sai para a fila: voltar pelo histórico podia cair no chamado apagado.
+      if (window.location.pathname.endsWith(`/${ticket.id}`)) {
+        navigate(tenantPath(ticketQueuePath(ticket.module)), { replace: true });
       }
     } catch (error: any) {
       toast.error(error?.message || 'Erro ao excluir chamado');
@@ -150,7 +151,7 @@ export function TicketActionsBar({
 
   const buttonSize = compact ? 'sm' : 'default';
 
-  const podeAssumir = (!ticket.assigned_to && pode('assume'))
+  const podeAssumir = (!ticket.assigned_to && pode('assume') && !isFinalState)
     || (!!ticket.assigned_to && ticket.assigned_to !== user?.id && pode('transfer') && !isFinalState);
   // Sem atendente vira "Atribuir" (dono, 2026-10-20). No banco é o mesmo "transferir".
   const podeTransferir = pode('transfer') && (!!ticket.assigned_to || !isFinalState);

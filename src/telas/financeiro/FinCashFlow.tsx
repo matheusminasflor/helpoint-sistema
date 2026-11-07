@@ -105,13 +105,17 @@ export default function FinCashFlow() {
   /** Quanto ficou fora da janela — para a tela não fingir que mostra tudo. */
   const foraDaJanela = useMemo(() => {
     const dentro = new Set(rows.map(r => r.key));
+    const atual = mesDeHoje();
     let quantos = 0;
     for (const e of entries) {
       const status = effectiveStatus(e);
       if (status === 'cancelled') continue;
       if (view === 'realizado' && status !== 'paid') continue;
-      const key = monthKey(e, view);
-      if (key && !dentro.has(key)) quantos++;
+      if (view === 'projetado' && status === 'paid') continue;
+      let key = monthKey(e, view);
+      if (!key) continue;
+      if (view === 'projetado' && key < atual) key = atual;
+      if (!dentro.has(key)) quantos++;
     }
     return quantos;
   }, [entries, rows, view]);

@@ -166,7 +166,7 @@ export default function MeuRH() {
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle className="text-base">Seus atestados</CardTitle>
-                <CardDescription>Envie fotos ou PDFs do atestado para o RH validar.</CardDescription>
+                <CardDescription>Os atestados enviados e a resposta do RH.</CardDescription>
               </div>
             </CardHeader>
             <CardContent>

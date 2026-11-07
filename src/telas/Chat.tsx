@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ConfirmarExclusao } from '@/components/ui/ConfirmarExclusao';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -13,7 +14,7 @@ import { NovoCanalDialog } from '@/components/chat/NovoCanalDialog';
 import { ConversarComDialog } from '@/components/chat/ConversarComDialog';
 import { ConversaCanal } from '@/components/chat/ConversaCanal';
 import {
-  useCanais, useApagarCanal, useNaoLidas, useRotuloDoCanal, useUltimasMensagens, type ChatCanalRow, type UltimaMensagem,
+  useCanais, useApagarCanal, useContadoresAoVivo, useNaoLidas, useRotuloDoCanal, useUltimasMensagens, type ChatCanalRow, type UltimaMensagem,
 } from '@/hooks/useChat';
 import { useAuth } from '@/contexts/AuthContext';
 import { useVisibleModules } from '@/hooks/useVisibleModules';
@@ -36,6 +37,8 @@ export default function Chat() {
   const { data: naoLidas = [] } = useNaoLidas();
   const { data: ultimas } = useUltimasMensagens();
   const apagarCanal = useApagarCanal();
+  const [apagando, setApagando] = useState<{ id: string; rotulo: string } | null>(null);
+  useContadoresAoVivo();
   const [novoCanal, setNovoCanal] = useState(false);
   const [conversarCom, setConversarCom] = useState(false);
 
@@ -107,7 +110,7 @@ export default function Chat() {
                           souEu={ultimas?.get(c.id)?.author_id === user?.id}
                           podeApagar={c.created_by === user?.id || isOwnerOrAdmin}
                           onAbrir={() => irPara(c.id)}
-                          onApagar={() => apagarCanal.mutate(c.id, { onSuccess: () => { if (c.id === id) navigate(tenantPath('/chat')); } })}
+                          onApagar={(rotulo) => setApagando({ id: c.id, rotulo })}
                         />
                       ))}
                     </ul>
@@ -127,7 +130,7 @@ export default function Chat() {
                           souEu={ultimas?.get(c.id)?.author_id === user?.id}
                           podeApagar={isOwnerOrAdmin}
                           onAbrir={() => irPara(c.id)}
-                          onApagar={() => apagarCanal.mutate(c.id, { onSuccess: () => { if (c.id === id) navigate(tenantPath('/chat')); } })}
+                          onApagar={(rotulo) => setApagando({ id: c.id, rotulo })}
                         />
                       ))}
                     </ul>
@@ -159,6 +162,19 @@ export default function Chat() {
 
       <NovoCanalDialog open={novoCanal} onOpenChange={setNovoCanal} />
       <ConversarComDialog open={conversarCom} onOpenChange={setConversarCom} />
+      <ConfirmarExclusao
+        aberto={!!apagando}
+        titulo={`Apagar ${apagando?.rotulo ?? 'esta conversa'}?`}
+        descricao="As mensagens e os arquivos saem para todos os participantes e não voltam."
+        enviando={apagarCanal.isPending}
+        onCancelar={() => setApagando(null)}
+        onConfirmar={() => {
+          if (!apagando) return;
+          apagarCanal.mutate(apagando.id, {
+            onSuccess: () => { if (apagando.id === id) navigate(tenantPath('/chat')); setApagando(null); },
+          });
+        }}
+      />
     </div>
   );
 }
@@ -192,7 +208,7 @@ function ItemDaLista({ canal, ativo, naoLidas, ultima, souEu, podeApagar, onAbri
   souEu: boolean;
   podeApagar: boolean;
   onAbrir: () => void;
-  onApagar: () => void;
+  onApagar: (rotulo: string) => void;
 }) {
   const rotulo = useRotuloDoCanal(canal);
   const previa = !ultima ? 'Sem mensagens ainda'
@@ -241,7 +257,7 @@ function ItemDaLista({ canal, ativo, naoLidas, ultima, souEu, podeApagar, onAbri
               </span>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-              <DropdownMenuItem className="text-destructive" onClick={onApagar}>
+              <DropdownMenuItem className="text-destructive" onClick={() => onApagar(rotulo)}>
                 <Trash2 className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
                 {canal.tipo === 'direta' ? 'Apagar conversa' : 'Apagar canal'}
               </DropdownMenuItem>

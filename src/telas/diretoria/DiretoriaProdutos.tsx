@@ -123,13 +123,15 @@ export default function DiretoriaProdutos() {
               <SelectItem value="quantidade">Por quantidade</SelectItem>
             </SelectContent>
           </Select>
-          <Select value={situacaoFiltro} onValueChange={(v) => setSituacaoFiltro(v as SituacaoProduto | 'todas')}>
-            <SelectTrigger className="w-44"><SelectValue placeholder="Situação" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todas">Todas as situações</SelectItem>
-              {SITUACOES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-            </SelectContent>
-          </Select>
+          {visao !== 'simplificado' && (
+            <Select value={situacaoFiltro} onValueChange={(v) => setSituacaoFiltro(v as SituacaoProduto | 'todas')}>
+              <SelectTrigger className="w-44"><SelectValue placeholder="Situação" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todas">Todas as situações</SelectItem>
+                {SITUACOES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          )}
         </div>
 
         {produtoSelecionado && (

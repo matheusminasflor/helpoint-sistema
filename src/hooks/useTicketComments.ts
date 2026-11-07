@@ -30,7 +30,7 @@ export function useTicketComments(ticketId: string | null) {
       setIsLoading(false);
       return;
     }
-    
+
     try {
       const { data, error } = await supabase
         .from('ticket_comments')
@@ -42,23 +42,17 @@ export function useTicketComments(ticketId: string | null) {
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      
-      // Fetch attachments for each comment
-      const commentsWithAttachments = await Promise.all(
-        (data || []).map(async (comment) => {
-          const attachments = unwrap(await supabase
-            .from('ticket_attachments')
-            .select('id, file_name, file_url, file_type')
-            .eq('comment_id', comment.id));
-          
-          return {
-            ...comment,
-            attachments: attachments || []
-          } as CommentWithAuthor;
-        })
-      );
-      
-      setComments(commentsWithAttachments);
+
+      const ids = (data || []).map((c) => c.id);
+      const anexos = ids.length ? unwrap(await supabase
+        .from('ticket_attachments')
+        .select('id, comment_id, file_name, file_url, file_type')
+        .in('comment_id', ids)) : [];
+
+      setComments((data || []).map((comment) => ({
+        ...comment,
+        attachments: ((anexos ?? []) as { comment_id: string }[]).filter((a) => a.comment_id === comment.id),
+      } as CommentWithAuthor)));
     } catch (error) {
       console.error('Error fetching comments:', error);
     } finally {
@@ -73,7 +67,7 @@ export function useTicketComments(ticketId: string | null) {
   // Subscribe to realtime updates
   useEffect(() => {
     if (!ticketId) return;
-    
+
     const channel = supabase
       .channel(`ticket-comments-${ticketId}`)
       .on(
@@ -154,7 +148,7 @@ export function useAddComment() {
     mantemStatus: boolean = false,
   ) => {
     if (!user || !profile) throw new Error('User not authenticated');
-    
+
     setIsSending(true);
     try {
       // Create the comment
@@ -197,14 +191,16 @@ export function useAddComment() {
 export function useTicketDetail(ticketId: string | null) {
   const [ticket, setTicket] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [erro, setErro] = useState(false);
 
   const fetchTicket = useCallback(async () => {
+    setErro(false);
     if (!ticketId) {
       setTicket(null);
       setIsLoading(false);
       return;
     }
-    
+
     try {
       const { data, error } = await supabase
         .from('tickets')
@@ -218,17 +214,19 @@ export function useTicketDetail(ticketId: string | null) {
         .single();
 
       if (error) throw error;
-      
+
       // Fetch ticket attachments (not linked to comments)
       const attachments = unwrap(await supabase
         .from('ticket_attachments')
         .select('id, file_name, file_url, file_type')
         .eq('ticket_id', ticketId)
         .is('comment_id', null));
-      
+
       setTicket({ ...data, attachments: attachments || [] });
     } catch (error) {
       console.error('Error fetching ticket:', error);
+      // PGRST116 é "nenhuma linha": aí o chamado não existe ou a pessoa não alcança. O resto é falha de leitura.
+      setErro((error as { code?: string }).code !== 'PGRST116');
     } finally {
       setIsLoading(false);
     }
@@ -240,5 +238,5 @@ export function useTicketDetail(ticketId: string | null) {
 
   // A tela mostra a ação na hora, antes de o banco gravar (regra 1 da proposta, "Feito · Desfazer").
   const patch = useCallback((p: Record<string, unknown>) => setTicket((t: Record<string, unknown> | null) => (t ? { ...t, ...p } : t)), []);
-  return { ticket, isLoading, refetch: fetchTicket, patch };
+  return { ticket, isLoading, erro, refetch: fetchTicket, patch };
 }

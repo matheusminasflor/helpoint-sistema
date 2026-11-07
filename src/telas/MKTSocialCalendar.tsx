@@ -117,6 +117,8 @@ export default function MKTSocialCalendar() {
     return true;
   });
 
+  const semData = filteredPosts?.filter(post => !post.scheduled_at) ?? [];
+
   const postsForSelectedDate = filteredPosts?.filter(post =>
     post.scheduled_at && selectedDate && isSameDay(parseISO(post.scheduled_at), selectedDate),
   );
@@ -455,6 +457,24 @@ export default function MKTSocialCalendar() {
             </CardContent>
           </Card>
         </div>
+      )}
+
+      {semData.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Rascunhos sem data ({semData.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="divide-y divide-border">
+              {semData.map(post => (
+                <li key={post.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
+                  <span className="min-w-0">{post.title} · {SOCIAL_PLATFORM_LABELS[post.platform]}</span>
+                  {podeEditar && <Button size="sm" variant="outline" onClick={() => abrirParaEditar(post)}>Definir data</Button>}
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
       )}
 
       {/* Posts do dia */}

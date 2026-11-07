@@ -75,7 +75,7 @@ export default function DiretoriaResumo() {
       <PageHeader
         icon={BarChart3}
         title="Resumo"
-        description="O ano até aqui, os objetivos da empresa e quais setores estão atrasados."
+        description="O ano até aqui e quais setores estão atrasados."
         actions={<><ExportarATela arquivo="diretoria-resumo" setor="diretoria" /><TutorialDoRelatorio id="diretoria-resumo" /></>}
       />
       <div className="flex-1 overflow-y-auto px-4 lg:px-8 pb-6 space-y-5">

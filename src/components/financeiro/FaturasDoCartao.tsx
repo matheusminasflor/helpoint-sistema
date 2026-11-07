@@ -1,13 +1,20 @@
 // As faturas do cartão em aberto (dono, 2026-10-14: o cartão vence na fatura). Cada compra no cartão vira uma
 // conta por parcela, vencendo no dia da fatura (`vencimento_da_fatura`); aqui elas se juntam por fatura, e o
 // Financeiro dá baixa na fatura inteira de uma vez, quando paga o banco.
+import { useState } from 'react';
 import { CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useBaixarFatura } from '@/hooks/useFinanceiro';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { usePagarSelecionadas } from '@/hooks/useFinanceiro';
+import { todayISO } from '@/lib/dates';
 import { effectiveStatus, formatBRL, formatDateBR, type FinEntry } from '@/types/financeiro';
 
 export function FaturasDoCartao({ entries, podeBaixar }: { entries: FinEntry[]; podeBaixar: boolean }) {
-  const baixar = useBaixarFatura();
+  const baixar = usePagarSelecionadas();
+  const [aberta, setAberta] = useState<FinEntry[] | null>(null);
+  const [data, setData] = useState(todayISO());
   const porFatura = new Map<string, FinEntry[]>();
   for (const e of entries) {
     const s = effectiveStatus(e);
@@ -31,13 +38,32 @@ export function FaturasDoCartao({ entries, podeBaixar }: { entries: FinEntry[]; 
             <span className="font-mono font-semibold">{formatBRL(contas.reduce((s, c) => s + Number(c.amount), 0))}</span>
             {podeBaixar && (
               <Button size="sm" variant="outline" className="ml-auto" disabled={baixar.isPending}
-                onClick={() => baixar.mutate(contas.map((c) => c.id))}>
+                onClick={() => { setData(todayISO()); setAberta(contas); }}>
                 Dar baixa na fatura
               </Button>
             )}
           </li>
         ))}
       </ul>
+      <Dialog open={!!aberta} onOpenChange={(v) => { if (!v) setAberta(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Dar baixa na fatura</DialogTitle></DialogHeader>
+          <p className="text-[14px]">
+            {aberta?.length} parcela{aberta?.length === 1 ? '' : 's'} · {formatBRL((aberta ?? []).reduce((s, c) => s + Number(c.amount), 0))}
+          </p>
+          <div className="space-y-1.5">
+            <Label htmlFor="fatura-data">Data do pagamento</Label>
+            <Input id="fatura-data" type="date" max={todayISO()} value={data} onChange={(e) => setData(e.target.value)} />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAberta(null)}>Voltar</Button>
+            <Button disabled={!data || data > todayISO() || baixar.isPending}
+              onClick={() => baixar.mutate({ ids: (aberta ?? []).map((c) => c.id), data }, { onSuccess: () => setAberta(null) })}>
+              Confirmar baixa
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -27,6 +27,7 @@ import { useTenantPath } from '@/hooks/useTenantPath';
 import { useQueryState } from '@/hooks/useQueryState';
 import { SETORES, rotuloDoSetor } from '@/lib/setores';
 import { diaCurto, todayISO } from '@/lib/dates';
+import { ErroDeCarga } from '@/components/ui/ErroDeCarga';
 import {
   farolDaAtividade, hojeNaJanela, iniciais, janelaDoCronograma, mesesDaJanela, numerarCronograma, percentualMedio,
   posicaoNaJanela, seloDoConjunto, setoresSemPlano,
@@ -41,8 +42,8 @@ export default function ProjetoDetalhe() {
   const navigate = useNavigate();
   const tenantPath = useTenantPath();
   const { user } = useAuth();
-  const { data: projeto, isLoading } = useProjeto(id);
-  const { data: estrutura } = useEstruturaDoProjeto(id);
+  const { data: projeto, isLoading, isError: erroNoProjeto, refetch: lerProjeto } = useProjeto(id);
+  const { data: estrutura, isError: erroNaEstrutura, refetch: lerEstrutura } = useEstruturaDoProjeto(id);
   const setores = useMemo(() => (estrutura?.setores ?? []).map((s) => s.setor), [estrutura]);
   const { data: pode } = usePodeNoProjeto(id, setores);
   const [editando, setEditando] = useState<AtividadeRow | null>(null);
@@ -57,6 +58,9 @@ export default function ProjetoDetalhe() {
   const [faseDaNova, setFaseDaNova] = useState<string | null>(null);
   const novaTarefa = (faseId: string | null) => { setEditando(null); setFaseDaNova(faseId); setNova(true); };
 
+  if (erroNoProjeto || erroNaEstrutura) {
+    return <div className="p-6"><ErroDeCarga mensagem="Não consegui abrir o projeto." onTentar={() => { void lerProjeto(); void lerEstrutura(); }} /></div>;
+  }
   if (isLoading || !estrutura) return <div className="p-6"><Skeleton className="h-64 w-full" /></div>;
   if (!projeto) {
     return <div className="p-6 text-[14px] text-muted-foreground">Projeto não encontrado — ou você não está na equipe dele.</div>;

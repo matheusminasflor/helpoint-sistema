@@ -12,7 +12,7 @@ import { dataHora } from '@/lib/dates';
 
 interface MeuTreinamento {
   inscricao_id: string; treinamento: string; horas: number | null; inicio: string; fim: string | null;
-  modalidade: string; local: string | null; situacao: string; concluido_em: string | null;
+  modalidade: string; local: string | null; situacao: string; concluido_em: string | null; turma_situacao: string;
 }
 
 const SITUACAO: Record<string, string> = {
@@ -26,7 +26,7 @@ export default function MeusTreinamentos() {
     queryFn: async () => unwrap(await supabase.rpc('meus_treinamentos' as never)) as unknown as MeuTreinamento[],
   });
   const agora = new Date().toISOString();
-  const proximos = data.filter((t) => t.inicio >= agora && t.situacao !== 'cancelado').sort((a, b) => a.inicio.localeCompare(b.inicio));
+  const proximos = data.filter((t) => t.inicio >= agora && t.situacao !== 'cancelado' && t.turma_situacao !== 'cancelada').sort((a, b) => a.inicio.localeCompare(b.inicio));
   const feitos = data.filter((t) => !proximos.includes(t));
   const horas = data.filter((t) => t.situacao === 'concluido').reduce((s, t) => s + Number(t.horas ?? 0), 0);
   const linha = (t: MeuTreinamento) => (
@@ -44,7 +44,7 @@ export default function MeusTreinamentos() {
         </p>
       </div>
       <span className={t.situacao === 'concluido' ? 'text-[13px] text-status-success shrink-0' : t.situacao === 'faltou' ? 'text-[13px] text-status-danger shrink-0' : 'text-[13px] text-muted-foreground shrink-0'}>
-        {SITUACAO[t.situacao] ?? t.situacao}
+        {t.turma_situacao === 'cancelada' ? 'Turma cancelada' : SITUACAO[t.situacao] ?? t.situacao}
       </span>
     </li>
   );
@@ -62,7 +62,7 @@ export default function MeusTreinamentos() {
         </Card>
         {feitos.length > 0 && (
           <Card className="p-4">
-            <h2 className="text-[16px] font-semibold">Já aconteceram</h2>
+            <h2 className="text-[16px] font-semibold">Encerrados</h2>
             <ul className="divide-y divide-border">{feitos.map(linha)}</ul>
           </Card>
         )}

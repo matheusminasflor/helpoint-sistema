@@ -60,9 +60,9 @@ export default function RHDocumentos() {
 
   const del = useMutation({
     mutationFn: async (d: any) => {
-      await supabase.storage.from('rh-documents').remove([d.file_path]).catch(() => {});
-      const { error } = await supabase.from('rh_documents').delete().eq('id', d.id);
-      if (error) throw error;
+      expectRows(await supabase.from('rh_documents').delete().eq('id', d.id).select('id'), 'o documento');
+      const { error } = await supabase.storage.from('rh-documents').remove([d.file_path]);
+      if (error) toast.warning('O documento saiu da lista, mas o arquivo não foi apagado. Avise a TI.');
     },
     onSuccess: () => { toast.success('Documento removido.'); qc.invalidateQueries({ queryKey: ['rh-documents-all'] }); },
     onError: (e: any) => toast.error(e.message),

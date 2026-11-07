@@ -64,7 +64,7 @@ export default function ComercialBonificacao() {
           <p className="text-[14px] text-muted-foreground">
             {visao === 'simplificado'
               ? 'Só o que pede decisão: quem recebe sem comprar, quem recebe mais do que compra, e o que sai mais de graça do que vendido.'
-              : 'Bonificação por cliente e os pedidos em condição (série 75, cliente em condição).'}
+              : 'Bonificação por cliente e os pedidos de cliente em condição.'}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -121,7 +121,7 @@ export default function ComercialBonificacao() {
         </table>
         {bonificacao?.cortou && (
           <p className="px-4 py-2 text-[12px] text-muted-foreground border-t border-border">
-            Lista maior que o mostrado aqui — estreite a filial ou a série para ver o restante.
+            Lista maior que o mostrado aqui — estreite a filial ou o período para ver o restante.
           </p>
         )}
       </div>
