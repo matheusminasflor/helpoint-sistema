@@ -253,3 +253,33 @@ Seção "Como garantimos", com as camadas de conferência:
 - **Correção no Kommo:** deixar só uma.
 - **Regra para o passo 4:** cada nota do Forteplus conta uma vez, para a 1ª venda ganha do cliente; a outra vai para
   "Para corrigir: venda repetida".
+
+## 11. Passo 1 feito no Kommo (2026-11-08, pelo navegador, com autorização do dono)
+
+**Feito:**
+- **Campos do lead:** CPF/CNPJ (texto), Segmento (lista: Consumidor final, Salão, Distribuidor), Marca (lista: BY.MF,
+  Minasflor, MF.PRO) e Link Yampi (url). Cidade e Estado já existiam no contato.
+- **Etapas:**
+  - Consumidor Final e Salão: Com a Lyra (113891167 e 113891215), Com a Thayná (ex-Contatado/Contatados), Em negociação
+    (mantida, sem mover leads) e Link enviado (113891171 e 113891219);
+  - Distribuidor: Com a Lyra (113891223), A contatar, Com a Thayná (ex-Contatado), Enviado para o representante,
+    Follow-up e Negociação.
+- **Funis novos:**
+  - "Instagram · Comentários" (14739447): Comentou, Convidado ao Direct;
+  - "Atendimento (fora de venda)" (14739451): Pós-venda, Interno, Outros assuntos.
+- **Priscila:** depois de unir os leads, sobrou o 118411874 (Entrada), que ganhou Segmento = Distribuidor. Ele não mudou
+  de funil, para a data de fechamento não virar hoje. A leitura de 08/11 contou uma venda só, de R$ 5.096, como
+  Distribuidor em 26/10.
+
+**Provado na montagem:**
+- campo obrigatório por etapa existe ("Obrigatório para funis de venda e etapas");
+- motivo de perda obrigatório não existe;
+- a fonte de comentários e o Direct ficam presos à integração do Instagram, que cai na Entrada.
+
+**O que mudou no plano:**
+- o WhatsApp "Minasflor Comercial" já cai no Consumidor Final e fica lá;
+- a Entrada não é arquivada: ela continua como porta do Instagram, e o robô do passo 3 tira os leads de lá;
+- passam para o passo 3: desligar "leads de entrada", os filtros salvos e o robô dos comentários.
+
+**Em aberto:** o login "Minasflor Professional" é o mesmo que o dono usa (estava logado nele). Trocar o nome para
+"Thayná" depende de confirmar quem usa o login.
