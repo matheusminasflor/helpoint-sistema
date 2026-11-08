@@ -301,3 +301,28 @@ Backbar, 2 cartelas de cores e o catálogo digital de distribuidores). A base da
 catálogo de distribuidores ficou de fora, porque repete os produtos e traz condição de revenda.
 - **Região com distribuidor (dono, 2026-11-08):** o salão ou o consumidor de Minasflor e MF.PRO compra direto, com o link
   dele, sem olhar a região. A Lyra não encaminha ao distribuidor.
+
+## 13. Passo 3: o robô de triagem já existe (2026-11-08)
+
+**O que já existe:**
+- O Kommo tem robôs de boas-vindas ("Qualquer nova conversa"):
+  - "BOT INICIAL MF": 1.113 disparos; na lista aparece apagado, com alerta no gatilho;
+  - "BOT INICIAL MF copiar(1)": 552 disparos, ativo.
+- O que eles fazem:
+  - mandam "1 Consumidor Final / 2 Salão / 3 Distribuidor"; no original, as respostas foram 46,8%, 40,5% e 12,7% dos
+    cliques;
+  - mudam o lead para a etapa "Com a Thayná" do funil escolhido (ex-Contatado, renomeada no passo 1);
+  - perguntam o nome.
+
+Cerca de 43% de quem recebeu a mensagem não clicou, e é provável que esses leads sejam os parados na Entrada.
+
+**Plano revisto:** não criar outro robô, que mandaria duas saudações. A ideia é copiar o robô ativo, melhorar a cópia
+(texto da Lyra, 4ª opção "Já sou cliente", campo Segmento e etiquetas, CPF/CNPJ no Salão e no Distribuidor, tarefa da
+Thayná), testar disparando à mão num lead de teste e só então trocar o gatilho.
+
+**Formato do código do Salesbot** (visto num rascunho que não foi salvo): blocos
+`{"0":{"block_uid","question":[{"handler":"send_message","params":{"text","type":"external","buttons":[{"type":"inline","text"}]}}]}}`.
+Abrir o código é sem volta: o robô deixa de poder ser editado pelos blocos.
+
+**Gatilhos disponíveis no Avançado:** criação ou mudança de etapa, nova conversa, comentário recebido e menção em
+história. Gatilho por etiqueta é do plano Pro.
