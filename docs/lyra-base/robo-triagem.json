@@ -1,13 +1,13 @@
 {
   "0": {
-    "block_uuid": "d98c83d6-f084-4f45-9e0c-34bff62def9f",
+    "block_uuid": "f019e05b-5071-4d8f-b2ad-5473ebd496bf",
     "question": [
       {
         "handler": "list_message",
         "params": {
           "list_message": {
             "header": "",
-            "body": "Oi! Eu sou a Lyra, assistente virtual da Minasflor ✨ Cuido das marcas BY.MF, Minasflor e MF.PRO. Se preferir falar com alguém da equipe, é só pedir. Para te indicar certinho, toque em \"Ver opções\" e me diz quem você é:",
+            "body": "Olá! Sou a Lyra, assistente virtual da Minasflor, e atendo as marcas BY.MF, Minasflor e MF.PRO. Para direcionar o seu atendimento, toque em \"Ver opções\" e selecione o seu perfil. Se preferir falar com a nossa equipe, é só escrever \"atendente\".",
             "footer": "",
             "button": "Ver opções",
             "sections": [
@@ -15,22 +15,22 @@
                 "title": "Opções",
                 "rows": [
                   {
-                    "callback_data": "fa7c3557-922c-473a-968d-f66ffc197d74",
+                    "callback_data": "dc97fb67-2909-4a49-aa6f-a5e69ae76ecf",
                     "title": "Uso em casa",
                     "description": ""
                   },
                   {
-                    "callback_data": "c09f64ef-3eb8-4fa5-8370-3160474494eb",
+                    "callback_data": "c83a48b9-07ce-4686-b10a-48e106312be7",
                     "title": "Tenho salão",
                     "description": ""
                   },
                   {
-                    "callback_data": "f6a6aad7-8b48-4ff7-9622-fa90d14725cf",
+                    "callback_data": "01a946f4-350e-4ff6-bab0-890f22702e1c",
                     "title": "Revendo/distribuo",
                     "description": ""
                   },
                   {
-                    "callback_data": "fccf9a3d-2486-47d8-8fb9-b467d680b177",
+                    "callback_data": "5bf896e5-1915-4769-bdda-8c9e0337cc7a",
                     "title": "Já sou cliente",
                     "description": ""
                   }
@@ -51,7 +51,7 @@
         "handler": "buttons",
         "params": [
           {
-            "value": "fa7c3557-922c-473a-968d-f66ffc197d74",
+            "value": "dc97fb67-2909-4a49-aa6f-a5e69ae76ecf",
             "params": [
               {
                 "handler": "goto",
@@ -63,7 +63,7 @@
             ]
           },
           {
-            "value": "c09f64ef-3eb8-4fa5-8370-3160474494eb",
+            "value": "c83a48b9-07ce-4686-b10a-48e106312be7",
             "params": [
               {
                 "handler": "goto",
@@ -75,7 +75,7 @@
             ]
           },
           {
-            "value": "f6a6aad7-8b48-4ff7-9622-fa90d14725cf",
+            "value": "01a946f4-350e-4ff6-bab0-890f22702e1c",
             "params": [
               {
                 "handler": "goto",
@@ -87,7 +87,7 @@
             ]
           },
           {
-            "value": "fccf9a3d-2486-47d8-8fb9-b467d680b177",
+            "value": "5bf896e5-1915-4769-bdda-8c9e0337cc7a",
             "params": [
               {
                 "handler": "goto",
@@ -115,7 +115,7 @@
     ]
   },
   "9": {
-    "block_uuid": "9226ac8c-40a6-4f55-a1a2-c1fa798b1484",
+    "block_uuid": "2333e8fd-6354-4d82-b6de-3b006a453015",
     "question": [
       {
         "handler": "action",
@@ -131,7 +131,7 @@
         "handler": "send_message",
         "params": {
           "tag": "",
-          "text": "Anotado! Nossa atendente vai entrar em contato com você, é só aguardar 💜",
+          "text": "Pedido anotado. A nossa equipe vai entrar em contato por aqui para finalizar a sua compra. 💙",
           "type": "external",
           "recipient": {
             "type": "all_contacts",
@@ -192,7 +192,7 @@
     ]
   },
   "10": {
-    "block_uuid": "a2cb32e2-646c-4fb2-87eb-e0e989296b12",
+    "block_uuid": "28953963-a927-4f72-b3dc-b42127b3862c",
     "question": [
       {
         "handler": "action",
@@ -236,13 +236,13 @@
     ]
   },
   "11": {
-    "block_uuid": "4ca42110-1595-4f5a-95f6-347783b6817c",
+    "block_uuid": "aca6989d-0e28-42c5-a25b-5d90f2fd49f6",
     "question": [
       {
         "handler": "send_message",
         "params": {
           "tag": "",
-          "text": "Que bom! 💜 Como você se chama?",
+          "text": "Será um prazer te atender. Qual é o seu nome?",
           "type": "external",
           "recipient": {
             "type": "all_contacts",
@@ -263,7 +263,7 @@
     ]
   },
   "12": {
-    "block_uuid": "45cbae10-3f45-4886-9d48-ecb201c82c42",
+    "block_uuid": "5fe6299c-a5a6-463e-a5d5-d7d780d8cff0",
     "question": [
       {
         "handler": "waits",
@@ -286,7 +286,7 @@
     ]
   },
   "13": {
-    "block_uuid": "977a63ee-b58d-439d-a546-aad15010e888",
+    "block_uuid": "2a96078b-7272-40de-82dd-fa7d8c1652d5",
     "question": [
       {
         "handler": "action",
@@ -308,13 +308,13 @@
     ]
   },
   "14": {
-    "block_uuid": "797b46a8-dfcd-423e-ae6a-d4f01557e71f",
+    "block_uuid": "aef33a7c-30ce-4b1c-b724-7435a628b1bc",
     "question": [
       {
         "handler": "send_message",
         "params": {
           "tag": "",
-          "text": "Qual destas você procura? 😊",
+          "text": "Obrigada. Qual marca você procura?",
           "type": "external",
           "recipient": {
             "type": "all_contacts",
@@ -418,7 +418,7 @@
     ]
   },
   "15": {
-    "block_uuid": "bbe4417f-cb7a-4f4c-8001-0a20f6bdc935",
+    "block_uuid": "fe8dc88f-8208-4cae-b787-25e3d8f502cd",
     "question": [
       {
         "handler": "action",
@@ -441,10 +441,39 @@
         }
       },
       {
+        "handler": "trigger",
+        "params": {
+          "trigger": {
+            "delay": 0,
+            "action": "create_task",
+            "segments": [
+              ""
+            ],
+            "settings": {
+              "task_text": "Lead recebeu o link da loja BY.MF: conferir se comprou no site (ganho) ou retomar o contato.",
+              "task_type": "1",
+              "deadline-days": "1",
+              "deadline-hours": "",
+              "task_type_name": "Acompanhar",
+              "within-deadline": "custom",
+              "deadline-minutes": "",
+              "responsible_user": "current"
+            },
+            "date_exec": 0,
+            "handler_code": "amocrm",
+            "execution_condition": {
+              "id": 45,
+              "name": "execute_trigger"
+            }
+          },
+          "element_type": "lead"
+        }
+      },
+      {
         "handler": "send_message",
         "params": {
           "tag": "",
-          "text": "Perfeito! A loja da BY.MF é https://bymfpro.com.br/ , com Pix ou cartão e o frete calculado pelo seu CEP 💜 Se tiver qualquer dúvida, é só me chamar aqui.",
+          "text": "A BY.MF tem loja online: https://bymfpro.com.br/\n\nO pagamento é por Pix ou cartão, e o frete é calculado pelo CEP na finalização da compra. Se precisar de ajuda, é só tocar no botão abaixo.",
           "type": "external",
           "recipient": {
             "type": "all_contacts",
@@ -452,31 +481,54 @@
           },
           "is_in_starting_block": false,
           "send_to_all_chat_sources": true,
-          "on_error": null
-        }
-      },
-      {
-        "handler": "waits",
-        "params": {
-          "logic": "or",
-          "conditions": [
+          "on_error": null,
+          "buttons": [
             {
-              "event": {
-                "action": "received",
-                "source": "message"
-              },
-              "action": {
-                "type": "question",
-                "step": 54
-              }
+              "type": "inline",
+              "text": "Falar com atendente"
             }
           ]
         }
       }
+    ],
+    "answer": [
+      {
+        "handler": "buttons",
+        "params": [
+          {
+            "value": "Falar com atendente",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 54
+                }
+              }
+            ],
+            "synonyms": [
+              "atendente",
+              "falar com atendente"
+            ]
+          },
+          {
+            "type": "else",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 54
+                }
+              }
+            ]
+          }
+        ]
+      }
     ]
   },
   "16": {
-    "block_uuid": "39ce875f-4f02-4144-9a05-567d636af56f",
+    "block_uuid": "78840ef4-fb07-4589-a708-a97adfe04097",
     "question": [
       {
         "handler": "action",
@@ -489,21 +541,6 @@
         }
       },
       {
-        "handler": "send_message",
-        "params": {
-          "tag": "",
-          "text": "Para usar em casa, a Minasflor tem as versões home care, de 300 ml e 300 g 💜 (as de litro e as embalagens profissionais são só para salão).",
-          "type": "external",
-          "recipient": {
-            "type": "all_contacts",
-            "way_of_communication": "over_all"
-          },
-          "is_in_starting_block": false,
-          "send_to_all_chat_sources": true,
-          "on_error": null
-        }
-      },
-      {
         "handler": "goto",
         "params": {
           "type": "question",
@@ -513,7 +550,7 @@
     ]
   },
   "17": {
-    "block_uuid": "d052ec37-b56e-4f7d-8fab-8eda64fb6ce0",
+    "block_uuid": "6877340e-c761-48fd-989d-309fbff0a5a3",
     "question": [
       {
         "handler": "action",
@@ -529,7 +566,7 @@
         "handler": "send_message",
         "params": {
           "tag": "",
-          "text": "Da MF.PRO, para usar em casa temos o Fusion da linha Therapy: shampoo e balm de base neutra, que você personaliza com um óleo essencial conforme o que o seu couro cabeludo pede 🌿\n\n• Hortelã-pimenta: sensação refrescante, ajuda a controlar a oleosidade (pode arder se usar demais)\n• Melaleuca: sensação de limpeza, para couro cabeludo oleoso ou com descamação\n• Lavanda: ação calmante, para couro cabeludo sensível\n• Laranja doce: calmante e de aroma relaxante\n• Alecrim: energizante, ajuda a fortalecer os fios\n\nA quantidade de gotas a nossa equipe te orienta certinho.",
+          "text": "Da MF.PRO, para uso em casa indicamos o Fusion, da linha Therapy: shampoo e balm de base neutra, personalizados com um óleo essencial de acordo com a necessidade do couro cabeludo.\n\n• Hortelã-pimenta: sensação refrescante, ajuda a controlar a oleosidade\n• Melaleuca: sensação de limpeza, para couro cabeludo oleoso ou com descamação\n• Lavanda: ação calmante, para couro cabeludo sensível\n• Laranja doce: calmante, com aroma relaxante\n• Alecrim: energizante, ajuda a fortalecer os fios\n\nA quantidade de gotas é orientada pela nossa equipe.",
           "type": "external",
           "recipient": {
             "type": "all_contacts",
@@ -550,13 +587,13 @@
     ]
   },
   "18": {
-    "block_uuid": "0732358d-8762-47e9-b034-5e412c57a068",
+    "block_uuid": "97e2fb7c-9d30-4215-95b8-adb05b5a95fe",
     "question": [
       {
         "handler": "send_message",
         "params": {
           "tag": "",
-          "text": "Me conta quais produtos e quantas unidades você quer (no Fusion, diga também qual óleo) 😊 Nossa equipe monta um link de pagamento só para você, com Pix ou cartão.",
+          "text": "Por favor, informe os produtos e as quantidades que deseja (no Fusion, informe também o óleo escolhido). A nossa equipe vai preparar um link de pagamento exclusivo para você, com Pix ou cartão.",
           "type": "external",
           "recipient": {
             "type": "all_contacts",
@@ -577,7 +614,7 @@
     ]
   },
   "19": {
-    "block_uuid": "6220a7db-87e5-450c-acd7-ce3c35c6ebef",
+    "block_uuid": "9ca97fb7-f57b-4d21-8c7e-d2fb4dd5a948",
     "question": [
       {
         "handler": "waits",
@@ -600,7 +637,7 @@
     ]
   },
   "20": {
-    "block_uuid": "1bcf7bce-7a28-4aec-b2cc-d7abe4c5ce03",
+    "block_uuid": "b2c72972-def7-4db7-b56d-6ef136f3e06c",
     "question": [
       {
         "handler": "action",
@@ -644,13 +681,13 @@
     ]
   },
   "21": {
-    "block_uuid": "dd486f4d-9776-4948-8da7-cc2ed2304f8a",
+    "block_uuid": "f963e0ce-531a-42b7-9b3d-80e2c7089015",
     "question": [
       {
         "handler": "send_message",
         "params": {
           "tag": "",
-          "text": "Que bom! 💇‍♀️ Como você se chama, e qual é o nome do salão?",
+          "text": "Será um prazer atender o seu salão. Por favor, informe o seu nome e o nome do salão.",
           "type": "external",
           "recipient": {
             "type": "all_contacts",
@@ -671,7 +708,7 @@
     ]
   },
   "22": {
-    "block_uuid": "4310b401-ec8f-4d78-a9fc-5edd55949a9d",
+    "block_uuid": "5918ccdd-3098-42e3-bf10-2a6664580baf",
     "question": [
       {
         "handler": "waits",
@@ -694,7 +731,7 @@
     ]
   },
   "23": {
-    "block_uuid": "492b4118-57fa-44d6-a9a4-c761ffa5c818",
+    "block_uuid": "8f5b1ded-71d6-46d1-96bf-4d4ad24690a4",
     "question": [
       {
         "handler": "action",
@@ -716,13 +753,13 @@
     ]
   },
   "24": {
-    "block_uuid": "1c8890e0-6779-43b4-a63f-99652990a774",
+    "block_uuid": "102429bd-ba21-42ba-b5af-88282c5a5194",
     "question": [
       {
         "handler": "send_message",
         "params": {
           "tag": "",
-          "text": "Prazer! O preço profissional é para salão com CNPJ. Você tem o CNPJ do salão?",
+          "text": "Obrigada. As condições profissionais são exclusivas para salões com CNPJ. O seu salão tem CNPJ?",
           "type": "external",
           "recipient": {
             "type": "all_contacts",
@@ -805,7 +842,7 @@
     ]
   },
   "25": {
-    "block_uuid": "079f2288-9a48-4372-b830-0580910469cc",
+    "block_uuid": "17b1d229-1e40-49eb-bcbf-39f7a8741b83",
     "question": [
       {
         "handler": "waits",
@@ -828,7 +865,7 @@
     ]
   },
   "26": {
-    "block_uuid": "99ea489b-690f-4e5c-9a79-05703cfb4e56",
+    "block_uuid": "cb37a35d-5d59-41a4-a5de-71258d3348c3",
     "question": [
       {
         "handler": "action",
@@ -850,13 +887,13 @@
     ]
   },
   "27": {
-    "block_uuid": "110f2521-370e-4d56-b51b-5c3752a51ced",
+    "block_uuid": "1e126649-2c57-412e-9805-e414b7fb5d4c",
     "question": [
       {
         "handler": "send_message",
         "params": {
           "tag": "",
-          "text": "Perfeito! Me conta quais produtos você tem interesse e quantas unidades, que eu já deixo o seu pedido anotado 😊",
+          "text": "Obrigada. Quais produtos e quantidades você deseja? Vou deixar o seu pedido anotado.",
           "type": "external",
           "recipient": {
             "type": "all_contacts",
@@ -877,7 +914,7 @@
     ]
   },
   "28": {
-    "block_uuid": "031fc43f-21ab-477f-9621-b7c7e425ab3d",
+    "block_uuid": "4ea03173-3aa4-4a7e-b14a-3450aa1d42a9",
     "question": [
       {
         "handler": "waits",
@@ -900,7 +937,7 @@
     ]
   },
   "29": {
-    "block_uuid": "ea1f86b4-25d1-4fbf-a283-471577909c57",
+    "block_uuid": "c8ce1c2d-b6d4-4e14-97ea-e19be37f71f5",
     "question": [
       {
         "handler": "action",
@@ -916,7 +953,7 @@
         "handler": "send_message",
         "params": {
           "tag": "",
-          "text": "Anotado! Nossa atendente vai entrar em contato para fechar o seu pedido, é só aguardar 💜",
+          "text": "Pedido anotado. A nossa equipe vai entrar em contato por aqui para finalizar o seu pedido. 💙",
           "type": "external",
           "recipient": {
             "type": "all_contacts",
@@ -977,7 +1014,7 @@
     ]
   },
   "30": {
-    "block_uuid": "02e54fdf-d95e-48a7-b074-df18772616b9",
+    "block_uuid": "9e25fe6c-863e-4745-b292-617926ae8395",
     "question": [
       {
         "handler": "action",
@@ -1021,13 +1058,13 @@
     ]
   },
   "31": {
-    "block_uuid": "752818dc-4acd-49e3-bfb6-8ee1ce3abbe5",
+    "block_uuid": "c64f883b-cc94-4eed-8929-434b824944bc",
     "question": [
       {
         "handler": "send_message",
         "params": {
           "tag": "",
-          "text": "Ótimo! Como você se chama, e qual é o nome da empresa?",
+          "text": "Será um prazer conversar sobre a distribuição dos nossos produtos. Por favor, informe o seu nome e o nome da empresa.",
           "type": "external",
           "recipient": {
             "type": "all_contacts",
@@ -1048,7 +1085,7 @@
     ]
   },
   "32": {
-    "block_uuid": "25ec4fb1-bc9a-4e45-bf66-37619c907b99",
+    "block_uuid": "ffaec911-ba9c-40c8-9467-91337b582bf0",
     "question": [
       {
         "handler": "waits",
@@ -1071,7 +1108,7 @@
     ]
   },
   "33": {
-    "block_uuid": "004146de-d227-4649-aa78-8552e4f2272c",
+    "block_uuid": "b311cbe3-6664-443f-8546-da8836e16bbf",
     "question": [
       {
         "handler": "action",
@@ -1093,13 +1130,13 @@
     ]
   },
   "34": {
-    "block_uuid": "53216e64-af74-4d59-8122-939cd1a6ebc9",
+    "block_uuid": "c90be366-fb96-4374-883d-fd9de91333ff",
     "question": [
       {
         "handler": "send_message",
         "params": {
           "tag": "",
-          "text": "Prazer! Qual é o CNPJ da empresa?",
+          "text": "Obrigada. Qual é o CNPJ da empresa?",
           "type": "external",
           "recipient": {
             "type": "all_contacts",
@@ -1120,7 +1157,7 @@
     ]
   },
   "35": {
-    "block_uuid": "259b1feb-3ee5-4fb1-ba21-b1c0ccdcaee9",
+    "block_uuid": "c3cf8392-600e-495e-a689-e39221db5f8f",
     "question": [
       {
         "handler": "waits",
@@ -1143,7 +1180,7 @@
     ]
   },
   "36": {
-    "block_uuid": "2ae24a34-7112-4418-9f11-a9f8b5e7a16d",
+    "block_uuid": "50f684f5-4aa1-4a8c-9a3f-564a9b1d3ddf",
     "question": [
       {
         "handler": "action",
@@ -1165,14 +1202,14 @@
     ]
   },
   "37": {
-    "block_uuid": "530f38a4-e417-49da-aad1-43ceac20780b",
+    "block_uuid": "b28c50db-1350-4bf6-a7ea-eec6b2a8a465",
     "question": [
       {
         "handler": "list_message",
         "params": {
           "list_message": {
             "header": "",
-            "body": "Em qual região você pretende atuar como distribuidor? Toque em \"Ver opções\":",
+            "body": "Em qual região você pretende atuar? Toque em \"Ver opções\":",
             "footer": "",
             "button": "Ver opções",
             "sections": [
@@ -1180,27 +1217,27 @@
                 "title": "Opções",
                 "rows": [
                   {
-                    "callback_data": "4d9e292d-7631-4177-93ef-ce40a815b92a",
+                    "callback_data": "1eb3fa9d-784a-4c9f-9ab5-bd7b8c56c1fa",
                     "title": "Sudeste",
                     "description": ""
                   },
                   {
-                    "callback_data": "ec0c9c08-cfdb-40d5-a5ab-3653cc0c3b5c",
+                    "callback_data": "b39b8d0a-9044-40bd-8f9d-a67a65b177a4",
                     "title": "Sul",
                     "description": ""
                   },
                   {
-                    "callback_data": "51e3a373-50c3-4ce2-888e-4bfa3a0e021b",
+                    "callback_data": "2703de6b-b4cf-404d-97fd-61fddc53e56e",
                     "title": "Centro-Oeste",
                     "description": ""
                   },
                   {
-                    "callback_data": "9c1d14ef-f98d-4b72-b33b-a1d391d9a927",
+                    "callback_data": "c4786869-d9dd-4ae7-a07f-8f7b5d4b0e48",
                     "title": "Nordeste",
                     "description": ""
                   },
                   {
-                    "callback_data": "e0472d57-315a-4870-89fc-fb7808b8ee11",
+                    "callback_data": "672909e9-ae13-40d9-af6f-6db75eb48de4",
                     "title": "Norte",
                     "description": ""
                   }
@@ -1221,7 +1258,7 @@
         "handler": "buttons",
         "params": [
           {
-            "value": "4d9e292d-7631-4177-93ef-ce40a815b92a",
+            "value": "1eb3fa9d-784a-4c9f-9ab5-bd7b8c56c1fa",
             "params": [
               {
                 "handler": "goto",
@@ -1233,7 +1270,7 @@
             ]
           },
           {
-            "value": "ec0c9c08-cfdb-40d5-a5ab-3653cc0c3b5c",
+            "value": "b39b8d0a-9044-40bd-8f9d-a67a65b177a4",
             "params": [
               {
                 "handler": "goto",
@@ -1245,7 +1282,7 @@
             ]
           },
           {
-            "value": "51e3a373-50c3-4ce2-888e-4bfa3a0e021b",
+            "value": "2703de6b-b4cf-404d-97fd-61fddc53e56e",
             "params": [
               {
                 "handler": "goto",
@@ -1257,7 +1294,7 @@
             ]
           },
           {
-            "value": "9c1d14ef-f98d-4b72-b33b-a1d391d9a927",
+            "value": "c4786869-d9dd-4ae7-a07f-8f7b5d4b0e48",
             "params": [
               {
                 "handler": "goto",
@@ -1269,7 +1306,7 @@
             ]
           },
           {
-            "value": "e0472d57-315a-4870-89fc-fb7808b8ee11",
+            "value": "672909e9-ae13-40d9-af6f-6db75eb48de4",
             "params": [
               {
                 "handler": "goto",
@@ -1297,7 +1334,7 @@
     ]
   },
   "39": {
-    "block_uuid": "b600cb22-74c1-4358-9fcc-ffffa998a2f5",
+    "block_uuid": "95816f0f-3a39-4ba3-a25c-fc368fc5de02",
     "question": [
       {
         "handler": "action",
@@ -1313,7 +1350,7 @@
         "handler": "send_message",
         "params": {
           "tag": "",
-          "text": "Obrigada! Um representante da nossa equipe vai entrar em contato com você, é só aguardar 💜\n\nEnquanto isso, já deixo aqui o nosso material para distribuidores 📲 Catálogos, fotos e vídeos dos produtos, mockups e campanhas prontas para você divulgar nas suas redes sociais: https://drive.google.com/drive/folders/1nAI-QmLyxgK_T5eBHvRumMsnFIufmSaR",
+          "text": "Obrigada pelas informações. Um representante da nossa equipe vai entrar em contato com você. 💙\n\nEnquanto isso, deixamos à sua disposição o nosso material para distribuidores: catálogos, fotos e vídeos dos produtos, mockups e campanhas prontas para divulgar nas redes sociais.\nhttps://drive.google.com/drive/folders/1nAI-QmLyxgK_T5eBHvRumMsnFIufmSaR",
           "type": "external",
           "recipient": {
             "type": "all_contacts",
@@ -1374,7 +1411,7 @@
     ]
   },
   "40": {
-    "block_uuid": "9d0673f7-2690-4bd3-91fd-361f97f3a05b",
+    "block_uuid": "0fa560d5-09a4-49e6-8202-7d70bec8e6bd",
     "question": [
       {
         "handler": "action",
@@ -1402,7 +1439,7 @@
         "handler": "send_message",
         "params": {
           "tag": "",
-          "text": "Claro! Me conta o número do pedido ou o que aconteceu. Nossa atendente vai entrar em contato com você, é só aguardar 💜",
+          "text": "Por favor, informe o número do pedido ou descreva o que aconteceu. A nossa equipe vai dar continuidade ao seu atendimento por aqui. 💙",
           "type": "external",
           "recipient": {
             "type": "all_contacts",
@@ -1463,14 +1500,14 @@
     ]
   },
   "50": {
-    "block_uuid": "98df60f1-2ca8-4667-9598-a5caba85cbac",
+    "block_uuid": "e1a20d03-0218-4d14-b334-3e67a0afe5e8",
     "question": [
       {
         "handler": "list_message",
         "params": {
           "list_message": {
             "header": "",
-            "body": "Para eu te atender certinho, primeiro me diz quem você é 😊 Toque em \"Ver opções\":",
+            "body": "Para seguir com o atendimento, selecione uma das opções. Toque em \"Ver opções\":",
             "footer": "",
             "button": "Ver opções",
             "sections": [
@@ -1478,22 +1515,22 @@
                 "title": "Opções",
                 "rows": [
                   {
-                    "callback_data": "fa7c3557-922c-473a-968d-f66ffc197d74",
+                    "callback_data": "dc97fb67-2909-4a49-aa6f-a5e69ae76ecf",
                     "title": "Uso em casa",
                     "description": ""
                   },
                   {
-                    "callback_data": "c09f64ef-3eb8-4fa5-8370-3160474494eb",
+                    "callback_data": "c83a48b9-07ce-4686-b10a-48e106312be7",
                     "title": "Tenho salão",
                     "description": ""
                   },
                   {
-                    "callback_data": "f6a6aad7-8b48-4ff7-9622-fa90d14725cf",
+                    "callback_data": "01a946f4-350e-4ff6-bab0-890f22702e1c",
                     "title": "Revendo/distribuo",
                     "description": ""
                   },
                   {
-                    "callback_data": "fccf9a3d-2486-47d8-8fb9-b467d680b177",
+                    "callback_data": "5bf896e5-1915-4769-bdda-8c9e0337cc7a",
                     "title": "Já sou cliente",
                     "description": ""
                   }
@@ -1514,7 +1551,7 @@
         "handler": "buttons",
         "params": [
           {
-            "value": "fa7c3557-922c-473a-968d-f66ffc197d74",
+            "value": "dc97fb67-2909-4a49-aa6f-a5e69ae76ecf",
             "params": [
               {
                 "handler": "goto",
@@ -1526,7 +1563,7 @@
             ]
           },
           {
-            "value": "c09f64ef-3eb8-4fa5-8370-3160474494eb",
+            "value": "c83a48b9-07ce-4686-b10a-48e106312be7",
             "params": [
               {
                 "handler": "goto",
@@ -1538,7 +1575,7 @@
             ]
           },
           {
-            "value": "f6a6aad7-8b48-4ff7-9622-fa90d14725cf",
+            "value": "01a946f4-350e-4ff6-bab0-890f22702e1c",
             "params": [
               {
                 "handler": "goto",
@@ -1550,7 +1587,7 @@
             ]
           },
           {
-            "value": "fccf9a3d-2486-47d8-8fb9-b467d680b177",
+            "value": "5bf896e5-1915-4769-bdda-8c9e0337cc7a",
             "params": [
               {
                 "handler": "goto",
@@ -1578,7 +1615,7 @@
     ]
   },
   "51": {
-    "block_uuid": "42a893ac-9e62-410b-b0ab-20bf32a0f7c1",
+    "block_uuid": "6e445010-dcee-4e60-be94-ca60358323a3",
     "question": [
       {
         "handler": "action",
@@ -1606,7 +1643,7 @@
         "handler": "send_message",
         "params": {
           "tag": "",
-          "text": "Claro! Vou te passar para a nossa atendente, ela continua com você por aqui, é só aguardar 💜",
+          "text": "Vou transferir o seu atendimento para a nossa equipe, que dará continuidade por aqui. 💙",
           "type": "external",
           "recipient": {
             "type": "all_contacts",
@@ -1667,7 +1704,7 @@
     ]
   },
   "52": {
-    "block_uuid": "6674b68c-1924-480a-b1e7-5691eb33bf50",
+    "block_uuid": "afa42a76-b6fe-4915-97d3-8c250e49d11c",
     "question": [
       {
         "handler": "action",
@@ -1683,7 +1720,7 @@
         "handler": "send_message",
         "params": {
           "tag": "",
-          "text": "Anotado! Vou te passar para a nossa atendente, ela continua com você por aqui e te ajuda a escolher, é só aguardar 💜",
+          "text": "Obrigada pela informação. Vou transferir o seu atendimento para a nossa equipe, que vai te ajudar a escolher os produtos. 💙",
           "type": "external",
           "recipient": {
             "type": "all_contacts",
@@ -1744,7 +1781,7 @@
     ]
   },
   "53": {
-    "block_uuid": "96bdc0f2-3f95-46f8-ab4d-81087bf36909",
+    "block_uuid": "0a121a04-6acf-4e5b-844d-4020fa5c7dc6",
     "question": [
       {
         "handler": "conditions",
@@ -1808,7 +1845,7 @@
     ]
   },
   "54": {
-    "block_uuid": "5a3d0ed0-b6a2-4bb0-8ee6-988128886248",
+    "block_uuid": "5b739e37-a41c-44cd-b53a-537acaa8d7dc",
     "question": [
       {
         "handler": "action",
@@ -1824,7 +1861,7 @@
         "handler": "send_message",
         "params": {
           "tag": "",
-          "text": "Vou te passar para a nossa atendente, ela continua com você por aqui, é só aguardar 💜",
+          "text": "Vou transferir o seu atendimento para a nossa equipe, que dará continuidade por aqui. 💙",
           "type": "external",
           "recipient": {
             "type": "all_contacts",
@@ -1845,7 +1882,7 @@
               ""
             ],
             "settings": {
-              "task_text": "Cliente mandou mensagem depois do link da BY.MF: responder pela conversa (até 30 minutos).",
+              "task_text": "Cliente da BY.MF pediu ajuda depois do link da loja: responder pela conversa (até 30 minutos).",
               "task_type": "1",
               "deadline-days": "",
               "deadline-hours": "",
@@ -1874,13 +1911,13 @@
     ]
   },
   "55": {
-    "block_uuid": "e4ab16f4-8492-420a-83e2-a03c97c0d556",
+    "block_uuid": "91190d2e-138d-408c-a725-41c2d79b1eab",
     "question": [
       {
         "handler": "send_message",
         "params": {
           "tag": "",
-          "text": "Recebi! Já passei para a nossa atendente, ela continua com você por aqui 💜",
+          "text": "Mensagem recebida. A nossa equipe já está com o seu atendimento e responde por aqui. 💙",
           "type": "external",
           "recipient": {
             "type": "all_contacts",
@@ -1901,13 +1938,13 @@
     ]
   },
   "60": {
-    "block_uuid": "41b7ea61-bb07-4bd8-8a4d-6c89c9017199",
+    "block_uuid": "2978f85d-1e9c-44ff-8c5e-c3433c501af0",
     "question": [
       {
         "handler": "send_message",
         "params": {
           "tag": "",
-          "text": "Me passa o CNPJ, por favor 🔒 Uso só para liberar o preço profissional.",
+          "text": "Por favor, informe o CNPJ do salão. Ele é usado apenas para liberar as condições profissionais.",
           "type": "external",
           "recipient": {
             "type": "all_contacts",
@@ -1928,7 +1965,7 @@
     ]
   },
   "61": {
-    "block_uuid": "9984f187-41d7-47ec-a716-792e0f58fd9d",
+    "block_uuid": "5d72444a-1d4b-4351-9b4d-760464b593a2",
     "question": [
       {
         "handler": "action",
@@ -1950,13 +1987,13 @@
     ]
   },
   "63": {
-    "block_uuid": "399b7230-a1de-4e59-806f-1f3d51517c0b",
+    "block_uuid": "d5c17d8a-5619-485b-bc8d-de49a0c7128e",
     "question": [
       {
         "handler": "send_message",
         "params": {
           "tag": "",
-          "text": "E em qual cidade?",
+          "text": "Em qual cidade?",
           "type": "external",
           "recipient": {
             "type": "all_contacts",
@@ -1977,7 +2014,7 @@
     ]
   },
   "64": {
-    "block_uuid": "015e8fff-c757-4c11-b5dc-f1d1a37dd63d",
+    "block_uuid": "a72f75cd-1577-4e47-8a19-98b45ec50821",
     "question": [
       {
         "handler": "waits",
@@ -2000,7 +2037,7 @@
     ]
   },
   "65": {
-    "block_uuid": "a7a66a81-d30d-4f5b-a34d-c248acfc329b",
+    "block_uuid": "b6a28cee-b8e7-4ae8-8851-e1f35c38c7c0",
     "question": [
       {
         "handler": "action",
@@ -2050,7 +2087,7 @@
         "handler": "send_message",
         "params": {
           "tag": "",
-          "text": "Sem problema! O preço profissional é só para salão com CNPJ, mas para usar em casa temos ótimas opções 💜",
+          "text": "Sem problemas. As condições profissionais são exclusivas para salões com CNPJ, mas temos ótimas opções para uso em casa.",
           "type": "external",
           "recipient": {
             "type": "all_contacts",
@@ -2071,7 +2108,7 @@
     ]
   },
   "66": {
-    "block_uuid": "af7d19bc-08f7-4178-8b81-ad4fc15773d9",
+    "block_uuid": "f4bdd117-122a-4072-9ab3-8facc3380c96",
     "question": [
       {
         "handler": "action",
@@ -2093,14 +2130,14 @@
     ]
   },
   "70": {
-    "block_uuid": "ba021af0-afd8-4954-8bce-488e07a4f22f",
+    "block_uuid": "3474e3e8-9f98-4404-9e41-53782373bf94",
     "question": [
       {
         "handler": "list_message",
         "params": {
           "list_message": {
             "header": "",
-            "body": "E qual estado? Toque em \"Ver opções\":",
+            "body": "Em qual estado? Toque em \"Ver opções\":",
             "footer": "",
             "button": "Ver opções",
             "sections": [
@@ -2108,22 +2145,22 @@
                 "title": "Opções",
                 "rows": [
                   {
-                    "callback_data": "3f485663-fe1e-4ac8-8665-367a03ca1d05",
+                    "callback_data": "e7affa18-20c9-4b9e-865c-e9a5de755698",
                     "title": "MG · Minas Gerais",
                     "description": ""
                   },
                   {
-                    "callback_data": "62e831aa-e3a1-459d-90a1-daa48309f0d5",
+                    "callback_data": "d62c21f5-4911-40d4-82f3-8b4df09d5917",
                     "title": "SP · São Paulo",
                     "description": ""
                   },
                   {
-                    "callback_data": "ee20aec0-f935-4cd5-ad67-da85093b551a",
+                    "callback_data": "b09f1640-0445-492d-be08-7e7ef0397377",
                     "title": "RJ · Rio de Janeiro",
                     "description": ""
                   },
                   {
-                    "callback_data": "18851b0d-27ae-4bf6-9ad6-ba41af55891b",
+                    "callback_data": "1f83b08a-7480-47d1-b24a-4879a6d6103a",
                     "title": "ES · Espírito Santo",
                     "description": ""
                   }
@@ -2144,7 +2181,7 @@
         "handler": "buttons",
         "params": [
           {
-            "value": "3f485663-fe1e-4ac8-8665-367a03ca1d05",
+            "value": "e7affa18-20c9-4b9e-865c-e9a5de755698",
             "params": [
               {
                 "handler": "goto",
@@ -2156,7 +2193,7 @@
             ]
           },
           {
-            "value": "62e831aa-e3a1-459d-90a1-daa48309f0d5",
+            "value": "d62c21f5-4911-40d4-82f3-8b4df09d5917",
             "params": [
               {
                 "handler": "goto",
@@ -2168,7 +2205,7 @@
             ]
           },
           {
-            "value": "ee20aec0-f935-4cd5-ad67-da85093b551a",
+            "value": "b09f1640-0445-492d-be08-7e7ef0397377",
             "params": [
               {
                 "handler": "goto",
@@ -2180,7 +2217,7 @@
             ]
           },
           {
-            "value": "18851b0d-27ae-4bf6-9ad6-ba41af55891b",
+            "value": "1f83b08a-7480-47d1-b24a-4879a6d6103a",
             "params": [
               {
                 "handler": "goto",
@@ -2208,14 +2245,14 @@
     ]
   },
   "71": {
-    "block_uuid": "2006a547-e8dd-40e5-ae9f-ee6513071234",
+    "block_uuid": "b928b055-5164-4c4b-95fd-f9ec4e1e86fb",
     "question": [
       {
         "handler": "list_message",
         "params": {
           "list_message": {
             "header": "",
-            "body": "E qual estado? Toque em \"Ver opções\":",
+            "body": "Em qual estado? Toque em \"Ver opções\":",
             "footer": "",
             "button": "Ver opções",
             "sections": [
@@ -2223,17 +2260,17 @@
                 "title": "Opções",
                 "rows": [
                   {
-                    "callback_data": "2128465b-7e43-4cf2-bed0-802b6db200c7",
+                    "callback_data": "97a4b763-04db-4323-b86d-bcebfdcdcbf2",
                     "title": "PR · Paraná",
                     "description": ""
                   },
                   {
-                    "callback_data": "3773cff7-b3cf-42e9-bd57-955310c00719",
+                    "callback_data": "c9ac8c72-a9c3-4d6b-bbdd-8e2234d6d18c",
                     "title": "SC · Santa Catarina",
                     "description": ""
                   },
                   {
-                    "callback_data": "beddd03f-152e-442f-9dcb-cf3ed2c3d238",
+                    "callback_data": "fe3bfb16-35c0-4fb1-945b-4d4affda3e83",
                     "title": "RS · Rio Grande do Sul",
                     "description": ""
                   }
@@ -2254,7 +2291,7 @@
         "handler": "buttons",
         "params": [
           {
-            "value": "2128465b-7e43-4cf2-bed0-802b6db200c7",
+            "value": "97a4b763-04db-4323-b86d-bcebfdcdcbf2",
             "params": [
               {
                 "handler": "goto",
@@ -2266,7 +2303,7 @@
             ]
           },
           {
-            "value": "3773cff7-b3cf-42e9-bd57-955310c00719",
+            "value": "c9ac8c72-a9c3-4d6b-bbdd-8e2234d6d18c",
             "params": [
               {
                 "handler": "goto",
@@ -2278,7 +2315,7 @@
             ]
           },
           {
-            "value": "beddd03f-152e-442f-9dcb-cf3ed2c3d238",
+            "value": "fe3bfb16-35c0-4fb1-945b-4d4affda3e83",
             "params": [
               {
                 "handler": "goto",
@@ -2306,14 +2343,14 @@
     ]
   },
   "72": {
-    "block_uuid": "34e5feb6-dd22-4034-ac34-b2c436b677f4",
+    "block_uuid": "efa4283a-844d-4570-b44f-593f5d03db97",
     "question": [
       {
         "handler": "list_message",
         "params": {
           "list_message": {
             "header": "",
-            "body": "E qual estado? Toque em \"Ver opções\":",
+            "body": "Em qual estado? Toque em \"Ver opções\":",
             "footer": "",
             "button": "Ver opções",
             "sections": [
@@ -2321,22 +2358,22 @@
                 "title": "Opções",
                 "rows": [
                   {
-                    "callback_data": "06138c05-6653-4ccf-965d-c4a227e27f63",
+                    "callback_data": "cd8295b9-3b2a-4cb3-8b1d-e7563449af02",
                     "title": "GO · Goiás",
                     "description": ""
                   },
                   {
-                    "callback_data": "47cfa4bd-2191-4dc1-a841-c8d9b580d3a0",
+                    "callback_data": "a82fdb81-ee7c-435d-b99c-d4672e9f1386",
                     "title": "MT · Mato Grosso",
                     "description": ""
                   },
                   {
-                    "callback_data": "0b232edd-dd6c-4744-9fb5-7b9bdf96cf5c",
+                    "callback_data": "a295420b-aa4e-41d9-9a34-df5301c1f313",
                     "title": "MS · Mato Grosso do Sul",
                     "description": ""
                   },
                   {
-                    "callback_data": "bc6157f0-6334-4537-81f1-295be8d882cf",
+                    "callback_data": "471b2b85-f3c7-4ba0-a793-0404ef78109d",
                     "title": "DF · Distrito Federal",
                     "description": ""
                   }
@@ -2357,7 +2394,7 @@
         "handler": "buttons",
         "params": [
           {
-            "value": "06138c05-6653-4ccf-965d-c4a227e27f63",
+            "value": "cd8295b9-3b2a-4cb3-8b1d-e7563449af02",
             "params": [
               {
                 "handler": "goto",
@@ -2369,7 +2406,7 @@
             ]
           },
           {
-            "value": "47cfa4bd-2191-4dc1-a841-c8d9b580d3a0",
+            "value": "a82fdb81-ee7c-435d-b99c-d4672e9f1386",
             "params": [
               {
                 "handler": "goto",
@@ -2381,7 +2418,7 @@
             ]
           },
           {
-            "value": "0b232edd-dd6c-4744-9fb5-7b9bdf96cf5c",
+            "value": "a295420b-aa4e-41d9-9a34-df5301c1f313",
             "params": [
               {
                 "handler": "goto",
@@ -2393,7 +2430,7 @@
             ]
           },
           {
-            "value": "bc6157f0-6334-4537-81f1-295be8d882cf",
+            "value": "471b2b85-f3c7-4ba0-a793-0404ef78109d",
             "params": [
               {
                 "handler": "goto",
@@ -2421,14 +2458,14 @@
     ]
   },
   "73": {
-    "block_uuid": "ec91f5dd-a52b-477a-b0b1-f220991b3c06",
+    "block_uuid": "393fe987-1606-4267-9703-6ee3d9841996",
     "question": [
       {
         "handler": "list_message",
         "params": {
           "list_message": {
             "header": "",
-            "body": "E qual estado? Toque em \"Ver opções\":",
+            "body": "Em qual estado? Toque em \"Ver opções\":",
             "footer": "",
             "button": "Ver opções",
             "sections": [
@@ -2436,47 +2473,47 @@
                 "title": "Opções",
                 "rows": [
                   {
-                    "callback_data": "39b70e71-fa34-4960-893b-0728ff42894f",
+                    "callback_data": "57057b7d-4a00-4391-83c7-639ae2a0d917",
                     "title": "BA · Bahia",
                     "description": ""
                   },
                   {
-                    "callback_data": "281ec542-0a32-4ced-bdda-4c1252d6a80f",
+                    "callback_data": "bd992ac2-ec91-402d-9646-6ab7228be7b0",
                     "title": "PE · Pernambuco",
                     "description": ""
                   },
                   {
-                    "callback_data": "d0623df1-94c3-48c0-b28a-27457c4fa4db",
+                    "callback_data": "75451ad6-b389-4a76-9432-37cc54d89a4c",
                     "title": "CE · Ceará",
                     "description": ""
                   },
                   {
-                    "callback_data": "59f4bedf-2e59-4718-808d-119b68388856",
+                    "callback_data": "0bbffc1e-cf9b-4241-aee9-dff53d7e7d87",
                     "title": "MA · Maranhão",
                     "description": ""
                   },
                   {
-                    "callback_data": "e1adac68-4998-47fd-8c0e-aa6324aed5e7",
+                    "callback_data": "f385d8b6-3c80-4081-86de-46e38605a3aa",
                     "title": "PB · Paraíba",
                     "description": ""
                   },
                   {
-                    "callback_data": "3e040271-c8e8-4c4d-9e08-48e14edb051f",
+                    "callback_data": "094d807a-8afd-49ae-a645-f40cb59e80b2",
                     "title": "RN · Rio Grande do Norte",
                     "description": ""
                   },
                   {
-                    "callback_data": "78148812-adf2-4dc4-b825-7d189a2e60ba",
+                    "callback_data": "d82f725b-58f5-4a92-8b5a-085d908742fc",
                     "title": "AL · Alagoas",
                     "description": ""
                   },
                   {
-                    "callback_data": "8c1e4f04-5e89-44d6-ae77-275f0d4b2be2",
+                    "callback_data": "1caa26dd-f6e1-480b-ae71-ad10cfe7e572",
                     "title": "PI · Piauí",
                     "description": ""
                   },
                   {
-                    "callback_data": "42355331-b245-42b9-b5d2-2b36c2cebb73",
+                    "callback_data": "95dfcbba-179f-4521-9c19-a915246454aa",
                     "title": "SE · Sergipe",
                     "description": ""
                   }
@@ -2497,7 +2534,7 @@
         "handler": "buttons",
         "params": [
           {
-            "value": "39b70e71-fa34-4960-893b-0728ff42894f",
+            "value": "57057b7d-4a00-4391-83c7-639ae2a0d917",
             "params": [
               {
                 "handler": "goto",
@@ -2509,7 +2546,7 @@
             ]
           },
           {
-            "value": "281ec542-0a32-4ced-bdda-4c1252d6a80f",
+            "value": "bd992ac2-ec91-402d-9646-6ab7228be7b0",
             "params": [
               {
                 "handler": "goto",
@@ -2521,7 +2558,7 @@
             ]
           },
           {
-            "value": "d0623df1-94c3-48c0-b28a-27457c4fa4db",
+            "value": "75451ad6-b389-4a76-9432-37cc54d89a4c",
             "params": [
               {
                 "handler": "goto",
@@ -2533,7 +2570,7 @@
             ]
           },
           {
-            "value": "59f4bedf-2e59-4718-808d-119b68388856",
+            "value": "0bbffc1e-cf9b-4241-aee9-dff53d7e7d87",
             "params": [
               {
                 "handler": "goto",
@@ -2545,7 +2582,7 @@
             ]
           },
           {
-            "value": "e1adac68-4998-47fd-8c0e-aa6324aed5e7",
+            "value": "f385d8b6-3c80-4081-86de-46e38605a3aa",
             "params": [
               {
                 "handler": "goto",
@@ -2557,7 +2594,7 @@
             ]
           },
           {
-            "value": "3e040271-c8e8-4c4d-9e08-48e14edb051f",
+            "value": "094d807a-8afd-49ae-a645-f40cb59e80b2",
             "params": [
               {
                 "handler": "goto",
@@ -2569,7 +2606,7 @@
             ]
           },
           {
-            "value": "78148812-adf2-4dc4-b825-7d189a2e60ba",
+            "value": "d82f725b-58f5-4a92-8b5a-085d908742fc",
             "params": [
               {
                 "handler": "goto",
@@ -2581,7 +2618,7 @@
             ]
           },
           {
-            "value": "8c1e4f04-5e89-44d6-ae77-275f0d4b2be2",
+            "value": "1caa26dd-f6e1-480b-ae71-ad10cfe7e572",
             "params": [
               {
                 "handler": "goto",
@@ -2593,7 +2630,7 @@
             ]
           },
           {
-            "value": "42355331-b245-42b9-b5d2-2b36c2cebb73",
+            "value": "95dfcbba-179f-4521-9c19-a915246454aa",
             "params": [
               {
                 "handler": "goto",
@@ -2621,14 +2658,14 @@
     ]
   },
   "74": {
-    "block_uuid": "48da6b7d-9c7c-4142-9de9-8b62af8803d1",
+    "block_uuid": "d5da15db-8658-466f-9315-30d4cbd7d492",
     "question": [
       {
         "handler": "list_message",
         "params": {
           "list_message": {
             "header": "",
-            "body": "E qual estado? Toque em \"Ver opções\":",
+            "body": "Em qual estado? Toque em \"Ver opções\":",
             "footer": "",
             "button": "Ver opções",
             "sections": [
@@ -2636,37 +2673,37 @@
                 "title": "Opções",
                 "rows": [
                   {
-                    "callback_data": "bf05e2b7-6c7c-460b-82d4-c53b3914632b",
+                    "callback_data": "204f3a0d-a6a3-4b95-b7de-5065074a6e4e",
                     "title": "PA · Pará",
                     "description": ""
                   },
                   {
-                    "callback_data": "681e9124-14a4-42c0-b776-306f9530d968",
+                    "callback_data": "3b9b078d-8c8f-4b9f-aa30-c38523d53b4f",
                     "title": "AM · Amazonas",
                     "description": ""
                   },
                   {
-                    "callback_data": "06805029-6788-4bd1-a7d4-09a5fa9cd785",
+                    "callback_data": "89efaabc-51e0-4a50-ae57-dd62da8d2806",
                     "title": "RO · Rondônia",
                     "description": ""
                   },
                   {
-                    "callback_data": "2436bac1-ff6b-460f-8c92-320f5ace481e",
+                    "callback_data": "2177de13-0b9c-4333-8be3-f2107fef1187",
                     "title": "TO · Tocantins",
                     "description": ""
                   },
                   {
-                    "callback_data": "343e8709-e700-49dd-9f72-676b8b20d2a4",
+                    "callback_data": "8d63ca23-fea4-4419-b758-496ecbb521d9",
                     "title": "AC · Acre",
                     "description": ""
                   },
                   {
-                    "callback_data": "e430bf9e-d6ee-4ec6-8d16-c04bd0847677",
+                    "callback_data": "aeeb4107-a190-4d2d-af54-edf6d2fea5b0",
                     "title": "AP · Amapá",
                     "description": ""
                   },
                   {
-                    "callback_data": "306abe7c-8654-4cae-9837-6b14e974d707",
+                    "callback_data": "e3c0ef6c-a689-49a5-bd68-95fd4cfbc3d4",
                     "title": "RR · Roraima",
                     "description": ""
                   }
@@ -2687,7 +2724,7 @@
         "handler": "buttons",
         "params": [
           {
-            "value": "bf05e2b7-6c7c-460b-82d4-c53b3914632b",
+            "value": "204f3a0d-a6a3-4b95-b7de-5065074a6e4e",
             "params": [
               {
                 "handler": "goto",
@@ -2699,7 +2736,7 @@
             ]
           },
           {
-            "value": "681e9124-14a4-42c0-b776-306f9530d968",
+            "value": "3b9b078d-8c8f-4b9f-aa30-c38523d53b4f",
             "params": [
               {
                 "handler": "goto",
@@ -2711,7 +2748,7 @@
             ]
           },
           {
-            "value": "06805029-6788-4bd1-a7d4-09a5fa9cd785",
+            "value": "89efaabc-51e0-4a50-ae57-dd62da8d2806",
             "params": [
               {
                 "handler": "goto",
@@ -2723,7 +2760,7 @@
             ]
           },
           {
-            "value": "2436bac1-ff6b-460f-8c92-320f5ace481e",
+            "value": "2177de13-0b9c-4333-8be3-f2107fef1187",
             "params": [
               {
                 "handler": "goto",
@@ -2735,7 +2772,7 @@
             ]
           },
           {
-            "value": "343e8709-e700-49dd-9f72-676b8b20d2a4",
+            "value": "8d63ca23-fea4-4419-b758-496ecbb521d9",
             "params": [
               {
                 "handler": "goto",
@@ -2747,7 +2784,7 @@
             ]
           },
           {
-            "value": "e430bf9e-d6ee-4ec6-8d16-c04bd0847677",
+            "value": "aeeb4107-a190-4d2d-af54-edf6d2fea5b0",
             "params": [
               {
                 "handler": "goto",
@@ -2759,7 +2796,7 @@
             ]
           },
           {
-            "value": "306abe7c-8654-4cae-9837-6b14e974d707",
+            "value": "e3c0ef6c-a689-49a5-bd68-95fd4cfbc3d4",
             "params": [
               {
                 "handler": "goto",
@@ -2787,7 +2824,7 @@
     ]
   },
   "100": {
-    "block_uuid": "70db954f-8773-4473-98a0-61556336ff9b",
+    "block_uuid": "17b8961a-9da7-469d-bcd3-45ef325de095",
     "question": [
       {
         "handler": "action",
@@ -2809,7 +2846,7 @@
     ]
   },
   "101": {
-    "block_uuid": "00597a2d-640c-4915-8ef8-c9d4b336b0fd",
+    "block_uuid": "981078b6-2cea-4740-afdf-f2c8c13db2f7",
     "question": [
       {
         "handler": "action",
@@ -2831,7 +2868,7 @@
     ]
   },
   "102": {
-    "block_uuid": "5d2aeb50-8500-48bf-a7f2-c6b812639551",
+    "block_uuid": "bb8e09ab-701f-40b1-8e8b-d414f21fa3b1",
     "question": [
       {
         "handler": "action",
@@ -2853,7 +2890,7 @@
     ]
   },
   "103": {
-    "block_uuid": "e9ed98da-a6bd-4db3-9236-8a957db806e5",
+    "block_uuid": "91cfb911-8c21-4078-b22e-dfe86f6660fe",
     "question": [
       {
         "handler": "action",
@@ -2875,7 +2912,7 @@
     ]
   },
   "104": {
-    "block_uuid": "6905bb43-73fb-4048-8b74-44c8ac5da5ba",
+    "block_uuid": "a34304bb-7c1e-44b7-9c4d-60db20195629",
     "question": [
       {
         "handler": "action",
@@ -2897,7 +2934,7 @@
     ]
   },
   "105": {
-    "block_uuid": "09b93957-58c2-4a1d-848e-aa3ece235543",
+    "block_uuid": "c512f2db-c2be-4a4d-aa7a-6699d4abec6f",
     "question": [
       {
         "handler": "action",
@@ -2919,7 +2956,7 @@
     ]
   },
   "106": {
-    "block_uuid": "d1f13f10-697d-485c-8b79-b54ededb6ab4",
+    "block_uuid": "6fd99286-2c79-403a-a62c-f08698b95ce3",
     "question": [
       {
         "handler": "action",
@@ -2941,7 +2978,7 @@
     ]
   },
   "107": {
-    "block_uuid": "1cb3aaca-54fe-49c9-83bd-5e3ec72e5740",
+    "block_uuid": "0bd32769-fd0e-4090-a6e3-ddd4dc56e2ac",
     "question": [
       {
         "handler": "action",
@@ -2963,7 +3000,7 @@
     ]
   },
   "108": {
-    "block_uuid": "78ce272b-c168-4594-835c-00391e1c20d7",
+    "block_uuid": "a3392186-8b6a-4df5-b5b9-a51b602459a1",
     "question": [
       {
         "handler": "action",
@@ -2985,7 +3022,7 @@
     ]
   },
   "109": {
-    "block_uuid": "ad43fe08-ac2b-441e-ae41-da5aa672e629",
+    "block_uuid": "1b130e80-60fe-4c1c-93c3-dcf880d4d39a",
     "question": [
       {
         "handler": "action",
@@ -3007,7 +3044,7 @@
     ]
   },
   "110": {
-    "block_uuid": "ea70af32-e5bc-45b5-afc8-852814eadc17",
+    "block_uuid": "139251b4-4fe7-4c1d-ae4d-3590902e6f09",
     "question": [
       {
         "handler": "action",
@@ -3029,7 +3066,7 @@
     ]
   },
   "111": {
-    "block_uuid": "059f904a-7860-4616-b225-b733dc6758e4",
+    "block_uuid": "170afeb8-bb05-4cea-9a88-2aeb045423cd",
     "question": [
       {
         "handler": "action",
@@ -3051,7 +3088,7 @@
     ]
   },
   "112": {
-    "block_uuid": "dbaae21d-4945-49b6-9bb3-47d3ac3d864e",
+    "block_uuid": "d70bc3aa-6e8c-41a2-a756-f9bc637316db",
     "question": [
       {
         "handler": "action",
@@ -3073,7 +3110,7 @@
     ]
   },
   "113": {
-    "block_uuid": "a852cc93-ab25-4896-b70d-e2341f50a752",
+    "block_uuid": "1dc4b4ae-43cc-4a7e-8331-fc021ceb87e4",
     "question": [
       {
         "handler": "action",
@@ -3095,7 +3132,7 @@
     ]
   },
   "114": {
-    "block_uuid": "33510fa4-24e5-4f09-b4ea-f69757122fe8",
+    "block_uuid": "8a1a1023-bc31-45a4-a9e6-2def8ffbc2ce",
     "question": [
       {
         "handler": "action",
@@ -3117,7 +3154,7 @@
     ]
   },
   "115": {
-    "block_uuid": "5ddb8614-c7dc-46e0-90ce-6921b3142dc2",
+    "block_uuid": "e952fb49-60f7-4b8a-912a-3e4956548240",
     "question": [
       {
         "handler": "action",
@@ -3139,7 +3176,7 @@
     ]
   },
   "116": {
-    "block_uuid": "dfd84f19-38ee-4596-af40-68382cc9a596",
+    "block_uuid": "60f4e9a9-803f-4f75-a825-52579e08da97",
     "question": [
       {
         "handler": "action",
@@ -3161,7 +3198,7 @@
     ]
   },
   "117": {
-    "block_uuid": "acf73e8c-1084-4806-b57c-9e04255f9757",
+    "block_uuid": "7deccb26-a6f7-4049-852d-10d989b289d0",
     "question": [
       {
         "handler": "action",
@@ -3183,7 +3220,7 @@
     ]
   },
   "118": {
-    "block_uuid": "0fadb5e0-dfbc-4e0d-89a7-bfd9beae904a",
+    "block_uuid": "3cff6119-95d8-4d57-98e2-503ff040339e",
     "question": [
       {
         "handler": "action",
@@ -3205,7 +3242,7 @@
     ]
   },
   "119": {
-    "block_uuid": "33954a07-00a3-4664-8019-91b8a9dbc941",
+    "block_uuid": "5a302eed-118d-43f6-8c33-b40cd2498c83",
     "question": [
       {
         "handler": "action",
@@ -3227,7 +3264,7 @@
     ]
   },
   "120": {
-    "block_uuid": "dfb0f972-8d53-4995-ae40-1edf3ad10363",
+    "block_uuid": "3df8905e-a358-437b-aaf8-64515b8187d1",
     "question": [
       {
         "handler": "action",
@@ -3249,7 +3286,7 @@
     ]
   },
   "121": {
-    "block_uuid": "60ab0424-9101-46fc-8fdc-d1ec1cde8b50",
+    "block_uuid": "47180136-f5b3-4f19-ab63-e4ccca5bf698",
     "question": [
       {
         "handler": "action",
@@ -3271,7 +3308,7 @@
     ]
   },
   "122": {
-    "block_uuid": "552b10df-6833-41fe-a399-2f3a69743f6e",
+    "block_uuid": "01efbeaf-1e07-48a0-b53b-e560897c30ab",
     "question": [
       {
         "handler": "action",
@@ -3293,7 +3330,7 @@
     ]
   },
   "123": {
-    "block_uuid": "a0f1db6d-2065-4c17-b61e-e1a0689d1464",
+    "block_uuid": "c9a1734d-e4f6-4656-b21b-a7d830673229",
     "question": [
       {
         "handler": "action",
@@ -3315,7 +3352,7 @@
     ]
   },
   "124": {
-    "block_uuid": "f5b3a10f-7a2b-4bc3-b44e-2c51a341d20f",
+    "block_uuid": "1f12ceea-92c0-4a43-8553-8efc0b166405",
     "question": [
       {
         "handler": "action",
@@ -3337,7 +3374,7 @@
     ]
   },
   "125": {
-    "block_uuid": "c9d19efe-53d1-404f-9f7f-53323b673553",
+    "block_uuid": "1797c4e5-a494-47e7-964f-ce737030c2ff",
     "question": [
       {
         "handler": "action",
@@ -3359,7 +3396,7 @@
     ]
   },
   "126": {
-    "block_uuid": "eb0e88d3-f1d7-4c1f-a378-3a52b0045fff",
+    "block_uuid": "52849251-69f7-4377-a876-593f874ac329",
     "question": [
       {
         "handler": "action",
