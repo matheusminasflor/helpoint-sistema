@@ -418,3 +418,29 @@ história. Gatilho por etiqueta é do plano Pro.
   - motivo de perda "Limpeza de cadastro" (39695891) nos 252 leads;
   - `ehLimpeza` (`_shared/kommo-segmento.ts`) tira esses leads das perdidas e da lista de vendas.
 - Leitura da produção autorizada, só leitura, para medir o tempo de resposta e o casamento pelo telefone.
+
+### 16.1 Parte 4.3: decisões do dono (2026-11-08)
+
+Proposta visual: https://claude.ai/artifact/TYnvDMKfnHEQLBdxLHQF95
+
+**Medição na produção (só leitura):**
+- Das 11 vendas, 3 casam com notas: wnscosmeticos, Leo e Vita Derm, que somam R$ 27.961.
+- Nas três, a nota saiu **antes** de marcarem a venda ganha:
+  - Vita Derm: faturou em 28/10, marcada em 04/11;
+  - Leo: 30/10 → 04/11;
+  - wnscosmeticos: 03/11 → 05/11.
+- Um mesmo telefone está em 6 clientes do cadastro.
+- Seis vendas foram marcadas ganhas no mesmo dia, 19/10, e três delas não têm nota perto dessa data.
+
+**Regras (substituem "notas até 7 dias depois de fechar"):**
+- **A ligação é só pelo CNPJ/CPF.** O telefone sugere o cliente quando casa com um cliente só; a atendente confere e
+  preenche o CNPJ.
+- **A venda só soma quando tem nota de venda faturada.** Vale a nota de 15 dias antes até 7 dias depois de marcarem
+  "ganha", e cada nota conta uma vez.
+- **Sem nota:** a venda fica "Aguardando nota" por 7 dias e depois vai para "Para corrigir".
+- **Lista "Para corrigir":** vista pelo dono, pelo admin, pelo gestor comercial e pela atendente. Entram nela:
+  - venda sem CNPJ;
+  - venda sem nota;
+  - cliente não encontrado;
+  - venda repetida;
+  - venda ganha sem valor e perdida sem motivo (nos três funis).
