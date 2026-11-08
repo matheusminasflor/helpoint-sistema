@@ -386,3 +386,35 @@ história. Gatilho por etiqueta é do plano Pro.
 - O "BOT INICIAL MF" foi apagado; os textos estão em `docs/lyra-base/bot-inicial-mf-antigo.md`.
 
 **Armadilha da API:** PATCH de etapa só com `sort` apaga o nome e a cor. Mande sempre `name`, `sort` e `color` juntos.
+
+## 16. Etapa 4: medição, plano e decisões (2026-11-08)
+
+**Medição no Kommo (últimos 90 dias):**
+- 11 vendas ganhas de Distribuidor: nenhuma com CNPJ no lead, nenhuma com valor (soma R$ 0), 10 com telefone no contato.
+- Consumidor: 6 ganhas, todas com valor (R$ 2.026). Salão: 2 ganhas, com valor (R$ 523).
+- Conversas dos últimos 30 dias: 245 WhatsApp e 4 Instagram (os Instagram foram ligados em 07/11).
+- Não havia nenhum campo obrigatório ligado.
+
+**Plano em partes (cada uma com CI verde e prova):**
+- 4.1: campos obrigatórios no Kommo.
+- 4.2: a limpeza não conta.
+- 4.3: Distribuidor pelo faturado do Forteplus, com a lista "Para corrigir".
+- 4.4: aviso de lead sem resposta, pela tarefa de 30 minutos da Lyra, contando só o expediente, os feriados e o recesso.
+- 4.5: canais, funil dos comentários e distribuidores por estado (proposta visual antes).
+- 4.6: aviso de 80% do limite de leads e lembrete do plano.
+- 4.7: números internos e duplicados.
+- 4b: tela Comercial › Atendimento do CRM (proposta visual antes).
+
+**Decisões do dono:**
+- Campos obrigatórios: CNPJ, valor e motivo. Limite do Kommo, testado: "Venda ganha" e "Venda perdida" aceitam campo
+  obrigatório em **um funil só**. Ficou assim:
+  - CNPJ obrigatório na venda ganha do Salão;
+  - no Distribuidor, CNPJ obrigatório nas etapas A contatar, Enviado para o representante, Follow-up e Negociação;
+  - o valor (campo nativo) e o motivo de perda não podem ser obrigatórios nos três funis, então vão para a lista
+    "Para corrigir" do Helpoint.
+- A atendente completa o CNPJ das 11 vendas de Distribuidor dos últimos 90 dias, pela lista "Para corrigir" com o
+  telefone que sugere o cliente.
+- Limpeza:
+  - motivo de perda "Limpeza de cadastro" (39695891) nos 252 leads;
+  - `ehLimpeza` (`_shared/kommo-segmento.ts`) tira esses leads das perdidas e da lista de vendas.
+- Leitura da produção autorizada, só leitura, para medir o tempo de resposta e o casamento pelo telefone.
