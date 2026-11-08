@@ -354,3 +354,35 @@ história. Gatilho por etiqueta é do plano Pro.
 - **Triagem:** a Lyra pergunta o estado (pede a sigla, ex.: MG) e depois a cidade, e grava cada um no seu campo.
 - **No Helpoint (passo 4 / 4b):** normalizar o estado para a sigla ("Minas", "minas gerais" → MG) e mostrar distribuidores
   interessados por estado e por cidade nos indicadores.
+
+## 15. Passo 3 no ar e arremates (2026-11-08)
+
+**Robôs (gerados por `docs/lyra-base/robo-triagem.mjs` e `robo-comentarios.mjs`):**
+- **Lyra · WhatsApp** (salesbot 189044): no ar desde 18h56. O gatilho "conversa nova" vale só para o WhatsApp comercial.
+  O teste real passou de ponta a ponta. Fluxo aprovado: https://claude.ai/artifact/72BZMuFRgSYhu71fs94qgs
+- **Lyra · Instagram** (salesbot 189042): pronta, mas sem gatilho. Espera o dono desligar a resposta instantânea da Meta
+  na conta minasflor. Até lá, o "BOT INICIAL MF copiar(1)" atende só os 3 Instagram.
+- **Por que um robô por canal:**
+  - a lista não chega ao Direct;
+  - o Instagram mostra no máximo 3 botões;
+  - a lista tem de estar sozinha no seu passo;
+  - uma mensagem presa a outro canal faz o Kommo parar o robô, sem acionar o "falha ao enviar".
+- **Lyra · Comentários:** 3 gatilhos de comentário recebido, um por conta. O robô leva o lead para "Instagram · Comentários",
+  põe a etiqueta `veio-de-comentario` e manda um convite no Direct.
+- **Endereços sem "https://":** o Kommo troca por kommo.cc todo link que começa com https, e não há opção para desligar.
+
+**Etapas e leads:**
+- "Etapa de leads de entrada" desligada nos 6 funis ativos.
+- 11 contatos estavam parados nela desde outubro sem ninguém ver: 8 WhatsApp e 3 formulários do site. Foram aceitos em
+  "Com atendente", com tarefa.
+- Nova ordem nos funis de venda: Com a Lyra (roxo) → Com atendente (laranja). "Com a Thayná" virou "Com atendente".
+- Entrada › Contato inicial tinha 297 leads sem segmento, deixados ali pelo robô antigo desde janeiro:
+  - os 252 sem movimento há mais de 30 dias foram para Venda perdida da Entrada;
+  - os 45 recentes foram para Entrada › Com atendente, com tarefa.
+
+**Limpeza:**
+- Filtros salvos: "Com a Lyra (sem atendente)", "Link enviado (conferir compra)" e "Só comentou (convidado ao Direct)".
+- Os 2 leads de teste foram apagados.
+- O "BOT INICIAL MF" foi apagado; os textos estão em `docs/lyra-base/bot-inicial-mf-antigo.md`.
+
+**Armadilha da API:** PATCH de etapa só com `sort` apaga o nome e a cor. Mande sempre `name`, `sort` e `color` juntos.
