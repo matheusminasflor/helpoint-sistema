@@ -55,3 +55,33 @@ ela tem lá não entra no indicador. O valor que vale é o **faturado**.
   2147. Os pedidos 11466 e 11467 somam R$ 5.098, e as notas 18843 e 23453 saíram em 27/10. Os pedidos 11475 e 11476
   (R$ 627, notas 553 e 23452) são outra compra.
 - **Antes de construir:** medir quantas ganhas de Distribuidor batem pelo telefone e fazer a proposta visual.
+
+## 4. Projeto do Kommo: proposta e decisões (2026-11-08)
+
+Proposta visual: https://claude.ai/artifact/WJMy4yWq43hcShLZWYAuan
+
+O que foi medido em 60 dias:
+- 115 de 232 leads que escreveram no último mês ficaram sem resposta de pessoa;
+- 65 de 66 leads ficaram parados na Entrada;
+- 5 de 19 perdidas estão sem motivo;
+- 0 leads têm a origem registrada;
+- usuários do Kommo: "Minasflor Professional" (o único que atende) e "Atendente 01" (sem uso);
+- cadastro do Helpoint: 95% dos clientes ativos têm CPF/CNPJ e 48% têm telefone.
+
+As 7 frentes:
+1. funis com etapas curtas;
+2. triagem automática;
+3. tarefa quando o lead fica sem resposta;
+4. venda ganha com CPF/CNPJ (e valor, fora Distribuidor) e perdida com motivo obrigatório;
+5. um login por pessoa;
+6. números da empresa fora dos leads (lista no Helpoint e etiqueta Interno);
+7. origem do lead (link da bio com mensagem pronta, anúncio de WhatsApp, UTM).
+
+Decisões do dono:
+1. Educacional, MF LOVER, Serviços prestados e ENAD continuam no Kommo, mas **fora dos indicadores**.
+2. A triagem é feita pelo **robô, com 3 opções** (uso em casa, salão, revendo). Quem não responde é classificado por uma pessoa.
+3. **Um login por pessoa.** Hoje só a Thayná usa o login único "Minasflor Professional": ele passa a ser dela, e cada
+   pessoa nova ganha o seu login.
+4. Lead **sem resposta de pessoa em 30 minutos**, contados no horário comercial, vira tarefa.
+
+Depois da etapa 2, voltar na etapa 1 e conferir se os números batem.
