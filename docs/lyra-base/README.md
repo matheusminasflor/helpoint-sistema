@@ -89,13 +89,24 @@ do catálogo:
 - **Frete e prazo:** dependem do CEP; a pessoa vê no carrinho da loja.
 - **Contato:** atendimento@minasflor.com.br e (31) 3465-5200.
 
-Para Minasflor e MF.PRO (link Yampi), **falta o Marketing ou o dono informar**: formas de pagamento do link, prazo de
-envio, frete, troca e se há pedido mínimo.
+## Perguntas frequentes das 3 marcas (dono, 2026-11-08)
+
+Valem para o link da Yampi (Minasflor e MF.PRO) e para o site BY.MF.
+
+- **Formas de pagamento:** Pix e cartão de crédito. Aparecem na hora de pagar.
+- **Frete e prazo de entrega:** calculados pelos Correios conforme o CEP. Aparecem na compra, no link ou no site; a Lyra
+  não promete prazo de entrega.
+- **Prazo de postagem:** até 48 horas úteis depois do pagamento.
+- **Troca e devolução** (regra do Código de Defesa do Consumidor para compra on-line):
+  - por arrependimento, em até 7 dias depois de receber, com o produto lacrado e sem uso;
+  - por defeito, em até 30 dias;
+  - o pedido de troca vai sempre para a Thayná, com o número do pedido.
+- **Pedido mínimo:** não há, para consumidor nem para salão.
+- **Quem quer revender ou distribuir:** é o botão "Revendo / distribuo". A Lyra pede nome, empresa e CNPJ e passa para a
+  Thayná, que encaminha ao representante. A Lyra não fala de preço nem de condição de revenda.
 
 ## Pendências para o Marketing
 
 1. (Não trava a Lyra.) Revisar as frases de `revisao-marketing.md` para melhorar catálogo, embalagem e site.
 2. Corrigir os selos que contradizem a composição.
 3. Unificar o nome do tonalizante ("MF Color" ou "Minas Color") e o tempo do Colorfix.
-4. Responder às perguntas frequentes de Minasflor e MF.PRO: pagamento, prazo, frete, troca e pedido mínimo.
-5. Dizer como responder "quero ser revendedor/distribuidor": para quem passar e o que pedir.
