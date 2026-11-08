@@ -23,14 +23,25 @@ const acao = (name, params) => ({ handler: 'action', params: { name, params } })
 const etapa = (pipeline_id, value) => acao('change_status', { value, pipeline_id });
 const campoLead = (id, value) => acao('set_custom_fields', { value, custom_field: `{{lead.cf.${id}}}` });
 const nomeDoLead = acao('set_custom_fields', { value: '{{message_text}}', custom_field: '{{lead.name}}' });
-const etiqueta = (nome) => acao('set_tag', { type: 1, value: [nome], element_type: 2 });
+// Formatos de etiqueta, tarefa e lista lidos de um robô de rascunho montado no editor visual (2026-11-08, não salvo).
+const etiqueta = (nome) => acao('set_tag', { type: 2, value: [nome] }); // type 2 = lead
+// Lista do WhatsApp: uma mensagem só, com o botão "Ver opções" (até 10 linhas). Botão comum passa de 3 e o WhatsApp
+// parte em várias mensagens repetidas, o que o dono reprovou ("ficou horrível"). Cada linha volta como callback_data,
+// e quem digita em vez de tocar cai nos sinônimos.
+const lista = (body, linhas) => ({
+  handler: 'list_message',
+  params: { list_message: { header: '', body, footer: '', button: 'Ver opções',
+    sections: [{ title: 'Opções', rows: linhas.map(({ id, title }) => ({ callback_data: id, title, description: '' })) }] },
+  recipient: { type: 'all_contacts', way_of_communication: 'over_all' }, disabled: false },
+});
+const linha = (title) => ({ id: randomUUID(), title });
 const esperaResposta = (step) => ({ handler: 'waits', params: { logic: 'or', conditions: [{ event: { action: 'received', source: 'message' }, action: { type: 'question', step } }] } });
-// Tarefa para quem cuida do lead, com prazo de 30 minutos (no robô antigo: "Em 1 dia" = within-deadline 1).
+// Tarefa para quem cuida do lead, com prazo de 30 minutos ("within-deadline" vazio virava 5 minutos; o certo é "custom").
 const tarefa = (texto) => ({
   handler: 'trigger',
   params: { trigger: { delay: 0, action: 'create_task', segments: [''], settings: {
     task_text: texto, task_type: '1', 'deadline-days': '', 'deadline-hours': '', task_type_name: 'Acompanhar',
-    'within-deadline': '', 'deadline-minutes': '30', responsible_user: 'current' },
+    'within-deadline': 'custom', 'deadline-minutes': '30', responsible_user: 'current' },
   date_exec: 0, handler_code: 'amocrm', execution_condition: { id: 45, name: 'execute_trigger' } }, element_type: 'lead' },
 });
 
@@ -44,16 +55,18 @@ const REGIOES = {
   Norte: [['PA', 'Pará'], ['AM', 'Amazonas'], ['RO', 'Rondônia'], ['TO', 'Tocantins'], ['AC', 'Acre'], ['AP', 'Amapá'], ['RR', 'Roraima']],
 };
 // Um bloco por estado, a partir do 100, que grava a sigla no campo Estado de atuação.
+const LINHA_REGIAO = Object.fromEntries(Object.keys(REGIOES).map((r) => [r, linha(r)]));
+const LINHA_UF = Object.fromEntries(Object.values(REGIOES).flat().map(([uf, nome]) => [uf, linha(`${uf} · ${nome}`)]));
 const UF_BLOCO = Object.fromEntries(Object.values(REGIOES).flat().map(([uf], i) => [uf, 100 + i]));
 const AGUARDE = 'Nossa atendente vai entrar em contato com você, é só aguardar 💜';
-const BOTOES = ['Uso em casa', 'Tenho salão', 'Revendo/distribuo', 'Já sou cliente'];
+const OPCOES = Object.fromEntries(['Uso em casa', 'Tenho salão', 'Revendo/distribuo', 'Já sou cliente'].map((t) => [t, linha(t)]));
 const respostaDosBotoes = (seNaoEntender) => [{
   handler: 'buttons',
   params: [
-    { value: 'Uso em casa', params: [goto(10)], synonyms: ['1', 'casa', 'Consumidor Final', 'consumidor final', 'consumidor', 'pra mim', 'uso pessoal'] },
-    { value: 'Tenho salão', params: [goto(20)], synonyms: ['2', 'Salão', 'salão', 'salao', 'SALÃO', 'cabeleireira', 'cabeleireiro', 'profissional'] },
-    { value: 'Revendo/distribuo', params: [goto(30)], synonyms: ['3', 'Distribuidor', 'distribuidor', 'revenda', 'revendo', 'revender', 'distribuir'] },
-    { value: 'Já sou cliente', params: [goto(40)], synonyms: ['4', 'já sou cliente', 'pedido', 'meu pedido', 'rastreio', 'troca', 'entrega'] },
+    { value: OPCOES['Uso em casa'].id, params: [goto(10)], synonyms: ['Uso em casa', '1', 'casa', 'Consumidor Final', 'consumidor final', 'consumidor', 'pra mim', 'uso pessoal'] },
+    { value: OPCOES['Tenho salão'].id, params: [goto(20)], synonyms: ['Tenho salão', '2', 'Salão', 'salão', 'salao', 'SALÃO', 'cabeleireira', 'cabeleireiro', 'profissional'] },
+    { value: OPCOES['Revendo/distribuo'].id, params: [goto(30)], synonyms: ['Revendo/distribuo', '3', 'Distribuidor', 'distribuidor', 'revenda', 'revendo', 'revender', 'distribuir'] },
+    { value: OPCOES['Já sou cliente'].id, params: [goto(40)], synonyms: ['Já sou cliente', '4', 'já sou cliente', 'pedido', 'meu pedido', 'rastreio', 'troca', 'entrega'] },
     // Sem botão: cumpre a promessa da saudação ("se preferir falar com alguém, é só pedir").
     { value: 'Falar com atendente', params: [goto(51)], synonyms: ['atendente', 'falar com atendente', 'quero falar com atendente', 'falar com alguém', 'quero falar com alguém', 'pessoa', 'humano', 'atendimento'] },
     { type: 'else', params: [goto(seNaoEntender)] },
@@ -65,7 +78,7 @@ const blocos = {
   0: { question: [], answer: respostaDosBotoes(50) }, // a mensagem entra logo abaixo
   // Regra do dono (2026-11-08): o segmento é obrigatório. Quem escreve em vez de escolher recebe as opções de novo,
   // quantas vezes for preciso; só "falar com atendente" passa direto para a Thayná, na Entrada (sem triagem).
-  50: { question: [msg('Para eu te atender certinho, primeiro me diz quem você é 😊 Toque em uma das opções:', { buttons: BOTOES.map((text) => ({ type: 'inline', text })) })], answer: respostaDosBotoes(50) },
+  50: { question: [lista('Para eu te atender certinho, primeiro me diz quem você é 😊 Toque em "Ver opções":', Object.values(OPCOES))], answer: respostaDosBotoes(50) },
   51: { question: [etapa(FUNIL.entrada, ETAPA.entradaThayna), etiqueta('pediu-atendente'), msg('Claro! Vou te passar para a nossa atendente, ela continua com você por aqui, é só aguardar 💜'), tarefa('Cliente pediu atendente antes da triagem: responder e preencher o Segmento.'), fim] },
   // Depois do segmento: escreveu o produto em vez de escolher a marca → passa para a Thayná.
   52: { question: [msg('Anotado! Vou te passar para a nossa atendente, ela continua com você por aqui e te ajuda a escolher, é só aguardar 💜'), tarefa('Consumidor escreveu o que quer em vez de escolher a marca: responder pela conversa (até 30 minutos).'), fim] },
@@ -136,16 +149,16 @@ const blocos = {
   // O estado é escolhido por toque (dono, 2026-11-08: "vão preencher errado"): primeiro a região, depois o estado da
   // região. O WhatsApp mostra até 10 opções por lista; a maior região, o Nordeste, tem 9. Quem digitar a sigla ou o nome
   // também é entendido; outra coisa repete a pergunta.
-  37: { question: [msg('Em qual região você pretende atuar como distribuidor?', { buttons: Object.keys(REGIOES).map((text) => ({ type: 'inline', text })) })],
+  37: { question: [lista('Em qual região você pretende atuar como distribuidor? Toque em "Ver opções":', Object.values(LINHA_REGIAO))],
     answer: [{ handler: 'buttons', params: [
-      ...Object.keys(REGIOES).map((r, i) => ({ value: r, params: [goto(70 + i)], synonyms: [r.toLowerCase(), r.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()] })),
+      ...Object.keys(REGIOES).map((r, i) => ({ value: LINHA_REGIAO[r].id, params: [goto(70 + i)], synonyms: [r, r.toLowerCase(), r.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()] })),
       ...Object.values(REGIOES).flat().map(([uf, nome]) => ({ value: uf, params: [goto(UF_BLOCO[uf])], synonyms: [uf.toLowerCase(), nome, nome.toLowerCase()] })),
       { type: 'else', params: [goto(37)] },
     ] }] },
   ...Object.fromEntries(Object.entries(REGIOES).map(([, ufs], i) => [70 + i, {
-    question: [msg('E qual estado?', { buttons: ufs.map(([uf]) => ({ type: 'inline', text: uf })) })],
+    question: [lista('E qual estado? Toque em "Ver opções":', ufs.map(([uf]) => LINHA_UF[uf]))],
     answer: [{ handler: 'buttons', params: [
-      ...ufs.map(([uf, nome]) => ({ value: uf, params: [goto(UF_BLOCO[uf])], synonyms: [uf.toLowerCase(), nome, nome.toLowerCase()] })),
+      ...ufs.map(([uf, nome]) => ({ value: LINHA_UF[uf].id, params: [goto(UF_BLOCO[uf])], synonyms: [uf, uf.toLowerCase(), nome, nome.toLowerCase(), LINHA_UF[uf].title] })),
       { type: 'else', params: [goto(70 + i)] },
     ] }],
   }])),
@@ -159,10 +172,8 @@ const blocos = {
   40: { question: [etapa(FUNIL.atendimento, ETAPA.posVenda), etiqueta('pos-venda'), msg(`Claro! Me conta o número do pedido ou o que aconteceu. ${AGUARDE}`), tarefa('Pós-venda: cliente pediu ajuda com pedido, troca ou entrega.'), fim] },
 };
 
-// Bloco 0: a mensagem com os botões, marcada como bloco inicial.
-blocos[0].question = [{ handler: 'send_message', params: { ...msg('').params,
-  text: 'Oi! Eu sou a Lyra, assistente virtual da Minasflor ✨ Cuido das marcas BY.MF, Minasflor e MF.PRO. Se preferir falar com alguém da equipe, é só pedir. Para te indicar certinho, você:',
-  buttons: BOTOES.map((text) => ({ type: 'inline', text })), is_in_starting_block: true } }];
+// Bloco 0: a saudação, em lista.
+blocos[0].question = [lista('Oi! Eu sou a Lyra, assistente virtual da Minasflor ✨ Cuido das marcas BY.MF, Minasflor e MF.PRO. Se preferir falar com alguém da equipe, é só pedir. Para te indicar certinho, toque em "Ver opções" e me diz quem você é:', Object.values(OPCOES))];
 
 const saida = { conversation: false };
 for (const [k, b] of Object.entries(blocos)) saida[k] = { block_uuid: randomUUID(), ...b };

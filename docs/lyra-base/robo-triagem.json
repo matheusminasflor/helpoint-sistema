@@ -1,38 +1,48 @@
 {
   "0": {
-    "block_uuid": "13d65bc6-e3f2-40fb-a074-a06d7787f2dd",
+    "block_uuid": "6c13fe02-074b-4651-8e18-e263e90168c8",
     "question": [
       {
-        "handler": "send_message",
+        "handler": "list_message",
         "params": {
-          "tag": "",
-          "text": "Oi! Eu sou a Lyra, assistente virtual da Minasflor ✨ Cuido das marcas BY.MF, Minasflor e MF.PRO. Se preferir falar com alguém da equipe, é só pedir. Para te indicar certinho, você:",
-          "type": "external",
+          "list_message": {
+            "header": "",
+            "body": "Oi! Eu sou a Lyra, assistente virtual da Minasflor ✨ Cuido das marcas BY.MF, Minasflor e MF.PRO. Se preferir falar com alguém da equipe, é só pedir. Para te indicar certinho, toque em \"Ver opções\" e me diz quem você é:",
+            "footer": "",
+            "button": "Ver opções",
+            "sections": [
+              {
+                "title": "Opções",
+                "rows": [
+                  {
+                    "callback_data": "59fd366b-6ca7-4d0a-a737-991f3343dcf3",
+                    "title": "Uso em casa",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "69a344f2-5081-4e12-89a3-a00ec1b886b7",
+                    "title": "Tenho salão",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "ab1f8905-dc21-4711-a971-e81d3919ccd4",
+                    "title": "Revendo/distribuo",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "f83939e6-ab09-4c20-b096-dae224cc6c9b",
+                    "title": "Já sou cliente",
+                    "description": ""
+                  }
+                ]
+              }
+            ]
+          },
           "recipient": {
             "type": "all_contacts",
             "way_of_communication": "over_all"
           },
-          "is_in_starting_block": true,
-          "send_to_all_chat_sources": true,
-          "on_error": null,
-          "buttons": [
-            {
-              "type": "inline",
-              "text": "Uso em casa"
-            },
-            {
-              "type": "inline",
-              "text": "Tenho salão"
-            },
-            {
-              "type": "inline",
-              "text": "Revendo/distribuo"
-            },
-            {
-              "type": "inline",
-              "text": "Já sou cliente"
-            }
-          ]
+          "disabled": false
         }
       }
     ],
@@ -41,7 +51,7 @@
         "handler": "buttons",
         "params": [
           {
-            "value": "Uso em casa",
+            "value": "59fd366b-6ca7-4d0a-a737-991f3343dcf3",
             "params": [
               {
                 "handler": "goto",
@@ -52,6 +62,7 @@
               }
             ],
             "synonyms": [
+              "Uso em casa",
               "1",
               "casa",
               "Consumidor Final",
@@ -62,7 +73,7 @@
             ]
           },
           {
-            "value": "Tenho salão",
+            "value": "69a344f2-5081-4e12-89a3-a00ec1b886b7",
             "params": [
               {
                 "handler": "goto",
@@ -73,6 +84,7 @@
               }
             ],
             "synonyms": [
+              "Tenho salão",
               "2",
               "Salão",
               "salão",
@@ -84,7 +96,7 @@
             ]
           },
           {
-            "value": "Revendo/distribuo",
+            "value": "ab1f8905-dc21-4711-a971-e81d3919ccd4",
             "params": [
               {
                 "handler": "goto",
@@ -95,6 +107,7 @@
               }
             ],
             "synonyms": [
+              "Revendo/distribuo",
               "3",
               "Distribuidor",
               "distribuidor",
@@ -105,7 +118,7 @@
             ]
           },
           {
-            "value": "Já sou cliente",
+            "value": "f83939e6-ab09-4c20-b096-dae224cc6c9b",
             "params": [
               {
                 "handler": "goto",
@@ -116,6 +129,7 @@
               }
             ],
             "synonyms": [
+              "Já sou cliente",
               "4",
               "já sou cliente",
               "pedido",
@@ -164,7 +178,7 @@
     ]
   },
   "9": {
-    "block_uuid": "f9e94c09-c431-42c9-aee1-b29697914bcf",
+    "block_uuid": "162fc05a-73f6-46aa-b342-7bb2e77de3bd",
     "question": [
       {
         "handler": "send_message",
@@ -196,7 +210,7 @@
               "deadline-days": "",
               "deadline-hours": "",
               "task_type_name": "Acompanhar",
-              "within-deadline": "",
+              "within-deadline": "custom",
               "deadline-minutes": "30",
               "responsible_user": "current"
             },
@@ -220,7 +234,7 @@
     ]
   },
   "10": {
-    "block_uuid": "c1e16695-c473-4142-9de9-b03a4a93cfa2",
+    "block_uuid": "96e991a9-ac4d-493d-af3d-3875a811dbd7",
     "question": [
       {
         "handler": "action",
@@ -247,11 +261,10 @@
         "params": {
           "name": "set_tag",
           "params": {
-            "type": 1,
+            "type": 2,
             "value": [
               "consumidor-final"
-            ],
-            "element_type": 2
+            ]
           }
         }
       },
@@ -265,7 +278,7 @@
     ]
   },
   "11": {
-    "block_uuid": "424b8813-f26f-4722-9d41-0e7b0ea9324d",
+    "block_uuid": "b9a61bdd-087d-4dd5-8c7e-2945ce437a02",
     "question": [
       {
         "handler": "send_message",
@@ -292,7 +305,7 @@
     ]
   },
   "12": {
-    "block_uuid": "8b5ffaa2-6652-4bb5-bbce-0eeff5e31566",
+    "block_uuid": "e0612b88-c283-4817-8823-ac741d85cbbc",
     "question": [
       {
         "handler": "waits",
@@ -315,7 +328,7 @@
     ]
   },
   "13": {
-    "block_uuid": "7fed963b-e142-4263-a3b3-e1e8e4911696",
+    "block_uuid": "79ae5a35-8dab-4371-bae2-48fde02991ff",
     "question": [
       {
         "handler": "action",
@@ -337,7 +350,7 @@
     ]
   },
   "14": {
-    "block_uuid": "13a97053-61c6-4007-aefd-025a3c8cf0f3",
+    "block_uuid": "fd153376-ef14-452c-bbc9-0b6265fb7d78",
     "question": [
       {
         "handler": "send_message",
@@ -447,7 +460,7 @@
     ]
   },
   "15": {
-    "block_uuid": "90d381d9-dc71-4529-a34d-660e0f7cea6e",
+    "block_uuid": "ae79e886-2f7a-4b5d-9fd5-3361e7feb3fe",
     "question": [
       {
         "handler": "action",
@@ -484,7 +497,7 @@
     ]
   },
   "16": {
-    "block_uuid": "6dfc2945-a345-4e40-9ec2-2b49ac5c29a7",
+    "block_uuid": "62c9ec3d-c5a6-4697-8e8f-907f73cfcd2d",
     "question": [
       {
         "handler": "action",
@@ -521,7 +534,7 @@
     ]
   },
   "17": {
-    "block_uuid": "0a28ddf9-2842-4702-a91c-ea9bf15c4a7e",
+    "block_uuid": "db09f807-c39a-483f-aed7-8b8e5cd806e3",
     "question": [
       {
         "handler": "action",
@@ -558,7 +571,7 @@
     ]
   },
   "18": {
-    "block_uuid": "94c92e8f-59bf-4b5c-b61e-74bb605a7c0e",
+    "block_uuid": "e504f646-fe58-4132-81ca-848f3bf1346e",
     "question": [
       {
         "handler": "send_message",
@@ -585,7 +598,7 @@
     ]
   },
   "19": {
-    "block_uuid": "58324f73-34bc-4480-a841-9fe54fb9fade",
+    "block_uuid": "76b25866-6171-435d-8715-2454937cd492",
     "question": [
       {
         "handler": "waits",
@@ -608,7 +621,7 @@
     ]
   },
   "20": {
-    "block_uuid": "a77724b0-ef8f-4416-81cf-4982b3dff49c",
+    "block_uuid": "a7141576-f6cb-48cf-9e04-a94780ba8758",
     "question": [
       {
         "handler": "action",
@@ -635,11 +648,10 @@
         "params": {
           "name": "set_tag",
           "params": {
-            "type": 1,
+            "type": 2,
             "value": [
               "salao"
-            ],
-            "element_type": 2
+            ]
           }
         }
       },
@@ -653,7 +665,7 @@
     ]
   },
   "21": {
-    "block_uuid": "ed7b9264-64cb-4aa1-b8f4-7bf534610d5e",
+    "block_uuid": "1c307207-b634-41ba-9724-52f339f726cc",
     "question": [
       {
         "handler": "send_message",
@@ -680,7 +692,7 @@
     ]
   },
   "22": {
-    "block_uuid": "e227a670-8880-4240-b5a3-cc5b826163da",
+    "block_uuid": "8297c4ff-d0b2-4f19-822d-4951340dd2ec",
     "question": [
       {
         "handler": "waits",
@@ -703,7 +715,7 @@
     ]
   },
   "23": {
-    "block_uuid": "5f6c9f84-b0a9-401a-b6aa-be21e26b849f",
+    "block_uuid": "adc2afab-60e4-4771-abd3-e5a8ca5bd363",
     "question": [
       {
         "handler": "action",
@@ -725,7 +737,7 @@
     ]
   },
   "24": {
-    "block_uuid": "274aff3b-afa1-4942-bc64-a22eea61d4f5",
+    "block_uuid": "8bc93ae7-83ce-4e31-ad17-8a67b1d6174e",
     "question": [
       {
         "handler": "send_message",
@@ -814,7 +826,7 @@
     ]
   },
   "25": {
-    "block_uuid": "2abf4090-c431-40f4-b540-2d2c3096df88",
+    "block_uuid": "114cee60-1727-4499-8630-016cb1cb79ab",
     "question": [
       {
         "handler": "waits",
@@ -837,7 +849,7 @@
     ]
   },
   "26": {
-    "block_uuid": "28d088b2-dd85-4d7d-a5fe-ac12b9ce5754",
+    "block_uuid": "9268aaf8-905c-42fc-8576-f00ebc1a0766",
     "question": [
       {
         "handler": "action",
@@ -859,7 +871,7 @@
     ]
   },
   "27": {
-    "block_uuid": "f06ca556-4d05-4eef-a32a-36817832b2bd",
+    "block_uuid": "8a4f5b35-72ab-40c8-9424-c4e984f5c222",
     "question": [
       {
         "handler": "send_message",
@@ -886,7 +898,7 @@
     ]
   },
   "28": {
-    "block_uuid": "010c570d-4e8e-4d5a-aba0-6b2fb67545ed",
+    "block_uuid": "d9b68a72-fcba-4e40-be97-226f114b3419",
     "question": [
       {
         "handler": "waits",
@@ -909,7 +921,7 @@
     ]
   },
   "29": {
-    "block_uuid": "7e3bf0a5-0318-47d7-8605-d184f15d38b6",
+    "block_uuid": "8886cba8-7a1a-41cd-9ff0-587cec952e89",
     "question": [
       {
         "handler": "send_message",
@@ -941,7 +953,7 @@
               "deadline-days": "",
               "deadline-hours": "",
               "task_type_name": "Acompanhar",
-              "within-deadline": "",
+              "within-deadline": "custom",
               "deadline-minutes": "30",
               "responsible_user": "current"
             },
@@ -965,7 +977,7 @@
     ]
   },
   "30": {
-    "block_uuid": "bba58179-d09c-4e1e-a551-4628f6070482",
+    "block_uuid": "afda7c07-4b6f-4e2c-8333-002ee18f7695",
     "question": [
       {
         "handler": "action",
@@ -992,11 +1004,10 @@
         "params": {
           "name": "set_tag",
           "params": {
-            "type": 1,
+            "type": 2,
             "value": [
               "distribuidor"
-            ],
-            "element_type": 2
+            ]
           }
         }
       },
@@ -1010,7 +1021,7 @@
     ]
   },
   "31": {
-    "block_uuid": "58eb007f-c179-422f-a510-baac9ce2dc9a",
+    "block_uuid": "62a11004-6207-45ff-b87b-577850b33daa",
     "question": [
       {
         "handler": "send_message",
@@ -1037,7 +1048,7 @@
     ]
   },
   "32": {
-    "block_uuid": "935b701c-20a3-4709-994d-1be459da083d",
+    "block_uuid": "91316a5b-8518-42cd-98d8-26e3b792c292",
     "question": [
       {
         "handler": "waits",
@@ -1060,7 +1071,7 @@
     ]
   },
   "33": {
-    "block_uuid": "ac344c0f-dbe7-40fd-9c90-25ae6a98db8c",
+    "block_uuid": "9396a76f-f9d9-4c25-9672-0d0e2e3299a6",
     "question": [
       {
         "handler": "action",
@@ -1082,7 +1093,7 @@
     ]
   },
   "34": {
-    "block_uuid": "f28111e6-9dd0-4696-a1d5-22028f97a68f",
+    "block_uuid": "78ecbc3f-c144-49a4-ab97-7398ca510e98",
     "question": [
       {
         "handler": "send_message",
@@ -1109,7 +1120,7 @@
     ]
   },
   "35": {
-    "block_uuid": "5234b65c-114b-4e38-ad0d-993a39659222",
+    "block_uuid": "ba9f2d00-a954-4c5d-9742-52eac1f7322e",
     "question": [
       {
         "handler": "waits",
@@ -1132,7 +1143,7 @@
     ]
   },
   "36": {
-    "block_uuid": "1c5324ab-6b45-4c25-abcc-23c9729237c3",
+    "block_uuid": "7d94f896-fcd7-4aed-b8e8-98dbc3109c1b",
     "question": [
       {
         "handler": "action",
@@ -1154,43 +1165,54 @@
     ]
   },
   "37": {
-    "block_uuid": "32184903-1c18-4b28-8fbe-aacb59855302",
+    "block_uuid": "416189b9-af72-47e7-a71c-71e451499410",
     "question": [
       {
-        "handler": "send_message",
+        "handler": "list_message",
         "params": {
-          "tag": "",
-          "text": "Em qual região você pretende atuar como distribuidor?",
-          "type": "external",
+          "list_message": {
+            "header": "",
+            "body": "Em qual região você pretende atuar como distribuidor? Toque em \"Ver opções\":",
+            "footer": "",
+            "button": "Ver opções",
+            "sections": [
+              {
+                "title": "Opções",
+                "rows": [
+                  {
+                    "callback_data": "b47a38ba-8cdd-4641-9171-0f048cc955ea",
+                    "title": "Sudeste",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "2af47df6-719c-43cd-b90e-425b439042de",
+                    "title": "Sul",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "a139a752-fa3c-4e66-a450-abcd44f50b42",
+                    "title": "Centro-Oeste",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "039248e4-3c0f-4ee8-acd2-881b6e006af7",
+                    "title": "Nordeste",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "69563156-1cfb-4950-ad11-e8bdbfb09829",
+                    "title": "Norte",
+                    "description": ""
+                  }
+                ]
+              }
+            ]
+          },
           "recipient": {
             "type": "all_contacts",
             "way_of_communication": "over_all"
           },
-          "is_in_starting_block": false,
-          "send_to_all_chat_sources": true,
-          "on_error": null,
-          "buttons": [
-            {
-              "type": "inline",
-              "text": "Sudeste"
-            },
-            {
-              "type": "inline",
-              "text": "Sul"
-            },
-            {
-              "type": "inline",
-              "text": "Centro-Oeste"
-            },
-            {
-              "type": "inline",
-              "text": "Nordeste"
-            },
-            {
-              "type": "inline",
-              "text": "Norte"
-            }
-          ]
+          "disabled": false
         }
       }
     ],
@@ -1199,7 +1221,7 @@
         "handler": "buttons",
         "params": [
           {
-            "value": "Sudeste",
+            "value": "b47a38ba-8cdd-4641-9171-0f048cc955ea",
             "params": [
               {
                 "handler": "goto",
@@ -1210,12 +1232,13 @@
               }
             ],
             "synonyms": [
+              "Sudeste",
               "sudeste",
               "sudeste"
             ]
           },
           {
-            "value": "Sul",
+            "value": "2af47df6-719c-43cd-b90e-425b439042de",
             "params": [
               {
                 "handler": "goto",
@@ -1226,12 +1249,13 @@
               }
             ],
             "synonyms": [
+              "Sul",
               "sul",
               "sul"
             ]
           },
           {
-            "value": "Centro-Oeste",
+            "value": "a139a752-fa3c-4e66-a450-abcd44f50b42",
             "params": [
               {
                 "handler": "goto",
@@ -1242,12 +1266,13 @@
               }
             ],
             "synonyms": [
+              "Centro-Oeste",
               "centro-oeste",
               "centro-oeste"
             ]
           },
           {
-            "value": "Nordeste",
+            "value": "039248e4-3c0f-4ee8-acd2-881b6e006af7",
             "params": [
               {
                 "handler": "goto",
@@ -1258,12 +1283,13 @@
               }
             ],
             "synonyms": [
+              "Nordeste",
               "nordeste",
               "nordeste"
             ]
           },
           {
-            "value": "Norte",
+            "value": "69563156-1cfb-4950-ad11-e8bdbfb09829",
             "params": [
               {
                 "handler": "goto",
@@ -1274,6 +1300,7 @@
               }
             ],
             "synonyms": [
+              "Norte",
               "norte",
               "norte"
             ]
@@ -1754,7 +1781,7 @@
     ]
   },
   "39": {
-    "block_uuid": "9e76828c-4562-45d9-a301-1a4a31b04bf6",
+    "block_uuid": "b7301518-5f8c-43af-84a4-da6da72c912d",
     "question": [
       {
         "handler": "send_message",
@@ -1786,7 +1813,7 @@
               "deadline-days": "",
               "deadline-hours": "",
               "task_type_name": "Acompanhar",
-              "within-deadline": "",
+              "within-deadline": "custom",
               "deadline-minutes": "30",
               "responsible_user": "current"
             },
@@ -1810,7 +1837,7 @@
     ]
   },
   "40": {
-    "block_uuid": "0b38e8ac-175f-4eea-99bc-c510a2d402c7",
+    "block_uuid": "0e2ae5f1-5605-4c2e-9d62-e11738d33b97",
     "question": [
       {
         "handler": "action",
@@ -1827,11 +1854,10 @@
         "params": {
           "name": "set_tag",
           "params": {
-            "type": 1,
+            "type": 2,
             "value": [
               "pos-venda"
-            ],
-            "element_type": 2
+            ]
           }
         }
       },
@@ -1865,7 +1891,7 @@
               "deadline-days": "",
               "deadline-hours": "",
               "task_type_name": "Acompanhar",
-              "within-deadline": "",
+              "within-deadline": "custom",
               "deadline-minutes": "30",
               "responsible_user": "current"
             },
@@ -1889,39 +1915,49 @@
     ]
   },
   "50": {
-    "block_uuid": "2dfc8612-133b-408a-8578-87f022ca7557",
+    "block_uuid": "f960ad4e-7e73-4015-aa9c-ef4bc30f1816",
     "question": [
       {
-        "handler": "send_message",
+        "handler": "list_message",
         "params": {
-          "tag": "",
-          "text": "Para eu te atender certinho, primeiro me diz quem você é 😊 Toque em uma das opções:",
-          "type": "external",
+          "list_message": {
+            "header": "",
+            "body": "Para eu te atender certinho, primeiro me diz quem você é 😊 Toque em \"Ver opções\":",
+            "footer": "",
+            "button": "Ver opções",
+            "sections": [
+              {
+                "title": "Opções",
+                "rows": [
+                  {
+                    "callback_data": "59fd366b-6ca7-4d0a-a737-991f3343dcf3",
+                    "title": "Uso em casa",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "69a344f2-5081-4e12-89a3-a00ec1b886b7",
+                    "title": "Tenho salão",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "ab1f8905-dc21-4711-a971-e81d3919ccd4",
+                    "title": "Revendo/distribuo",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "f83939e6-ab09-4c20-b096-dae224cc6c9b",
+                    "title": "Já sou cliente",
+                    "description": ""
+                  }
+                ]
+              }
+            ]
+          },
           "recipient": {
             "type": "all_contacts",
             "way_of_communication": "over_all"
           },
-          "is_in_starting_block": false,
-          "send_to_all_chat_sources": true,
-          "on_error": null,
-          "buttons": [
-            {
-              "type": "inline",
-              "text": "Uso em casa"
-            },
-            {
-              "type": "inline",
-              "text": "Tenho salão"
-            },
-            {
-              "type": "inline",
-              "text": "Revendo/distribuo"
-            },
-            {
-              "type": "inline",
-              "text": "Já sou cliente"
-            }
-          ]
+          "disabled": false
         }
       }
     ],
@@ -1930,7 +1966,7 @@
         "handler": "buttons",
         "params": [
           {
-            "value": "Uso em casa",
+            "value": "59fd366b-6ca7-4d0a-a737-991f3343dcf3",
             "params": [
               {
                 "handler": "goto",
@@ -1941,6 +1977,7 @@
               }
             ],
             "synonyms": [
+              "Uso em casa",
               "1",
               "casa",
               "Consumidor Final",
@@ -1951,7 +1988,7 @@
             ]
           },
           {
-            "value": "Tenho salão",
+            "value": "69a344f2-5081-4e12-89a3-a00ec1b886b7",
             "params": [
               {
                 "handler": "goto",
@@ -1962,6 +1999,7 @@
               }
             ],
             "synonyms": [
+              "Tenho salão",
               "2",
               "Salão",
               "salão",
@@ -1973,7 +2011,7 @@
             ]
           },
           {
-            "value": "Revendo/distribuo",
+            "value": "ab1f8905-dc21-4711-a971-e81d3919ccd4",
             "params": [
               {
                 "handler": "goto",
@@ -1984,6 +2022,7 @@
               }
             ],
             "synonyms": [
+              "Revendo/distribuo",
               "3",
               "Distribuidor",
               "distribuidor",
@@ -1994,7 +2033,7 @@
             ]
           },
           {
-            "value": "Já sou cliente",
+            "value": "f83939e6-ab09-4c20-b096-dae224cc6c9b",
             "params": [
               {
                 "handler": "goto",
@@ -2005,6 +2044,7 @@
               }
             ],
             "synonyms": [
+              "Já sou cliente",
               "4",
               "já sou cliente",
               "pedido",
@@ -2053,7 +2093,7 @@
     ]
   },
   "51": {
-    "block_uuid": "6b871e24-6269-46af-9618-8904253771b2",
+    "block_uuid": "34567e8f-d514-45de-a6a8-eb79d7057a63",
     "question": [
       {
         "handler": "action",
@@ -2070,11 +2110,10 @@
         "params": {
           "name": "set_tag",
           "params": {
-            "type": 1,
+            "type": 2,
             "value": [
               "pediu-atendente"
-            ],
-            "element_type": 2
+            ]
           }
         }
       },
@@ -2108,7 +2147,7 @@
               "deadline-days": "",
               "deadline-hours": "",
               "task_type_name": "Acompanhar",
-              "within-deadline": "",
+              "within-deadline": "custom",
               "deadline-minutes": "30",
               "responsible_user": "current"
             },
@@ -2132,7 +2171,7 @@
     ]
   },
   "52": {
-    "block_uuid": "f2823337-9080-417c-8f77-35cbb6bcd6f6",
+    "block_uuid": "347bf93c-fb1e-4d79-a788-9546addb76e3",
     "question": [
       {
         "handler": "send_message",
@@ -2164,7 +2203,7 @@
               "deadline-days": "",
               "deadline-hours": "",
               "task_type_name": "Acompanhar",
-              "within-deadline": "",
+              "within-deadline": "custom",
               "deadline-minutes": "30",
               "responsible_user": "current"
             },
@@ -2188,7 +2227,7 @@
     ]
   },
   "60": {
-    "block_uuid": "befaef0c-af42-41c9-8260-43aa8381cdb3",
+    "block_uuid": "b939c7dd-68cb-4e45-bf85-77b83af429e7",
     "question": [
       {
         "handler": "send_message",
@@ -2215,7 +2254,7 @@
     ]
   },
   "61": {
-    "block_uuid": "759a12a2-cb06-4d5b-bb23-7a023155bc6a",
+    "block_uuid": "cb980eb4-4870-4572-ae18-3eaa72c3b6f6",
     "question": [
       {
         "handler": "action",
@@ -2237,7 +2276,7 @@
     ]
   },
   "63": {
-    "block_uuid": "2246d485-1a56-4d80-bf6e-2b383a63a8b3",
+    "block_uuid": "35989f7a-f5bb-45b3-9ed4-d7254f9b74d6",
     "question": [
       {
         "handler": "send_message",
@@ -2264,7 +2303,7 @@
     ]
   },
   "64": {
-    "block_uuid": "54e2b6a4-9f96-4521-a089-f5c360746489",
+    "block_uuid": "f95c11ea-502b-4ec5-8d30-31f0e1841175",
     "question": [
       {
         "handler": "waits",
@@ -2287,7 +2326,7 @@
     ]
   },
   "65": {
-    "block_uuid": "fdf55dab-2fa0-4e97-84ee-1c375df379c4",
+    "block_uuid": "2605ad1b-47c4-469e-a595-770d57b0b13d",
     "question": [
       {
         "handler": "action",
@@ -2314,11 +2353,10 @@
         "params": {
           "name": "set_tag",
           "params": {
-            "type": 1,
+            "type": 2,
             "value": [
               "consumidor-final"
-            ],
-            "element_type": 2
+            ]
           }
         }
       },
@@ -2327,11 +2365,10 @@
         "params": {
           "name": "set_tag",
           "params": {
-            "type": 1,
+            "type": 2,
             "value": [
               "profissional-sem-cnpj"
-            ],
-            "element_type": 2
+            ]
           }
         }
       },
@@ -2360,7 +2397,7 @@
     ]
   },
   "66": {
-    "block_uuid": "fedbd4cc-de58-4b1b-bae3-ab8f8198c1a3",
+    "block_uuid": "8c7d8adb-2395-4ad6-833d-a4204b6caf9b",
     "question": [
       {
         "handler": "action",
@@ -2382,39 +2419,49 @@
     ]
   },
   "70": {
-    "block_uuid": "92a7d6e6-5348-47fc-9487-e92df196f558",
+    "block_uuid": "2476546d-1af5-4923-913c-850c03e94af4",
     "question": [
       {
-        "handler": "send_message",
+        "handler": "list_message",
         "params": {
-          "tag": "",
-          "text": "E qual estado?",
-          "type": "external",
+          "list_message": {
+            "header": "",
+            "body": "E qual estado? Toque em \"Ver opções\":",
+            "footer": "",
+            "button": "Ver opções",
+            "sections": [
+              {
+                "title": "Opções",
+                "rows": [
+                  {
+                    "callback_data": "6696237f-0664-4a9c-bffc-d263552e230e",
+                    "title": "MG · Minas Gerais",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "4789be36-6b8a-47c4-94ab-dd9a665fe00d",
+                    "title": "SP · São Paulo",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "5b9aa002-81e9-43e5-a1c4-bbb859d35840",
+                    "title": "RJ · Rio de Janeiro",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "7dfa01ac-cea6-4e3d-ba57-d9a6990a9f81",
+                    "title": "ES · Espírito Santo",
+                    "description": ""
+                  }
+                ]
+              }
+            ]
+          },
           "recipient": {
             "type": "all_contacts",
             "way_of_communication": "over_all"
           },
-          "is_in_starting_block": false,
-          "send_to_all_chat_sources": true,
-          "on_error": null,
-          "buttons": [
-            {
-              "type": "inline",
-              "text": "MG"
-            },
-            {
-              "type": "inline",
-              "text": "SP"
-            },
-            {
-              "type": "inline",
-              "text": "RJ"
-            },
-            {
-              "type": "inline",
-              "text": "ES"
-            }
-          ]
+          "disabled": false
         }
       }
     ],
@@ -2423,7 +2470,7 @@
         "handler": "buttons",
         "params": [
           {
-            "value": "MG",
+            "value": "6696237f-0664-4a9c-bffc-d263552e230e",
             "params": [
               {
                 "handler": "goto",
@@ -2434,13 +2481,15 @@
               }
             ],
             "synonyms": [
+              "MG",
               "mg",
               "Minas Gerais",
-              "minas gerais"
+              "minas gerais",
+              "MG · Minas Gerais"
             ]
           },
           {
-            "value": "SP",
+            "value": "4789be36-6b8a-47c4-94ab-dd9a665fe00d",
             "params": [
               {
                 "handler": "goto",
@@ -2451,13 +2500,15 @@
               }
             ],
             "synonyms": [
+              "SP",
               "sp",
               "São Paulo",
-              "são paulo"
+              "são paulo",
+              "SP · São Paulo"
             ]
           },
           {
-            "value": "RJ",
+            "value": "5b9aa002-81e9-43e5-a1c4-bbb859d35840",
             "params": [
               {
                 "handler": "goto",
@@ -2468,13 +2519,15 @@
               }
             ],
             "synonyms": [
+              "RJ",
               "rj",
               "Rio de Janeiro",
-              "rio de janeiro"
+              "rio de janeiro",
+              "RJ · Rio de Janeiro"
             ]
           },
           {
-            "value": "ES",
+            "value": "7dfa01ac-cea6-4e3d-ba57-d9a6990a9f81",
             "params": [
               {
                 "handler": "goto",
@@ -2485,9 +2538,11 @@
               }
             ],
             "synonyms": [
+              "ES",
               "es",
               "Espírito Santo",
-              "espírito santo"
+              "espírito santo",
+              "ES · Espírito Santo"
             ]
           },
           {
@@ -2507,35 +2562,44 @@
     ]
   },
   "71": {
-    "block_uuid": "d0b4597e-1735-400b-9f36-c40773be89b5",
+    "block_uuid": "7bebe13a-0626-4425-98a5-776249c00220",
     "question": [
       {
-        "handler": "send_message",
+        "handler": "list_message",
         "params": {
-          "tag": "",
-          "text": "E qual estado?",
-          "type": "external",
+          "list_message": {
+            "header": "",
+            "body": "E qual estado? Toque em \"Ver opções\":",
+            "footer": "",
+            "button": "Ver opções",
+            "sections": [
+              {
+                "title": "Opções",
+                "rows": [
+                  {
+                    "callback_data": "3afb36f6-d2f1-49ff-a124-48137a61f851",
+                    "title": "PR · Paraná",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "ee0e1f86-dc0d-49aa-9bab-890b11c76117",
+                    "title": "SC · Santa Catarina",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "ba5c26bf-5955-47d9-865f-d4efa32b51b1",
+                    "title": "RS · Rio Grande do Sul",
+                    "description": ""
+                  }
+                ]
+              }
+            ]
+          },
           "recipient": {
             "type": "all_contacts",
             "way_of_communication": "over_all"
           },
-          "is_in_starting_block": false,
-          "send_to_all_chat_sources": true,
-          "on_error": null,
-          "buttons": [
-            {
-              "type": "inline",
-              "text": "PR"
-            },
-            {
-              "type": "inline",
-              "text": "SC"
-            },
-            {
-              "type": "inline",
-              "text": "RS"
-            }
-          ]
+          "disabled": false
         }
       }
     ],
@@ -2544,7 +2608,7 @@
         "handler": "buttons",
         "params": [
           {
-            "value": "PR",
+            "value": "3afb36f6-d2f1-49ff-a124-48137a61f851",
             "params": [
               {
                 "handler": "goto",
@@ -2555,13 +2619,15 @@
               }
             ],
             "synonyms": [
+              "PR",
               "pr",
               "Paraná",
-              "paraná"
+              "paraná",
+              "PR · Paraná"
             ]
           },
           {
-            "value": "SC",
+            "value": "ee0e1f86-dc0d-49aa-9bab-890b11c76117",
             "params": [
               {
                 "handler": "goto",
@@ -2572,13 +2638,15 @@
               }
             ],
             "synonyms": [
+              "SC",
               "sc",
               "Santa Catarina",
-              "santa catarina"
+              "santa catarina",
+              "SC · Santa Catarina"
             ]
           },
           {
-            "value": "RS",
+            "value": "ba5c26bf-5955-47d9-865f-d4efa32b51b1",
             "params": [
               {
                 "handler": "goto",
@@ -2589,9 +2657,11 @@
               }
             ],
             "synonyms": [
+              "RS",
               "rs",
               "Rio Grande do Sul",
-              "rio grande do sul"
+              "rio grande do sul",
+              "RS · Rio Grande do Sul"
             ]
           },
           {
@@ -2611,39 +2681,49 @@
     ]
   },
   "72": {
-    "block_uuid": "6051c5b1-efe4-4b60-8cea-e429cc9d4b7d",
+    "block_uuid": "cc26cb84-11cb-4985-8786-cff474a15ee4",
     "question": [
       {
-        "handler": "send_message",
+        "handler": "list_message",
         "params": {
-          "tag": "",
-          "text": "E qual estado?",
-          "type": "external",
+          "list_message": {
+            "header": "",
+            "body": "E qual estado? Toque em \"Ver opções\":",
+            "footer": "",
+            "button": "Ver opções",
+            "sections": [
+              {
+                "title": "Opções",
+                "rows": [
+                  {
+                    "callback_data": "44d38db7-cfe4-4d71-a08e-dfe05445781c",
+                    "title": "GO · Goiás",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "04b6a910-c216-493f-8f31-0ddb7c737097",
+                    "title": "MT · Mato Grosso",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "2fdad295-e41e-490e-a814-b32f54f758a1",
+                    "title": "MS · Mato Grosso do Sul",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "49074e9d-aa28-4f35-a182-b47bcf077945",
+                    "title": "DF · Distrito Federal",
+                    "description": ""
+                  }
+                ]
+              }
+            ]
+          },
           "recipient": {
             "type": "all_contacts",
             "way_of_communication": "over_all"
           },
-          "is_in_starting_block": false,
-          "send_to_all_chat_sources": true,
-          "on_error": null,
-          "buttons": [
-            {
-              "type": "inline",
-              "text": "GO"
-            },
-            {
-              "type": "inline",
-              "text": "MT"
-            },
-            {
-              "type": "inline",
-              "text": "MS"
-            },
-            {
-              "type": "inline",
-              "text": "DF"
-            }
-          ]
+          "disabled": false
         }
       }
     ],
@@ -2652,7 +2732,7 @@
         "handler": "buttons",
         "params": [
           {
-            "value": "GO",
+            "value": "44d38db7-cfe4-4d71-a08e-dfe05445781c",
             "params": [
               {
                 "handler": "goto",
@@ -2663,13 +2743,15 @@
               }
             ],
             "synonyms": [
+              "GO",
               "go",
               "Goiás",
-              "goiás"
+              "goiás",
+              "GO · Goiás"
             ]
           },
           {
-            "value": "MT",
+            "value": "04b6a910-c216-493f-8f31-0ddb7c737097",
             "params": [
               {
                 "handler": "goto",
@@ -2680,13 +2762,15 @@
               }
             ],
             "synonyms": [
+              "MT",
               "mt",
               "Mato Grosso",
-              "mato grosso"
+              "mato grosso",
+              "MT · Mato Grosso"
             ]
           },
           {
-            "value": "MS",
+            "value": "2fdad295-e41e-490e-a814-b32f54f758a1",
             "params": [
               {
                 "handler": "goto",
@@ -2697,13 +2781,15 @@
               }
             ],
             "synonyms": [
+              "MS",
               "ms",
               "Mato Grosso do Sul",
-              "mato grosso do sul"
+              "mato grosso do sul",
+              "MS · Mato Grosso do Sul"
             ]
           },
           {
-            "value": "DF",
+            "value": "49074e9d-aa28-4f35-a182-b47bcf077945",
             "params": [
               {
                 "handler": "goto",
@@ -2714,9 +2800,11 @@
               }
             ],
             "synonyms": [
+              "DF",
               "df",
               "Distrito Federal",
-              "distrito federal"
+              "distrito federal",
+              "DF · Distrito Federal"
             ]
           },
           {
@@ -2736,59 +2824,74 @@
     ]
   },
   "73": {
-    "block_uuid": "2c2be6fd-97cd-49d8-849a-97b41e3351fa",
+    "block_uuid": "a1ab6885-cc15-4d4b-a2c0-62fe53cfaff0",
     "question": [
       {
-        "handler": "send_message",
+        "handler": "list_message",
         "params": {
-          "tag": "",
-          "text": "E qual estado?",
-          "type": "external",
+          "list_message": {
+            "header": "",
+            "body": "E qual estado? Toque em \"Ver opções\":",
+            "footer": "",
+            "button": "Ver opções",
+            "sections": [
+              {
+                "title": "Opções",
+                "rows": [
+                  {
+                    "callback_data": "d4751713-5320-44cd-9783-c00a70ea428d",
+                    "title": "BA · Bahia",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "3bcf5615-d010-41fd-9ee1-6deac53e6ff1",
+                    "title": "PE · Pernambuco",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "d71d6423-86cd-49c5-8e21-1279058c45d1",
+                    "title": "CE · Ceará",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "6dd4f652-eac6-4c70-bbd1-44beffec1244",
+                    "title": "MA · Maranhão",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "23da752c-f886-49de-8b85-fe945477a37a",
+                    "title": "PB · Paraíba",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "5e412a7d-0642-4602-865b-20c1ed8ecfbe",
+                    "title": "RN · Rio Grande do Norte",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "3ac5d011-5cb1-441c-b4d5-64c5b50ccb97",
+                    "title": "AL · Alagoas",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "aa06f913-4456-4a9d-8cbb-4b660f860868",
+                    "title": "PI · Piauí",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "32ce0545-ea1f-40a2-a578-17571c28307c",
+                    "title": "SE · Sergipe",
+                    "description": ""
+                  }
+                ]
+              }
+            ]
+          },
           "recipient": {
             "type": "all_contacts",
             "way_of_communication": "over_all"
           },
-          "is_in_starting_block": false,
-          "send_to_all_chat_sources": true,
-          "on_error": null,
-          "buttons": [
-            {
-              "type": "inline",
-              "text": "BA"
-            },
-            {
-              "type": "inline",
-              "text": "PE"
-            },
-            {
-              "type": "inline",
-              "text": "CE"
-            },
-            {
-              "type": "inline",
-              "text": "MA"
-            },
-            {
-              "type": "inline",
-              "text": "PB"
-            },
-            {
-              "type": "inline",
-              "text": "RN"
-            },
-            {
-              "type": "inline",
-              "text": "AL"
-            },
-            {
-              "type": "inline",
-              "text": "PI"
-            },
-            {
-              "type": "inline",
-              "text": "SE"
-            }
-          ]
+          "disabled": false
         }
       }
     ],
@@ -2797,7 +2900,7 @@
         "handler": "buttons",
         "params": [
           {
-            "value": "BA",
+            "value": "d4751713-5320-44cd-9783-c00a70ea428d",
             "params": [
               {
                 "handler": "goto",
@@ -2808,13 +2911,15 @@
               }
             ],
             "synonyms": [
+              "BA",
               "ba",
               "Bahia",
-              "bahia"
+              "bahia",
+              "BA · Bahia"
             ]
           },
           {
-            "value": "PE",
+            "value": "3bcf5615-d010-41fd-9ee1-6deac53e6ff1",
             "params": [
               {
                 "handler": "goto",
@@ -2825,13 +2930,15 @@
               }
             ],
             "synonyms": [
+              "PE",
               "pe",
               "Pernambuco",
-              "pernambuco"
+              "pernambuco",
+              "PE · Pernambuco"
             ]
           },
           {
-            "value": "CE",
+            "value": "d71d6423-86cd-49c5-8e21-1279058c45d1",
             "params": [
               {
                 "handler": "goto",
@@ -2842,13 +2949,15 @@
               }
             ],
             "synonyms": [
+              "CE",
               "ce",
               "Ceará",
-              "ceará"
+              "ceará",
+              "CE · Ceará"
             ]
           },
           {
-            "value": "MA",
+            "value": "6dd4f652-eac6-4c70-bbd1-44beffec1244",
             "params": [
               {
                 "handler": "goto",
@@ -2859,13 +2968,15 @@
               }
             ],
             "synonyms": [
+              "MA",
               "ma",
               "Maranhão",
-              "maranhão"
+              "maranhão",
+              "MA · Maranhão"
             ]
           },
           {
-            "value": "PB",
+            "value": "23da752c-f886-49de-8b85-fe945477a37a",
             "params": [
               {
                 "handler": "goto",
@@ -2876,13 +2987,15 @@
               }
             ],
             "synonyms": [
+              "PB",
               "pb",
               "Paraíba",
-              "paraíba"
+              "paraíba",
+              "PB · Paraíba"
             ]
           },
           {
-            "value": "RN",
+            "value": "5e412a7d-0642-4602-865b-20c1ed8ecfbe",
             "params": [
               {
                 "handler": "goto",
@@ -2893,13 +3006,15 @@
               }
             ],
             "synonyms": [
+              "RN",
               "rn",
               "Rio Grande do Norte",
-              "rio grande do norte"
+              "rio grande do norte",
+              "RN · Rio Grande do Norte"
             ]
           },
           {
-            "value": "AL",
+            "value": "3ac5d011-5cb1-441c-b4d5-64c5b50ccb97",
             "params": [
               {
                 "handler": "goto",
@@ -2910,13 +3025,15 @@
               }
             ],
             "synonyms": [
+              "AL",
               "al",
               "Alagoas",
-              "alagoas"
+              "alagoas",
+              "AL · Alagoas"
             ]
           },
           {
-            "value": "PI",
+            "value": "aa06f913-4456-4a9d-8cbb-4b660f860868",
             "params": [
               {
                 "handler": "goto",
@@ -2927,13 +3044,15 @@
               }
             ],
             "synonyms": [
+              "PI",
               "pi",
               "Piauí",
-              "piauí"
+              "piauí",
+              "PI · Piauí"
             ]
           },
           {
-            "value": "SE",
+            "value": "32ce0545-ea1f-40a2-a578-17571c28307c",
             "params": [
               {
                 "handler": "goto",
@@ -2944,9 +3063,11 @@
               }
             ],
             "synonyms": [
+              "SE",
               "se",
               "Sergipe",
-              "sergipe"
+              "sergipe",
+              "SE · Sergipe"
             ]
           },
           {
@@ -2966,51 +3087,64 @@
     ]
   },
   "74": {
-    "block_uuid": "69d85200-692c-4173-a912-98bdf8a8e2e0",
+    "block_uuid": "daa0c3ad-ddef-4af1-aaf9-6ce6b92cf308",
     "question": [
       {
-        "handler": "send_message",
+        "handler": "list_message",
         "params": {
-          "tag": "",
-          "text": "E qual estado?",
-          "type": "external",
+          "list_message": {
+            "header": "",
+            "body": "E qual estado? Toque em \"Ver opções\":",
+            "footer": "",
+            "button": "Ver opções",
+            "sections": [
+              {
+                "title": "Opções",
+                "rows": [
+                  {
+                    "callback_data": "84d179e1-20f6-46b3-a239-54b2b2215b73",
+                    "title": "PA · Pará",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "a44b94ea-61a7-403e-8afe-a2faee482ddf",
+                    "title": "AM · Amazonas",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "fb1046ce-c768-4011-91b4-9fcdd2a77a51",
+                    "title": "RO · Rondônia",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "73184130-5fd6-4b62-835f-ef1d758b3996",
+                    "title": "TO · Tocantins",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "335292f6-bf34-42a4-8a3f-0616578f44f4",
+                    "title": "AC · Acre",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "dc23d678-3054-4ed1-b95f-f81d7d04e8a9",
+                    "title": "AP · Amapá",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "84db0c8c-0bc8-482b-8d39-9fe8f6d85d4b",
+                    "title": "RR · Roraima",
+                    "description": ""
+                  }
+                ]
+              }
+            ]
+          },
           "recipient": {
             "type": "all_contacts",
             "way_of_communication": "over_all"
           },
-          "is_in_starting_block": false,
-          "send_to_all_chat_sources": true,
-          "on_error": null,
-          "buttons": [
-            {
-              "type": "inline",
-              "text": "PA"
-            },
-            {
-              "type": "inline",
-              "text": "AM"
-            },
-            {
-              "type": "inline",
-              "text": "RO"
-            },
-            {
-              "type": "inline",
-              "text": "TO"
-            },
-            {
-              "type": "inline",
-              "text": "AC"
-            },
-            {
-              "type": "inline",
-              "text": "AP"
-            },
-            {
-              "type": "inline",
-              "text": "RR"
-            }
-          ]
+          "disabled": false
         }
       }
     ],
@@ -3019,7 +3153,7 @@
         "handler": "buttons",
         "params": [
           {
-            "value": "PA",
+            "value": "84d179e1-20f6-46b3-a239-54b2b2215b73",
             "params": [
               {
                 "handler": "goto",
@@ -3030,13 +3164,15 @@
               }
             ],
             "synonyms": [
+              "PA",
               "pa",
               "Pará",
-              "pará"
+              "pará",
+              "PA · Pará"
             ]
           },
           {
-            "value": "AM",
+            "value": "a44b94ea-61a7-403e-8afe-a2faee482ddf",
             "params": [
               {
                 "handler": "goto",
@@ -3047,13 +3183,15 @@
               }
             ],
             "synonyms": [
+              "AM",
               "am",
               "Amazonas",
-              "amazonas"
+              "amazonas",
+              "AM · Amazonas"
             ]
           },
           {
-            "value": "RO",
+            "value": "fb1046ce-c768-4011-91b4-9fcdd2a77a51",
             "params": [
               {
                 "handler": "goto",
@@ -3064,13 +3202,15 @@
               }
             ],
             "synonyms": [
+              "RO",
               "ro",
               "Rondônia",
-              "rondônia"
+              "rondônia",
+              "RO · Rondônia"
             ]
           },
           {
-            "value": "TO",
+            "value": "73184130-5fd6-4b62-835f-ef1d758b3996",
             "params": [
               {
                 "handler": "goto",
@@ -3081,13 +3221,15 @@
               }
             ],
             "synonyms": [
+              "TO",
               "to",
               "Tocantins",
-              "tocantins"
+              "tocantins",
+              "TO · Tocantins"
             ]
           },
           {
-            "value": "AC",
+            "value": "335292f6-bf34-42a4-8a3f-0616578f44f4",
             "params": [
               {
                 "handler": "goto",
@@ -3098,13 +3240,15 @@
               }
             ],
             "synonyms": [
+              "AC",
               "ac",
               "Acre",
-              "acre"
+              "acre",
+              "AC · Acre"
             ]
           },
           {
-            "value": "AP",
+            "value": "dc23d678-3054-4ed1-b95f-f81d7d04e8a9",
             "params": [
               {
                 "handler": "goto",
@@ -3115,13 +3259,15 @@
               }
             ],
             "synonyms": [
+              "AP",
               "ap",
               "Amapá",
-              "amapá"
+              "amapá",
+              "AP · Amapá"
             ]
           },
           {
-            "value": "RR",
+            "value": "84db0c8c-0bc8-482b-8d39-9fe8f6d85d4b",
             "params": [
               {
                 "handler": "goto",
@@ -3132,9 +3278,11 @@
               }
             ],
             "synonyms": [
+              "RR",
               "rr",
               "Roraima",
-              "roraima"
+              "roraima",
+              "RR · Roraima"
             ]
           },
           {
@@ -3154,7 +3302,7 @@
     ]
   },
   "100": {
-    "block_uuid": "8a1f347f-0ed8-4288-b799-e84c3d1558b7",
+    "block_uuid": "dedc2548-f120-46dd-8592-a168af588757",
     "question": [
       {
         "handler": "action",
@@ -3176,7 +3324,7 @@
     ]
   },
   "101": {
-    "block_uuid": "5eb12c30-1fe4-47e9-98b2-d3f1156e114a",
+    "block_uuid": "3528d2bd-7aef-4818-9a26-4d3f74dbcd48",
     "question": [
       {
         "handler": "action",
@@ -3198,7 +3346,7 @@
     ]
   },
   "102": {
-    "block_uuid": "c4618bcb-ff9d-4fb7-b7fd-9e3af8922a3f",
+    "block_uuid": "399b1aca-80dc-435a-b41b-38d1ad56eef9",
     "question": [
       {
         "handler": "action",
@@ -3220,7 +3368,7 @@
     ]
   },
   "103": {
-    "block_uuid": "56cefd9d-50e2-4c9b-a000-68376ba39037",
+    "block_uuid": "b978e8bb-bf56-432a-8442-a755613f3c38",
     "question": [
       {
         "handler": "action",
@@ -3242,7 +3390,7 @@
     ]
   },
   "104": {
-    "block_uuid": "75301fae-0cd3-47da-a086-a6143011cfbc",
+    "block_uuid": "22e7f522-680e-4159-bcf5-ae4020ed2a4f",
     "question": [
       {
         "handler": "action",
@@ -3264,7 +3412,7 @@
     ]
   },
   "105": {
-    "block_uuid": "9ceca5df-73d8-4cc5-a546-8dbd087aaec8",
+    "block_uuid": "2b649972-62df-4770-acb0-c959c4a9d1d2",
     "question": [
       {
         "handler": "action",
@@ -3286,7 +3434,7 @@
     ]
   },
   "106": {
-    "block_uuid": "cca7c29a-1842-49d9-9261-c27c34202f18",
+    "block_uuid": "9af22b4f-13db-4ee3-8de8-c04993a02a1e",
     "question": [
       {
         "handler": "action",
@@ -3308,7 +3456,7 @@
     ]
   },
   "107": {
-    "block_uuid": "7989a49b-26de-4cf7-b862-cde1fb2cad85",
+    "block_uuid": "88f978ef-662c-4d42-8fc5-b49e8a29700f",
     "question": [
       {
         "handler": "action",
@@ -3330,7 +3478,7 @@
     ]
   },
   "108": {
-    "block_uuid": "ee9cf9ed-682e-4211-9d68-9cfee3e7b55c",
+    "block_uuid": "0dd18f94-3317-43a7-ba10-c2ae2ee1c735",
     "question": [
       {
         "handler": "action",
@@ -3352,7 +3500,7 @@
     ]
   },
   "109": {
-    "block_uuid": "6486da50-9fef-4d1f-87fb-b93e56d72b66",
+    "block_uuid": "edb24e0c-30fa-40ed-8afc-a9f5d3fa4c4a",
     "question": [
       {
         "handler": "action",
@@ -3374,7 +3522,7 @@
     ]
   },
   "110": {
-    "block_uuid": "955b8840-3c37-4931-9fa7-01c8741ce5d8",
+    "block_uuid": "a324da41-e7ab-45ad-86ea-8183667c27d1",
     "question": [
       {
         "handler": "action",
@@ -3396,7 +3544,7 @@
     ]
   },
   "111": {
-    "block_uuid": "0b72149e-6ba8-4012-be11-3a9f54bdcd4f",
+    "block_uuid": "45b82eda-65e2-41ae-a0d5-76f94590fa16",
     "question": [
       {
         "handler": "action",
@@ -3418,7 +3566,7 @@
     ]
   },
   "112": {
-    "block_uuid": "83598c6b-c93a-43c2-9819-24171cff87e1",
+    "block_uuid": "f0ee9c7c-3851-46f9-a2f3-f1b0d38bab02",
     "question": [
       {
         "handler": "action",
@@ -3440,7 +3588,7 @@
     ]
   },
   "113": {
-    "block_uuid": "d4ed1f59-cf3f-4979-94e5-48b6b13dca7d",
+    "block_uuid": "e3a26db1-3bd5-4f70-93ba-08134b9fdbdf",
     "question": [
       {
         "handler": "action",
@@ -3462,7 +3610,7 @@
     ]
   },
   "114": {
-    "block_uuid": "d2eb89df-6afa-4ecc-84e2-ec3648b9d0bd",
+    "block_uuid": "e5f07aa0-7794-4822-a638-8888b207f6ae",
     "question": [
       {
         "handler": "action",
@@ -3484,7 +3632,7 @@
     ]
   },
   "115": {
-    "block_uuid": "df6c82e2-4d06-41b1-a1b1-b9803aa2807f",
+    "block_uuid": "43e2f686-bd2c-43c7-a493-d2ab6eadecd4",
     "question": [
       {
         "handler": "action",
@@ -3506,7 +3654,7 @@
     ]
   },
   "116": {
-    "block_uuid": "2ea0383d-e5fc-4e1a-ba4f-55047a02d91c",
+    "block_uuid": "e4ea5377-3551-47b4-a4a4-351a76154a2d",
     "question": [
       {
         "handler": "action",
@@ -3528,7 +3676,7 @@
     ]
   },
   "117": {
-    "block_uuid": "6bb821af-5e67-409b-849b-243f01bc0f92",
+    "block_uuid": "72b86ee7-67e2-4dc1-bf5b-2c77ab771df6",
     "question": [
       {
         "handler": "action",
@@ -3550,7 +3698,7 @@
     ]
   },
   "118": {
-    "block_uuid": "1dd147dd-397e-4461-8982-014256255d79",
+    "block_uuid": "8116ee0f-a641-48a9-90dd-8179bc4b16b5",
     "question": [
       {
         "handler": "action",
@@ -3572,7 +3720,7 @@
     ]
   },
   "119": {
-    "block_uuid": "5c8a9694-c781-4c83-bd76-3c30972f692c",
+    "block_uuid": "085be2e8-bdab-4ac5-bbd8-94f72bb9edaa",
     "question": [
       {
         "handler": "action",
@@ -3594,7 +3742,7 @@
     ]
   },
   "120": {
-    "block_uuid": "47a70c03-206d-457d-833b-4b26de653395",
+    "block_uuid": "1cf2cdaf-f889-4894-902a-91202c861fdf",
     "question": [
       {
         "handler": "action",
@@ -3616,7 +3764,7 @@
     ]
   },
   "121": {
-    "block_uuid": "63ff7912-2cba-4a77-9f28-e30e4448dd89",
+    "block_uuid": "032128f1-e293-41dc-89a7-6030359fc2ec",
     "question": [
       {
         "handler": "action",
@@ -3638,7 +3786,7 @@
     ]
   },
   "122": {
-    "block_uuid": "52f1740d-6e6a-447e-a820-a040d16b4653",
+    "block_uuid": "7d0aa498-bec8-4e02-bdff-dc7f68aa718e",
     "question": [
       {
         "handler": "action",
@@ -3660,7 +3808,7 @@
     ]
   },
   "123": {
-    "block_uuid": "0bb1ee0b-eeba-4a01-8511-adb16ec72108",
+    "block_uuid": "3c533fb6-a5fa-4ba2-ac61-6071746ff57e",
     "question": [
       {
         "handler": "action",
@@ -3682,7 +3830,7 @@
     ]
   },
   "124": {
-    "block_uuid": "3139818f-6722-4e2d-9161-965a059f65ad",
+    "block_uuid": "9cd3f7ef-55f1-4cbc-a823-e64e82d1f2a1",
     "question": [
       {
         "handler": "action",
@@ -3704,7 +3852,7 @@
     ]
   },
   "125": {
-    "block_uuid": "dba4cca8-9c54-4c36-9a02-a3d4308e4ca8",
+    "block_uuid": "d4e17201-6275-40cf-8acc-9d2a47bc90e4",
     "question": [
       {
         "handler": "action",
@@ -3726,7 +3874,7 @@
     ]
   },
   "126": {
-    "block_uuid": "4cc32fa8-2a97-439e-91e2-bb25751f396b",
+    "block_uuid": "d41a37b6-15fc-4e8d-a4c8-752676b2be89",
     "question": [
       {
         "handler": "action",
