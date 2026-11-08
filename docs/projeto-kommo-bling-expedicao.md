@@ -283,3 +283,19 @@ Seção "Como garantimos", com as camadas de conferência:
 
 **Em aberto:** o login "Minasflor Professional" é o mesmo que o dono usa (estava logado nele). Trocar o nome para
 "Thayná" depende de confirmar quem usa o login.
+
+## 12. Lojas e regra de canal (dono, 2026-11-08)
+
+**As lojas:**
+- **BY.MF** tem loja pública: https://bymfpro.com.br/.
+- **Minasflor e MF.PRO não têm loja pública, de propósito.** Cada cliente recebe um link de pagamento personalizado da
+  Yampi. Uma loja aberta igual à da BY.MF desagradaria os distribuidores.
+
+**Para a Lyra:**
+- nunca mandar link genérico de Minasflor ou MF.PRO, só o link daquele cliente (fase 1: gerado pela Thayná; fase 2:
+  gerado pelo Helpoint);
+- não publicar preço de Minasflor ou MF.PRO em resposta aberta.
+
+**Catálogos:** estão em `C:\Users\matheus.baeta\Downloads\CATÁLOGOS_` (Styling, ebook Styling, Therapy, BY.MF, Minasflor,
+Backbar, 2 cartelas de cores e o catálogo digital de distribuidores). A base da Lyra fica em `docs/lyra-base/`. O
+catálogo de distribuidores ficou de fora, porque repete os produtos e traz condição de revenda.
