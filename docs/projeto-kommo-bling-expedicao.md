@@ -141,3 +141,10 @@ Com isso, a origem do Direct passa a ser automática pela conta.
   - pergunto ao suporte do Kommo se há como desligar.
 - **Direct:** a Lyra e o Salesbot fazem a triagem igual ao WhatsApp. O Direct não traz o telefone, então a Lyra pede o
   WhatsApp.
+- **Funil próprio para comentários (versão 5, 2026-11-08):** criar o funil "Instagram · Comentários", fora dos indicadores,
+  com as etapas Comentou → Convidado ao Direct → Só comentou (perdida em 7 dias).
+  - Quem responde no Direct vai para a triagem da Lyra e muda para o funil do segmento, com a etiqueta
+    `veio-de-comentario`.
+  - Filtros salvos no Kommo: "Vieram de comentário" e "Só comentou".
+  - Novo indicador no Helpoint: comentários → conversas → vendas, por conta.
+  - Regra do Instagram: uma única mensagem no Direct por comentário, até 7 dias depois dele.
