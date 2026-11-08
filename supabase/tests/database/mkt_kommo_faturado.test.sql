@@ -25,11 +25,11 @@ grant select on f, u to authenticated;
 select tests.grant_role((select dona from u), 'admin');
 
 insert into public.com_clientes (tenant_id, codigo, razao_social, documento, telefone) values
-  ((select a from f), '1103', 'Vita Derm', '35.588.859/0001-10', '(38) 99191-7000'),
-  ((select a from f), '2000', 'Priscila Cosméticos', '11.222.333/0001-44', null),
-  ((select a from f), '3000', 'Sem Nota Ltda', '22.333.444/0001-55', null),
-  ((select a from f), '4000', 'Recente Ltda', '33.444.555/0001-66', null),
-  ((select a from f), '5000', 'Dois Pedidos', '44.555.666/0001-77', null),
+  ((select a from f), '1103', 'Vita Derm', '35588859000110', '(38) 99191-7000'),
+  ((select a from f), '2000', 'Priscila Cosméticos', '11222333000144', null),
+  ((select a from f), '3000', 'Sem Nota Ltda', '22333444000155', null),
+  ((select a from f), '4000', 'Recente Ltda', '33444555000166', null),
+  ((select a from f), '5000', 'Dois Pedidos', '44555666000177', null),
   ((select a from f), '6000', 'Telefone A', null, '(11) 95867-3001'),
   ((select a from f), '6001', 'Telefone B', null, '(11) 95867-3001');
 
