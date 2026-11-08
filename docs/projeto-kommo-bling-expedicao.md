@@ -179,3 +179,28 @@ Decisões do dono sobre a revisão (2026-11-08):
   volta, e a tarefa fica marcada para esse dia.
 - **Aviso dos 30 minutos:** vai para a Thayná, para o dono e para o gestor comercial.
 - **Plano do Kommo:** lembrete no Helpoint em 14/02/2027, 30 dias antes de vencer, para o dono e o admin.
+
+## 8. Revisão completa (versão 7, 2026-11-08): mais 15 pontos, 33 no total
+
+Segunda passada, sistemática: a página foi conferida seção por seção contra os dados, as regras do Kommo, do WhatsApp, do
+Instagram e da Yampi, o código, a LGPD, o custo e as contradições internas.
+
+Os 15 pontos novos:
+- **19.** O segmento é contado pelo campo Segmento. Lead em "Com a Lyra" sem segmento conta como sem triagem.
+- **20.** Funil "Atendimento (fora de venda)", com Pós-venda, Interno e Outros assuntos, fora dos indicadores.
+- **21.** Só o Salesbot fala na primeira mensagem. A Lyra entra depois da triagem, ou pela etiqueta `precisa-ia`.
+- **22.** Limite do plano: 2.922 de 5.000 leads. Leads "só comentou" excluídos 30 dias depois de fechados (decisão do dono),
+  e aviso em 80%.
+- **23.** Contato que já tem segmento vai direto para o funil dele.
+- **24.** Comentários separados por palavras na automação, sem IA.
+- **25.** Masterclass continua no Salão.
+- **26.** Formulário do site vai para "Com a Thayná". Falta confirmar se ele é só para distribuidor.
+- **27.** Motivo de perda: plano B com um campo obrigatório na etapa Venda perdida.
+- **28.** O Helpoint escreve no Kommo só a etiqueta `interno` e a Venda ganha dos links que ele gerou, com registro.
+- **29.** O Kommo não mescla contatos sozinho.
+- **30.** No Instagram, as opções vão como respostas rápidas, e a janela também é de 24 h.
+- **31.** O número oficial é o do Helpoint.
+- **32.** Kommo × Bling se conferem, nunca se somam.
+- **33.** O recesso da empresa é cadastrado no Helpoint.
+
+Seis pontos só se provam montando, e cada um tem plano B (seção "Provar na montagem" da página).
