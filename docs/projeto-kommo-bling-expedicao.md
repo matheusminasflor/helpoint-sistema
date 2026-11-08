@@ -43,8 +43,10 @@ formulário do site com `referrer` (Google 15, l.instagram.com 12, site 5).
 Toda venda do segmento Distribuidor passa pelo Forteplus. A venda ganha no Kommo só avisa que **fechou**: o valor que
 ela tem lá não entra no indicador. O valor que vale é o **faturado**.
 
-- **Ligação:** pelo telefone. O telefone do contato no Kommo (últimos 8 dígitos) é comparado com `com_clientes.telefone`.
-  Se não bater, a venda vai para "Para corrigir" e quem cuida dos leads preenche um campo com o código do cliente no Kommo.
+- **Ligação (o dono recusou ligar só pelo telefone, 2026-11-07):** a forma de ligar entra no projeto do Kommo, junto com
+  a melhoria do CRM. A proposta a levar: um campo **CPF/CNPJ** no lead, obrigatório para marcar venda ganha (o Kommo permite
+  campo obrigatório por etapa). O Helpoint compara esse campo com `com_clientes.documento`. Telefone e e-mail servem só
+  para **sugerir** o cliente, e alguém confirma. Venda ganha sem cliente ligado vai para "Para corrigir".
 - **Valor:** a soma de `com_vendas_itens.valor_nota` do cliente, com CFOP de venda, das notas emitidas **até 7 dias depois
   de fechar**. "Pago" foi descartado porque o Forteplus não manda pagamento ao Helpoint.
 - **Situações:** Faturado (com o valor e o número das notas), Aguardando nota e Cliente não encontrado.
