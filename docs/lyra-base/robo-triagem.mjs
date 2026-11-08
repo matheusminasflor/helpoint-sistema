@@ -41,15 +41,20 @@ const lista = (body, linhas) => ({
   recipient: { type: 'all_contacts', way_of_communication: 'over_all' }, chat_sources: CANAL.whatsapp, disabled: false },
 });
 // No Direct do Instagram a lista não chega (testado em 2026-11-08: o Kommo descarta em silêncio). Ali vai a mesma
-// pergunta com botões, que o Instagram mostra juntos numa mensagem. Cada mensagem tem o seu canal, então o cliente
-// recebe só uma. O botão do Instagram tem até 20 letras: `curto` encurta o rótulo (o estado vai só com a sigla).
+// pergunta com botões. Mas o Instagram também só mostra 3 botões por mensagem: com 4, o Kommo partiu em duas e repetiu
+// o texto (testado em 2026-11-08). Então `instagram` traz o texto e os botões (até 3) próprios desse canal; sem
+// botões, a pessoa responde escrevendo. O botão do Instagram tem até 20 letras: `curto` encurta o rótulo.
 const linha = (title, curto = title) => ({ id: randomUUID(), title, curto });
 // `{toque}` no texto vira a instrução de cada canal.
-const escolha = (body, linhas) => [
-  lista(body.replace('{toque}', 'toque em "Ver opções"'), linhas),
-  msg(body.replace('{toque}', 'toque em uma das opções'), { send_to_all_chat_sources: false, chat_sources: CANAL.instagram,
-    buttons: linhas.map(({ curto }) => ({ type: 'inline', text: curto })) }),
-];
+const escolha = (body, linhas, instagram = {}) => {
+  const botoesIg = instagram.linhas ?? linhas;
+  if (botoesIg.length > 3) throw new Error('Instagram: no máximo 3 botões por mensagem');
+  return [
+    lista(body.replace('{toque}', 'toque em "Ver opções"'), linhas),
+    msg(instagram.texto ?? body.replace('{toque}', 'toque em uma das opções'), { send_to_all_chat_sources: false, chat_sources: CANAL.instagram,
+      ...(botoesIg.length ? { buttons: botoesIg.map(({ curto }) => ({ type: 'inline', text: curto })) } : {}) }),
+  ];
+};
 // A resposta aceita o toque dos dois canais: o callback_data da lista e o texto do botão. Sem sinônimos, que a lista
 // não aceita (o Kommo recusa a gravação com 400).
 const opcao = (linhaDaLista, params) => [{ value: linhaDaLista.id, params }, { value: linhaDaLista.curto, params }];
@@ -98,8 +103,10 @@ const blocos = {
   0: { question: [], answer: respostaDosBotoes() }, // a mensagem entra logo abaixo
   // Regra do dono (2026-11-08): o segmento é obrigatório. Quem escreve em vez de escolher recebe as opções de novo,
   // quantas vezes for preciso; só "atendente" passa direto para uma pessoa, na Entrada (sem triagem).
-  50: { question: escolha('Para seguir com o atendimento, {toque} 👇', Object.values(OPCOES)), answer: respostaDosBotoes() },
-  53: { question: [contem(['atendente', 'Atendente', 'ATENDENTE', 'falar com alguém', 'Falar com alguém', 'humano', 'pessoa'], 51), goto(50)] },
+  50: { question: escolha('Para seguir com o atendimento, {toque} 👇', Object.values(OPCOES), {
+    texto: 'Para seguir com o atendimento, toque em uma das opções 👇 Se você já é cliente, escreva "cliente".', linhas: [OPCOES['Uso em casa'], OPCOES['Tenho salão'], OPCOES['Revendo/distribuo']] }), answer: respostaDosBotoes() },
+  53: { question: [contem(['atendente', 'Atendente', 'ATENDENTE', 'falar com alguém', 'Falar com alguém', 'humano', 'pessoa'], 51),
+    contem(['cliente', 'Cliente', 'CLIENTE', 'pedido', 'Pedido', 'troca', 'Troca', 'entrega', 'Entrega', 'rastreio', 'Rastreio'], 40), goto(50)] },
   51: { question: [etapa(FUNIL.entrada, ETAPA.entradaAtendente), etiqueta('pediu-atendente'), msg(TRANSFERE), tarefa('Cliente pediu atendente antes da triagem: responder e preencher o Segmento.'), esperaResposta(55)] },
   // Depois do segmento: escreveu o produto em vez de escolher a marca → passa para uma pessoa.
   52: { question: [etapa(FUNIL.consumidor, ETAPA.consumidorAtendente), msg('Obrigada pela informação. Vou transferir o seu atendimento para a nossa equipe, que vai te ajudar a escolher os produtos. 💙'), tarefa('Consumidor escreveu o que quer em vez de escolher a marca: responder pela conversa (até 30 minutos).'), esperaResposta(55)] },
@@ -174,13 +181,18 @@ const blocos = {
   // O estado é escolhido por toque (dono, 2026-11-08: "vão preencher errado"): primeiro a região, depois o estado da
   // região. O WhatsApp mostra até 10 opções por lista; a maior região, o Nordeste, tem 9. Quem escreve em vez de
   // tocar recebe a pergunta de novo (lista não aceita sinônimos).
-  37: { question: escolha('Em qual região você pretende atuar? 📍 Para responder, {toque}.', Object.values(LINHA_REGIAO)),
+  37: { question: escolha('Em qual região você pretende atuar? 📍 Para responder, {toque}.', Object.values(LINHA_REGIAO), {
+    texto: 'Em qual estado você pretende atuar? 📍 Escreva a sigla, por exemplo: MG', linhas: [] }),
     answer: [{ handler: 'buttons', params: [
       ...Object.keys(REGIOES).flatMap((r, i) => opcao(LINHA_REGIAO[r], [goto(70 + i)])),
+      // Instagram: a sigla ou o nome do estado, escritos. Outra coisa repete a pergunta, então o campo não recebe erro.
+      ...Object.values(REGIOES).flat().flatMap(([uf, nome]) => [uf, uf.toLowerCase(), nome, nome.toLowerCase()].map((value) => ({ value, params: [goto(UF_BLOCO[uf])] }))),
       { type: 'else', params: [goto(37)] },
     ] }] },
   ...Object.fromEntries(Object.entries(REGIOES).map(([, ufs], i) => [70 + i, {
-    question: escolha('Em qual estado? 📍 Para responder, {toque}.', ufs.map(([uf]) => LINHA_UF[uf])),
+    // Só o WhatsApp chega aqui (no Instagram o 37 já pede a sigla); o texto do Instagram é a mesma pergunta, por garantia.
+    question: escolha('Em qual estado? 📍 Para responder, {toque}.', ufs.map(([uf]) => LINHA_UF[uf]), {
+      texto: 'Em qual estado você pretende atuar? 📍 Escreva a sigla, por exemplo: MG', linhas: [] }),
     answer: [{ handler: 'buttons', params: [
       ...ufs.flatMap(([uf]) => opcao(LINHA_UF[uf], [goto(UF_BLOCO[uf])])),
       { type: 'else', params: [goto(70 + i)] },
@@ -199,7 +211,9 @@ const blocos = {
 };
 
 // Bloco 0: a saudação, em lista.
-blocos[0].question = escolha('Olá! ✨ Sou a Lyra, assistente virtual da Minasflor, e atendo as marcas BY.MF, Minasflor e MF.PRO. Para direcionar o seu atendimento, {toque} para selecionar o seu perfil. Se preferir falar com a nossa equipe, é só escrever "atendente".', Object.values(OPCOES));
+const TRES = [OPCOES['Uso em casa'], OPCOES['Tenho salão'], OPCOES['Revendo/distribuo']];
+blocos[0].question = escolha('Olá! ✨ Sou a Lyra, assistente virtual da Minasflor, e atendo as marcas BY.MF, Minasflor e MF.PRO. Para direcionar o seu atendimento, {toque} para selecionar o seu perfil. Se preferir falar com a nossa equipe, é só escrever "atendente".', Object.values(OPCOES), {
+  texto: 'Olá! ✨ Sou a Lyra, assistente virtual da Minasflor, e atendo as marcas BY.MF, Minasflor e MF.PRO. Para direcionar o seu atendimento, toque em uma das opções. Se você já é cliente, é só escrever "cliente"; para falar com a nossa equipe, escreva "atendente".', linhas: TRES });
 
 // A lista tem de estar sozinha no seu passo (o Kommo recusa a gravação com 400 se vier outra mensagem junto). Então
 // cada escolha vira dois passos: o passo N manda os botões só para o Instagram e, quando o canal não é Instagram, a
