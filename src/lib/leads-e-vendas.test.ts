@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { destaquesDoPeriodo, ehMesInteiro, leadsPorSemana, periodoCurto, resumoDoKommo, rotuloDaSemana, type LinhaKommo, type LinhaPerda } from './leads-e-vendas';
+import { destaquesDoPeriodo, ehMesInteiro, leadsPorSemana, pendenciasDoKommo, periodoCurto, resumoDoKommo, rotuloDaSemana, type LinhaKommo, type LinhaPerda } from './leads-e-vendas';
 import { somarDias } from './ti-equipe';
 
 // A semana de 26/10 a 01/11/2026, como o Kommo mostra (conferido no conector em 2026-11-07).
@@ -81,5 +81,23 @@ describe('destaquesDoPeriodo', () => {
   it('sem números, sem destaque', () => {
     const vazio = resumoDoKommo([], [], semana);
     expect(destaquesDoPeriodo(vazio, vazio, { investimento: null, investimentoAntes: null, custoPorVisita: null })).toEqual([]);
+  });
+});
+
+describe('pendenciasDoKommo', () => {
+  const v = (x: Partial<import('./leads-e-vendas').Venda>) => ({
+    lead_id: 1, nome: 'A', funil: 'distribuidor' as const, situacao: 'ganha' as const, valor: 10, fechou: '2026-10-27', motivo: null, link: 'x', ...x,
+  });
+  it('ganha sem valor, ganha sem segmento e perdida sem motivo, só do período', () => {
+    const p = pendenciasDoKommo([
+      v({ lead_id: 1, valor: 0 }),
+      v({ lead_id: 2, funil: 'sem_triagem', valor: 5096 }),
+      v({ lead_id: 3, situacao: 'perdida', valor: 0 }),
+      v({ lead_id: 4, situacao: 'perdida', motivo: 'Preço' }),
+      v({ lead_id: 5, valor: 0, fechou: '2026-10-01' }),
+    ], semana);
+    expect(p.semValor.map((x) => x.lead_id)).toEqual([1]);
+    expect(p.semSegmento.map((x) => x.lead_id)).toEqual([2]);
+    expect(p.semMotivo.map((x) => x.lead_id)).toEqual([3]);
   });
 });

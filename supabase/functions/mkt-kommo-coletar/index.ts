@@ -43,14 +43,18 @@ async function kommo<T>(caminho: string): Promise<T | null> {
   return await r.json() as T;
 }
 
-interface Lead { pipeline_id: number; status_id: number; price: number | null; created_at: number; closed_at: number | null; loss_reason_id: number | null }
+interface Lead {
+  id: number; name: string; pipeline_id: number; status_id: number; price: number | null; created_at: number; closed_at: number | null;
+  loss_reason_id: number | null; _embedded?: { contacts?: { id: number; is_main?: boolean }[] };
+}
 
-/** Todos os leads com `campo` (criado ou fechado) entre `de` e agora, em segundos. */
+/** Todos os leads com `campo` (criado ou fechado) entre `de` e agora, em segundos; os fechados vêm com os contatos. */
 async function leads(campo: 'created_at' | 'closed_at', de: number): Promise<Lead[]> {
   const todos: Lead[] = [];
+  const com = campo === 'closed_at' ? '&with=contacts' : '';
   for (let pagina = 1; ; pagina++) {
     const r = await kommo<{ _embedded: { leads: Lead[] }; _links?: { next?: unknown } }>(
-      `leads?limit=250&page=${pagina}&filter[${campo}][from]=${de}&filter[${campo}][to]=${Math.floor(Date.now() / 1000)}`);
+      `leads?limit=250&page=${pagina}${com}&filter[${campo}][from]=${de}&filter[${campo}][to]=${Math.floor(Date.now() / 1000)}`);
     todos.push(...(r?._embedded.leads ?? []));
     if (!r?._links?.next) return todos;
   }
@@ -82,11 +86,20 @@ async function rodada(db: SupabaseClient, tenant: string) {
     const funil = segmentoDo.get(l.pipeline_id);
     if (funil) linha(diaBR(l.created_at * 1000), funil).chegaram++;
   }
+  const vendas: { lead_id: number; nome: string; contato: number | null; funil: string; situacao: string; valor: number; fechou: string; motivo: string | null; link: string }[] = [];
+  const sub = Deno.env.get('KOMMO_SUBDOMINIO')!.trim();
   for (const l of await leads('closed_at', de)) {
     const funil = segmentoDo.get(l.pipeline_id);
     if (!funil || !l.closed_at || (l.status_id !== GANHA && l.status_id !== PERDIDA)) continue;
     const dia = diaBR(l.closed_at * 1000);
     const n = linha(dia, funil);
+    const contatos = l._embedded?.contacts ?? [];
+    vendas.push({
+      lead_id: l.id, nome: l.name, contato: (contatos.find((c) => c.is_main) ?? contatos[0])?.id ?? null, funil,
+      situacao: l.status_id === GANHA ? 'ganha' : 'perdida', valor: Number(l.price ?? 0), fechou: dia,
+      motivo: l.status_id === PERDIDA ? (l.loss_reason_id && motivoDo.get(l.loss_reason_id)) || null : null,
+      link: `https://${sub}.kommo.com/leads/detail/${l.id}`,
+    });
     if (l.status_id === GANHA) {
       n.ganhas++;
       n.valor_ganho += Number(l.price ?? 0);
@@ -104,6 +117,20 @@ async function rodada(db: SupabaseClient, tenant: string) {
     p_tenant: tenant, p_desde: desde, p_dias: [...dias.values()], p_perdas: [...perdas.values()],
   });
   if (error) throw error;
+
+  // O nome é o do contato principal do lead ("Lead #118411874" não diz quem é); sem contato, fica o nome do lead.
+  const ids = [...new Set(vendas.map((v) => v.contato).filter((x): x is number => x !== null))];
+  const nomeDo = new Map<number, string>();
+  for (let i = 0; i < ids.length; i += 200) {
+    const filtro = ids.slice(i, i + 200).map((id) => `filter[id][]=${id}`).join('&');
+    const r = await kommo<{ _embedded: { contacts: { id: number; name: string }[] } }>(`contacts?limit=250&${filtro}`);
+    for (const c of r?._embedded.contacts ?? []) if (c.name?.trim()) nomeDo.set(c.id, c.name.trim());
+  }
+  const { error: e2 } = await db.rpc('mkt_kommo_gravar_vendas', {
+    p_tenant: tenant, p_desde: desde,
+    p_vendas: vendas.map(({ contato, ...v }) => ({ ...v, nome: (contato !== null && nomeDo.get(contato)) || v.nome })),
+  });
+  if (e2) throw e2;
   const soma = (k: 'chegaram' | 'ganhas' | 'perdidas') => [...dias.values()].reduce((s, d) => s + d[k], 0);
   return { desde, chegaram: soma('chegaram'), ganhas: soma('ganhas'), perdidas: soma('perdidas') };
 }

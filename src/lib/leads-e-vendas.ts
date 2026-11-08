@@ -125,3 +125,22 @@ export function destaquesDoPeriodo(atual: ResumoDoKommo, anterior: ResumoDoKommo
   }
   return d;
 }
+
+/** Uma venda ganha ou perdida do Kommo, com o nome do contato e o link do lead (`mkt_kommo_vendas`). */
+export interface Venda {
+  lead_id: number; nome: string; funil: Segmento; situacao: 'ganha' | 'perdida'; valor: number; fechou: string; motivo: string | null; link: string;
+}
+export interface Pendencias { semValor: Venda[]; semSegmento: Venda[]; semMotivo: Venda[] }
+
+/**
+ * O que corrigir no Kommo para o número sair certo (proposta v5): venda ganha sem valor, venda ganha ainda na Entrada
+ * (sem segmento) e venda perdida sem motivo. Só as do período.
+ */
+export function pendenciasDoKommo(vendas: Venda[], p: Intervalo): Pendencias {
+  const no = vendas.filter((v) => dentro(v.fechou, p));
+  return {
+    semValor: no.filter((v) => v.situacao === 'ganha' && !Number(v.valor)),
+    semSegmento: no.filter((v) => v.situacao === 'ganha' && v.funil === 'sem_triagem'),
+    semMotivo: no.filter((v) => v.situacao === 'perdida' && !v.motivo),
+  };
+}

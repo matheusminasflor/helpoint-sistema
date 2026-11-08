@@ -5,10 +5,12 @@
 --   4  nem o mês da Meta
 --   5  a gravação não abre para o navegador
 --   6  o navegador não grava direto na tabela
+--   7  as vendas com nome também ficam fechadas a quem não vê os Indicadores
+--   8  e a gravação delas não abre para o navegador
 begin;
 \ir _helpers.psql
 
-select plan(6);
+select plan(8);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-kommo-dia', 'Kommo dia', false) as a;
@@ -29,13 +31,17 @@ select is((select string_agg(coalesce(motivo, '-') || ':' || quantos, ',') from 
   'Preço:2', 'as perdas também são trocadas');
 
 insert into public.mkt_redes_mes (tenant_id, mes, conta, visitas_perfil) values ((select a from f), '2026-10-01', '@minasflor', 10);
+select public.mkt_kommo_gravar_vendas((select a from f), '2026-11-01',
+  '[{"lead_id":1,"nome":"Priscila","funil":"distribuidor","situacao":"ganha","valor":5096,"fechou":"2026-11-02","motivo":null,"link":"x"}]'::jsonb);
 select tests.authenticate_as('ana@kommodia.test');
 select is((select count(*)::int from public.mkt_kommo_dia), 0, 'sem acesso aos Indicadores, não lê o Kommo');
 select is((select count(*)::int from public.mkt_redes_mes), 0, 'nem o mês da Meta');
+select is((select count(*)::int from public.mkt_kommo_vendas), 0, 'nem as vendas com nome');
 select tests.clear_authentication();
 
 select ok(not has_function_privilege('authenticated', 'public.mkt_kommo_gravar(uuid, date, jsonb, jsonb)', 'execute'), 'a gravação não abre para o navegador');
 select ok(not has_table_privilege('authenticated', 'public.mkt_kommo_dia', 'insert'), 'o navegador não grava direto');
+select ok(not has_function_privilege('authenticated', 'public.mkt_kommo_gravar_vendas(uuid, date, jsonb)', 'execute'), 'a gravação das vendas não abre para o navegador');
 
 select * from finish();
 rollback;

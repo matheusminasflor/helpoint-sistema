@@ -7,7 +7,7 @@ import { unwrap } from '@/lib/supabase-result';
 import { somarDias } from '@/lib/ti-equipe';
 import type { Intervalo, LinhaRedes, LinhaTrafego } from '@/lib/redes-e-trafego';
 import type { LinhaPublico } from '@/lib/publico-do-instagram';
-import type { LinhaKommo, LinhaPerda } from '@/lib/leads-e-vendas';
+import type { LinhaKommo, LinhaPerda, Venda } from '@/lib/leads-e-vendas';
 
 export const CHAVE_DAS_SEMANAS = 'mkt-semanal';
 
@@ -94,4 +94,16 @@ export function useKommo(de: string, ate: string) {
         .gte('dia', de).lte('dia', ate).limit(5000)) ?? []) as unknown as LinhaPerda[],
   });
   return { linhas: linhas.data ?? [], perdas: perdas.data ?? [] };
+}
+
+/** As vendas ganhas e perdidas do Kommo com nome e link (`mkt_kommo_vendas`) que fecharam entre `de` e `ate`. */
+export function useVendasDoKommo(de: string, ate: string) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: [CHAVE_DAS_SEMANAS, 'mkt_kommo_vendas', tenantId, de, ate],
+    enabled: !!tenantId && !!de && !!ate,
+    queryFn: async (): Promise<Venda[]> =>
+      (unwrap(await supabase.from('mkt_kommo_vendas' as never).select('lead_id, nome, funil, situacao, valor, fechou, motivo, link')
+        .gte('fechou', de).lte('fechou', ate).order('fechou', { ascending: false })) ?? []) as unknown as Venda[],
+  });
 }

@@ -2,7 +2,7 @@
 // Leis de UX da proposta:
 //   · Miller: três destaques no topo e até quatro números por bloco (antes, cinco cartões e um parágrafo de cinco assuntos);
 //   · Hick: uma escolha de conta no topo vale para a tela toda, em vez de três cartões repetidos em cada bloco;
-//   · posição serial: destaques e "do anúncio à venda" abrem; chamados e operação descem;
+//   · posição serial: destaques e o resumo (tráfego pago × leads e vendas, v5) abrem; chamados e operação descem;
 //   · Von Restorff: só o que piorou fica vermelho; investimento não tem cor (gastar menos pode ser escolha);
 //   · semelhança: cada conta com a mesma cor em tabela, gráfico e apresentação;
 //   · Jakob: a escolha de conta segue o Meta Business Suite; ganhas × perdidas, os relatórios do Kommo; a data, o Google Analytics.
@@ -30,7 +30,7 @@ import { CHAVE_DAS_SEMANAS, useSemanaParaLancar } from '@/hooks/useRedesETrafego
 import {
   CONTAS, NOME_DO_FORMATO, pctTexto, TODAS, type LinhaRedes, type LinhaTrafego, type NumerosDaConta, type Painel, type SemanaNoGrafico,
 } from '@/lib/redes-e-trafego';
-import { rotuloDaSemana, type Destaque, type ResumoDoKommo } from '@/lib/leads-e-vendas';
+import { rotuloDaSemana, type Destaque, type Pendencias, type ResumoDoKommo, type Venda } from '@/lib/leads-e-vendas';
 import { DIAS, fatias, horariosTexto, nomeDoPais, type ResumoDoPublico } from '@/lib/publico-do-instagram';
 
 const int = (v: number | null) => (v === null ? '—' : Math.round(v).toLocaleString('pt-BR'));
@@ -137,38 +137,129 @@ export function Destaques({ itens, grande }: { itens: Destaque[]; grande?: boole
   );
 }
 
-/** Do anúncio à venda: alcance pago → visitas → leads → vendas ganhas, com quantos passaram de uma etapa para a outra. */
-export function DoAnuncioAVenda({ painel, conta, kommo, kommoAntes }: {
+/**
+ * Tráfego pago e Leads e vendas, cada um com uma fonte só (proposta v5, 2026-11-07): o "Do anúncio à venda" ligava as
+ * visitas pagas a todos os leads do Kommo, de qualquer origem, e o "8% das visitas viraram lead" não existia.
+ * O caminho anúncio → venda volta quando o Kommo souber quais leads vieram de anúncio (etapa 2 do roteiro).
+ */
+export function DuasFontes({ painel, conta, kommo, kommoAntes }: {
   painel: Painel; conta: ContaEscolhida; kommo: ResumoDoKommo; kommoAntes: ResumoDoKommo;
 }) {
   const daConta = conta === TODAS ? null : painel.contas.find((c) => c.atual.conta === conta);
-  const alcance = daConta ? daConta.atual.alcancePago : painel.trafego.atual.alcance;
-  const alcanceAntes = daConta ? daConta.anterior.alcancePago : painel.trafego.anterior.alcance;
-  const visitas = daConta ? daConta.atual.visitasPagas : painel.trafego.atual.visitas;
-  const visitasAntes = daConta ? daConta.anterior.visitasPagas : painel.trafego.anterior.visitas;
-  const etapas = [
-    { rotulo: 'Pessoas alcançadas', v: alcance, antes: alcanceAntes, porcento: true },
-    { rotulo: 'Visitas ao perfil', v: visitas, antes: visitasAntes, porcento: true },
-    { rotulo: 'Leads que chegaram', v: kommo.total.chegaram, antes: kommoAntes.temDados ? kommoAntes.total.chegaram : null },
-    { rotulo: 'Vendas ganhas', v: kommo.total.ganhas, antes: kommoAntes.temDados ? kommoAntes.total.ganhas : null },
-  ];
-  const passou = (a: number | null, b: number | null) => (a && b !== null ? `${(b / a * 100).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%` : null);
-  return (
-    <Secao titulo="Do anúncio à venda" icone={Target}
-      nota={daConta ? `Alcance e visitas de ${conta}; leads e vendas são da empresa toda (o Kommo não separa por conta)` : 'Alcance e visitas do tráfego pago; leads e vendas do Kommo'}>
-      <div className="grid grid-cols-2 lg:grid-cols-4 overflow-hidden rounded-lg border bg-card">
-        {etapas.map((e, i) => (
-          <div key={e.rotulo} className="relative border-b border-r p-4 last:border-r-0 lg:border-b-0 [&:nth-child(2)]:max-lg:border-r-0">
-            <div className="text-[12px] font-semibold uppercase tracking-wider text-muted-foreground">{e.rotulo}</div>
-            <div className="text-[28px] font-bold font-mono tabular-nums leading-tight">{int(e.v)}</div>
-            <div className="text-[13px]"><Compara atual={e.v} anterior={e.antes} porcento={e.porcento} /></div>
-            {i < etapas.length - 1 && passou(e.v, etapas[i + 1].v) && (
-              <span className="absolute right-2 top-2 rounded-full bg-primary/10 px-2 py-0.5 text-[12px] font-bold text-primary"
-                title={`De ${e.rotulo.toLowerCase()} para ${etapas[i + 1].rotulo.toLowerCase()}`}>→ {passou(e.v, etapas[i + 1].v)}</span>
-            )}
+  const t = daConta
+    ? { investimento: daConta.atual.investimento, alcance: daConta.atual.alcancePago, visitas: daConta.atual.visitasPagas, custo: daConta.atual.custoPorVisita }
+    : { investimento: painel.trafego.atual.investimento, alcance: painel.trafego.atual.alcance, visitas: painel.trafego.atual.visitas, custo: painel.trafego.atual.custoPorVisita };
+  const a = daConta
+    ? { investimento: daConta.anterior.investimento, alcance: daConta.anterior.alcancePago, visitas: daConta.anterior.visitasPagas, custo: daConta.anterior.custoPorVisita }
+    : { investimento: painel.trafego.anterior.investimento, alcance: painel.trafego.anterior.alcance, visitas: painel.trafego.anterior.visitas, custo: painel.trafego.anterior.custoPorVisita };
+  const k = kommo.total, ka = kommoAntes.temDados ? kommoAntes.total : null;
+  const linha = (titulo: string, fonte: string, nota: string, numeros: { rotulo: string; valor: string; comp: ReactNode; cor?: string }[]) => (
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h3 className="text-sm font-semibold">{titulo} <span className="ml-1 rounded px-1.5 py-0.5 text-[12px] font-semibold bg-primary/10 text-primary">{fonte}</span></h3>
+        <span className="text-xs text-muted-foreground">{nota}</span>
+      </div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+        {numeros.map((n) => (
+          <div key={n.rotulo} className="rounded-lg border bg-card p-3">
+            <div className="text-[12px] font-semibold uppercase tracking-wider text-muted-foreground">{n.rotulo}</div>
+            <div className={cn('text-[26px] font-bold font-mono tabular-nums leading-tight', n.cor)}>{n.valor}</div>
+            <div className="text-[13px]">{n.comp}</div>
           </div>
         ))}
       </div>
+    </div>
+  );
+  return (
+    <Secao titulo="Resumo do período" icone={Target}>
+      {linha('Tráfego pago', 'Meta', daConta ? `Só os anúncios de ${conta}` : 'Só os anúncios; sem misturar com leads', [
+        { rotulo: 'Investimento', valor: brl(t.investimento), comp: <Compara atual={t.investimento} anterior={a.investimento} melhor="neutro" formato={brl} porcento /> },
+        { rotulo: 'Pessoas alcançadas', valor: int(t.alcance), comp: <Compara atual={t.alcance} anterior={a.alcance} porcento /> },
+        { rotulo: 'Visitas ao perfil', valor: int(t.visitas), comp: <Compara atual={t.visitas} anterior={a.visitas} porcento /> },
+        { rotulo: 'Custo por visita', valor: brl(t.custo), comp: <Compara atual={t.custo} anterior={a.custo} melhor="menos" formato={brl} /> },
+      ])}
+      {linha('Leads e vendas', 'Kommo', daConta ? 'Da empresa toda: o Kommo ainda não diz de qual Instagram o lead veio' : 'Todo lead do Kommo: WhatsApp, site e Direct', [
+        { rotulo: 'Leads que chegaram', valor: int(k.chegaram), comp: <Compara atual={k.chegaram} anterior={ka?.chegaram ?? null} /> },
+        { rotulo: 'Vendas ganhas', valor: int(k.ganhas), cor: 'text-status-success', comp: <Compara atual={k.ganhas} anterior={ka?.ganhas ?? null} /> },
+        { rotulo: 'Vendas perdidas', valor: int(k.perdidas), cor: 'text-status-danger', comp: <Compara atual={k.perdidas} anterior={ka?.perdidas ?? null} melhor="menos" /> },
+        { rotulo: 'Valor ganho', valor: k.valor ? formatBRL(k.valor) : '—', comp: <Compara atual={k.valor} anterior={ka?.valor ?? null} formato={brl} porcento /> },
+      ])}
+    </Secao>
+  );
+}
+
+const NOME_DO_SEGMENTO: Record<Venda['funil'], string> = {
+  salao: 'Salão de beleza', distribuidor: 'Distribuidor', consumidor: 'Consumidor final', sem_triagem: 'Sem triagem',
+};
+const dia = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
+
+/**
+ * As vendas do período com o nome do cliente e o link do Kommo, e o que corrigir lá (proposta v5): "quem é esse lead?".
+ * Venda ganha ainda na Entrada aparece como "Sem triagem" até alguém mover o lead para o funil certo.
+ */
+export function VendasDoPeriodo({ vendas, pendencias }: { vendas: Venda[]; pendencias: Pendencias }) {
+  const [aba, setAba] = useState<'ganha' | 'perdida'>('ganha');
+  const [lista, setLista] = useState<keyof Pendencias | null>(null);
+  const mostradas = lista ? pendencias[lista] : vendas.filter((v) => v.situacao === aba);
+  const itens: { k: keyof Pendencias; texto: string }[] = [
+    { k: 'semValor', texto: 'venda ganha sem valor' },
+    { k: 'semSegmento', texto: 'venda ganha sem segmento (ainda na Entrada)' },
+    { k: 'semMotivo', texto: 'venda perdida sem motivo' },
+  ];
+  const ganhas = vendas.filter((v) => v.situacao === 'ganha').length;
+  return (
+    <Secao titulo="Vendas do período" icone={Users} nota="Do Kommo, pelo dia em que a venda fechou">
+      {itens.some((i) => pendencias[i.k].length) && (
+        <div className="rounded-lg border border-l-4 border-l-status-warning bg-card px-4 py-3 space-y-1.5">
+          <h3 className="text-sm font-semibold">Para corrigir no Kommo</h3>
+          <div className="flex flex-wrap gap-2">
+            {itens.filter((i) => pendencias[i.k].length).map((i) => (
+              <button key={i.k} type="button" onClick={() => setLista(lista === i.k ? null : i.k)} aria-pressed={lista === i.k}
+                className={cn('rounded-md px-3 py-1.5 text-[13px] font-semibold', lista === i.k ? 'bg-primary text-primary-foreground' : 'badge-warning hover:underline')}>
+                {pendencias[i.k].length} {i.texto}
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground">Sem isso, o valor e o segmento saem errados nos indicadores. Clique para ver quais.</p>
+        </div>
+      )}
+      <Card className="p-0 overflow-hidden">
+        <div className="flex flex-wrap items-center gap-2 border-b px-3 py-2">
+          {lista ? (
+            <>
+              <span className="text-sm font-semibold">{itens.find((i) => i.k === lista)?.texto}</span>
+              <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setLista(null)}>Voltar para todas</Button>
+            </>
+          ) : (['ganha', 'perdida'] as const).map((s) => (
+            <button key={s} type="button" onClick={() => setAba(s)} aria-pressed={aba === s}
+              className={cn('rounded-md px-3 py-1 text-[13px] font-semibold', aba === s ? 'bg-primary text-primary-foreground' : 'hover:bg-muted')}>
+              {s === 'ganha' ? `Ganhas (${ganhas})` : `Perdidas (${vendas.length - ganhas})`}
+            </button>
+          ))}
+        </div>
+        {mostradas.length === 0 ? <p className="px-4 py-6 text-sm text-muted-foreground">Nenhuma venda {aba === 'ganha' ? 'ganha' : 'perdida'} no período.</p> : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[640px] text-sm">
+              <thead><tr><TH esquerda>Cliente</TH><TH esquerda>Segmento</TH><TH>{mostradas[0].situacao === 'ganha' ? 'Valor' : 'Motivo'}</TH><TH>Fechou</TH><TH> </TH></tr></thead>
+              <tbody>
+                {mostradas.map((v) => (
+                  <tr key={v.lead_id} className="border-b last:border-0">
+                    <td className="px-3 py-2.5 font-medium">{v.nome}</td>
+                    <td className="px-3 py-2.5">{v.funil === 'sem_triagem' ? <span className="rounded px-1.5 py-0.5 text-[12px] font-semibold badge-warning">Sem triagem</span> : NOME_DO_SEGMENTO[v.funil]}</td>
+                    <td className="px-3 py-2.5 text-right">
+                      {v.situacao === 'ganha'
+                        ? (Number(v.valor) ? <span className="font-mono tabular-nums">{formatBRL(Number(v.valor))}</span> : <span className="text-[12px] font-semibold text-aviso">sem valor</span>)
+                        : (v.motivo ?? <span className="text-[12px] font-semibold text-aviso">sem motivo</span>)}
+                    </td>
+                    <td className="px-3 py-2.5 text-right tabular-nums">{dia(v.fechou)}</td>
+                    <td className="px-3 py-2.5 text-right"><a href={v.link} target="_blank" rel="noreferrer" className="text-primary font-semibold hover:underline">Abrir no Kommo</a></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
     </Secao>
   );
 }

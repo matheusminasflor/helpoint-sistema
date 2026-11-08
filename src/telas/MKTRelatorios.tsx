@@ -29,15 +29,15 @@ import { CategoriasDosChamados } from '@/components/ti/CategoriasDosChamados';
 import { LinhaAgendaEAjuda } from '@/components/dashboard/AjudaAOutrosSetoresKPI';
 import { OutrosIndicadoresDoMarketing } from '@/components/mkt/OutrosIndicadoresDoMarketing';
 import {
-  Compara, Destaques, DoAnuncioAVenda, EscolhaDeConta, LancarSemana, LeadsEVendas, NumerosGrandes, RedesSociais, TrafegoPorConta,
+  Compara, Destaques, DuasFontes, EscolhaDeConta, LancarSemana, LeadsEVendas, NumerosGrandes, RedesSociais, TrafegoPorConta, VendasDoPeriodo,
 } from '@/components/mkt/RedesETrafego';
 import { useIndicadoresDoMarketing } from '@/hooks/useIndicadoresDoMarketing';
-import { useKommo, useMesesDaMeta, usePublicoDoInstagram, useRedesETrafego } from '@/hooks/useRedesETrafego';
+import { useKommo, useMesesDaMeta, usePublicoDoInstagram, useRedesETrafego, useVendasDoKommo } from '@/hooks/useRedesETrafego';
 import { fatias, horariosTexto, nomeDoPais, publicoDoMes } from '@/lib/publico-do-instagram';
 import {
   comASemanaEmAndamento, fraseDasRedes, NOME_DO_FORMATO, painelDasRedes, pctTexto, semanaASemana, TODAS, ultimasSemanas,
 } from '@/lib/redes-e-trafego';
-import { destaquesDoPeriodo, ehMesInteiro, leadsPorSemana, periodoCurto, resumoDoKommo } from '@/lib/leads-e-vendas';
+import { destaquesDoPeriodo, ehMesInteiro, leadsPorSemana, pendenciasDoKommo, periodoCurto, resumoDoKommo } from '@/lib/leads-e-vendas';
 import { ArtistasDoMes, ArtistasMesAMes } from '@/components/mkt/ArtistasNosIndicadores';
 import { SeloDaMeta } from '@/components/mkt/SeloDaMeta';
 import { DicaDoGrafico } from '@/components/dashboard/DicaDoGrafico';
@@ -75,8 +75,9 @@ const PRIORITY_LABEL: Record<string, string> = { critical: 'Crítica', high: 'Al
 
 const SECOES_DA_VISAO = [
   { id: 'mkt-resumo', rotulo: 'Destaques' },
-  { id: 'mkt-funil', rotulo: 'Do anúncio à venda' },
-  { id: 'mkt-leads', rotulo: 'Leads e vendas' },
+  { id: 'mkt-funil', rotulo: 'Resumo' },
+  { id: 'mkt-leads', rotulo: 'Leads por segmento' },
+  { id: 'mkt-vendas', rotulo: 'Vendas' },
   { id: 'mkt-trafego', rotulo: 'Tráfego' },
   { id: 'mkt-redes', rotulo: 'Redes' },
   { id: 'mkt-artistas', rotulo: 'Artistas' },
@@ -166,6 +167,9 @@ export default function MKTRelatorios() {
   const kommoAtual = resumoDoKommo(kommo.linhas, kommo.perdas, intervaloDaTela);
   const kommoAntes = resumoDoKommo(kommo.linhas, kommo.perdas, anteriorISO);
   const leadsDasSemanas = leadsPorSemana(kommo.linhas, domingosDoGrafico, somarDias);
+  // As vendas com nome e link e o que corrigir no Kommo (proposta v5).
+  const { data: vendas = [] } = useVendasDoKommo(intervaloDaTela.de, intervaloDaTela.ate);
+  const pendencias = pendenciasDoKommo(vendas, intervaloDaTela);
   const destaques = destaquesDoPeriodo(kommoAtual, kommoAntes, {
     investimento: conta === TODAS ? painel.trafego.atual.investimento : painel.contas.find((c) => c.atual.conta === conta)?.atual.investimento ?? null,
     investimentoAntes: conta === TODAS ? painel.trafego.anterior.investimento : painel.contas.find((c) => c.atual.conta === conta)?.anterior.investimento ?? null,
@@ -366,6 +370,10 @@ export default function MKTRelatorios() {
           s.taxa === null ? '—' : pct(s.taxa), s.valor ? formatBRL(s.valor) : '—'];
       }),
       larguras: [0.26, 0.16, 0.14, 0.14, 0.14, 0.16] },
+    ...(vendas.some((v) => v.situacao === 'ganha') ? [{ secao: 'social' as const, titulo: 'VENDAS GANHAS (KOMMO)', cabecalho: ['Cliente', 'Segmento', 'Valor', 'Fechou'],
+      linhas: vendas.filter((v) => v.situacao === 'ganha').map((v) => [v.nome, kommoAtual.segmentos.find((s) => s.k === v.funil)?.nome ?? v.funil,
+        Number(v.valor) ? formatBRL(Number(v.valor)) : 'sem valor', `${v.fechou.slice(8, 10)}/${v.fechou.slice(5, 7)}`]),
+      larguras: [0.4, 0.25, 0.2, 0.15] }] : []),
     ...(kommoAtual.motivos.length ? [{ secao: 'social' as const, titulo: 'POR QUE PERDEMOS', cabecalho: ['Motivo', 'Vendas perdidas'],
       linhas: kommoAtual.motivos.map((m) => [m.motivo, `${m.quantos}`]), larguras: [0.75, 0.25] }] : []),
     { secao: 'artists', titulo: `ARTISTAS · ${rotuloDoRecorte(recorte, hoje).titulo.toUpperCase()}`,
@@ -463,8 +471,9 @@ export default function MKTRelatorios() {
             <Destaques itens={destaques} />
             {usarMeses && <p className="text-xs text-muted-foreground">Redes e tráfego do mês inteiro, direto da Meta.</p>}
           </div>
-          <div id="mkt-funil" className="scroll-mt-14"><DoAnuncioAVenda painel={painel} conta={conta} kommo={kommoAtual} kommoAntes={kommoAntes} /></div>
+          <div id="mkt-funil" className="scroll-mt-14"><DuasFontes painel={painel} conta={conta} kommo={kommoAtual} kommoAntes={kommoAntes} /></div>
           <div id="mkt-leads" className="scroll-mt-14"><LeadsEVendas atual={kommoAtual} anterior={kommoAntes} semanas={leadsDasSemanas} /></div>
+          <div id="mkt-vendas" className="scroll-mt-14"><VendasDoPeriodo vendas={vendas} pendencias={pendencias} /></div>
           <div id="mkt-trafego" className="scroll-mt-14"><TrafegoPorConta painel={painel} conta={conta} grafico={grafico} /></div>
           <div id="mkt-redes" className="scroll-mt-14"><RedesSociais painel={painel} grafico={grafico} conta={conta} publico={publico} /></div>
 
@@ -566,14 +575,7 @@ export default function MKTRelatorios() {
               )}
             </div>
           ) },
-          { titulo: 'Do anúncio à venda', conteudo: (
-            <NumerosGrandes numeros={[
-              { rotulo: 'Pessoas alcançadas', valor: n(painel.trafego.atual.alcance), nota: <Compara atual={painel.trafego.atual.alcance} anterior={painel.trafego.anterior.alcance} porcento /> },
-              { rotulo: 'Visitas ao perfil', valor: n(painel.trafego.atual.visitas), nota: <Compara atual={painel.trafego.atual.visitas} anterior={painel.trafego.anterior.visitas} porcento /> },
-              { rotulo: 'Leads que chegaram', valor: n(kommoAtual.total.chegaram), nota: <Compara atual={kommoAtual.total.chegaram} anterior={kommoAntes.total.chegaram} /> },
-              { rotulo: 'Vendas ganhas', valor: n(kommoAtual.total.ganhas), tom: 'bom', nota: <Compara atual={kommoAtual.total.ganhas} anterior={kommoAntes.total.ganhas} /> },
-            ]} frase={`O tráfego pago investiu ${r$(painel.trafego.atual.investimento)}; cada visita ao perfil custou ${r$(painel.trafego.atual.custoPorVisita)}.`} />
-          ) },
+          { titulo: 'Tráfego pago e leads', conteudo: <DuasFontes painel={painel} conta={TODAS} kommo={kommoAtual} kommoAntes={kommoAntes} /> },
           { titulo: 'Leads e vendas', conteudo: (
             <div className="space-y-6">
               <NumerosGrandes numeros={[
@@ -585,6 +587,7 @@ export default function MKTRelatorios() {
               <LeadsEVendas atual={kommoAtual} anterior={kommoAntes} semanas={[]} />
             </div>
           ) },
+          { titulo: 'Vendas do período', conteudo: <VendasDoPeriodo vendas={vendas} pendencias={pendencias} /> },
           { titulo: 'Tráfego pago por conta', conteudo: <TrafegoPorConta painel={painel} conta={TODAS} grafico={grafico} /> },
           { titulo: 'Redes sociais por conta', conteudo: <RedesSociais painel={painel} grafico={grafico} conta={TODAS} publico={[]} /> },
           ...(temArtistas ? [{ titulo: 'Artistas', conteudo: artistasDoPeriodo }] : []),
