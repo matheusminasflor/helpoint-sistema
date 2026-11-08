@@ -444,3 +444,11 @@ Proposta visual: https://claude.ai/artifact/TYnvDMKfnHEQLBdxLHQF95
   - cliente não encontrado;
   - venda repetida;
   - venda ganha sem valor e perdida sem motivo (nos três funis).
+
+### 15.1 Lyra no Instagram no ar (2026-11-08, noite)
+
+Depois que o dono desligou a resposta instantânea da Meta:
+- **Lyra · Instagram** (189042) recebeu o gatilho de conversa nova nos 3 Direct (minasflor, mf.professional e bymf.br).
+  As fontes de comentário ficaram de fora, porque elas são do robô Lyra · Comentários.
+- O "BOT INICIAL MF copiar(1)" foi desligado. Os três robôs no ar são Lyra · WhatsApp, Lyra · Instagram e
+  Lyra · Comentários.
