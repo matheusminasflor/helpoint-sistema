@@ -129,18 +129,61 @@ export function destaquesDoPeriodo(atual: ResumoDoKommo, anterior: ResumoDoKommo
 /** Uma venda ganha ou perdida do Kommo, com o nome do contato e o link do lead (`mkt_kommo_vendas`). */
 export interface Venda {
   lead_id: number; nome: string; funil: Segmento; situacao: 'ganha' | 'perdida'; valor: number; fechou: string; motivo: string | null; link: string;
+  /** Só na venda ganha de Distribuidor: o faturado do Forteplus (parte 4.3). */
+  faturado?: Faturado;
 }
-export interface Pendencias { semValor: Venda[]; semSegmento: Venda[]; semMotivo: Venda[] }
+
+// Distribuidor pelo faturado do Forteplus (parte 4.3 do projeto do Kommo, aprovada em 2026-11-08,
+// https://claude.ai/artifact/TYnvDMKfnHEQLBdxLHQF95): o valor da venda ganha de Distribuidor é o das notas de venda do
+// cliente ligado pelo CPF/CNPJ, de 15 dias antes a 7 depois de marcarem "ganha". A conta é do banco (`mkt_kommo_faturado`).
+export type SituacaoDoFaturado = 'faturado' | 'aguardando_nota' | 'sem_nota' | 'sem_cnpj' | 'cliente_nao_encontrado' | 'venda_repetida';
+export interface Faturado {
+  lead_id: number; situacao: SituacaoDoFaturado; cliente: string | null; valor: number; notas: string | null; sugerido: string | null;
+}
+
+/** A venda ganha de Distribuidor passa a valer o faturado (sem nota, R$ 0); as outras ficam como vieram do Kommo. */
+export function comFaturado(vendas: Venda[], faturados: Faturado[]): Venda[] {
+  const doLead = new Map(faturados.map((f) => [f.lead_id, f]));
+  return vendas.map((v) => {
+    if (v.funil !== 'distribuidor' || v.situacao !== 'ganha') return v;
+    const f = doLead.get(v.lead_id);
+    return { ...v, valor: f ? Number(f.valor) : 0, faturado: f };
+  });
+}
+
+/** O valor do Distribuidor (e o total) no resumo do período passa a ser o faturado das vendas desse período. */
+export function resumoComFaturado(resumo: ResumoDoKommo, vendas: Venda[], p: Intervalo): ResumoDoKommo {
+  const faturado = vendas.filter((v) => dentro(v.fechou, p) && v.funil === 'distribuidor' && v.situacao === 'ganha')
+    .reduce((s, v) => s + Number(v.valor), 0);
+  const antes = resumo.segmentos.find((x) => x.k === 'distribuidor')?.valor ?? 0;
+  return {
+    ...resumo,
+    segmentos: resumo.segmentos.map((x) => (x.k === 'distribuidor' ? { ...x, valor: faturado } : x)),
+    total: { ...resumo.total, valor: resumo.total.valor - antes + faturado },
+  };
+}
+
+export interface Pendencias {
+  semValor: Venda[]; semSegmento: Venda[]; semMotivo: Venda[];
+  semCnpj: Venda[]; semNota: Venda[]; clienteNaoEncontrado: Venda[]; vendaRepetida: Venda[];
+}
 
 /**
- * O que corrigir no Kommo para o número sair certo (proposta v5): venda ganha sem valor, venda ganha ainda na Entrada
- * (sem segmento) e venda perdida sem motivo. Só as do período.
+ * O que corrigir no Kommo para o número sair certo (proposta v5 e parte 4.3): venda ganha sem valor, venda ganha ainda na
+ * Entrada (sem segmento), venda perdida sem motivo e, no Distribuidor, venda sem CNPJ, sem nota (7 dias depois de
+ * fechar), com cliente que não está no cadastro ou com a nota já contada em outra venda. Só as do período. O
+ * Distribuidor não entra em "sem valor": o valor dele é o faturado, e o que falta aparece pelo motivo.
  */
 export function pendenciasDoKommo(vendas: Venda[], p: Intervalo): Pendencias {
   const no = vendas.filter((v) => dentro(v.fechou, p));
+  const fat = (situacao: SituacaoDoFaturado) => no.filter((v) => v.faturado?.situacao === situacao);
   return {
-    semValor: no.filter((v) => v.situacao === 'ganha' && !Number(v.valor)),
+    semValor: no.filter((v) => v.situacao === 'ganha' && v.funil !== 'distribuidor' && !Number(v.valor)),
     semSegmento: no.filter((v) => v.situacao === 'ganha' && v.funil === 'sem_triagem'),
     semMotivo: no.filter((v) => v.situacao === 'perdida' && !v.motivo),
+    semCnpj: fat('sem_cnpj'),
+    semNota: fat('sem_nota'),
+    clienteNaoEncontrado: fat('cliente_nao_encontrado'),
+    vendaRepetida: fat('venda_repetida'),
   };
 }

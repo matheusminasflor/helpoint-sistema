@@ -12,7 +12,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient, type SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { requireServiceRole } from '../_shared/require-service-role.ts';
-import { ehLimpeza, etapasDeTriagem, FUNIL_DE_VENDA, segmentoDoLead, type LeadParaSegmento } from '../_shared/kommo-segmento.ts';
+import { documentoDoLead, ehLimpeza, etapasDeTriagem, FUNIL_DE_VENDA, segmentoDoLead, type LeadParaSegmento } from '../_shared/kommo-segmento.ts';
 
 const json = (corpo: unknown, status = 200) =>
   new Response(JSON.stringify(corpo), { status, headers: { 'Content-Type': 'application/json' } });
@@ -79,7 +79,7 @@ async function rodada(db: SupabaseClient, tenant: string) {
     const funil = segmentoDoLead(l, triagem);
     if (funil) linha(diaBR(l.created_at * 1000), funil).chegaram++;
   }
-  const vendas: { lead_id: number; nome: string; contato: number | null; funil: string; situacao: string; valor: number; fechou: string; motivo: string | null; link: string }[] = [];
+  const vendas: { lead_id: number; nome: string; contato: number | null; funil: string; situacao: string; valor: number; fechou: string; motivo: string | null; link: string; documento: string | null }[] = [];
   const sub = Deno.env.get('KOMMO_SUBDOMINIO')!.trim();
   for (const l of await leads('closed_at', de)) {
     const funil = segmentoDoLead(l, triagem);
@@ -93,6 +93,8 @@ async function rodada(db: SupabaseClient, tenant: string) {
       situacao: l.status_id === GANHA ? 'ganha' : 'perdida', valor: Number(l.price ?? 0), fechou: dia,
       motivo: l.status_id === PERDIDA ? (l.loss_reason_id && motivoDo.get(l.loss_reason_id)) || null : null,
       link: `https://${sub}.kommo.com/leads/detail/${l.id}`,
+      // Parte 4.3: o CPF/CNPJ liga a venda de Distribuidor às notas do Forteplus (mkt_kommo_faturado).
+      documento: documentoDoLead(l),
     });
     if (l.status_id === GANHA) {
       n.ganhas++;
@@ -113,16 +115,23 @@ async function rodada(db: SupabaseClient, tenant: string) {
   if (error) throw error;
 
   // O nome é o do contato principal do lead ("Lead #118411874" não diz quem é); sem contato, fica o nome do lead.
+  // O telefone do contato só SUGERE o cliente na lista "Para corrigir" (parte 4.3); a ligação é pelo CPF/CNPJ.
   const ids = [...new Set(vendas.map((v) => v.contato).filter((x): x is number => x !== null))];
   const nomeDo = new Map<number, string>();
+  const telefoneDo = new Map<number, string>();
   for (let i = 0; i < ids.length; i += 200) {
     const filtro = ids.slice(i, i + 200).map((id) => `filter[id][]=${id}`).join('&');
-    const r = await kommo<{ _embedded: { contacts: { id: number; name: string }[] } }>(`contacts?limit=250&${filtro}`);
-    for (const c of r?._embedded.contacts ?? []) if (c.name?.trim()) nomeDo.set(c.id, c.name.trim());
+    const r = await kommo<{ _embedded: { contacts: { id: number; name: string; custom_fields_values?: { field_code?: string; values?: { value?: unknown }[] }[] | null }[] } }>(`contacts?limit=250&${filtro}`);
+    for (const c of r?._embedded.contacts ?? []) {
+      if (c.name?.trim()) nomeDo.set(c.id, c.name.trim());
+      const tel = String(c.custom_fields_values?.find((f) => f.field_code === 'PHONE')?.values?.[0]?.value ?? '').replace(/\D/g, '');
+      if (tel.length >= 8 && tel.length <= 15) telefoneDo.set(c.id, tel);
+    }
   }
   const { error: e2 } = await db.rpc('mkt_kommo_gravar_vendas', {
     p_tenant: tenant, p_desde: desde,
-    p_vendas: vendas.map(({ contato, ...v }) => ({ ...v, nome: (contato !== null && nomeDo.get(contato)) || v.nome })),
+    p_vendas: vendas.map(({ contato, ...v }) => ({ ...v, nome: (contato !== null && nomeDo.get(contato)) || v.nome,
+      telefone: (contato !== null && telefoneDo.get(contato)) || null })),
   });
   if (e2) throw e2;
   const soma = (k: 'chegaram' | 'ganhas' | 'perdidas') => [...dias.values()].reduce((s, d) => s + d[k], 0);

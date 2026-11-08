@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ehLimpeza, etapasDeTriagem, segmentoDoCampo, segmentoDoLead } from '../../supabase/functions/_shared/kommo-segmento';
+import { documentoDoLead, ehLimpeza, etapasDeTriagem, segmentoDoCampo, segmentoDoLead } from '../../supabase/functions/_shared/kommo-segmento';
 
 const ENTRADA = 13975223, CONSUMIDOR = 12904179, SALAO = 12927111, DISTRIBUIDOR = 12927087, EDUCACIONAL = 12927031;
 const COM_A_LYRA = 900001, EM_ATENDIMENTO = 900002, GANHA = 142;
@@ -59,5 +59,17 @@ describe('ehLimpeza', () => {
     expect(ehLimpeza(' LIMPEZA DE CADASTRO ')).toBe(true);
     expect(ehLimpeza('Orçamento insuficiente')).toBe(false);
     expect(ehLimpeza(null)).toBe(false);
+  });
+});
+
+describe('documentoDoLead', () => {
+  const lead = (valor: unknown) => ({ pipeline_id: DISTRIBUIDOR, status_id: GANHA, custom_fields_values: [{ field_name: 'CPF/CNPJ', values: [{ value: valor }] }] });
+  it('guarda só os dígitos de um CNPJ ou CPF completo', () => {
+    expect(documentoDoLead(lead('35.588.859/0001-10'))).toBe('35588859000110');
+    expect(documentoDoLead(lead('123.456.789-09'))).toBe('12345678909');
+  });
+  it('número incompleto ou campo vazio não liga a ninguém', () => {
+    expect(documentoDoLead(lead('0831913800016'))).toBeNull();
+    expect(documentoDoLead({ pipeline_id: DISTRIBUIDOR, status_id: GANHA })).toBeNull();
   });
 });

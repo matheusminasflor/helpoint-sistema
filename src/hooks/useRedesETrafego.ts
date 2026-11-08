@@ -7,7 +7,7 @@ import { unwrap } from '@/lib/supabase-result';
 import { somarDias } from '@/lib/ti-equipe';
 import type { Intervalo, LinhaRedes, LinhaTrafego } from '@/lib/redes-e-trafego';
 import type { LinhaPublico } from '@/lib/publico-do-instagram';
-import type { LinhaKommo, LinhaPerda, Venda } from '@/lib/leads-e-vendas';
+import type { Faturado, LinhaKommo, LinhaPerda, Venda } from '@/lib/leads-e-vendas';
 
 export const CHAVE_DAS_SEMANAS = 'mkt-semanal';
 
@@ -105,5 +105,16 @@ export function useVendasDoKommo(de: string, ate: string) {
     queryFn: async (): Promise<Venda[]> =>
       (unwrap(await supabase.from('mkt_kommo_vendas' as never).select('lead_id, nome, funil, situacao, valor, fechou, motivo, link')
         .gte('fechou', de).lte('fechou', ate).order('fechou', { ascending: false })) ?? []) as unknown as Venda[],
+  });
+}
+
+/** O faturado do Forteplus de cada venda ganha de Distribuidor que fechou entre `de` e `ate` (parte 4.3, `mkt_kommo_faturado`). */
+export function useFaturadoDoKommo(de: string, ate: string) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: [CHAVE_DAS_SEMANAS, 'mkt_kommo_faturado', tenantId, de, ate],
+    enabled: !!tenantId && !!de && !!ate,
+    queryFn: async (): Promise<Faturado[]> =>
+      (unwrap(await supabase.rpc('mkt_kommo_faturado' as never, { p_de: de, p_ate: ate } as never)) ?? []) as unknown as Faturado[],
   });
 }

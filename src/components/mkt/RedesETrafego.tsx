@@ -30,7 +30,7 @@ import { CHAVE_DAS_SEMANAS, useSemanaParaLancar } from '@/hooks/useRedesETrafego
 import {
   CONTAS, NOME_DO_FORMATO, pctTexto, TODAS, type LinhaRedes, type LinhaTrafego, type NumerosDaConta, type Painel, type SemanaNoGrafico,
 } from '@/lib/redes-e-trafego';
-import { rotuloDaSemana, type Destaque, type Pendencias, type ResumoDoKommo, type Venda } from '@/lib/leads-e-vendas';
+import { rotuloDaSemana, type Destaque, type Pendencias, type ResumoDoKommo, type SituacaoDoFaturado, type Venda } from '@/lib/leads-e-vendas';
 import { DIAS, fatias, horariosTexto, nomeDoPais, type ResumoDoPublico } from '@/lib/publico-do-instagram';
 
 const int = (v: number | null) => (v === null ? '—' : Math.round(v).toLocaleString('pt-BR'));
@@ -197,6 +197,15 @@ const dia = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
  * As vendas do período com o nome do cliente e o link do Kommo, e o que corrigir lá (proposta v5): "quem é esse lead?".
  * Venda ganha ainda na Entrada aparece como "Sem triagem" até alguém mover o lead para o funil certo.
  */
+const SITUACAO_DO_FATURADO: Record<SituacaoDoFaturado, string> = {
+  faturado: 'faturado',
+  aguardando_nota: 'aguardando nota',
+  sem_nota: 'sem nota',
+  sem_cnpj: 'sem CNPJ',
+  cliente_nao_encontrado: 'cliente não encontrado',
+  venda_repetida: 'nota já contada',
+};
+
 export function VendasDoPeriodo({ vendas, pendencias }: { vendas: Venda[]; pendencias: Pendencias }) {
   const [aba, setAba] = useState<'ganha' | 'perdida'>('ganha');
   const [lista, setLista] = useState<keyof Pendencias | null>(null);
@@ -205,6 +214,10 @@ export function VendasDoPeriodo({ vendas, pendencias }: { vendas: Venda[]; pende
     { k: 'semValor', texto: 'venda ganha sem valor' },
     { k: 'semSegmento', texto: 'venda ganha sem segmento (ainda na Entrada)' },
     { k: 'semMotivo', texto: 'venda perdida sem motivo' },
+    { k: 'semCnpj', texto: 'distribuidor sem CNPJ' },
+    { k: 'semNota', texto: 'distribuidor sem nota há mais de 7 dias' },
+    { k: 'clienteNaoEncontrado', texto: 'distribuidor com CNPJ fora do cadastro' },
+    { k: 'vendaRepetida', texto: 'distribuidor com a nota já contada em outra venda' },
   ];
   const ganhas = vendas.filter((v) => v.situacao === 'ganha').length;
   return (
@@ -220,7 +233,7 @@ export function VendasDoPeriodo({ vendas, pendencias }: { vendas: Venda[]; pende
               </button>
             ))}
           </div>
-          <p className="text-xs text-muted-foreground">Sem isso, o valor e o segmento saem errados nos indicadores. Clique para ver quais.</p>
+          <p className="text-xs text-muted-foreground">Sem isso, o valor e o segmento saem errados nos indicadores. O Distribuidor vale o faturado do Forteplus, ligado pelo CPF/CNPJ do lead. Clique para ver quais.</p>
         </div>
       )}
       <Card className="p-0 overflow-hidden">
@@ -244,11 +257,16 @@ export function VendasDoPeriodo({ vendas, pendencias }: { vendas: Venda[]; pende
               <tbody>
                 {mostradas.map((v) => (
                   <tr key={v.lead_id} className="border-b last:border-0">
-                    <td className="px-3 py-2.5 font-medium">{v.nome}</td>
+                    <td className="px-3 py-2.5 font-medium">
+                      {v.nome}
+                      {v.faturado?.cliente && <span className="block text-[12px] font-normal text-muted-foreground">Forteplus: {v.faturado.cliente}{v.faturado.notas ? ` · ${v.faturado.notas}` : ''}</span>}
+                      {v.faturado?.sugerido && <span className="block text-[12px] font-normal text-muted-foreground">Pelo telefone, parece ser {v.faturado.sugerido}: confira e preencha o CPF/CNPJ no Kommo</span>}
+                    </td>
                     <td className="px-3 py-2.5">{v.funil === 'sem_triagem' ? <span className="rounded px-1.5 py-0.5 text-[12px] font-semibold badge-warning">Sem triagem</span> : NOME_DO_SEGMENTO[v.funil]}</td>
                     <td className="px-3 py-2.5 text-right">
                       {v.situacao === 'ganha'
-                        ? (Number(v.valor) ? <span className="font-mono tabular-nums">{formatBRL(Number(v.valor))}</span> : <span className="text-[12px] font-semibold text-aviso">sem valor</span>)
+                        ? (Number(v.valor) ? <span className="font-mono tabular-nums">{formatBRL(Number(v.valor))}</span>
+                          : <span className="text-[12px] font-semibold text-aviso">{v.faturado ? SITUACAO_DO_FATURADO[v.faturado.situacao] : v.funil === 'distribuidor' ? 'sem leitura do faturado' : 'sem valor'}</span>)
                         : (v.motivo ?? <span className="text-[12px] font-semibold text-aviso">sem motivo</span>)}
                     </td>
                     <td className="px-3 py-2.5 text-right tabular-nums">{dia(v.fechou)}</td>

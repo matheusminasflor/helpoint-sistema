@@ -32,12 +32,12 @@ import {
   Compara, Destaques, DuasFontes, EscolhaDeConta, LancarSemana, LeadsEVendas, NumerosGrandes, RedesSociais, TrafegoPorConta, VendasDoPeriodo,
 } from '@/components/mkt/RedesETrafego';
 import { useIndicadoresDoMarketing } from '@/hooks/useIndicadoresDoMarketing';
-import { useKommo, useMesesDaMeta, usePublicoDoInstagram, useRedesETrafego, useVendasDoKommo } from '@/hooks/useRedesETrafego';
+import { useFaturadoDoKommo, useKommo, useMesesDaMeta, usePublicoDoInstagram, useRedesETrafego, useVendasDoKommo } from '@/hooks/useRedesETrafego';
 import { fatias, horariosTexto, nomeDoPais, publicoDoMes } from '@/lib/publico-do-instagram';
 import {
   comASemanaEmAndamento, fraseDasRedes, NOME_DO_FORMATO, painelDasRedes, pctTexto, semanaASemana, TODAS, ultimasSemanas,
 } from '@/lib/redes-e-trafego';
-import { destaquesDoPeriodo, ehMesInteiro, leadsPorSemana, pendenciasDoKommo, periodoCurto, resumoDoKommo } from '@/lib/leads-e-vendas';
+import { comFaturado, destaquesDoPeriodo, ehMesInteiro, leadsPorSemana, pendenciasDoKommo, periodoCurto, resumoComFaturado, resumoDoKommo } from '@/lib/leads-e-vendas';
 import { ArtistasDoMes, ArtistasMesAMes } from '@/components/mkt/ArtistasNosIndicadores';
 import { SeloDaMeta } from '@/components/mkt/SeloDaMeta';
 import { DicaDoGrafico } from '@/components/dashboard/DicaDoGrafico';
@@ -164,11 +164,15 @@ export default function MKTRelatorios() {
   const [conta, setConta] = useQueryState<string>('conta', TODAS);
   // O Kommo é por dia: o período, o anterior e as semanas do gráfico.
   const kommo = useKommo([anteriorISO.de, somarDias(domingosDoGrafico[0], -6)].sort()[0], [intervaloDaTela.ate, hoje].sort()[1]);
-  const kommoAtual = resumoDoKommo(kommo.linhas, kommo.perdas, intervaloDaTela);
-  const kommoAntes = resumoDoKommo(kommo.linhas, kommo.perdas, anteriorISO);
+  // As vendas com nome e link e o que corrigir no Kommo (proposta v5); a de Distribuidor vale o faturado do Forteplus
+  // (parte 4.3), no período e no anterior.
+  const { data: vendasDoKommo = [] } = useVendasDoKommo(anteriorISO.de < intervaloDaTela.de ? anteriorISO.de : intervaloDaTela.de, intervaloDaTela.ate);
+  const { data: faturados = [] } = useFaturadoDoKommo(anteriorISO.de < intervaloDaTela.de ? anteriorISO.de : intervaloDaTela.de, intervaloDaTela.ate);
+  const todasAsVendas = comFaturado(vendasDoKommo, faturados);
+  const vendas = todasAsVendas.filter((v) => v.fechou >= intervaloDaTela.de && v.fechou <= intervaloDaTela.ate);
+  const kommoAtual = resumoComFaturado(resumoDoKommo(kommo.linhas, kommo.perdas, intervaloDaTela), todasAsVendas, intervaloDaTela);
+  const kommoAntes = resumoComFaturado(resumoDoKommo(kommo.linhas, kommo.perdas, anteriorISO), todasAsVendas, anteriorISO);
   const leadsDasSemanas = leadsPorSemana(kommo.linhas, domingosDoGrafico, somarDias);
-  // As vendas com nome e link e o que corrigir no Kommo (proposta v5).
-  const { data: vendas = [] } = useVendasDoKommo(intervaloDaTela.de, intervaloDaTela.ate);
   const pendencias = pendenciasDoKommo(vendas, intervaloDaTela);
   const destaques = destaquesDoPeriodo(kommoAtual, kommoAntes, {
     investimento: conta === TODAS ? painel.trafego.atual.investimento : painel.contas.find((c) => c.atual.conta === conta)?.atual.investimento ?? null,

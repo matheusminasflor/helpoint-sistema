@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { destaquesDoPeriodo, ehMesInteiro, leadsPorSemana, pendenciasDoKommo, periodoCurto, resumoDoKommo, rotuloDaSemana, type LinhaKommo, type LinhaPerda } from './leads-e-vendas';
+import { comFaturado, destaquesDoPeriodo, resumoComFaturado, ehMesInteiro, leadsPorSemana, pendenciasDoKommo, periodoCurto, resumoDoKommo, rotuloDaSemana, type LinhaKommo, type LinhaPerda } from './leads-e-vendas';
 import { somarDias } from './ti-equipe';
 
 // A semana de 26/10 a 01/11/2026, como o Kommo mostra (conferido no conector em 2026-11-07).
@@ -90,7 +90,8 @@ describe('pendenciasDoKommo', () => {
   });
   it('ganha sem valor, ganha sem segmento e perdida sem motivo, só do período', () => {
     const p = pendenciasDoKommo([
-      v({ lead_id: 1, valor: 0 }),
+      v({ lead_id: 1, funil: 'salao', valor: 0 }),
+      v({ lead_id: 6, valor: 0 }), // Distribuidor: o valor é o faturado, não entra em "sem valor"
       v({ lead_id: 2, funil: 'sem_triagem', valor: 5096 }),
       v({ lead_id: 3, situacao: 'perdida', valor: 0 }),
       v({ lead_id: 4, situacao: 'perdida', motivo: 'Preço' }),
@@ -99,5 +100,31 @@ describe('pendenciasDoKommo', () => {
     expect(p.semValor.map((x) => x.lead_id)).toEqual([1]);
     expect(p.semSegmento.map((x) => x.lead_id)).toEqual([2]);
     expect(p.semMotivo.map((x) => x.lead_id)).toEqual([3]);
+  });
+});
+
+describe('distribuidor pelo faturado (parte 4.3)', () => {
+  const v = (x: Partial<import('./leads-e-vendas').Venda>) => ({
+    lead_id: 1, nome: 'A', funil: 'distribuidor' as const, situacao: 'ganha' as const, valor: 0, fechou: '2026-10-28', motivo: null, link: 'x', ...x,
+  });
+  const f = (lead_id: number, situacao: import('./leads-e-vendas').SituacaoDoFaturado, valor = 0) =>
+    ({ lead_id, situacao, cliente: null, valor, notas: null, sugerido: null });
+  const vendas = comFaturado([
+    v({ lead_id: 1 }), v({ lead_id: 2 }), v({ lead_id: 3 }), v({ lead_id: 4 }), v({ lead_id: 5 }),
+    v({ lead_id: 9, funil: 'salao', valor: 300 }),
+  ], [f(1, 'faturado', 8708.04), f(2, 'sem_cnpj'), f(3, 'sem_nota'), f(4, 'cliente_nao_encontrado'), f(5, 'venda_repetida')]);
+
+  it('a venda de Distribuidor vale o faturado; as outras ficam com o valor do Kommo', () => {
+    expect(vendas.map((x) => x.valor)).toEqual([8708.04, 0, 0, 0, 0, 300]);
+  });
+  it('o resumo troca o valor do Distribuidor pelo faturado e acerta o total', () => {
+    const r = resumoComFaturado(resumoDoKommo(linhas, perdas, semana), vendas, semana);
+    expect(r.segmentos.find((x) => x.k === 'distribuidor')?.valor).toBeCloseTo(8708.04);
+    expect(r.total.valor).toBeCloseTo(5096 + 8708.04);
+  });
+  it('cada problema do faturado vai para a sua lista', () => {
+    const p = pendenciasDoKommo(vendas, semana);
+    expect([p.semCnpj, p.semNota, p.clienteNaoEncontrado, p.vendaRepetida].map((l) => l.map((x) => x.lead_id))).toEqual([[2], [3], [4], [5]]);
+    expect(p.semValor).toEqual([]);
   });
 });
