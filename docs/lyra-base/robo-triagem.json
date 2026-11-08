@@ -1,6 +1,6 @@
 {
   "0": {
-    "block_uuid": "ba31ee17-fffe-49bc-bb73-52d991807875",
+    "block_uuid": "923fdec5-8e0e-47f3-8f88-4448c2db7017",
     "question": [
       {
         "handler": "send_message",
@@ -126,6 +126,28 @@
             ]
           },
           {
+            "value": "Falar com atendente",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 51
+                }
+              }
+            ],
+            "synonyms": [
+              "atendente",
+              "falar com atendente",
+              "quero falar com atendente",
+              "falar com alguém",
+              "quero falar com alguém",
+              "pessoa",
+              "humano",
+              "atendimento"
+            ]
+          },
+          {
             "type": "else",
             "params": [
               {
@@ -142,7 +164,7 @@
     ]
   },
   "9": {
-    "block_uuid": "d6dfe43c-598b-4c1d-b632-d9fd25e38db6",
+    "block_uuid": "50b0f2af-80d0-4c03-98dd-628079f84844",
     "question": [
       {
         "handler": "send_message",
@@ -198,7 +220,7 @@
     ]
   },
   "10": {
-    "block_uuid": "9062d74f-dc28-4ac6-baf8-8de4b6402c06",
+    "block_uuid": "fc654a0c-26e8-41ba-a0a3-de1bd6d6eb83",
     "question": [
       {
         "handler": "action",
@@ -243,7 +265,7 @@
     ]
   },
   "11": {
-    "block_uuid": "e7b9c905-2df6-47b9-aafe-ae4d5fdf1ab0",
+    "block_uuid": "6a3b80c3-f1aa-413e-9e79-2b968cec7e17",
     "question": [
       {
         "handler": "send_message",
@@ -270,7 +292,7 @@
     ]
   },
   "12": {
-    "block_uuid": "02dca6bb-e73c-4d97-b14b-508889b747fc",
+    "block_uuid": "41158078-ad85-4b90-9ef7-6f730adb9fb2",
     "question": [
       {
         "handler": "waits",
@@ -293,7 +315,7 @@
     ]
   },
   "13": {
-    "block_uuid": "f07f52d0-8b8b-4ee2-8480-9b61b0bcc5d7",
+    "block_uuid": "61dbcf09-8915-4f19-a3b2-84c647117f0a",
     "question": [
       {
         "handler": "action",
@@ -315,7 +337,7 @@
     ]
   },
   "14": {
-    "block_uuid": "61d12b34-47a6-40f1-8a1d-68bf7d49ad52",
+    "block_uuid": "196b9090-fbc4-4806-9776-36918b5b86ff",
     "question": [
       {
         "handler": "send_message",
@@ -415,7 +437,7 @@
                 "handler": "goto",
                 "params": {
                   "type": "question",
-                  "step": 18
+                  "step": 52
                 }
               }
             ]
@@ -425,7 +447,7 @@
     ]
   },
   "15": {
-    "block_uuid": "9f1262d4-3de6-4dd9-97d5-16a448118f3f",
+    "block_uuid": "accd40df-b63b-434b-95af-85c9a7174fd3",
     "question": [
       {
         "handler": "action",
@@ -462,7 +484,7 @@
     ]
   },
   "16": {
-    "block_uuid": "2da4c7ef-2ace-4c30-985f-8721f379ac90",
+    "block_uuid": "077da0d8-3517-4cd9-94b3-347a67fa9597",
     "question": [
       {
         "handler": "action",
@@ -499,7 +521,7 @@
     ]
   },
   "17": {
-    "block_uuid": "f98c69cb-a457-4f11-929f-3e0896ad3b50",
+    "block_uuid": "6a85eb4a-60af-4d73-8f03-b049a0772a60",
     "question": [
       {
         "handler": "action",
@@ -536,7 +558,7 @@
     ]
   },
   "18": {
-    "block_uuid": "9f2f3bcd-c8d0-4f03-8705-3da9732ea28d",
+    "block_uuid": "6b4e9c6d-b4f8-4d9e-a91d-f702f6c81198",
     "question": [
       {
         "handler": "send_message",
@@ -563,7 +585,7 @@
     ]
   },
   "19": {
-    "block_uuid": "c08cd901-37c4-4578-ab63-bf02b839630d",
+    "block_uuid": "29270c16-7609-4978-aff8-2724d40ea395",
     "question": [
       {
         "handler": "waits",
@@ -586,7 +608,7 @@
     ]
   },
   "20": {
-    "block_uuid": "e9703a62-ff43-4762-a6ce-5dce29edfd4c",
+    "block_uuid": "e6d2c6fd-9b9b-43aa-af35-8e8e8e5ecedc",
     "question": [
       {
         "handler": "action",
@@ -631,7 +653,7 @@
     ]
   },
   "21": {
-    "block_uuid": "9e65f768-2964-4262-af17-081185177580",
+    "block_uuid": "a8fecb66-ee3c-47ea-bd86-3ed3f704e098",
     "question": [
       {
         "handler": "send_message",
@@ -658,7 +680,7 @@
     ]
   },
   "22": {
-    "block_uuid": "a2c3e5d0-a8c8-417e-8d44-1fea8a24c14b",
+    "block_uuid": "aaa6c185-7981-4c67-9667-4373cd986199",
     "question": [
       {
         "handler": "waits",
@@ -681,7 +703,7 @@
     ]
   },
   "23": {
-    "block_uuid": "b3f1b892-80ee-4d12-a113-3b0823093131",
+    "block_uuid": "526c0cfd-c33f-4971-a06b-f0e0d9a9e195",
     "question": [
       {
         "handler": "action",
@@ -703,7 +725,7 @@
     ]
   },
   "24": {
-    "block_uuid": "20791d77-da25-412d-8197-3b426103ee0c",
+    "block_uuid": "f0059ffb-ddd4-4f7c-a751-ff6412467044",
     "question": [
       {
         "handler": "send_message",
@@ -730,7 +752,7 @@
     ]
   },
   "25": {
-    "block_uuid": "4299dcaf-c188-4203-a9ad-9c560be99a8c",
+    "block_uuid": "0d8a5c64-4553-49d5-bfc5-76c9a04ea922",
     "question": [
       {
         "handler": "waits",
@@ -753,7 +775,7 @@
     ]
   },
   "26": {
-    "block_uuid": "bad0dc9c-62b1-4e35-b0dc-6fd986ad5f18",
+    "block_uuid": "15ce0f82-39d2-4a5f-9c6d-98bb9aba6570",
     "question": [
       {
         "handler": "action",
@@ -775,7 +797,7 @@
     ]
   },
   "27": {
-    "block_uuid": "711c7fb3-0de7-456a-97d4-f8d6365dfa51",
+    "block_uuid": "335d6c67-306e-4f56-b811-231a677ca666",
     "question": [
       {
         "handler": "send_message",
@@ -831,7 +853,7 @@
     ]
   },
   "30": {
-    "block_uuid": "1e153563-9b7d-4ab1-a822-b8798d795b8c",
+    "block_uuid": "31197e74-a28f-44d2-bb83-85ee6d4748a8",
     "question": [
       {
         "handler": "action",
@@ -876,7 +898,7 @@
     ]
   },
   "31": {
-    "block_uuid": "04cf5bf8-09ca-486e-8f70-6c063cb32732",
+    "block_uuid": "58d85aae-d5f9-49ee-87b4-35df399de050",
     "question": [
       {
         "handler": "send_message",
@@ -903,7 +925,7 @@
     ]
   },
   "32": {
-    "block_uuid": "16938fca-190c-4a4b-9240-8007bc266ce2",
+    "block_uuid": "72925910-b44b-4121-8440-acc53e38ecd1",
     "question": [
       {
         "handler": "waits",
@@ -926,7 +948,7 @@
     ]
   },
   "33": {
-    "block_uuid": "1baf6b84-367d-4037-9ff0-85c66c9db3ad",
+    "block_uuid": "bc918ac0-9ee1-4809-909d-0f24f70142bd",
     "question": [
       {
         "handler": "action",
@@ -948,7 +970,7 @@
     ]
   },
   "34": {
-    "block_uuid": "441d9848-f3fc-4468-88af-121af1058685",
+    "block_uuid": "bf623b1c-2809-4799-a994-e7aa06d23ba3",
     "question": [
       {
         "handler": "send_message",
@@ -975,7 +997,7 @@
     ]
   },
   "35": {
-    "block_uuid": "90a0821d-1618-46e9-bbb7-dd3ef2075ecc",
+    "block_uuid": "452cfd69-d558-4ba2-a8d3-8db01e87bcfa",
     "question": [
       {
         "handler": "waits",
@@ -998,7 +1020,7 @@
     ]
   },
   "36": {
-    "block_uuid": "d70ed143-2db9-4bd2-a22f-cf2ceb2f3e3d",
+    "block_uuid": "8741729d-3e3c-4a24-9f22-dea6465f12a6",
     "question": [
       {
         "handler": "action",
@@ -1020,7 +1042,7 @@
     ]
   },
   "37": {
-    "block_uuid": "1177a433-57a4-44ee-a3ce-4597f0663832",
+    "block_uuid": "a0ffe4ed-c442-41aa-a3d1-df9fd03980c2",
     "question": [
       {
         "handler": "send_message",
@@ -1076,7 +1098,7 @@
     ]
   },
   "40": {
-    "block_uuid": "06a0be23-6774-4153-8def-715338044fca",
+    "block_uuid": "cd021881-b1f9-4293-9ac2-1c051e6dcb3e",
     "question": [
       {
         "handler": "action",
@@ -1155,13 +1177,13 @@
     ]
   },
   "50": {
-    "block_uuid": "cf8a646c-f26b-4aa9-92f2-7586f0ee53d9",
+    "block_uuid": "e3d60c1b-c848-4485-a266-4b93b10b7572",
     "question": [
       {
         "handler": "send_message",
         "params": {
           "tag": "",
-          "text": "Desculpa, não entendi 😊 Toque em uma das opções:",
+          "text": "Para eu te atender certinho, primeiro me diz quem você é 😊 Toque em uma das opções:",
           "type": "external",
           "recipient": {
             "type": "all_contacts",
@@ -1281,13 +1303,35 @@
             ]
           },
           {
-            "type": "else",
+            "value": "Falar com atendente",
             "params": [
               {
                 "handler": "goto",
                 "params": {
                   "type": "question",
                   "step": 51
+                }
+              }
+            ],
+            "synonyms": [
+              "atendente",
+              "falar com atendente",
+              "quero falar com atendente",
+              "falar com alguém",
+              "quero falar com alguém",
+              "pessoa",
+              "humano",
+              "atendimento"
+            ]
+          },
+          {
+            "type": "else",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 50
                 }
               }
             ]
@@ -1297,13 +1341,36 @@
     ]
   },
   "51": {
-    "block_uuid": "cce8543c-f4e6-4f8b-8817-13d132b8f24d",
+    "block_uuid": "d8fc2af0-54f8-4d6a-9088-221daf2dd62d",
     "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "change_status",
+          "params": {
+            "value": 113893475,
+            "pipeline_id": 13975223
+          }
+        }
+      },
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_tag",
+          "params": {
+            "type": 1,
+            "value": [
+              "pediu-atendente"
+            ],
+            "element_type": 2
+          }
+        }
+      },
       {
         "handler": "send_message",
         "params": {
           "tag": "",
-          "text": "Sem problema! Vou chamar alguém da equipe para te ajudar. Nossa equipe te responde em até 30 minutos no horário comercial. Fora dele, falamos com você assim que abrirmos 💜",
+          "text": "Claro! Vou te passar para a nossa atendente, ela continua com você por aqui. Nossa equipe te responde em até 30 minutos no horário comercial. Fora dele, falamos com você assim que abrirmos 💜",
           "type": "external",
           "recipient": {
             "type": "all_contacts",
@@ -1324,7 +1391,63 @@
               ""
             ],
             "settings": {
-              "task_text": "Lyra não conseguiu fazer a triagem: responder o cliente e escolher o segmento (campo Segmento).",
+              "task_text": "Cliente pediu atendente antes da triagem: responder e preencher o Segmento.",
+              "task_type": "1",
+              "deadline-days": "",
+              "deadline-hours": "",
+              "task_type_name": "Acompanhar",
+              "within-deadline": "",
+              "deadline-minutes": "30",
+              "responsible_user": "current"
+            },
+            "date_exec": 0,
+            "handler_code": "amocrm",
+            "execution_condition": {
+              "id": 45,
+              "name": "execute_trigger"
+            }
+          },
+          "element_type": "lead"
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "finish",
+          "step": 999
+        }
+      }
+    ]
+  },
+  "52": {
+    "block_uuid": "6b170669-3f5f-4dd5-b069-b7afec05a040",
+    "question": [
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "Anotado! Vou te passar para a nossa atendente, ela continua com você por aqui e te ajuda a escolher. Nossa equipe te responde em até 30 minutos no horário comercial. Fora dele, falamos com você assim que abrirmos 💜",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null
+        }
+      },
+      {
+        "handler": "trigger",
+        "params": {
+          "trigger": {
+            "delay": 0,
+            "action": "create_task",
+            "segments": [
+              ""
+            ],
+            "settings": {
+              "task_text": "Consumidor escreveu o que quer em vez de escolher a marca: responder pela conversa (até 30 minutos).",
               "task_type": "1",
               "deadline-days": "",
               "deadline-hours": "",

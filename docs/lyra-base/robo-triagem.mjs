@@ -8,8 +8,8 @@ import fs from 'node:fs';
 import { randomUUID } from 'node:crypto';
 
 // Números da conta ticminasflor (leitura de 2026-11-08).
-const FUNIL = { consumidor: 12904179, salao: 12927111, distribuidor: 12927087, atendimento: 14739451 };
-const ETAPA = { consumidorThayna: 99501151, salaoThayna: 99680859, distribuidorThayna: 99680647, posVenda: 113891275 };
+const FUNIL = { consumidor: 12904179, salao: 12927111, distribuidor: 12927087, atendimento: 14739451, entrada: 13975223 };
+const ETAPA = { consumidorThayna: 99501151, salaoThayna: 99680859, distribuidorThayna: 99680647, posVenda: 113891275, entradaThayna: 113893475 };
 const CAMPO = { segmento: 4381514, cpfCnpj: 4381512, marca: 4381516 };
 
 const goto = (step, type = 'question') => ({ handler: 'goto', params: { type, step } });
@@ -43,6 +43,8 @@ const respostaDosBotoes = (seNaoEntender) => [{
     { value: 'Tenho salão', params: [goto(20)], synonyms: ['2', 'Salão', 'salão', 'salao', 'SALÃO', 'cabeleireira', 'cabeleireiro', 'profissional'] },
     { value: 'Revendo/distribuo', params: [goto(30)], synonyms: ['3', 'Distribuidor', 'distribuidor', 'revenda', 'revendo', 'revender', 'distribuir'] },
     { value: 'Já sou cliente', params: [goto(40)], synonyms: ['4', 'já sou cliente', 'pedido', 'meu pedido', 'rastreio', 'troca', 'entrega'] },
+    // Sem botão: cumpre a promessa da saudação ("se preferir falar com alguém, é só pedir").
+    { value: 'Falar com atendente', params: [goto(51)], synonyms: ['atendente', 'falar com atendente', 'quero falar com atendente', 'falar com alguém', 'quero falar com alguém', 'pessoa', 'humano', 'atendimento'] },
     { type: 'else', params: [goto(seNaoEntender)] },
   ],
 }];
@@ -50,9 +52,12 @@ const respostaDosBotoes = (seNaoEntender) => [{
 const blocos = {
   // Saudação e triagem.
   0: { question: [], answer: respostaDosBotoes(50) }, // a mensagem entra logo abaixo
-  // Escreveu outra coisa: pergunta de novo uma vez; na segunda, passa para a equipe.
-  50: { question: [msg('Desculpa, não entendi 😊 Toque em uma das opções:', { buttons: BOTOES.map((text) => ({ type: 'inline', text })) })], answer: respostaDosBotoes(51) },
-  51: { question: [msg(`Sem problema! Vou chamar alguém da equipe para te ajudar. ${PRAZO}`), tarefa('Lyra não conseguiu fazer a triagem: responder o cliente e escolher o segmento (campo Segmento).'), fim] },
+  // Regra do dono (2026-11-08): o segmento é obrigatório. Quem escreve em vez de escolher recebe as opções de novo,
+  // quantas vezes for preciso; só "falar com atendente" passa direto para a Thayná, na Entrada (sem triagem).
+  50: { question: [msg('Para eu te atender certinho, primeiro me diz quem você é 😊 Toque em uma das opções:', { buttons: BOTOES.map((text) => ({ type: 'inline', text })) })], answer: respostaDosBotoes(50) },
+  51: { question: [etapa(FUNIL.entrada, ETAPA.entradaThayna), etiqueta('pediu-atendente'), msg(`Claro! Vou te passar para a nossa atendente, ela continua com você por aqui. ${PRAZO}`), tarefa('Cliente pediu atendente antes da triagem: responder e preencher o Segmento.'), fim] },
+  // Depois do segmento: escreveu o produto em vez de escolher a marca → passa para a Thayná.
+  52: { question: [msg(`Anotado! Vou te passar para a nossa atendente, ela continua com você por aqui e te ajuda a escolher. ${PRAZO}`), tarefa('Consumidor escreveu o que quer em vez de escolher a marca: responder pela conversa (até 30 minutos).'), fim] },
 
   // Uso em casa.
   10: { question: [etapa(FUNIL.consumidor, ETAPA.consumidorThayna), campoLead(CAMPO.segmento, 'Consumidor final'), etiqueta('consumidor-final'), goto(11)] },
@@ -68,7 +73,7 @@ const blocos = {
       { value: 'BY.MF', params: [goto(15)], synonyms: ['by.mf', 'bymf', 'BYMF', 'by mf'] },
       { value: 'Minasflor', params: [goto(16)], synonyms: ['minasflor', 'Minas Flor', 'minas flor'] },
       { value: 'Fusion (MF.PRO)', params: [goto(17)], synonyms: ['fusion', 'Fusion', 'mf.pro', 'MF.PRO', 'mfpro', 'MF PRO', 'mf pro', 'therapy'] },
-      { type: 'else', params: [goto(18)] },
+      { type: 'else', params: [goto(52)] },
     ] }] },
   15: { question: [campoLead(CAMPO.marca, 'BY.MF'), msg('Perfeito! A loja da BY.MF é https://bymfpro.com.br/ , com Pix ou cartão e o frete calculado pelo seu CEP 💜 Se tiver qualquer dúvida, é só me chamar aqui.'), fim] },
   16: { question: [campoLead(CAMPO.marca, 'Minasflor'), msg('Para usar em casa, a Minasflor tem as versões home care, de 300 ml e 300 g 💜 (as de litro e as embalagens profissionais são só para salão).'), goto(18)] },
