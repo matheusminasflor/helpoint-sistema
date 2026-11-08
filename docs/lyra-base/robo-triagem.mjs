@@ -1,11 +1,20 @@
-// O robô de triagem da Lyra no Kommo (Salesbot), em código. Rodar `node docs/lyra-base/robo-triagem.mjs` gera
-// `robo-triagem.json`, que é colado no modo de código do robô "Lyra · Triagem v2" (projeto do Kommo, passo 3; o dono
-// escolheu o modo de código em 2026-11-08). Os textos ficam aqui: mudar uma mensagem é mudar este arquivo e colar de novo.
+// O robô de triagem da Lyra no Kommo (Salesbot), em código. São dois robôs com os mesmos textos, um por canal:
+// `node docs/lyra-base/robo-triagem.mjs whatsapp --min` e `... instagram --min` geram `robo-triagem-<canal>.json`,
+// colado no modo de código do robô daquele canal (projeto do Kommo, passo 3; o dono escolheu o modo de código em
+// 2026-11-08). Os textos ficam aqui: mudar uma mensagem é mudar este arquivo e colar de novo nos dois.
+//
+// Por que dois robôs (testado em 2026-11-08): a lista do WhatsApp não chega ao Direct do Instagram, o Instagram só
+// mostra 3 botões por mensagem, a lista tem de estar sozinha no seu passo, e uma mensagem presa a outro canal faz o
+// Kommo parar o robô sem cair no "falha ao enviar". Misturar os canais num robô só deixou o WhatsApp sem saudação.
 //
 // Formato aprendido do robô antigo "BOT INICIAL MF" e do modelo "Bot de boas-vindas" do próprio Kommo:
 // cada bloco é {block_uuid, question:[...], answer?:[...], no_answer?}; `goto` com type question/finish.
 import fs from 'node:fs';
 import { randomUUID } from 'node:crypto';
+
+const CANAL_DO_ROBO = process.argv[2];
+if (!['whatsapp', 'instagram'].includes(CANAL_DO_ROBO)) throw new Error('uso: node robo-triagem.mjs whatsapp|instagram [--min]');
+const noWhatsapp = CANAL_DO_ROBO === 'whatsapp';
 
 // Números da conta ticminasflor (leitura de 2026-11-08).
 const FUNIL = { consumidor: 12904179, salao: 12927111, distribuidor: 12927087, atendimento: 14739451, entrada: 13975223 };
@@ -31,31 +40,24 @@ const nomeDoLead = acao('set_custom_fields', { value: '{{message_text}}', custom
 const etiqueta = (nome) => acao('set_tag', { type: 2, value: [nome] }); // type 2 = lead
 // Lista do WhatsApp: uma mensagem só, com o botão "Ver opções" (até 10 linhas). Botão comum passa de 3 e o WhatsApp
 // parte em várias mensagens repetidas, o que o dono reprovou ("ficou horrível"). Cada linha volta como callback_data.
-// Canais da conta, lidos de um robô de rascunho (2026-11-08, não salvo): o WhatsApp "Minasflor Comercial" e os três
-// Instagram (minasflor, mf.professional, bymf.br).
-const CANAL = { whatsapp: [{ id: 23132910 }], instagram: [{ id: 23111950 }, { id: 23142026 }, { id: 23142030 }] };
 const lista = (body, linhas) => ({
   handler: 'list_message',
   params: { list_message: { header: '', body, footer: '', button: 'Ver opções',
     sections: [{ title: 'Opções', rows: linhas.map(({ id, title }) => ({ callback_data: id, title, description: '' })) }] },
-  recipient: { type: 'all_contacts', way_of_communication: 'over_all' }, chat_sources: CANAL.whatsapp, disabled: false },
+  recipient: { type: 'all_contacts', way_of_communication: 'over_all' }, disabled: false },
 });
-// No Direct do Instagram a lista não chega (testado em 2026-11-08: o Kommo descarta em silêncio). Ali vai a mesma
-// pergunta com botões. Mas o Instagram também só mostra 3 botões por mensagem: com 4, o Kommo partiu em duas e repetiu
-// o texto (testado em 2026-11-08). Então `instagram` traz o texto e os botões (até 3) próprios desse canal; sem
-// botões, a pessoa responde escrevendo. O botão do Instagram tem até 20 letras: `curto` encurta o rótulo.
+// No Instagram vai a mesma pergunta com botões, até 3 (com 4 o Kommo partiu a mensagem em duas). `instagram` traz o
+// texto e os botões próprios desse canal; sem botões, a pessoa responde escrevendo. Botão do Instagram: até 20 letras.
 const linha = (title, curto = title) => ({ id: randomUUID(), title, curto });
-// `{toque}` no texto vira a instrução de cada canal.
+// `{toque}` no texto vira a instrução do WhatsApp.
 const escolha = (body, linhas, instagram = {}) => {
+  if (noWhatsapp) return [lista(body.replace('{toque}', 'toque em "Ver opções"'), linhas)];
   const botoesIg = instagram.linhas ?? linhas;
   if (botoesIg.length > 3) throw new Error('Instagram: no máximo 3 botões por mensagem');
-  return [
-    lista(body.replace('{toque}', 'toque em "Ver opções"'), linhas),
-    msg(instagram.texto ?? body.replace('{toque}', 'toque em uma das opções'), { send_to_all_chat_sources: false, chat_sources: CANAL.instagram,
-      ...(botoesIg.length ? { buttons: botoesIg.map(({ curto }) => ({ type: 'inline', text: curto })) } : {}) }),
-  ];
+  return [msg(instagram.texto ?? body.replace('{toque}', 'toque em uma das opções'),
+    botoesIg.length ? { buttons: botoesIg.map(({ curto }) => ({ type: 'inline', text: curto })) } : {})];
 };
-// A resposta aceita o toque dos dois canais: o callback_data da lista e o texto do botão. Sem sinônimos, que a lista
+// A resposta aceita o toque dos dois canais: o callback_data da lista e o texto do botão (o mesmo bloco serve aos dois). Sem sinônimos, que a lista
 // não aceita (o Kommo recusa a gravação com 400).
 const opcao = (linhaDaLista, params) => [{ value: linhaDaLista.id, params }, { value: linhaDaLista.curto, params }];
 const esperaResposta = (step) => ({ handler: 'waits', params: { logic: 'or', conditions: [{ event: { action: 'received', source: 'message' }, action: { type: 'question', step } }] } });
@@ -215,25 +217,20 @@ const TRES = [OPCOES['Uso em casa'], OPCOES['Tenho salão'], OPCOES['Revendo/dis
 blocos[0].question = escolha('Olá! ✨ Sou a Lyra, assistente virtual da Minasflor, e atendo as marcas BY.MF, Minasflor e MF.PRO. Para direcionar o seu atendimento, {toque} para selecionar o seu perfil. Se preferir falar com a nossa equipe, é só escrever "atendente".', Object.values(OPCOES), {
   texto: 'Olá! ✨ Sou a Lyra, assistente virtual da Minasflor, e atendo as marcas BY.MF, Minasflor e MF.PRO. Para direcionar o seu atendimento, toque em uma das opções. Se você já é cliente, é só escrever "cliente"; para falar com a nossa equipe, escreva "atendente".', linhas: TRES });
 
-// A lista tem de estar sozinha no seu passo (o Kommo recusa a gravação com 400 se vier outra mensagem junto). Então
-// cada escolha vira dois passos, N (botões do Instagram) e N+200 (lista do WhatsApp, que espera a resposta).
-for (const [k, b] of Object.entries({ ...blocos })) {
-  if (b.question?.[0]?.handler !== 'list_message') continue;
-  const [listaDoWhatsapp, botoesDoInstagram] = b.question;
-  // A mensagem de outro canal é pulada em silêncio, sem cair no "on_error" (reteste no WhatsApp, 2026-11-08: a saudação
-  // não saiu). Então o passo N manda os botões do Instagram e segue direto para o N+200, que manda a lista do WhatsApp
-  // e espera a resposta; cada cliente recebe só a mensagem do seu canal.
-  botoesDoInstagram.params.is_in_starting_block = k === '0';
-  // Na saudação, o lead vai primeiro para Entrada › Contato inicial, como fazia o robô de entrada que a Lyra substitui:
-  // sem isso o lead do WhatsApp nasceria em Consumidor Final antes de escolher o segmento e entraria nos indicadores.
-  const antes = k === '0' ? [etapa(FUNIL.entrada, ETAPA.entradaContato)] : [];
-  blocos[k] = { question: [...antes, botoesDoInstagram, goto(Number(k) + 200)] };
-  blocos[Number(k) + 200] = { question: [listaDoWhatsapp], answer: b.answer };
+// Na saudação, o lead vai primeiro para Entrada › Contato inicial, como fazia o robô de entrada que a Lyra substitui:
+// sem isso o lead do WhatsApp nasceria em Consumidor Final antes de escolher o segmento e entraria nos indicadores.
+// A lista tem de estar sozinha no seu passo (o Kommo recusa a gravação com 400), então no WhatsApp a saudação mora no 200.
+const paraEntrada = etapa(FUNIL.entrada, ETAPA.entradaContato);
+if (noWhatsapp) {
+  blocos[200] = { question: blocos[0].question, answer: blocos[0].answer };
+  blocos[0] = { question: [paraEntrada, goto(200)] };
+} else {
+  blocos[0].question = [paraEntrada, { ...blocos[0].question[0], params: { ...blocos[0].question[0].params, is_in_starting_block: true } }];
 }
 
 const saida = { conversation: false };
 for (const [k, b] of Object.entries(blocos)) saida[k] = { block_uuid: randomUUID(), ...b };
-const destino = new URL('./robo-triagem.json', import.meta.url);
+const destino = new URL(`./robo-triagem-${CANAL_DO_ROBO}.json`, import.meta.url);
 fs.writeFileSync(destino, JSON.stringify(saida, null, 2));
-if (process.argv[2] === "--min") fs.writeFileSync(new URL("./robo-triagem.min.json", import.meta.url), JSON.stringify(saida));
+if (process.argv[3] === '--min') fs.writeFileSync(new URL(`./robo-triagem-${CANAL_DO_ROBO}.min.json`, import.meta.url), JSON.stringify(saida));
 console.log('blocos', Object.keys(blocos).length, '→', destino.pathname);
