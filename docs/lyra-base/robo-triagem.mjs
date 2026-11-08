@@ -119,7 +119,7 @@ const blocos = {
       { type: 'else', params: [goto(54)] },
     ] }] },
   // Site institucional da Minasflor (dono, 2026-11-08): quem não conhece os produtos olha lá e depois diz o que quer.
-  16: { question: [campoLead(CAMPO.marca, 'Minasflor'), msg('Você pode conhecer toda a linha Minasflor no nosso site 🌿 https://minasflor.com.br/'), goto(18)] },
+  16: { question: [campoLead(CAMPO.marca, 'Minasflor'), msg('Você pode conhecer toda a linha Minasflor no nosso site: https://minasflor.com.br/'), goto(18)] },
   17: { question: [campoLead(CAMPO.marca, 'MF.PRO'), msg(
     'Da MF.PRO, para uso em casa indicamos o Fusion, da linha Therapy: shampoo e balm de base neutra, personalizados com um óleo essencial de acordo com a necessidade do couro cabeludo 🌿\n\n' +
     '• Hortelã-pimenta: sensação refrescante, ajuda a controlar a oleosidade\n' +
@@ -149,7 +149,7 @@ const blocos = {
   25: { question: [esperaResposta(26)] },
   26: { question: [campoLead(CAMPO.cpfCnpj, '{{message_text}}'), goto(27)] },
   61: { question: [campoLead(CAMPO.cpfCnpj, '{{message_text}}'), goto(27)] },
-  27: { question: [msg('Obrigada! Você pode conhecer todos os nossos produtos em https://minasflor.com.br/ 🌿\n\nDepois é só me dizer quais produtos e quantidades deseja, que eu deixo o seu pedido anotado 📝'), goto(28)] },
+  27: { question: [msg('Obrigada! Você pode conhecer todos os nossos produtos em https://minasflor.com.br/\n\nDepois é só me dizer quais produtos e quantidades deseja, que eu deixo o seu pedido anotado 📝'), goto(28)] },
   28: { question: [esperaResposta(29)] },
   29: { question: [etapa(FUNIL.salao, ETAPA.salaoAtendente), msg('Pedido anotado ✅ A nossa equipe vai entrar em contato por aqui para finalizar o seu pedido. 💙'), tarefa('Salão (CNPJ no lead) fez o pedido pela Lyra: montar o pedido com os produtos da conversa (até 30 minutos).'), esperaResposta(55)] },
   65: { question: [etapa(FUNIL.consumidor, ETAPA.consumidorLyra), campoLead(CAMPO.segmento, 'Consumidor final'), etiqueta('consumidor-final'), etiqueta('profissional-sem-cnpj'),
