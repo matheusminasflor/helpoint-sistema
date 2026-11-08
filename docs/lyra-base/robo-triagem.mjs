@@ -31,13 +31,28 @@ const nomeDoLead = acao('set_custom_fields', { value: '{{message_text}}', custom
 const etiqueta = (nome) => acao('set_tag', { type: 2, value: [nome] }); // type 2 = lead
 // Lista do WhatsApp: uma mensagem só, com o botão "Ver opções" (até 10 linhas). Botão comum passa de 3 e o WhatsApp
 // parte em várias mensagens repetidas, o que o dono reprovou ("ficou horrível"). Cada linha volta como callback_data.
+// Canais da conta, lidos de um robô de rascunho (2026-11-08, não salvo): o WhatsApp "Minasflor Comercial" e os três
+// Instagram (minasflor, mf.professional, bymf.br).
+const CANAL = { whatsapp: [{ id: 23132910 }], instagram: [{ id: 23111950 }, { id: 23142026 }, { id: 23142030 }] };
 const lista = (body, linhas) => ({
   handler: 'list_message',
   params: { list_message: { header: '', body, footer: '', button: 'Ver opções',
     sections: [{ title: 'Opções', rows: linhas.map(({ id, title }) => ({ callback_data: id, title, description: '' })) }] },
-  recipient: { type: 'all_contacts', way_of_communication: 'over_all' }, disabled: false },
+  recipient: { type: 'all_contacts', way_of_communication: 'over_all' }, chat_sources: CANAL.whatsapp, disabled: false },
 });
-const linha = (title) => ({ id: randomUUID(), title });
+// No Direct do Instagram a lista não chega (testado em 2026-11-08: o Kommo descarta em silêncio). Ali vai a mesma
+// pergunta com botões, que o Instagram mostra juntos numa mensagem. Cada mensagem tem o seu canal, então o cliente
+// recebe só uma. O botão do Instagram tem até 20 letras: `curto` encurta o rótulo (o estado vai só com a sigla).
+const linha = (title, curto = title) => ({ id: randomUUID(), title, curto });
+// `{toque}` no texto vira a instrução de cada canal.
+const escolha = (body, linhas) => [
+  lista(body.replace('{toque}', 'toque em "Ver opções"'), linhas),
+  msg(body.replace('{toque}', 'toque em uma das opções'), { send_to_all_chat_sources: false, chat_sources: CANAL.instagram,
+    buttons: linhas.map(({ curto }) => ({ type: 'inline', text: curto })) }),
+];
+// A resposta aceita o toque dos dois canais: o callback_data da lista e o texto do botão. Sem sinônimos, que a lista
+// não aceita (o Kommo recusa a gravação com 400).
+const opcao = (linhaDaLista, params) => [{ value: linhaDaLista.id, params }, { value: linhaDaLista.curto, params }];
 const esperaResposta = (step) => ({ handler: 'waits', params: { logic: 'or', conditions: [{ event: { action: 'received', source: 'message' }, action: { type: 'question', step } }] } });
 // Tarefa para quem cuida do lead. Prazo padrão de 30 minutos ("within-deadline" vazio virava 5 minutos; o certo é
 // "custom"); `dias` troca o prazo por dias.
@@ -60,18 +75,17 @@ const REGIOES = {
 };
 // Um bloco por estado, a partir do 100, que grava a sigla no campo Estado de atuação.
 const LINHA_REGIAO = Object.fromEntries(Object.keys(REGIOES).map((r) => [r, linha(r)]));
-const LINHA_UF = Object.fromEntries(Object.values(REGIOES).flat().map(([uf, nome]) => [uf, linha(`${uf} · ${nome}`)]));
+const LINHA_UF = Object.fromEntries(Object.values(REGIOES).flat().map(([uf, nome]) => [uf, linha(`${uf} · ${nome}`, uf)]));
 const UF_BLOCO = Object.fromEntries(Object.values(REGIOES).flat().map(([uf], i) => [uf, 100 + i]));
 const OPCOES = Object.fromEntries(['Uso em casa', 'Tenho salão', 'Revendo/distribuo', 'Já sou cliente'].map((t) => [t, linha(t)]));
-// A resposta de uma lista não aceita sinônimos (o Kommo recusa a gravação com 400): só o toque conta. Quem escreve
-// cai no bloco 53, que procura "atendente" no texto; o resto recebe a lista de novo.
+// Só o toque conta. Quem escreve cai no bloco 53, que procura "atendente" no texto; o resto recebe as opções de novo.
 const respostaDosBotoes = () => [{
   handler: 'buttons',
   params: [
-    { value: OPCOES['Uso em casa'].id, params: [goto(10)] },
-    { value: OPCOES['Tenho salão'].id, params: [goto(20)] },
-    { value: OPCOES['Revendo/distribuo'].id, params: [goto(30)] },
-    { value: OPCOES['Já sou cliente'].id, params: [goto(40)] },
+    ...opcao(OPCOES['Uso em casa'], [goto(10)]),
+    ...opcao(OPCOES['Tenho salão'], [goto(20)]),
+    ...opcao(OPCOES['Revendo/distribuo'], [goto(30)]),
+    ...opcao(OPCOES['Já sou cliente'], [goto(40)]),
     { type: 'else', params: [goto(53)] },
   ],
 }];
@@ -84,7 +98,7 @@ const blocos = {
   0: { question: [], answer: respostaDosBotoes() }, // a mensagem entra logo abaixo
   // Regra do dono (2026-11-08): o segmento é obrigatório. Quem escreve em vez de escolher recebe as opções de novo,
   // quantas vezes for preciso; só "atendente" passa direto para uma pessoa, na Entrada (sem triagem).
-  50: { question: [lista('Para seguir com o atendimento, selecione uma das opções. Toque em "Ver opções" 👇', Object.values(OPCOES))], answer: respostaDosBotoes() },
+  50: { question: escolha('Para seguir com o atendimento, {toque} 👇', Object.values(OPCOES)), answer: respostaDosBotoes() },
   53: { question: [contem(['atendente', 'Atendente', 'ATENDENTE', 'falar com alguém', 'Falar com alguém', 'humano', 'pessoa'], 51), goto(50)] },
   51: { question: [etapa(FUNIL.entrada, ETAPA.entradaAtendente), etiqueta('pediu-atendente'), msg(TRANSFERE), tarefa('Cliente pediu atendente antes da triagem: responder e preencher o Segmento.'), esperaResposta(55)] },
   // Depois do segmento: escreveu o produto em vez de escolher a marca → passa para uma pessoa.
@@ -160,15 +174,15 @@ const blocos = {
   // O estado é escolhido por toque (dono, 2026-11-08: "vão preencher errado"): primeiro a região, depois o estado da
   // região. O WhatsApp mostra até 10 opções por lista; a maior região, o Nordeste, tem 9. Quem escreve em vez de
   // tocar recebe a pergunta de novo (lista não aceita sinônimos).
-  37: { question: [lista('Em qual região você pretende atuar? 📍 Toque em "Ver opções":', Object.values(LINHA_REGIAO))],
+  37: { question: escolha('Em qual região você pretende atuar? 📍 Para responder, {toque}.', Object.values(LINHA_REGIAO)),
     answer: [{ handler: 'buttons', params: [
-      ...Object.keys(REGIOES).map((r, i) => ({ value: LINHA_REGIAO[r].id, params: [goto(70 + i)] })),
+      ...Object.keys(REGIOES).flatMap((r, i) => opcao(LINHA_REGIAO[r], [goto(70 + i)])),
       { type: 'else', params: [goto(37)] },
     ] }] },
   ...Object.fromEntries(Object.entries(REGIOES).map(([, ufs], i) => [70 + i, {
-    question: [lista('Em qual estado? 📍 Toque em "Ver opções":', ufs.map(([uf]) => LINHA_UF[uf]))],
+    question: escolha('Em qual estado? 📍 Para responder, {toque}.', ufs.map(([uf]) => LINHA_UF[uf])),
     answer: [{ handler: 'buttons', params: [
-      ...ufs.map(([uf]) => ({ value: LINHA_UF[uf].id, params: [goto(UF_BLOCO[uf])] })),
+      ...ufs.flatMap(([uf]) => opcao(LINHA_UF[uf], [goto(UF_BLOCO[uf])])),
       { type: 'else', params: [goto(70 + i)] },
     ] }],
   }])),
@@ -185,7 +199,19 @@ const blocos = {
 };
 
 // Bloco 0: a saudação, em lista.
-blocos[0].question = [lista('Olá! ✨ Sou a Lyra, assistente virtual da Minasflor, e atendo as marcas BY.MF, Minasflor e MF.PRO. Para direcionar o seu atendimento, toque em "Ver opções" e selecione o seu perfil. Se preferir falar com a nossa equipe, é só escrever "atendente".', Object.values(OPCOES))];
+blocos[0].question = escolha('Olá! ✨ Sou a Lyra, assistente virtual da Minasflor, e atendo as marcas BY.MF, Minasflor e MF.PRO. Para direcionar o seu atendimento, {toque} para selecionar o seu perfil. Se preferir falar com a nossa equipe, é só escrever "atendente".', Object.values(OPCOES));
+
+// A lista tem de estar sozinha no seu passo (o Kommo recusa a gravação com 400 se vier outra mensagem junto). Então
+// cada escolha vira dois passos: o passo N manda os botões só para o Instagram e, quando o canal não é Instagram, a
+// falha de envio ("on_error") desvia para o passo N+200, que manda a lista do WhatsApp. Os dois esperam a mesma resposta.
+for (const [k, b] of Object.entries({ ...blocos })) {
+  if (b.question?.[0]?.handler !== 'list_message') continue;
+  const [listaDoWhatsapp, botoesDoInstagram] = b.question;
+  botoesDoInstagram.params.on_error = goto(Number(k) + 200);
+  botoesDoInstagram.params.is_in_starting_block = k === '0';
+  blocos[k] = { ...b, question: [botoesDoInstagram] };
+  blocos[Number(k) + 200] = { question: [listaDoWhatsapp], answer: b.answer };
+}
 
 const saida = { conversation: false };
 for (const [k, b] of Object.entries(blocos)) saida[k] = { block_uuid: randomUUID(), ...b };

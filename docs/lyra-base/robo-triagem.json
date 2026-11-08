@@ -1,48 +1,55 @@
 {
   "0": {
-    "block_uuid": "032c9fb8-899b-4395-aec8-38b1d854b9a2",
+    "block_uuid": "a575c434-f1bc-45fa-aa14-c64b2ce424ee",
     "question": [
       {
-        "handler": "list_message",
+        "handler": "send_message",
         "params": {
-          "list_message": {
-            "header": "",
-            "body": "Olá! ✨ Sou a Lyra, assistente virtual da Minasflor, e atendo as marcas BY.MF, Minasflor e MF.PRO. Para direcionar o seu atendimento, toque em \"Ver opções\" e selecione o seu perfil. Se preferir falar com a nossa equipe, é só escrever \"atendente\".",
-            "footer": "",
-            "button": "Ver opções",
-            "sections": [
-              {
-                "title": "Opções",
-                "rows": [
-                  {
-                    "callback_data": "de3f9d9f-6526-426e-8ed3-b291cfeca4b1",
-                    "title": "Uso em casa",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "1bead1d1-73e2-4acf-a59d-071358566045",
-                    "title": "Tenho salão",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "f68205ba-fbbe-4889-b142-f3f4c26496a9",
-                    "title": "Revendo/distribuo",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "33ff43fe-4e51-4195-91c8-450590c561e1",
-                    "title": "Já sou cliente",
-                    "description": ""
-                  }
-                ]
-              }
-            ]
-          },
+          "tag": "",
+          "text": "Olá! ✨ Sou a Lyra, assistente virtual da Minasflor, e atendo as marcas BY.MF, Minasflor e MF.PRO. Para direcionar o seu atendimento, toque em uma das opções para selecionar o seu perfil. Se preferir falar com a nossa equipe, é só escrever \"atendente\".",
+          "type": "external",
           "recipient": {
             "type": "all_contacts",
             "way_of_communication": "over_all"
           },
-          "disabled": false
+          "is_in_starting_block": true,
+          "send_to_all_chat_sources": false,
+          "on_error": {
+            "handler": "goto",
+            "params": {
+              "type": "question",
+              "step": 200
+            }
+          },
+          "chat_sources": [
+            {
+              "id": 23111950
+            },
+            {
+              "id": 23142026
+            },
+            {
+              "id": 23142030
+            }
+          ],
+          "buttons": [
+            {
+              "type": "inline",
+              "text": "Uso em casa"
+            },
+            {
+              "type": "inline",
+              "text": "Tenho salão"
+            },
+            {
+              "type": "inline",
+              "text": "Revendo/distribuo"
+            },
+            {
+              "type": "inline",
+              "text": "Já sou cliente"
+            }
+          ]
         }
       }
     ],
@@ -51,7 +58,7 @@
         "handler": "buttons",
         "params": [
           {
-            "value": "de3f9d9f-6526-426e-8ed3-b291cfeca4b1",
+            "value": "416ae88e-cbbe-4088-b819-cdea02578c36",
             "params": [
               {
                 "handler": "goto",
@@ -63,7 +70,19 @@
             ]
           },
           {
-            "value": "1bead1d1-73e2-4acf-a59d-071358566045",
+            "value": "Uso em casa",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 10
+                }
+              }
+            ]
+          },
+          {
+            "value": "21521018-3e25-4b77-863b-4bffd88b2baa",
             "params": [
               {
                 "handler": "goto",
@@ -75,7 +94,19 @@
             ]
           },
           {
-            "value": "f68205ba-fbbe-4889-b142-f3f4c26496a9",
+            "value": "Tenho salão",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 20
+                }
+              }
+            ]
+          },
+          {
+            "value": "e7fbfd24-9065-49eb-b1c4-044c52fbf574",
             "params": [
               {
                 "handler": "goto",
@@ -87,7 +118,31 @@
             ]
           },
           {
-            "value": "33ff43fe-4e51-4195-91c8-450590c561e1",
+            "value": "Revendo/distribuo",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 30
+                }
+              }
+            ]
+          },
+          {
+            "value": "64bb70b4-5108-4826-9133-c94a368e59e1",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 40
+                }
+              }
+            ]
+          },
+          {
+            "value": "Já sou cliente",
             "params": [
               {
                 "handler": "goto",
@@ -115,7 +170,7 @@
     ]
   },
   "9": {
-    "block_uuid": "8596dc34-a853-454e-a1b5-cdea7f29b6cd",
+    "block_uuid": "458afb45-58d9-441c-853e-7ae64dc171f9",
     "question": [
       {
         "handler": "action",
@@ -192,7 +247,7 @@
     ]
   },
   "10": {
-    "block_uuid": "0cf9d9be-b682-4ab0-abf2-35a9041a558b",
+    "block_uuid": "22e575a3-23de-4d39-ada9-2369a0b4dce9",
     "question": [
       {
         "handler": "action",
@@ -236,7 +291,7 @@
     ]
   },
   "11": {
-    "block_uuid": "f958b2a0-6ca1-40e2-ad39-dbcfee63d819",
+    "block_uuid": "d3ad7ffc-081e-47ea-ab95-8a2ab8e40960",
     "question": [
       {
         "handler": "send_message",
@@ -263,7 +318,7 @@
     ]
   },
   "12": {
-    "block_uuid": "855c8b3f-ed7a-4d56-aced-977120526f96",
+    "block_uuid": "bc539289-4e74-4dbf-ba7a-0da7926c763a",
     "question": [
       {
         "handler": "waits",
@@ -286,7 +341,7 @@
     ]
   },
   "13": {
-    "block_uuid": "bb9f3997-1f69-476c-ab5c-8d0f08fcb2fc",
+    "block_uuid": "77f1423e-85f7-4f8c-a51e-99fe8cfc8fc0",
     "question": [
       {
         "handler": "action",
@@ -308,7 +363,7 @@
     ]
   },
   "14": {
-    "block_uuid": "143e26b3-a9e2-461c-b199-228eb09eb93a",
+    "block_uuid": "e333785a-3770-48f1-8950-308ec5a9f233",
     "question": [
       {
         "handler": "send_message",
@@ -392,7 +447,7 @@
     ]
   },
   "15": {
-    "block_uuid": "b7536ce4-69ed-4f89-a54f-72c883fc4d47",
+    "block_uuid": "2bbde4fa-1b01-4b5c-b609-e6886e268e85",
     "question": [
       {
         "handler": "action",
@@ -502,7 +557,7 @@
     ]
   },
   "16": {
-    "block_uuid": "2ffba4cd-f222-4b4b-b1b8-048292e12965",
+    "block_uuid": "87ed08c2-eb1b-47b7-a356-6c7fdc8e313b",
     "question": [
       {
         "handler": "action",
@@ -539,7 +594,7 @@
     ]
   },
   "18": {
-    "block_uuid": "f04bcd1b-a9f3-4013-930f-d8ce29ed7121",
+    "block_uuid": "12283e77-fea2-4955-8808-1f564263ffea",
     "question": [
       {
         "handler": "send_message",
@@ -566,7 +621,7 @@
     ]
   },
   "19": {
-    "block_uuid": "3d3ae62b-079c-412b-b3d4-2504d6500a13",
+    "block_uuid": "69b1f6a2-a6e0-4c3f-b477-9196c0119cb6",
     "question": [
       {
         "handler": "waits",
@@ -589,7 +644,7 @@
     ]
   },
   "20": {
-    "block_uuid": "880b1b20-dab4-4d79-88cc-2497debda7b8",
+    "block_uuid": "05fd6889-1864-4e17-befb-fcf411115cb6",
     "question": [
       {
         "handler": "action",
@@ -633,7 +688,7 @@
     ]
   },
   "21": {
-    "block_uuid": "d63ff49a-5cef-4ced-b57d-831da31221f1",
+    "block_uuid": "77971a65-3bf7-4e6d-a694-8a6e60f316c8",
     "question": [
       {
         "handler": "send_message",
@@ -660,7 +715,7 @@
     ]
   },
   "22": {
-    "block_uuid": "ec4d3f6c-39d4-4e64-8dfb-76863a9bc6d3",
+    "block_uuid": "96afe703-0a9d-42f5-9e0e-facb5fe55037",
     "question": [
       {
         "handler": "waits",
@@ -683,7 +738,7 @@
     ]
   },
   "23": {
-    "block_uuid": "f6e4941c-2ac2-4f6c-a4f1-8d405f610134",
+    "block_uuid": "f4bf732b-6e2b-45ba-a338-4ec045784ad4",
     "question": [
       {
         "handler": "action",
@@ -705,7 +760,7 @@
     ]
   },
   "24": {
-    "block_uuid": "3645ed35-f6e9-490f-a3ef-1e7c9d54424e",
+    "block_uuid": "0bd30a3a-865d-41ba-8b1c-878c1c5d7678",
     "question": [
       {
         "handler": "send_message",
@@ -794,7 +849,7 @@
     ]
   },
   "25": {
-    "block_uuid": "8db605d4-6c48-4e52-9baf-13e0ab842290",
+    "block_uuid": "169dd927-6872-40d0-8f06-ce17afc58d6d",
     "question": [
       {
         "handler": "waits",
@@ -817,7 +872,7 @@
     ]
   },
   "26": {
-    "block_uuid": "5199ee57-a84e-457f-8039-cac61784fcc4",
+    "block_uuid": "54eb06a7-af63-4c53-a03d-fbbeef3f6429",
     "question": [
       {
         "handler": "action",
@@ -839,7 +894,7 @@
     ]
   },
   "27": {
-    "block_uuid": "6280f1ae-dc1a-455a-823b-e368e2de4b77",
+    "block_uuid": "0938db22-f2be-41d3-8a78-0b16d29dcfe7",
     "question": [
       {
         "handler": "send_message",
@@ -866,7 +921,7 @@
     ]
   },
   "28": {
-    "block_uuid": "5b8900b0-ef43-4e6d-add1-f540254d284b",
+    "block_uuid": "030a5c9f-34d7-4163-9e13-a0a7018b2db7",
     "question": [
       {
         "handler": "waits",
@@ -889,7 +944,7 @@
     ]
   },
   "29": {
-    "block_uuid": "d454169b-fcab-48ee-b366-18904e811e31",
+    "block_uuid": "7200d25f-cccb-48c4-afb3-233b3e912032",
     "question": [
       {
         "handler": "action",
@@ -966,7 +1021,7 @@
     ]
   },
   "30": {
-    "block_uuid": "a3ef5ae7-499f-4f74-8b9a-dee158f9c624",
+    "block_uuid": "203787f2-9f08-48bd-bbbf-0597c7267e1b",
     "question": [
       {
         "handler": "action",
@@ -1010,7 +1065,7 @@
     ]
   },
   "31": {
-    "block_uuid": "61ccf271-45e3-4002-a27a-7f4e7e014635",
+    "block_uuid": "52a93bab-c84b-409e-b942-920f8a45fc04",
     "question": [
       {
         "handler": "send_message",
@@ -1037,7 +1092,7 @@
     ]
   },
   "32": {
-    "block_uuid": "ac697522-cc11-4837-8f0f-7533da831a5c",
+    "block_uuid": "84f9f3e8-bfc3-4b5e-b365-e87a9673809e",
     "question": [
       {
         "handler": "waits",
@@ -1060,7 +1115,7 @@
     ]
   },
   "33": {
-    "block_uuid": "66989da5-494c-4b5f-a11d-45be08bf14c4",
+    "block_uuid": "995d4396-628b-4b04-bb52-603016a00729",
     "question": [
       {
         "handler": "action",
@@ -1082,7 +1137,7 @@
     ]
   },
   "34": {
-    "block_uuid": "0131836b-8efb-4966-a74b-5b429833b1a0",
+    "block_uuid": "71e56a1b-65db-4cb8-8f6f-16eee2510242",
     "question": [
       {
         "handler": "send_message",
@@ -1109,7 +1164,7 @@
     ]
   },
   "35": {
-    "block_uuid": "6c8fa3a9-62c7-4f0e-b0a4-c2713eeccdb6",
+    "block_uuid": "23f01a01-cd79-45fb-a573-e0066158940a",
     "question": [
       {
         "handler": "waits",
@@ -1132,7 +1187,7 @@
     ]
   },
   "36": {
-    "block_uuid": "5a369c93-1111-427e-a70e-fba188b4a2e3",
+    "block_uuid": "ea16f542-6b7a-4c76-9ffb-a176d6879612",
     "question": [
       {
         "handler": "action",
@@ -1154,54 +1209,60 @@
     ]
   },
   "37": {
-    "block_uuid": "6cf22872-fd9e-4eb3-82ad-65c2cc4b7cf7",
+    "block_uuid": "ce46d21b-80f0-41d1-bf95-5cc1cfd2445f",
     "question": [
       {
-        "handler": "list_message",
+        "handler": "send_message",
         "params": {
-          "list_message": {
-            "header": "",
-            "body": "Em qual região você pretende atuar? 📍 Toque em \"Ver opções\":",
-            "footer": "",
-            "button": "Ver opções",
-            "sections": [
-              {
-                "title": "Opções",
-                "rows": [
-                  {
-                    "callback_data": "cab7b069-f902-41fc-9390-586bd8f0c842",
-                    "title": "Sudeste",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "4ee85962-70fd-4ebc-94d0-304ac3d9ca91",
-                    "title": "Sul",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "89580194-102c-4f35-99c8-8f768d2db638",
-                    "title": "Centro-Oeste",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "0b428774-87bc-457c-b709-87f601335abf",
-                    "title": "Nordeste",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "13101739-319b-464c-aa3e-bd38dfe7c72a",
-                    "title": "Norte",
-                    "description": ""
-                  }
-                ]
-              }
-            ]
-          },
+          "tag": "",
+          "text": "Em qual região você pretende atuar? 📍 Para responder, toque em uma das opções.",
+          "type": "external",
           "recipient": {
             "type": "all_contacts",
             "way_of_communication": "over_all"
           },
-          "disabled": false
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": false,
+          "on_error": {
+            "handler": "goto",
+            "params": {
+              "type": "question",
+              "step": 237
+            }
+          },
+          "chat_sources": [
+            {
+              "id": 23111950
+            },
+            {
+              "id": 23142026
+            },
+            {
+              "id": 23142030
+            }
+          ],
+          "buttons": [
+            {
+              "type": "inline",
+              "text": "Sudeste"
+            },
+            {
+              "type": "inline",
+              "text": "Sul"
+            },
+            {
+              "type": "inline",
+              "text": "Centro-Oeste"
+            },
+            {
+              "type": "inline",
+              "text": "Nordeste"
+            },
+            {
+              "type": "inline",
+              "text": "Norte"
+            }
+          ]
         }
       }
     ],
@@ -1210,7 +1271,7 @@
         "handler": "buttons",
         "params": [
           {
-            "value": "cab7b069-f902-41fc-9390-586bd8f0c842",
+            "value": "fd77e554-c4a0-4bbd-9fbf-f814a1cc0ad6",
             "params": [
               {
                 "handler": "goto",
@@ -1222,7 +1283,19 @@
             ]
           },
           {
-            "value": "4ee85962-70fd-4ebc-94d0-304ac3d9ca91",
+            "value": "Sudeste",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 70
+                }
+              }
+            ]
+          },
+          {
+            "value": "402524ad-ea4c-4d90-8328-22b5a5f6a6b4",
             "params": [
               {
                 "handler": "goto",
@@ -1234,7 +1307,19 @@
             ]
           },
           {
-            "value": "89580194-102c-4f35-99c8-8f768d2db638",
+            "value": "Sul",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 71
+                }
+              }
+            ]
+          },
+          {
+            "value": "1a5bc228-f532-4f26-ad5c-b319c20ee2e7",
             "params": [
               {
                 "handler": "goto",
@@ -1246,7 +1331,19 @@
             ]
           },
           {
-            "value": "0b428774-87bc-457c-b709-87f601335abf",
+            "value": "Centro-Oeste",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 72
+                }
+              }
+            ]
+          },
+          {
+            "value": "7e12db33-fc36-4d5a-b2e0-3aa33f5f8fde",
             "params": [
               {
                 "handler": "goto",
@@ -1258,7 +1355,31 @@
             ]
           },
           {
-            "value": "13101739-319b-464c-aa3e-bd38dfe7c72a",
+            "value": "Nordeste",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 73
+                }
+              }
+            ]
+          },
+          {
+            "value": "81ca4cc2-c8f4-4d44-a229-b64c55655d40",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 74
+                }
+              }
+            ]
+          },
+          {
+            "value": "Norte",
             "params": [
               {
                 "handler": "goto",
@@ -1286,7 +1407,7 @@
     ]
   },
   "39": {
-    "block_uuid": "2f2ede02-ddde-4b06-a363-89625a08a488",
+    "block_uuid": "a18cee28-fef1-4ffa-ad8b-8c48d17bb3fa",
     "question": [
       {
         "handler": "action",
@@ -1363,7 +1484,7 @@
     ]
   },
   "40": {
-    "block_uuid": "3b1a2789-74e8-4106-9244-5326f96e3fad",
+    "block_uuid": "f138dc4a-2f45-470f-b04a-7c042bf4ddb3",
     "question": [
       {
         "handler": "action",
@@ -1452,49 +1573,56 @@
     ]
   },
   "50": {
-    "block_uuid": "1c583d2a-e977-4d51-8951-d0bab4a7f5bc",
+    "block_uuid": "5148d56a-b827-4cb4-bcfc-0363925761a2",
     "question": [
       {
-        "handler": "list_message",
+        "handler": "send_message",
         "params": {
-          "list_message": {
-            "header": "",
-            "body": "Para seguir com o atendimento, selecione uma das opções. Toque em \"Ver opções\" 👇",
-            "footer": "",
-            "button": "Ver opções",
-            "sections": [
-              {
-                "title": "Opções",
-                "rows": [
-                  {
-                    "callback_data": "de3f9d9f-6526-426e-8ed3-b291cfeca4b1",
-                    "title": "Uso em casa",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "1bead1d1-73e2-4acf-a59d-071358566045",
-                    "title": "Tenho salão",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "f68205ba-fbbe-4889-b142-f3f4c26496a9",
-                    "title": "Revendo/distribuo",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "33ff43fe-4e51-4195-91c8-450590c561e1",
-                    "title": "Já sou cliente",
-                    "description": ""
-                  }
-                ]
-              }
-            ]
-          },
+          "tag": "",
+          "text": "Para seguir com o atendimento, toque em uma das opções 👇",
+          "type": "external",
           "recipient": {
             "type": "all_contacts",
             "way_of_communication": "over_all"
           },
-          "disabled": false
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": false,
+          "on_error": {
+            "handler": "goto",
+            "params": {
+              "type": "question",
+              "step": 250
+            }
+          },
+          "chat_sources": [
+            {
+              "id": 23111950
+            },
+            {
+              "id": 23142026
+            },
+            {
+              "id": 23142030
+            }
+          ],
+          "buttons": [
+            {
+              "type": "inline",
+              "text": "Uso em casa"
+            },
+            {
+              "type": "inline",
+              "text": "Tenho salão"
+            },
+            {
+              "type": "inline",
+              "text": "Revendo/distribuo"
+            },
+            {
+              "type": "inline",
+              "text": "Já sou cliente"
+            }
+          ]
         }
       }
     ],
@@ -1503,7 +1631,7 @@
         "handler": "buttons",
         "params": [
           {
-            "value": "de3f9d9f-6526-426e-8ed3-b291cfeca4b1",
+            "value": "416ae88e-cbbe-4088-b819-cdea02578c36",
             "params": [
               {
                 "handler": "goto",
@@ -1515,7 +1643,19 @@
             ]
           },
           {
-            "value": "1bead1d1-73e2-4acf-a59d-071358566045",
+            "value": "Uso em casa",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 10
+                }
+              }
+            ]
+          },
+          {
+            "value": "21521018-3e25-4b77-863b-4bffd88b2baa",
             "params": [
               {
                 "handler": "goto",
@@ -1527,7 +1667,19 @@
             ]
           },
           {
-            "value": "f68205ba-fbbe-4889-b142-f3f4c26496a9",
+            "value": "Tenho salão",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 20
+                }
+              }
+            ]
+          },
+          {
+            "value": "e7fbfd24-9065-49eb-b1c4-044c52fbf574",
             "params": [
               {
                 "handler": "goto",
@@ -1539,7 +1691,31 @@
             ]
           },
           {
-            "value": "33ff43fe-4e51-4195-91c8-450590c561e1",
+            "value": "Revendo/distribuo",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 30
+                }
+              }
+            ]
+          },
+          {
+            "value": "64bb70b4-5108-4826-9133-c94a368e59e1",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 40
+                }
+              }
+            ]
+          },
+          {
+            "value": "Já sou cliente",
             "params": [
               {
                 "handler": "goto",
@@ -1567,7 +1743,7 @@
     ]
   },
   "51": {
-    "block_uuid": "3b82c068-6452-478e-ab35-b6eaf6450b5f",
+    "block_uuid": "1ec6a15c-402c-4d06-bd4b-bb5ddec9bcdb",
     "question": [
       {
         "handler": "action",
@@ -1656,7 +1832,7 @@
     ]
   },
   "52": {
-    "block_uuid": "34cdda6c-711d-4a2c-be5c-c2aa1c162d61",
+    "block_uuid": "6d096bf8-cf14-4f0c-8474-44995c132890",
     "question": [
       {
         "handler": "action",
@@ -1733,7 +1909,7 @@
     ]
   },
   "53": {
-    "block_uuid": "0951860b-e451-4465-97d1-f48fc5cc494f",
+    "block_uuid": "058b39d7-2a99-4e1c-a9ac-85277f9333ef",
     "question": [
       {
         "handler": "conditions",
@@ -1797,7 +1973,7 @@
     ]
   },
   "54": {
-    "block_uuid": "7232b137-9fe9-4e36-82ad-f1a463ce657b",
+    "block_uuid": "c8325dc1-65e1-4e92-a149-92a5b6fd8792",
     "question": [
       {
         "handler": "action",
@@ -1863,7 +2039,7 @@
     ]
   },
   "55": {
-    "block_uuid": "a4a21a57-ca66-41b5-a146-7e28baee2862",
+    "block_uuid": "db3704a3-7be2-484e-9491-8cec2dc3b0de",
     "question": [
       {
         "handler": "send_message",
@@ -1890,7 +2066,7 @@
     ]
   },
   "60": {
-    "block_uuid": "652a057d-7941-4baf-9c45-8305dd52dd8b",
+    "block_uuid": "2247721d-322d-4832-921b-6a757934c416",
     "question": [
       {
         "handler": "send_message",
@@ -1917,7 +2093,7 @@
     ]
   },
   "61": {
-    "block_uuid": "c81388cc-faa7-4e28-923a-11f5fb065542",
+    "block_uuid": "e12d0875-fc58-444c-88bd-88f707bb6747",
     "question": [
       {
         "handler": "action",
@@ -1939,7 +2115,7 @@
     ]
   },
   "63": {
-    "block_uuid": "5109cd8c-5383-4565-bb2f-34864583c8c0",
+    "block_uuid": "1b6a4eac-85c5-4f73-a82d-f6fe94cdd08d",
     "question": [
       {
         "handler": "send_message",
@@ -1966,7 +2142,7 @@
     ]
   },
   "64": {
-    "block_uuid": "dd633240-3348-42a9-b860-ce74bfb8517f",
+    "block_uuid": "b87edfff-c9cb-4750-aaa1-17d29e8fe18b",
     "question": [
       {
         "handler": "waits",
@@ -1989,7 +2165,7 @@
     ]
   },
   "65": {
-    "block_uuid": "1bbc84b4-668f-48c1-9fc0-b749669c6940",
+    "block_uuid": "d0e3e3c0-f2ce-43c6-996e-9139692bc0e4",
     "question": [
       {
         "handler": "action",
@@ -2060,7 +2236,7 @@
     ]
   },
   "66": {
-    "block_uuid": "fcbd0d74-ad61-4e96-a391-b6f9e5f75deb",
+    "block_uuid": "25cc2769-5c9e-4ade-b9f4-7f46ad4c3675",
     "question": [
       {
         "handler": "action",
@@ -2082,49 +2258,56 @@
     ]
   },
   "70": {
-    "block_uuid": "f70c7f55-9b75-4a51-a9aa-8099153a7155",
+    "block_uuid": "34ea94ca-2dcf-476d-8450-ce89cc840854",
     "question": [
       {
-        "handler": "list_message",
+        "handler": "send_message",
         "params": {
-          "list_message": {
-            "header": "",
-            "body": "Em qual estado? 📍 Toque em \"Ver opções\":",
-            "footer": "",
-            "button": "Ver opções",
-            "sections": [
-              {
-                "title": "Opções",
-                "rows": [
-                  {
-                    "callback_data": "94e54fc5-d505-49b4-9981-fbd50d84bfe1",
-                    "title": "MG · Minas Gerais",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "3f30d6d1-0607-4a33-ad59-89ce6e57205f",
-                    "title": "SP · São Paulo",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "974adeef-7c70-4a91-a71c-a9beca8b363d",
-                    "title": "RJ · Rio de Janeiro",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "bf15cdb1-c4f2-418b-928f-9bd9b098b4aa",
-                    "title": "ES · Espírito Santo",
-                    "description": ""
-                  }
-                ]
-              }
-            ]
-          },
+          "tag": "",
+          "text": "Em qual estado? 📍 Para responder, toque em uma das opções.",
+          "type": "external",
           "recipient": {
             "type": "all_contacts",
             "way_of_communication": "over_all"
           },
-          "disabled": false
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": false,
+          "on_error": {
+            "handler": "goto",
+            "params": {
+              "type": "question",
+              "step": 270
+            }
+          },
+          "chat_sources": [
+            {
+              "id": 23111950
+            },
+            {
+              "id": 23142026
+            },
+            {
+              "id": 23142030
+            }
+          ],
+          "buttons": [
+            {
+              "type": "inline",
+              "text": "MG"
+            },
+            {
+              "type": "inline",
+              "text": "SP"
+            },
+            {
+              "type": "inline",
+              "text": "RJ"
+            },
+            {
+              "type": "inline",
+              "text": "ES"
+            }
+          ]
         }
       }
     ],
@@ -2133,7 +2316,7 @@
         "handler": "buttons",
         "params": [
           {
-            "value": "94e54fc5-d505-49b4-9981-fbd50d84bfe1",
+            "value": "1a43a8dc-ff08-4c74-8576-070019cfef29",
             "params": [
               {
                 "handler": "goto",
@@ -2145,7 +2328,19 @@
             ]
           },
           {
-            "value": "3f30d6d1-0607-4a33-ad59-89ce6e57205f",
+            "value": "MG",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 100
+                }
+              }
+            ]
+          },
+          {
+            "value": "31c6c9f9-ebcc-48a7-8c63-0a6362e5dc9e",
             "params": [
               {
                 "handler": "goto",
@@ -2157,7 +2352,19 @@
             ]
           },
           {
-            "value": "974adeef-7c70-4a91-a71c-a9beca8b363d",
+            "value": "SP",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 101
+                }
+              }
+            ]
+          },
+          {
+            "value": "b7bad9a5-1875-4852-85ff-213f0037ab55",
             "params": [
               {
                 "handler": "goto",
@@ -2169,7 +2376,31 @@
             ]
           },
           {
-            "value": "bf15cdb1-c4f2-418b-928f-9bd9b098b4aa",
+            "value": "RJ",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 102
+                }
+              }
+            ]
+          },
+          {
+            "value": "fe236e12-8b0b-4ef8-99d0-f5e6582247f4",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 103
+                }
+              }
+            ]
+          },
+          {
+            "value": "ES",
             "params": [
               {
                 "handler": "goto",
@@ -2197,44 +2428,52 @@
     ]
   },
   "71": {
-    "block_uuid": "6b89abe6-14af-43a4-82a7-edb5b3013da8",
+    "block_uuid": "bb27a266-1790-44a2-8f29-39d0ced65420",
     "question": [
       {
-        "handler": "list_message",
+        "handler": "send_message",
         "params": {
-          "list_message": {
-            "header": "",
-            "body": "Em qual estado? 📍 Toque em \"Ver opções\":",
-            "footer": "",
-            "button": "Ver opções",
-            "sections": [
-              {
-                "title": "Opções",
-                "rows": [
-                  {
-                    "callback_data": "21e76d50-22b8-4aa4-a19b-963dedfe252c",
-                    "title": "PR · Paraná",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "6210a138-ada8-43a9-8761-6900b3246296",
-                    "title": "SC · Santa Catarina",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "bd892d81-96b7-4933-88af-5fca1a5176b7",
-                    "title": "RS · Rio Grande do Sul",
-                    "description": ""
-                  }
-                ]
-              }
-            ]
-          },
+          "tag": "",
+          "text": "Em qual estado? 📍 Para responder, toque em uma das opções.",
+          "type": "external",
           "recipient": {
             "type": "all_contacts",
             "way_of_communication": "over_all"
           },
-          "disabled": false
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": false,
+          "on_error": {
+            "handler": "goto",
+            "params": {
+              "type": "question",
+              "step": 271
+            }
+          },
+          "chat_sources": [
+            {
+              "id": 23111950
+            },
+            {
+              "id": 23142026
+            },
+            {
+              "id": 23142030
+            }
+          ],
+          "buttons": [
+            {
+              "type": "inline",
+              "text": "PR"
+            },
+            {
+              "type": "inline",
+              "text": "SC"
+            },
+            {
+              "type": "inline",
+              "text": "RS"
+            }
+          ]
         }
       }
     ],
@@ -2243,7 +2482,7 @@
         "handler": "buttons",
         "params": [
           {
-            "value": "21e76d50-22b8-4aa4-a19b-963dedfe252c",
+            "value": "645d7577-2889-468a-ab9f-1a25f82ea9d1",
             "params": [
               {
                 "handler": "goto",
@@ -2255,7 +2494,19 @@
             ]
           },
           {
-            "value": "6210a138-ada8-43a9-8761-6900b3246296",
+            "value": "PR",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 104
+                }
+              }
+            ]
+          },
+          {
+            "value": "c2165ccd-3f4f-428a-af13-acd71119d8f2",
             "params": [
               {
                 "handler": "goto",
@@ -2267,7 +2518,31 @@
             ]
           },
           {
-            "value": "bd892d81-96b7-4933-88af-5fca1a5176b7",
+            "value": "SC",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 105
+                }
+              }
+            ]
+          },
+          {
+            "value": "fc1f2efe-876c-4f03-95bc-7cbd7fa2ac2d",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 106
+                }
+              }
+            ]
+          },
+          {
+            "value": "RS",
             "params": [
               {
                 "handler": "goto",
@@ -2295,49 +2570,56 @@
     ]
   },
   "72": {
-    "block_uuid": "0529159a-e4a4-4fa0-af1d-ca7fe6177ace",
+    "block_uuid": "b5b49ab8-8c35-41ac-a00e-11bc9eaa4435",
     "question": [
       {
-        "handler": "list_message",
+        "handler": "send_message",
         "params": {
-          "list_message": {
-            "header": "",
-            "body": "Em qual estado? 📍 Toque em \"Ver opções\":",
-            "footer": "",
-            "button": "Ver opções",
-            "sections": [
-              {
-                "title": "Opções",
-                "rows": [
-                  {
-                    "callback_data": "cd69c1d6-ec27-4ad2-b61b-99cb8181d8be",
-                    "title": "GO · Goiás",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "83418c1a-5cf5-4b28-959c-09230990796e",
-                    "title": "MT · Mato Grosso",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "25adbd05-b905-4b69-9abe-0b6c0c36d710",
-                    "title": "MS · Mato Grosso do Sul",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "91fe460c-6597-46e5-8aa0-d1d3d98a7a39",
-                    "title": "DF · Distrito Federal",
-                    "description": ""
-                  }
-                ]
-              }
-            ]
-          },
+          "tag": "",
+          "text": "Em qual estado? 📍 Para responder, toque em uma das opções.",
+          "type": "external",
           "recipient": {
             "type": "all_contacts",
             "way_of_communication": "over_all"
           },
-          "disabled": false
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": false,
+          "on_error": {
+            "handler": "goto",
+            "params": {
+              "type": "question",
+              "step": 272
+            }
+          },
+          "chat_sources": [
+            {
+              "id": 23111950
+            },
+            {
+              "id": 23142026
+            },
+            {
+              "id": 23142030
+            }
+          ],
+          "buttons": [
+            {
+              "type": "inline",
+              "text": "GO"
+            },
+            {
+              "type": "inline",
+              "text": "MT"
+            },
+            {
+              "type": "inline",
+              "text": "MS"
+            },
+            {
+              "type": "inline",
+              "text": "DF"
+            }
+          ]
         }
       }
     ],
@@ -2346,7 +2628,7 @@
         "handler": "buttons",
         "params": [
           {
-            "value": "cd69c1d6-ec27-4ad2-b61b-99cb8181d8be",
+            "value": "90acdec3-d831-4af2-8d6b-95fb2eec895a",
             "params": [
               {
                 "handler": "goto",
@@ -2358,7 +2640,19 @@
             ]
           },
           {
-            "value": "83418c1a-5cf5-4b28-959c-09230990796e",
+            "value": "GO",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 107
+                }
+              }
+            ]
+          },
+          {
+            "value": "b7d183ba-c90f-405e-8598-dfd11eeebd14",
             "params": [
               {
                 "handler": "goto",
@@ -2370,7 +2664,19 @@
             ]
           },
           {
-            "value": "25adbd05-b905-4b69-9abe-0b6c0c36d710",
+            "value": "MT",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 108
+                }
+              }
+            ]
+          },
+          {
+            "value": "acdfa712-2fde-479e-86c0-83fe9746b106",
             "params": [
               {
                 "handler": "goto",
@@ -2382,7 +2688,31 @@
             ]
           },
           {
-            "value": "91fe460c-6597-46e5-8aa0-d1d3d98a7a39",
+            "value": "MS",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 109
+                }
+              }
+            ]
+          },
+          {
+            "value": "35eda287-c3f0-46d4-9b57-802d53a1185e",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 110
+                }
+              }
+            ]
+          },
+          {
+            "value": "DF",
             "params": [
               {
                 "handler": "goto",
@@ -2410,74 +2740,76 @@
     ]
   },
   "73": {
-    "block_uuid": "67a25df5-ae77-40df-8aee-07803e497daf",
+    "block_uuid": "7b2c5771-8d2a-4d86-a707-41dce1006447",
     "question": [
       {
-        "handler": "list_message",
+        "handler": "send_message",
         "params": {
-          "list_message": {
-            "header": "",
-            "body": "Em qual estado? 📍 Toque em \"Ver opções\":",
-            "footer": "",
-            "button": "Ver opções",
-            "sections": [
-              {
-                "title": "Opções",
-                "rows": [
-                  {
-                    "callback_data": "f79ddcb9-3caf-4b94-93fe-7575fffd53f8",
-                    "title": "BA · Bahia",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "7081b758-8eb5-4ee4-b0b7-b0c28e58f1fd",
-                    "title": "PE · Pernambuco",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "3881e542-27ef-4992-a33b-82c75bee8da5",
-                    "title": "CE · Ceará",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "38003bd9-4298-4b45-9a4d-2eb596a47256",
-                    "title": "MA · Maranhão",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "a7d02e0a-2d97-4b7c-9a92-5036c41941b4",
-                    "title": "PB · Paraíba",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "7f53222a-6e8a-48f1-ab09-778428c99d36",
-                    "title": "RN · Rio Grande do Norte",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "57450aff-1aa7-4890-874f-a46ddd6c0d6c",
-                    "title": "AL · Alagoas",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "892e185d-bf6a-4bf5-8f48-0b0685a28091",
-                    "title": "PI · Piauí",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "3024b1d5-b8cc-4820-8add-7c1e16019ee2",
-                    "title": "SE · Sergipe",
-                    "description": ""
-                  }
-                ]
-              }
-            ]
-          },
+          "tag": "",
+          "text": "Em qual estado? 📍 Para responder, toque em uma das opções.",
+          "type": "external",
           "recipient": {
             "type": "all_contacts",
             "way_of_communication": "over_all"
           },
-          "disabled": false
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": false,
+          "on_error": {
+            "handler": "goto",
+            "params": {
+              "type": "question",
+              "step": 273
+            }
+          },
+          "chat_sources": [
+            {
+              "id": 23111950
+            },
+            {
+              "id": 23142026
+            },
+            {
+              "id": 23142030
+            }
+          ],
+          "buttons": [
+            {
+              "type": "inline",
+              "text": "BA"
+            },
+            {
+              "type": "inline",
+              "text": "PE"
+            },
+            {
+              "type": "inline",
+              "text": "CE"
+            },
+            {
+              "type": "inline",
+              "text": "MA"
+            },
+            {
+              "type": "inline",
+              "text": "PB"
+            },
+            {
+              "type": "inline",
+              "text": "RN"
+            },
+            {
+              "type": "inline",
+              "text": "AL"
+            },
+            {
+              "type": "inline",
+              "text": "PI"
+            },
+            {
+              "type": "inline",
+              "text": "SE"
+            }
+          ]
         }
       }
     ],
@@ -2486,7 +2818,7 @@
         "handler": "buttons",
         "params": [
           {
-            "value": "f79ddcb9-3caf-4b94-93fe-7575fffd53f8",
+            "value": "7d8905bf-dc00-4a1b-a5ca-3469a549868c",
             "params": [
               {
                 "handler": "goto",
@@ -2498,7 +2830,19 @@
             ]
           },
           {
-            "value": "7081b758-8eb5-4ee4-b0b7-b0c28e58f1fd",
+            "value": "BA",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 111
+                }
+              }
+            ]
+          },
+          {
+            "value": "b99f711e-64a1-4bfb-a595-5fd653fc9930",
             "params": [
               {
                 "handler": "goto",
@@ -2510,7 +2854,19 @@
             ]
           },
           {
-            "value": "3881e542-27ef-4992-a33b-82c75bee8da5",
+            "value": "PE",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 112
+                }
+              }
+            ]
+          },
+          {
+            "value": "143220c0-7eb1-4aaf-8086-f528dd46b11a",
             "params": [
               {
                 "handler": "goto",
@@ -2522,7 +2878,19 @@
             ]
           },
           {
-            "value": "38003bd9-4298-4b45-9a4d-2eb596a47256",
+            "value": "CE",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 113
+                }
+              }
+            ]
+          },
+          {
+            "value": "e8e1cdce-27c6-4dca-a83a-d650f66771c7",
             "params": [
               {
                 "handler": "goto",
@@ -2534,7 +2902,19 @@
             ]
           },
           {
-            "value": "a7d02e0a-2d97-4b7c-9a92-5036c41941b4",
+            "value": "MA",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 114
+                }
+              }
+            ]
+          },
+          {
+            "value": "52155bf9-5005-4e40-9e18-7d5b14ceb203",
             "params": [
               {
                 "handler": "goto",
@@ -2546,7 +2926,19 @@
             ]
           },
           {
-            "value": "7f53222a-6e8a-48f1-ab09-778428c99d36",
+            "value": "PB",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 115
+                }
+              }
+            ]
+          },
+          {
+            "value": "726a5e3d-4f10-4351-9b19-e1c28b60663b",
             "params": [
               {
                 "handler": "goto",
@@ -2558,7 +2950,19 @@
             ]
           },
           {
-            "value": "57450aff-1aa7-4890-874f-a46ddd6c0d6c",
+            "value": "RN",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 116
+                }
+              }
+            ]
+          },
+          {
+            "value": "b5886059-6d06-497e-ae6c-d6308ec320aa",
             "params": [
               {
                 "handler": "goto",
@@ -2570,7 +2974,19 @@
             ]
           },
           {
-            "value": "892e185d-bf6a-4bf5-8f48-0b0685a28091",
+            "value": "AL",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 117
+                }
+              }
+            ]
+          },
+          {
+            "value": "433d4b06-1d96-48bc-a1ee-d2234f3dfa12",
             "params": [
               {
                 "handler": "goto",
@@ -2582,7 +2998,31 @@
             ]
           },
           {
-            "value": "3024b1d5-b8cc-4820-8add-7c1e16019ee2",
+            "value": "PI",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 118
+                }
+              }
+            ]
+          },
+          {
+            "value": "ef348a2b-3a67-407c-a28b-b56994f0c90c",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 119
+                }
+              }
+            ]
+          },
+          {
+            "value": "SE",
             "params": [
               {
                 "handler": "goto",
@@ -2610,64 +3050,68 @@
     ]
   },
   "74": {
-    "block_uuid": "22ce3b09-9c69-4bb2-9cc5-20f7d9e38eb9",
+    "block_uuid": "1c6b8e54-da5b-460d-a94f-4310308260ec",
     "question": [
       {
-        "handler": "list_message",
+        "handler": "send_message",
         "params": {
-          "list_message": {
-            "header": "",
-            "body": "Em qual estado? 📍 Toque em \"Ver opções\":",
-            "footer": "",
-            "button": "Ver opções",
-            "sections": [
-              {
-                "title": "Opções",
-                "rows": [
-                  {
-                    "callback_data": "a383089a-3ab9-4fe5-8de0-1f9cffca1184",
-                    "title": "PA · Pará",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "c10b4c3f-7947-469d-9743-f72e84dc2bac",
-                    "title": "AM · Amazonas",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "1c151562-fba3-46bb-941d-7def033f91f8",
-                    "title": "RO · Rondônia",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "5add4d7c-6360-435d-bcab-29828b7b1d01",
-                    "title": "TO · Tocantins",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "1b50f254-4031-46b0-a75a-19eed83b56d9",
-                    "title": "AC · Acre",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "e889ee2a-b498-4b13-babd-33a4b4017064",
-                    "title": "AP · Amapá",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "4a189b5e-2a84-4b9c-a964-e89cb3f72d1f",
-                    "title": "RR · Roraima",
-                    "description": ""
-                  }
-                ]
-              }
-            ]
-          },
+          "tag": "",
+          "text": "Em qual estado? 📍 Para responder, toque em uma das opções.",
+          "type": "external",
           "recipient": {
             "type": "all_contacts",
             "way_of_communication": "over_all"
           },
-          "disabled": false
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": false,
+          "on_error": {
+            "handler": "goto",
+            "params": {
+              "type": "question",
+              "step": 274
+            }
+          },
+          "chat_sources": [
+            {
+              "id": 23111950
+            },
+            {
+              "id": 23142026
+            },
+            {
+              "id": 23142030
+            }
+          ],
+          "buttons": [
+            {
+              "type": "inline",
+              "text": "PA"
+            },
+            {
+              "type": "inline",
+              "text": "AM"
+            },
+            {
+              "type": "inline",
+              "text": "RO"
+            },
+            {
+              "type": "inline",
+              "text": "TO"
+            },
+            {
+              "type": "inline",
+              "text": "AC"
+            },
+            {
+              "type": "inline",
+              "text": "AP"
+            },
+            {
+              "type": "inline",
+              "text": "RR"
+            }
+          ]
         }
       }
     ],
@@ -2676,7 +3120,7 @@
         "handler": "buttons",
         "params": [
           {
-            "value": "a383089a-3ab9-4fe5-8de0-1f9cffca1184",
+            "value": "7172e556-f065-4614-92a4-36120e6688a7",
             "params": [
               {
                 "handler": "goto",
@@ -2688,7 +3132,19 @@
             ]
           },
           {
-            "value": "c10b4c3f-7947-469d-9743-f72e84dc2bac",
+            "value": "PA",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 120
+                }
+              }
+            ]
+          },
+          {
+            "value": "d63787c0-ed56-498f-bc42-3066af0e20d4",
             "params": [
               {
                 "handler": "goto",
@@ -2700,7 +3156,19 @@
             ]
           },
           {
-            "value": "1c151562-fba3-46bb-941d-7def033f91f8",
+            "value": "AM",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 121
+                }
+              }
+            ]
+          },
+          {
+            "value": "dd457b25-f4cc-475f-a332-44b042136e25",
             "params": [
               {
                 "handler": "goto",
@@ -2712,7 +3180,19 @@
             ]
           },
           {
-            "value": "5add4d7c-6360-435d-bcab-29828b7b1d01",
+            "value": "RO",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 122
+                }
+              }
+            ]
+          },
+          {
+            "value": "0bb80659-c24e-4225-ad89-fd35269068c8",
             "params": [
               {
                 "handler": "goto",
@@ -2724,7 +3204,19 @@
             ]
           },
           {
-            "value": "1b50f254-4031-46b0-a75a-19eed83b56d9",
+            "value": "TO",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 123
+                }
+              }
+            ]
+          },
+          {
+            "value": "7300696b-19cf-45c5-950f-d649e919175c",
             "params": [
               {
                 "handler": "goto",
@@ -2736,7 +3228,19 @@
             ]
           },
           {
-            "value": "e889ee2a-b498-4b13-babd-33a4b4017064",
+            "value": "AC",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 124
+                }
+              }
+            ]
+          },
+          {
+            "value": "8f37d12c-7d9b-491e-811f-ad76c1a24e3b",
             "params": [
               {
                 "handler": "goto",
@@ -2748,7 +3252,31 @@
             ]
           },
           {
-            "value": "4a189b5e-2a84-4b9c-a964-e89cb3f72d1f",
+            "value": "AP",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 125
+                }
+              }
+            ]
+          },
+          {
+            "value": "20ca4954-f6a1-4cf3-bd8b-473bd91a4039",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 126
+                }
+              }
+            ]
+          },
+          {
+            "value": "RR",
             "params": [
               {
                 "handler": "goto",
@@ -2776,7 +3304,7 @@
     ]
   },
   "100": {
-    "block_uuid": "1cd47efd-f7ed-43f0-ab7c-982ed071015e",
+    "block_uuid": "ac6c16d2-1040-4e8c-85e9-b50ae7bcd8c8",
     "question": [
       {
         "handler": "action",
@@ -2798,7 +3326,7 @@
     ]
   },
   "101": {
-    "block_uuid": "dc4ce949-30a7-443e-924c-9c56fb838e60",
+    "block_uuid": "22c64181-47c0-482d-b1c7-0e52648a1d9e",
     "question": [
       {
         "handler": "action",
@@ -2820,7 +3348,7 @@
     ]
   },
   "102": {
-    "block_uuid": "3c580b85-1322-4cc9-8ae9-e493016da20f",
+    "block_uuid": "2466c2f8-ccc5-4020-9389-877b3fc0a7c4",
     "question": [
       {
         "handler": "action",
@@ -2842,7 +3370,7 @@
     ]
   },
   "103": {
-    "block_uuid": "cf47d059-7553-4f90-9534-d8177f2c87c7",
+    "block_uuid": "5c09b0bd-5d14-4423-bfa5-015c7158cab8",
     "question": [
       {
         "handler": "action",
@@ -2864,7 +3392,7 @@
     ]
   },
   "104": {
-    "block_uuid": "5d5a6328-07fd-440e-a4a5-fef3391ab507",
+    "block_uuid": "7f032d35-f432-44d4-a044-4d4a44be6d9a",
     "question": [
       {
         "handler": "action",
@@ -2886,7 +3414,7 @@
     ]
   },
   "105": {
-    "block_uuid": "b539e710-d30b-4d7f-bd5d-a292d0e1d21b",
+    "block_uuid": "3f94a9c9-42f1-4771-a38f-96ea14a43507",
     "question": [
       {
         "handler": "action",
@@ -2908,7 +3436,7 @@
     ]
   },
   "106": {
-    "block_uuid": "20995421-9188-4c07-99f5-058256edc8b2",
+    "block_uuid": "68a3e139-0581-4cf4-96f6-54339a04510d",
     "question": [
       {
         "handler": "action",
@@ -2930,7 +3458,7 @@
     ]
   },
   "107": {
-    "block_uuid": "b136c896-b5bf-4c75-9d55-e3e6caf8debb",
+    "block_uuid": "ad85d8e3-c349-4928-a622-f8b29572070e",
     "question": [
       {
         "handler": "action",
@@ -2952,7 +3480,7 @@
     ]
   },
   "108": {
-    "block_uuid": "b04001f0-89e3-417c-93ae-889189382c84",
+    "block_uuid": "77491a35-1915-4911-856e-ca5be6e116c4",
     "question": [
       {
         "handler": "action",
@@ -2974,7 +3502,7 @@
     ]
   },
   "109": {
-    "block_uuid": "98189120-9a43-4cd5-88af-57aeb0003e86",
+    "block_uuid": "1351a610-cd2e-4d64-8802-b514f048b3e7",
     "question": [
       {
         "handler": "action",
@@ -2996,7 +3524,7 @@
     ]
   },
   "110": {
-    "block_uuid": "6bc5ca2f-e799-4628-9b26-1736910868aa",
+    "block_uuid": "653c011a-abfd-400a-b081-6aae2cf5c9d5",
     "question": [
       {
         "handler": "action",
@@ -3018,7 +3546,7 @@
     ]
   },
   "111": {
-    "block_uuid": "8c6b4dd9-e107-4fd5-8559-d863d44de8dd",
+    "block_uuid": "2a50c2bd-18b2-4fd4-a4dd-7861e1e51d17",
     "question": [
       {
         "handler": "action",
@@ -3040,7 +3568,7 @@
     ]
   },
   "112": {
-    "block_uuid": "f5a265eb-7959-43ab-bbb6-2618c9b2a822",
+    "block_uuid": "611efed0-65e3-4c67-8be6-9079d358a927",
     "question": [
       {
         "handler": "action",
@@ -3062,7 +3590,7 @@
     ]
   },
   "113": {
-    "block_uuid": "d493433d-619e-4e76-ba61-833e81c3d58c",
+    "block_uuid": "38272508-fdf2-42b8-9df9-66daae5041b2",
     "question": [
       {
         "handler": "action",
@@ -3084,7 +3612,7 @@
     ]
   },
   "114": {
-    "block_uuid": "ef2c53b1-60dd-4376-8630-931d2bc301c1",
+    "block_uuid": "f634fdee-0785-48e9-ac87-bd0f5f7976e6",
     "question": [
       {
         "handler": "action",
@@ -3106,7 +3634,7 @@
     ]
   },
   "115": {
-    "block_uuid": "615f50ab-8f8c-44d0-bc69-f5b52275dbe1",
+    "block_uuid": "758baa74-db1c-4b51-83f1-4edc20397e9a",
     "question": [
       {
         "handler": "action",
@@ -3128,7 +3656,7 @@
     ]
   },
   "116": {
-    "block_uuid": "c1c0d3cc-04bd-4404-b2fc-535076cba1bf",
+    "block_uuid": "b8afc998-645f-4e4d-bdcd-a3645f61e5e0",
     "question": [
       {
         "handler": "action",
@@ -3150,7 +3678,7 @@
     ]
   },
   "117": {
-    "block_uuid": "6a0424d3-9202-45f6-af9d-84e88c4251e2",
+    "block_uuid": "61de8ceb-817c-432d-aee2-2dc011403379",
     "question": [
       {
         "handler": "action",
@@ -3172,7 +3700,7 @@
     ]
   },
   "118": {
-    "block_uuid": "b0404a13-5e3d-4150-8c24-d445506f295c",
+    "block_uuid": "3d39bc5c-a2a1-474a-9623-139a5309694e",
     "question": [
       {
         "handler": "action",
@@ -3194,7 +3722,7 @@
     ]
   },
   "119": {
-    "block_uuid": "0c547b09-f3e3-4720-ab3c-0ab3e3459979",
+    "block_uuid": "b0dd8ff6-8b1f-4dbe-86ba-a79a67cbf972",
     "question": [
       {
         "handler": "action",
@@ -3216,7 +3744,7 @@
     ]
   },
   "120": {
-    "block_uuid": "cc7bd6dd-b59c-428e-8a01-bd3d77ed6dd2",
+    "block_uuid": "944f11f2-4093-4d22-87b4-6f426b05e43d",
     "question": [
       {
         "handler": "action",
@@ -3238,7 +3766,7 @@
     ]
   },
   "121": {
-    "block_uuid": "5a396848-65a3-4290-bcff-4b502784f768",
+    "block_uuid": "82488ca2-3da4-4401-a14c-7000bb242d76",
     "question": [
       {
         "handler": "action",
@@ -3260,7 +3788,7 @@
     ]
   },
   "122": {
-    "block_uuid": "b4787d85-d574-47bd-946d-4b8665df039c",
+    "block_uuid": "35317b10-16f8-499d-b006-687443b1285c",
     "question": [
       {
         "handler": "action",
@@ -3282,7 +3810,7 @@
     ]
   },
   "123": {
-    "block_uuid": "fe58c6b5-0173-49b7-ac37-cb35c5fcdf42",
+    "block_uuid": "5971c46a-7281-4b5d-8366-d5e6465f25ef",
     "question": [
       {
         "handler": "action",
@@ -3304,7 +3832,7 @@
     ]
   },
   "124": {
-    "block_uuid": "c5b9230d-4679-4f95-8dfb-360760c62f69",
+    "block_uuid": "7ea68d88-f4eb-411e-a96f-3e586667e729",
     "question": [
       {
         "handler": "action",
@@ -3326,7 +3854,7 @@
     ]
   },
   "125": {
-    "block_uuid": "961d61ba-653f-4ca7-b71e-19d7adf551d6",
+    "block_uuid": "5f27992b-d90b-4575-8703-e13772e9963c",
     "question": [
       {
         "handler": "action",
@@ -3348,7 +3876,7 @@
     ]
   },
   "126": {
-    "block_uuid": "c10a81e5-1bf9-4403-94ca-072d5d2316d9",
+    "block_uuid": "8e2f2c5f-59b0-4b9b-bbf3-c7bbc3820a72",
     "question": [
       {
         "handler": "action",
@@ -3366,6 +3894,1582 @@
           "type": "question",
           "step": 63
         }
+      }
+    ]
+  },
+  "200": {
+    "block_uuid": "143b388f-055e-43ea-9d71-91a58e82f3be",
+    "question": [
+      {
+        "handler": "list_message",
+        "params": {
+          "list_message": {
+            "header": "",
+            "body": "Olá! ✨ Sou a Lyra, assistente virtual da Minasflor, e atendo as marcas BY.MF, Minasflor e MF.PRO. Para direcionar o seu atendimento, toque em \"Ver opções\" para selecionar o seu perfil. Se preferir falar com a nossa equipe, é só escrever \"atendente\".",
+            "footer": "",
+            "button": "Ver opções",
+            "sections": [
+              {
+                "title": "Opções",
+                "rows": [
+                  {
+                    "callback_data": "416ae88e-cbbe-4088-b819-cdea02578c36",
+                    "title": "Uso em casa",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "21521018-3e25-4b77-863b-4bffd88b2baa",
+                    "title": "Tenho salão",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "e7fbfd24-9065-49eb-b1c4-044c52fbf574",
+                    "title": "Revendo/distribuo",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "64bb70b4-5108-4826-9133-c94a368e59e1",
+                    "title": "Já sou cliente",
+                    "description": ""
+                  }
+                ]
+              }
+            ]
+          },
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "chat_sources": [
+            {
+              "id": 23132910
+            }
+          ],
+          "disabled": false
+        }
+      }
+    ],
+    "answer": [
+      {
+        "handler": "buttons",
+        "params": [
+          {
+            "value": "416ae88e-cbbe-4088-b819-cdea02578c36",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 10
+                }
+              }
+            ]
+          },
+          {
+            "value": "Uso em casa",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 10
+                }
+              }
+            ]
+          },
+          {
+            "value": "21521018-3e25-4b77-863b-4bffd88b2baa",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 20
+                }
+              }
+            ]
+          },
+          {
+            "value": "Tenho salão",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 20
+                }
+              }
+            ]
+          },
+          {
+            "value": "e7fbfd24-9065-49eb-b1c4-044c52fbf574",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 30
+                }
+              }
+            ]
+          },
+          {
+            "value": "Revendo/distribuo",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 30
+                }
+              }
+            ]
+          },
+          {
+            "value": "64bb70b4-5108-4826-9133-c94a368e59e1",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 40
+                }
+              }
+            ]
+          },
+          {
+            "value": "Já sou cliente",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 40
+                }
+              }
+            ]
+          },
+          {
+            "type": "else",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 53
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "237": {
+    "block_uuid": "a6be2dd2-07c2-47f1-9cd6-9961d80ea242",
+    "question": [
+      {
+        "handler": "list_message",
+        "params": {
+          "list_message": {
+            "header": "",
+            "body": "Em qual região você pretende atuar? 📍 Para responder, toque em \"Ver opções\".",
+            "footer": "",
+            "button": "Ver opções",
+            "sections": [
+              {
+                "title": "Opções",
+                "rows": [
+                  {
+                    "callback_data": "fd77e554-c4a0-4bbd-9fbf-f814a1cc0ad6",
+                    "title": "Sudeste",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "402524ad-ea4c-4d90-8328-22b5a5f6a6b4",
+                    "title": "Sul",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "1a5bc228-f532-4f26-ad5c-b319c20ee2e7",
+                    "title": "Centro-Oeste",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "7e12db33-fc36-4d5a-b2e0-3aa33f5f8fde",
+                    "title": "Nordeste",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "81ca4cc2-c8f4-4d44-a229-b64c55655d40",
+                    "title": "Norte",
+                    "description": ""
+                  }
+                ]
+              }
+            ]
+          },
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "chat_sources": [
+            {
+              "id": 23132910
+            }
+          ],
+          "disabled": false
+        }
+      }
+    ],
+    "answer": [
+      {
+        "handler": "buttons",
+        "params": [
+          {
+            "value": "fd77e554-c4a0-4bbd-9fbf-f814a1cc0ad6",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 70
+                }
+              }
+            ]
+          },
+          {
+            "value": "Sudeste",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 70
+                }
+              }
+            ]
+          },
+          {
+            "value": "402524ad-ea4c-4d90-8328-22b5a5f6a6b4",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 71
+                }
+              }
+            ]
+          },
+          {
+            "value": "Sul",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 71
+                }
+              }
+            ]
+          },
+          {
+            "value": "1a5bc228-f532-4f26-ad5c-b319c20ee2e7",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 72
+                }
+              }
+            ]
+          },
+          {
+            "value": "Centro-Oeste",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 72
+                }
+              }
+            ]
+          },
+          {
+            "value": "7e12db33-fc36-4d5a-b2e0-3aa33f5f8fde",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 73
+                }
+              }
+            ]
+          },
+          {
+            "value": "Nordeste",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 73
+                }
+              }
+            ]
+          },
+          {
+            "value": "81ca4cc2-c8f4-4d44-a229-b64c55655d40",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 74
+                }
+              }
+            ]
+          },
+          {
+            "value": "Norte",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 74
+                }
+              }
+            ]
+          },
+          {
+            "type": "else",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 37
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "250": {
+    "block_uuid": "a6125dc0-f7fb-4769-afb1-b95eb41965f2",
+    "question": [
+      {
+        "handler": "list_message",
+        "params": {
+          "list_message": {
+            "header": "",
+            "body": "Para seguir com o atendimento, toque em \"Ver opções\" 👇",
+            "footer": "",
+            "button": "Ver opções",
+            "sections": [
+              {
+                "title": "Opções",
+                "rows": [
+                  {
+                    "callback_data": "416ae88e-cbbe-4088-b819-cdea02578c36",
+                    "title": "Uso em casa",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "21521018-3e25-4b77-863b-4bffd88b2baa",
+                    "title": "Tenho salão",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "e7fbfd24-9065-49eb-b1c4-044c52fbf574",
+                    "title": "Revendo/distribuo",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "64bb70b4-5108-4826-9133-c94a368e59e1",
+                    "title": "Já sou cliente",
+                    "description": ""
+                  }
+                ]
+              }
+            ]
+          },
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "chat_sources": [
+            {
+              "id": 23132910
+            }
+          ],
+          "disabled": false
+        }
+      }
+    ],
+    "answer": [
+      {
+        "handler": "buttons",
+        "params": [
+          {
+            "value": "416ae88e-cbbe-4088-b819-cdea02578c36",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 10
+                }
+              }
+            ]
+          },
+          {
+            "value": "Uso em casa",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 10
+                }
+              }
+            ]
+          },
+          {
+            "value": "21521018-3e25-4b77-863b-4bffd88b2baa",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 20
+                }
+              }
+            ]
+          },
+          {
+            "value": "Tenho salão",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 20
+                }
+              }
+            ]
+          },
+          {
+            "value": "e7fbfd24-9065-49eb-b1c4-044c52fbf574",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 30
+                }
+              }
+            ]
+          },
+          {
+            "value": "Revendo/distribuo",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 30
+                }
+              }
+            ]
+          },
+          {
+            "value": "64bb70b4-5108-4826-9133-c94a368e59e1",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 40
+                }
+              }
+            ]
+          },
+          {
+            "value": "Já sou cliente",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 40
+                }
+              }
+            ]
+          },
+          {
+            "type": "else",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 53
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "270": {
+    "block_uuid": "9bfdab26-2f78-4f9f-a31d-bf58e0ad906a",
+    "question": [
+      {
+        "handler": "list_message",
+        "params": {
+          "list_message": {
+            "header": "",
+            "body": "Em qual estado? 📍 Para responder, toque em \"Ver opções\".",
+            "footer": "",
+            "button": "Ver opções",
+            "sections": [
+              {
+                "title": "Opções",
+                "rows": [
+                  {
+                    "callback_data": "1a43a8dc-ff08-4c74-8576-070019cfef29",
+                    "title": "MG · Minas Gerais",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "31c6c9f9-ebcc-48a7-8c63-0a6362e5dc9e",
+                    "title": "SP · São Paulo",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "b7bad9a5-1875-4852-85ff-213f0037ab55",
+                    "title": "RJ · Rio de Janeiro",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "fe236e12-8b0b-4ef8-99d0-f5e6582247f4",
+                    "title": "ES · Espírito Santo",
+                    "description": ""
+                  }
+                ]
+              }
+            ]
+          },
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "chat_sources": [
+            {
+              "id": 23132910
+            }
+          ],
+          "disabled": false
+        }
+      }
+    ],
+    "answer": [
+      {
+        "handler": "buttons",
+        "params": [
+          {
+            "value": "1a43a8dc-ff08-4c74-8576-070019cfef29",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 100
+                }
+              }
+            ]
+          },
+          {
+            "value": "MG",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 100
+                }
+              }
+            ]
+          },
+          {
+            "value": "31c6c9f9-ebcc-48a7-8c63-0a6362e5dc9e",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 101
+                }
+              }
+            ]
+          },
+          {
+            "value": "SP",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 101
+                }
+              }
+            ]
+          },
+          {
+            "value": "b7bad9a5-1875-4852-85ff-213f0037ab55",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 102
+                }
+              }
+            ]
+          },
+          {
+            "value": "RJ",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 102
+                }
+              }
+            ]
+          },
+          {
+            "value": "fe236e12-8b0b-4ef8-99d0-f5e6582247f4",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 103
+                }
+              }
+            ]
+          },
+          {
+            "value": "ES",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 103
+                }
+              }
+            ]
+          },
+          {
+            "type": "else",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 70
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "271": {
+    "block_uuid": "b4b136b0-e4cf-4d37-bc9f-d6387308b86f",
+    "question": [
+      {
+        "handler": "list_message",
+        "params": {
+          "list_message": {
+            "header": "",
+            "body": "Em qual estado? 📍 Para responder, toque em \"Ver opções\".",
+            "footer": "",
+            "button": "Ver opções",
+            "sections": [
+              {
+                "title": "Opções",
+                "rows": [
+                  {
+                    "callback_data": "645d7577-2889-468a-ab9f-1a25f82ea9d1",
+                    "title": "PR · Paraná",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "c2165ccd-3f4f-428a-af13-acd71119d8f2",
+                    "title": "SC · Santa Catarina",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "fc1f2efe-876c-4f03-95bc-7cbd7fa2ac2d",
+                    "title": "RS · Rio Grande do Sul",
+                    "description": ""
+                  }
+                ]
+              }
+            ]
+          },
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "chat_sources": [
+            {
+              "id": 23132910
+            }
+          ],
+          "disabled": false
+        }
+      }
+    ],
+    "answer": [
+      {
+        "handler": "buttons",
+        "params": [
+          {
+            "value": "645d7577-2889-468a-ab9f-1a25f82ea9d1",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 104
+                }
+              }
+            ]
+          },
+          {
+            "value": "PR",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 104
+                }
+              }
+            ]
+          },
+          {
+            "value": "c2165ccd-3f4f-428a-af13-acd71119d8f2",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 105
+                }
+              }
+            ]
+          },
+          {
+            "value": "SC",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 105
+                }
+              }
+            ]
+          },
+          {
+            "value": "fc1f2efe-876c-4f03-95bc-7cbd7fa2ac2d",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 106
+                }
+              }
+            ]
+          },
+          {
+            "value": "RS",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 106
+                }
+              }
+            ]
+          },
+          {
+            "type": "else",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 71
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "272": {
+    "block_uuid": "686304ba-ab35-4e95-a639-0d982c930ff3",
+    "question": [
+      {
+        "handler": "list_message",
+        "params": {
+          "list_message": {
+            "header": "",
+            "body": "Em qual estado? 📍 Para responder, toque em \"Ver opções\".",
+            "footer": "",
+            "button": "Ver opções",
+            "sections": [
+              {
+                "title": "Opções",
+                "rows": [
+                  {
+                    "callback_data": "90acdec3-d831-4af2-8d6b-95fb2eec895a",
+                    "title": "GO · Goiás",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "b7d183ba-c90f-405e-8598-dfd11eeebd14",
+                    "title": "MT · Mato Grosso",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "acdfa712-2fde-479e-86c0-83fe9746b106",
+                    "title": "MS · Mato Grosso do Sul",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "35eda287-c3f0-46d4-9b57-802d53a1185e",
+                    "title": "DF · Distrito Federal",
+                    "description": ""
+                  }
+                ]
+              }
+            ]
+          },
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "chat_sources": [
+            {
+              "id": 23132910
+            }
+          ],
+          "disabled": false
+        }
+      }
+    ],
+    "answer": [
+      {
+        "handler": "buttons",
+        "params": [
+          {
+            "value": "90acdec3-d831-4af2-8d6b-95fb2eec895a",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 107
+                }
+              }
+            ]
+          },
+          {
+            "value": "GO",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 107
+                }
+              }
+            ]
+          },
+          {
+            "value": "b7d183ba-c90f-405e-8598-dfd11eeebd14",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 108
+                }
+              }
+            ]
+          },
+          {
+            "value": "MT",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 108
+                }
+              }
+            ]
+          },
+          {
+            "value": "acdfa712-2fde-479e-86c0-83fe9746b106",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 109
+                }
+              }
+            ]
+          },
+          {
+            "value": "MS",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 109
+                }
+              }
+            ]
+          },
+          {
+            "value": "35eda287-c3f0-46d4-9b57-802d53a1185e",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 110
+                }
+              }
+            ]
+          },
+          {
+            "value": "DF",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 110
+                }
+              }
+            ]
+          },
+          {
+            "type": "else",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 72
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "273": {
+    "block_uuid": "42ebf26a-48bf-49d7-a3c9-8aad45f51498",
+    "question": [
+      {
+        "handler": "list_message",
+        "params": {
+          "list_message": {
+            "header": "",
+            "body": "Em qual estado? 📍 Para responder, toque em \"Ver opções\".",
+            "footer": "",
+            "button": "Ver opções",
+            "sections": [
+              {
+                "title": "Opções",
+                "rows": [
+                  {
+                    "callback_data": "7d8905bf-dc00-4a1b-a5ca-3469a549868c",
+                    "title": "BA · Bahia",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "b99f711e-64a1-4bfb-a595-5fd653fc9930",
+                    "title": "PE · Pernambuco",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "143220c0-7eb1-4aaf-8086-f528dd46b11a",
+                    "title": "CE · Ceará",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "e8e1cdce-27c6-4dca-a83a-d650f66771c7",
+                    "title": "MA · Maranhão",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "52155bf9-5005-4e40-9e18-7d5b14ceb203",
+                    "title": "PB · Paraíba",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "726a5e3d-4f10-4351-9b19-e1c28b60663b",
+                    "title": "RN · Rio Grande do Norte",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "b5886059-6d06-497e-ae6c-d6308ec320aa",
+                    "title": "AL · Alagoas",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "433d4b06-1d96-48bc-a1ee-d2234f3dfa12",
+                    "title": "PI · Piauí",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "ef348a2b-3a67-407c-a28b-b56994f0c90c",
+                    "title": "SE · Sergipe",
+                    "description": ""
+                  }
+                ]
+              }
+            ]
+          },
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "chat_sources": [
+            {
+              "id": 23132910
+            }
+          ],
+          "disabled": false
+        }
+      }
+    ],
+    "answer": [
+      {
+        "handler": "buttons",
+        "params": [
+          {
+            "value": "7d8905bf-dc00-4a1b-a5ca-3469a549868c",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 111
+                }
+              }
+            ]
+          },
+          {
+            "value": "BA",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 111
+                }
+              }
+            ]
+          },
+          {
+            "value": "b99f711e-64a1-4bfb-a595-5fd653fc9930",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 112
+                }
+              }
+            ]
+          },
+          {
+            "value": "PE",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 112
+                }
+              }
+            ]
+          },
+          {
+            "value": "143220c0-7eb1-4aaf-8086-f528dd46b11a",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 113
+                }
+              }
+            ]
+          },
+          {
+            "value": "CE",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 113
+                }
+              }
+            ]
+          },
+          {
+            "value": "e8e1cdce-27c6-4dca-a83a-d650f66771c7",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 114
+                }
+              }
+            ]
+          },
+          {
+            "value": "MA",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 114
+                }
+              }
+            ]
+          },
+          {
+            "value": "52155bf9-5005-4e40-9e18-7d5b14ceb203",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 115
+                }
+              }
+            ]
+          },
+          {
+            "value": "PB",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 115
+                }
+              }
+            ]
+          },
+          {
+            "value": "726a5e3d-4f10-4351-9b19-e1c28b60663b",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 116
+                }
+              }
+            ]
+          },
+          {
+            "value": "RN",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 116
+                }
+              }
+            ]
+          },
+          {
+            "value": "b5886059-6d06-497e-ae6c-d6308ec320aa",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 117
+                }
+              }
+            ]
+          },
+          {
+            "value": "AL",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 117
+                }
+              }
+            ]
+          },
+          {
+            "value": "433d4b06-1d96-48bc-a1ee-d2234f3dfa12",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 118
+                }
+              }
+            ]
+          },
+          {
+            "value": "PI",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 118
+                }
+              }
+            ]
+          },
+          {
+            "value": "ef348a2b-3a67-407c-a28b-b56994f0c90c",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 119
+                }
+              }
+            ]
+          },
+          {
+            "value": "SE",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 119
+                }
+              }
+            ]
+          },
+          {
+            "type": "else",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 73
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "274": {
+    "block_uuid": "9cacd65b-137c-4819-8197-47c4a23c326b",
+    "question": [
+      {
+        "handler": "list_message",
+        "params": {
+          "list_message": {
+            "header": "",
+            "body": "Em qual estado? 📍 Para responder, toque em \"Ver opções\".",
+            "footer": "",
+            "button": "Ver opções",
+            "sections": [
+              {
+                "title": "Opções",
+                "rows": [
+                  {
+                    "callback_data": "7172e556-f065-4614-92a4-36120e6688a7",
+                    "title": "PA · Pará",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "d63787c0-ed56-498f-bc42-3066af0e20d4",
+                    "title": "AM · Amazonas",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "dd457b25-f4cc-475f-a332-44b042136e25",
+                    "title": "RO · Rondônia",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "0bb80659-c24e-4225-ad89-fd35269068c8",
+                    "title": "TO · Tocantins",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "7300696b-19cf-45c5-950f-d649e919175c",
+                    "title": "AC · Acre",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "8f37d12c-7d9b-491e-811f-ad76c1a24e3b",
+                    "title": "AP · Amapá",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "20ca4954-f6a1-4cf3-bd8b-473bd91a4039",
+                    "title": "RR · Roraima",
+                    "description": ""
+                  }
+                ]
+              }
+            ]
+          },
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "chat_sources": [
+            {
+              "id": 23132910
+            }
+          ],
+          "disabled": false
+        }
+      }
+    ],
+    "answer": [
+      {
+        "handler": "buttons",
+        "params": [
+          {
+            "value": "7172e556-f065-4614-92a4-36120e6688a7",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 120
+                }
+              }
+            ]
+          },
+          {
+            "value": "PA",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 120
+                }
+              }
+            ]
+          },
+          {
+            "value": "d63787c0-ed56-498f-bc42-3066af0e20d4",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 121
+                }
+              }
+            ]
+          },
+          {
+            "value": "AM",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 121
+                }
+              }
+            ]
+          },
+          {
+            "value": "dd457b25-f4cc-475f-a332-44b042136e25",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 122
+                }
+              }
+            ]
+          },
+          {
+            "value": "RO",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 122
+                }
+              }
+            ]
+          },
+          {
+            "value": "0bb80659-c24e-4225-ad89-fd35269068c8",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 123
+                }
+              }
+            ]
+          },
+          {
+            "value": "TO",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 123
+                }
+              }
+            ]
+          },
+          {
+            "value": "7300696b-19cf-45c5-950f-d649e919175c",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 124
+                }
+              }
+            ]
+          },
+          {
+            "value": "AC",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 124
+                }
+              }
+            ]
+          },
+          {
+            "value": "8f37d12c-7d9b-491e-811f-ad76c1a24e3b",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 125
+                }
+              }
+            ]
+          },
+          {
+            "value": "AP",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 125
+                }
+              }
+            ]
+          },
+          {
+            "value": "20ca4954-f6a1-4cf3-bd8b-473bd91a4039",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 126
+                }
+              }
+            ]
+          },
+          {
+            "value": "RR",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 126
+                }
+              }
+            ]
+          },
+          {
+            "type": "else",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 74
+                }
+              }
+            ]
+          }
+        ]
       }
     ]
   },
