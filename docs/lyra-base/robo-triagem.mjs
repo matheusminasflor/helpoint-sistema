@@ -61,17 +61,26 @@ const blocos = {
   13: { question: [nomeDoLead, goto(14)] },
   // Consumidor escolhe a marca: BY.MF compra sozinho no site; Minasflor e MF.PRO não têm loja aberta (para não
   // concorrer com o distribuidor), então a Lyra anota os produtos e a Thayná gera o link de pagamento da Yampi.
-  14: { question: [msg('Prazer! 😊 Qual marca você procura?', { buttons: ['BY.MF', 'Minasflor', 'MF.PRO'].map((text) => ({ type: 'inline', text })) })],
+  // Regra do dono (2026-11-08): o consumidor compra Minasflor só home care (300 ml / 300 g; litro e embalagem
+  // profissional são só para salão) e, da MF.PRO, só o Fusion da linha Therapy.
+  14: { question: [msg('Prazer! 😊 Qual destas você procura?', { buttons: ['BY.MF', 'Minasflor', 'Fusion (MF.PRO)'].map((text) => ({ type: 'inline', text })) })],
     answer: [{ handler: 'buttons', params: [
       { value: 'BY.MF', params: [goto(15)], synonyms: ['by.mf', 'bymf', 'BYMF', 'by mf'] },
       { value: 'Minasflor', params: [goto(16)], synonyms: ['minasflor', 'Minas Flor', 'minas flor'] },
-      { value: 'MF.PRO', params: [goto(17)], synonyms: ['mf.pro', 'mfpro', 'MF PRO', 'mf pro'] },
+      { value: 'Fusion (MF.PRO)', params: [goto(17)], synonyms: ['fusion', 'Fusion', 'mf.pro', 'MF.PRO', 'mfpro', 'MF PRO', 'mf pro', 'therapy'] },
       { type: 'else', params: [goto(18)] },
     ] }] },
   15: { question: [campoLead(CAMPO.marca, 'BY.MF'), msg('Perfeito! A loja da BY.MF é https://bymfpro.com.br/ , com Pix ou cartão e o frete calculado pelo seu CEP 💜 Se tiver qualquer dúvida, é só me chamar aqui.'), fim] },
-  16: { question: [campoLead(CAMPO.marca, 'Minasflor'), goto(18)] },
-  17: { question: [campoLead(CAMPO.marca, 'MF.PRO'), goto(18)] },
-  18: { question: [msg('Ótimo! Me conta quais produtos e quantas unidades você quer 😊 Nossa equipe monta um link de pagamento só para você, com Pix ou cartão.'), goto(19)] },
+  16: { question: [campoLead(CAMPO.marca, 'Minasflor'), msg('Para usar em casa, a Minasflor tem as versões home care, de 300 ml e 300 g 💜 (as de litro e as embalagens profissionais são só para salão).'), goto(18)] },
+  17: { question: [campoLead(CAMPO.marca, 'MF.PRO'), msg(
+    'Da MF.PRO, para usar em casa temos o Fusion da linha Therapy: shampoo e balm de base neutra, que você personaliza com um óleo essencial conforme o que o seu couro cabeludo pede 🌿\n\n' +
+    '• Hortelã-pimenta: sensação refrescante, ajuda a controlar a oleosidade (pode arder se usar demais)\n' +
+    '• Melaleuca: sensação de limpeza, para couro cabeludo oleoso ou com descamação\n' +
+    '• Lavanda: ação calmante, para couro cabeludo sensível\n' +
+    '• Laranja doce: calmante e de aroma relaxante\n' +
+    '• Alecrim: energizante, ajuda a fortalecer os fios\n\n' +
+    'A quantidade de gotas a nossa equipe te orienta certinho.'), goto(18)] },
+  18: { question: [msg('Me conta quais produtos e quantas unidades você quer (no Fusion, diga também qual óleo) 😊 Nossa equipe monta um link de pagamento só para você, com Pix ou cartão.'), goto(19)] },
   19: { question: [esperaResposta(9)] },
   9: { question: [msg(`Anotado! ${PRAZO}`), tarefa('Consumidor pediu Minasflor/MF.PRO pela Lyra: montar o link de pagamento da Yampi com os produtos da conversa (até 30 minutos).'), fim] },
 

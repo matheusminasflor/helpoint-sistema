@@ -34,6 +34,18 @@ O catálogo digital de distribuidores ficou de fora: repete os produtos e traz c
 | MF.PRO | **sem loja pública** | igual à Minasflor |
 | Distribuidor | representante | pede nome, empresa e CNPJ e passa para a Thayná |
 
+- **O que cada público pode comprar (dono, 2026-11-08):**
+  - **Consumidor final:** BY.MF (site); Minasflor **só home care, 300 ml e 300 g**; da MF.PRO, **só o Fusion** da linha
+    Therapy (shampoo e balm de base neutra, personalizados com óleo essencial).
+  - **Salão:** tudo, inclusive as versões de litro e as embalagens profissionais de Minasflor e MF.PRO.
+  - A Lyra nunca oferece litro, embalagem profissional ou outro produto MF.PRO a consumidor final.
+- **Fusion e óleos essenciais, como a Lyra explica ao consumidor** (linguagem cautelosa; nada de doença; as gotas são
+  com a equipe, porque a tabela do catálogo saiu desalinhada e precisa de conferência):
+  - Hortelã-pimenta: sensação refrescante, ajuda a controlar a oleosidade (pode arder se usar demais);
+  - Melaleuca: sensação de limpeza, para couro cabeludo oleoso ou com descamação;
+  - Lavanda: ação calmante, para couro cabeludo sensível;
+  - Laranja doce: calmante e de aroma relaxante;
+  - Alecrim: energizante, ajuda a fortalecer os fios.
 - Minasflor e MF.PRO **não têm loja aberta de propósito**, para não concorrer com os distribuidores. Mesmo assim, salão e
   consumidor de qualquer cidade compram direto pelo link deles. A Lyra **não** encaminha ninguém para distribuidor.
 - **Nunca** informa preço de Minasflor ou MF.PRO, nem preço de revenda, desconto ou condição. Preço é com a pessoa ou no link.
