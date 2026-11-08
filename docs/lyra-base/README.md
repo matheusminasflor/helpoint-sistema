@@ -12,7 +12,7 @@ dono aprova antes de ir para o Kommo.**
 | `minasflor.md` | Minasflor: 37 produtos | catálogo técnico Minasflor |
 | `styling.md` | finalizadores: 7 Minasflor e 8 MF.PRO | catálogo e e-book Styling |
 | `therapy.md` | MF.PRO Therapy: 27 produtos | catálogo Therapy |
-| `backbar.md` | Backbar: 7 produtos e 3 protocolos de salão | catálogo Backbar |
+| `backbar.md` | MF.PRO Backbar: 7 produtos e 3 protocolos de salão | catálogo Backbar |
 | `cores.md` | coloração: 60 tons (MF Color, Minas Color, Colorfix) | as duas cartelas de 2026 |
 | `revisao-marketing.md` | as 163 frases com ⚠️ para o Marketing decidir | gerado dos arquivos acima |
 
@@ -76,7 +76,6 @@ envio, frete, troca e se há pedido mínimo.
 
 1. Decidir as 163 frases de `revisao-marketing.md`.
 2. Corrigir os selos que contradizem a composição.
-3. Confirmar se o Backbar é da marca MF.PRO (o catálogo não diz).
-4. Unificar o nome do tonalizante ("MF Color" ou "Minas Color") e o tempo do Colorfix.
-5. Responder às perguntas frequentes de Minasflor e MF.PRO: pagamento, prazo, frete, troca e pedido mínimo.
-6. Dizer como responder "quero ser revendedor/distribuidor": para quem passar e o que pedir.
+3. Unificar o nome do tonalizante ("MF Color" ou "Minas Color") e o tempo do Colorfix.
+4. Responder às perguntas frequentes de Minasflor e MF.PRO: pagamento, prazo, frete, troca e pedido mínimo.
+5. Dizer como responder "quero ser revendedor/distribuidor": para quem passar e o que pedir.

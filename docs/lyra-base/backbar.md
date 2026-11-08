@@ -2,7 +2,7 @@
 
 Fonte: `5_CATÁLOGO_TECNICO_LINHA_BACKBAR_2026.pdf` (catálogo técnico, 14 páginas).
 
-- **Marca:** não consta no texto do catálogo. O texto não cita BY.MF, Minasflor nem MF.PRO; a marca pode estar só no logotipo (imagem), que não foi lido — **confirmar com o Marketing antes de a Lyra dizer a marca**.
+- **Marca:** MF.PRO (confirmado pelo dono em 2026-11-08; o texto do catálogo não cita a marca).
 - **Público:** profissional/salão. Os três cronogramas se chamam "Protocolo de Aplicação Profissional"; o For All Shampoo é "ideal para pré-tratamentos em salão e preparação para processos químicos"; o Bond Repair Mask é "ideal para uso profissional". O catálogo não diz que a linha é vendida ao consumidor final.
 
 **Cronograma de tratamento (página 3, "Três Etapas para um cabelo Saudável"):**
