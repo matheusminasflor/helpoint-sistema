@@ -1,6 +1,6 @@
 {
   "0": {
-    "block_uuid": "85bcc4d2-852b-4928-98b7-0f7d6bf74c3f",
+    "block_uuid": "13d65bc6-e3f2-40fb-a074-a06d7787f2dd",
     "question": [
       {
         "handler": "send_message",
@@ -164,7 +164,7 @@
     ]
   },
   "9": {
-    "block_uuid": "4654491e-052e-468c-911d-6b088be0737b",
+    "block_uuid": "f9e94c09-c431-42c9-aee1-b29697914bcf",
     "question": [
       {
         "handler": "send_message",
@@ -220,7 +220,7 @@
     ]
   },
   "10": {
-    "block_uuid": "95992d1b-84d8-4810-8302-338b9fa96ac1",
+    "block_uuid": "c1e16695-c473-4142-9de9-b03a4a93cfa2",
     "question": [
       {
         "handler": "action",
@@ -265,7 +265,7 @@
     ]
   },
   "11": {
-    "block_uuid": "916774fb-dfba-46e2-b2d4-3f0c3842d27d",
+    "block_uuid": "424b8813-f26f-4722-9d41-0e7b0ea9324d",
     "question": [
       {
         "handler": "send_message",
@@ -292,7 +292,7 @@
     ]
   },
   "12": {
-    "block_uuid": "28d6a26d-144a-4df0-9523-d0a00ab49edb",
+    "block_uuid": "8b5ffaa2-6652-4bb5-bbce-0eeff5e31566",
     "question": [
       {
         "handler": "waits",
@@ -315,7 +315,7 @@
     ]
   },
   "13": {
-    "block_uuid": "c452a1fb-473c-4c9c-942c-13f33e1ecff7",
+    "block_uuid": "7fed963b-e142-4263-a3b3-e1e8e4911696",
     "question": [
       {
         "handler": "action",
@@ -337,7 +337,7 @@
     ]
   },
   "14": {
-    "block_uuid": "0452d611-1deb-4842-a5be-4e2d9905a1a4",
+    "block_uuid": "13a97053-61c6-4007-aefd-025a3c8cf0f3",
     "question": [
       {
         "handler": "send_message",
@@ -447,7 +447,7 @@
     ]
   },
   "15": {
-    "block_uuid": "80015fff-6106-4b67-b0b6-64464c903ed8",
+    "block_uuid": "90d381d9-dc71-4529-a34d-660e0f7cea6e",
     "question": [
       {
         "handler": "action",
@@ -484,7 +484,7 @@
     ]
   },
   "16": {
-    "block_uuid": "73061ca0-e370-48f4-bd10-04a4e03f185e",
+    "block_uuid": "6dfc2945-a345-4e40-9ec2-2b49ac5c29a7",
     "question": [
       {
         "handler": "action",
@@ -521,7 +521,7 @@
     ]
   },
   "17": {
-    "block_uuid": "a4f65115-a080-4b9f-b37b-d70d9522fded",
+    "block_uuid": "0a28ddf9-2842-4702-a91c-ea9bf15c4a7e",
     "question": [
       {
         "handler": "action",
@@ -558,7 +558,7 @@
     ]
   },
   "18": {
-    "block_uuid": "5f0cea30-2c4a-43d0-8d0d-d9e6a4c4960a",
+    "block_uuid": "94c92e8f-59bf-4b5c-b61e-74bb605a7c0e",
     "question": [
       {
         "handler": "send_message",
@@ -585,7 +585,7 @@
     ]
   },
   "19": {
-    "block_uuid": "c3d787ef-8cab-4380-b2f0-cefb6f8e74ef",
+    "block_uuid": "58324f73-34bc-4480-a841-9fe54fb9fade",
     "question": [
       {
         "handler": "waits",
@@ -608,7 +608,7 @@
     ]
   },
   "20": {
-    "block_uuid": "8c99b56c-cc84-43bd-9ead-4c24c00b9ec3",
+    "block_uuid": "a77724b0-ef8f-4416-81cf-4982b3dff49c",
     "question": [
       {
         "handler": "action",
@@ -653,7 +653,7 @@
     ]
   },
   "21": {
-    "block_uuid": "154dc8ec-50f6-4d19-945d-2e93ea28eefe",
+    "block_uuid": "ed7b9264-64cb-4aa1-b8f4-7bf534610d5e",
     "question": [
       {
         "handler": "send_message",
@@ -680,7 +680,7 @@
     ]
   },
   "22": {
-    "block_uuid": "6d2062d0-4dd9-4484-87a2-fcb310a7f91b",
+    "block_uuid": "e227a670-8880-4240-b5a3-cc5b826163da",
     "question": [
       {
         "handler": "waits",
@@ -703,7 +703,7 @@
     ]
   },
   "23": {
-    "block_uuid": "3e4836b4-6312-4377-bdeb-dda52c952c58",
+    "block_uuid": "5f6c9f84-b0a9-401a-b6aa-be21e26b849f",
     "question": [
       {
         "handler": "action",
@@ -725,7 +725,7 @@
     ]
   },
   "24": {
-    "block_uuid": "194a7254-8bc2-4db3-a4d1-cbffff22868e",
+    "block_uuid": "274aff3b-afa1-4942-bc64-a22eea61d4f5",
     "question": [
       {
         "handler": "send_message",
@@ -814,7 +814,7 @@
     ]
   },
   "25": {
-    "block_uuid": "ee4ec9ba-6e69-4317-880d-1c4a8a495c1f",
+    "block_uuid": "2abf4090-c431-40f4-b540-2d2c3096df88",
     "question": [
       {
         "handler": "waits",
@@ -837,7 +837,7 @@
     ]
   },
   "26": {
-    "block_uuid": "a42c7a15-12cc-4940-ae07-6a162d384510",
+    "block_uuid": "28d088b2-dd85-4d7d-a5fe-ac12b9ce5754",
     "question": [
       {
         "handler": "action",
@@ -859,7 +859,7 @@
     ]
   },
   "27": {
-    "block_uuid": "87c2b07d-992c-4069-b2a9-3d5ef0fa865f",
+    "block_uuid": "f06ca556-4d05-4eef-a32a-36817832b2bd",
     "question": [
       {
         "handler": "send_message",
@@ -886,7 +886,7 @@
     ]
   },
   "28": {
-    "block_uuid": "931ed29d-514e-4416-b878-a826842add47",
+    "block_uuid": "010c570d-4e8e-4d5a-aba0-6b2fb67545ed",
     "question": [
       {
         "handler": "waits",
@@ -909,7 +909,7 @@
     ]
   },
   "29": {
-    "block_uuid": "3c540442-d026-4861-a572-7d9abd997349",
+    "block_uuid": "7e3bf0a5-0318-47d7-8605-d184f15d38b6",
     "question": [
       {
         "handler": "send_message",
@@ -965,7 +965,7 @@
     ]
   },
   "30": {
-    "block_uuid": "7eff1c44-59d2-4e3b-a934-8d33b19268f7",
+    "block_uuid": "bba58179-d09c-4e1e-a551-4628f6070482",
     "question": [
       {
         "handler": "action",
@@ -1010,7 +1010,7 @@
     ]
   },
   "31": {
-    "block_uuid": "56547ab0-0430-4675-af6b-440daee8f986",
+    "block_uuid": "58eb007f-c179-422f-a510-baac9ce2dc9a",
     "question": [
       {
         "handler": "send_message",
@@ -1037,7 +1037,7 @@
     ]
   },
   "32": {
-    "block_uuid": "d31d78f6-efaf-4425-b1ca-7eb93541c75c",
+    "block_uuid": "935b701c-20a3-4709-994d-1be459da083d",
     "question": [
       {
         "handler": "waits",
@@ -1060,7 +1060,7 @@
     ]
   },
   "33": {
-    "block_uuid": "19d857c3-7089-47ce-91c2-89804da4b5c4",
+    "block_uuid": "ac344c0f-dbe7-40fd-9c90-25ae6a98db8c",
     "question": [
       {
         "handler": "action",
@@ -1082,7 +1082,7 @@
     ]
   },
   "34": {
-    "block_uuid": "ad7bd5ec-3da9-4068-a370-6514e8a7fa7e",
+    "block_uuid": "f28111e6-9dd0-4696-a1d5-22028f97a68f",
     "question": [
       {
         "handler": "send_message",
@@ -1109,7 +1109,7 @@
     ]
   },
   "35": {
-    "block_uuid": "b3c63d90-822c-47cd-b241-b1ea0b6ac149",
+    "block_uuid": "5234b65c-114b-4e38-ad0d-993a39659222",
     "question": [
       {
         "handler": "waits",
@@ -1132,7 +1132,7 @@
     ]
   },
   "36": {
-    "block_uuid": "9fc39ab7-c5f7-456a-a97a-bb3d41cb3356",
+    "block_uuid": "1c5324ab-6b45-4c25-abcc-23c9729237c3",
     "question": [
       {
         "handler": "action",
@@ -1154,13 +1154,13 @@
     ]
   },
   "37": {
-    "block_uuid": "ce8d9a1d-7c78-4677-8650-1341c07edb62",
+    "block_uuid": "32184903-1c18-4b28-8fbe-aacb59855302",
     "question": [
       {
         "handler": "send_message",
         "params": {
           "tag": "",
-          "text": "Em qual estado você pretende atuar como distribuidor? Pode mandar só a sigla, por exemplo: MG",
+          "text": "Em qual região você pretende atuar como distribuidor?",
           "type": "external",
           "recipient": {
             "type": "all_contacts",
@@ -1168,43 +1168,593 @@
           },
           "is_in_starting_block": false,
           "send_to_all_chat_sources": true,
-          "on_error": null
-        }
-      },
-      {
-        "handler": "goto",
-        "params": {
-          "type": "question",
-          "step": 38
-        }
-      }
-    ]
-  },
-  "38": {
-    "block_uuid": "092484a7-35e6-4247-a16a-d14b87e1dda2",
-    "question": [
-      {
-        "handler": "waits",
-        "params": {
-          "logic": "or",
-          "conditions": [
+          "on_error": null,
+          "buttons": [
             {
-              "event": {
-                "action": "received",
-                "source": "message"
-              },
-              "action": {
-                "type": "question",
-                "step": 62
-              }
+              "type": "inline",
+              "text": "Sudeste"
+            },
+            {
+              "type": "inline",
+              "text": "Sul"
+            },
+            {
+              "type": "inline",
+              "text": "Centro-Oeste"
+            },
+            {
+              "type": "inline",
+              "text": "Nordeste"
+            },
+            {
+              "type": "inline",
+              "text": "Norte"
             }
           ]
         }
       }
+    ],
+    "answer": [
+      {
+        "handler": "buttons",
+        "params": [
+          {
+            "value": "Sudeste",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 70
+                }
+              }
+            ],
+            "synonyms": [
+              "sudeste",
+              "sudeste"
+            ]
+          },
+          {
+            "value": "Sul",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 71
+                }
+              }
+            ],
+            "synonyms": [
+              "sul",
+              "sul"
+            ]
+          },
+          {
+            "value": "Centro-Oeste",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 72
+                }
+              }
+            ],
+            "synonyms": [
+              "centro-oeste",
+              "centro-oeste"
+            ]
+          },
+          {
+            "value": "Nordeste",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 73
+                }
+              }
+            ],
+            "synonyms": [
+              "nordeste",
+              "nordeste"
+            ]
+          },
+          {
+            "value": "Norte",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 74
+                }
+              }
+            ],
+            "synonyms": [
+              "norte",
+              "norte"
+            ]
+          },
+          {
+            "value": "MG",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 100
+                }
+              }
+            ],
+            "synonyms": [
+              "mg",
+              "Minas Gerais",
+              "minas gerais"
+            ]
+          },
+          {
+            "value": "SP",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 101
+                }
+              }
+            ],
+            "synonyms": [
+              "sp",
+              "São Paulo",
+              "são paulo"
+            ]
+          },
+          {
+            "value": "RJ",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 102
+                }
+              }
+            ],
+            "synonyms": [
+              "rj",
+              "Rio de Janeiro",
+              "rio de janeiro"
+            ]
+          },
+          {
+            "value": "ES",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 103
+                }
+              }
+            ],
+            "synonyms": [
+              "es",
+              "Espírito Santo",
+              "espírito santo"
+            ]
+          },
+          {
+            "value": "PR",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 104
+                }
+              }
+            ],
+            "synonyms": [
+              "pr",
+              "Paraná",
+              "paraná"
+            ]
+          },
+          {
+            "value": "SC",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 105
+                }
+              }
+            ],
+            "synonyms": [
+              "sc",
+              "Santa Catarina",
+              "santa catarina"
+            ]
+          },
+          {
+            "value": "RS",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 106
+                }
+              }
+            ],
+            "synonyms": [
+              "rs",
+              "Rio Grande do Sul",
+              "rio grande do sul"
+            ]
+          },
+          {
+            "value": "GO",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 107
+                }
+              }
+            ],
+            "synonyms": [
+              "go",
+              "Goiás",
+              "goiás"
+            ]
+          },
+          {
+            "value": "MT",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 108
+                }
+              }
+            ],
+            "synonyms": [
+              "mt",
+              "Mato Grosso",
+              "mato grosso"
+            ]
+          },
+          {
+            "value": "MS",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 109
+                }
+              }
+            ],
+            "synonyms": [
+              "ms",
+              "Mato Grosso do Sul",
+              "mato grosso do sul"
+            ]
+          },
+          {
+            "value": "DF",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 110
+                }
+              }
+            ],
+            "synonyms": [
+              "df",
+              "Distrito Federal",
+              "distrito federal"
+            ]
+          },
+          {
+            "value": "BA",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 111
+                }
+              }
+            ],
+            "synonyms": [
+              "ba",
+              "Bahia",
+              "bahia"
+            ]
+          },
+          {
+            "value": "PE",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 112
+                }
+              }
+            ],
+            "synonyms": [
+              "pe",
+              "Pernambuco",
+              "pernambuco"
+            ]
+          },
+          {
+            "value": "CE",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 113
+                }
+              }
+            ],
+            "synonyms": [
+              "ce",
+              "Ceará",
+              "ceará"
+            ]
+          },
+          {
+            "value": "MA",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 114
+                }
+              }
+            ],
+            "synonyms": [
+              "ma",
+              "Maranhão",
+              "maranhão"
+            ]
+          },
+          {
+            "value": "PB",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 115
+                }
+              }
+            ],
+            "synonyms": [
+              "pb",
+              "Paraíba",
+              "paraíba"
+            ]
+          },
+          {
+            "value": "RN",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 116
+                }
+              }
+            ],
+            "synonyms": [
+              "rn",
+              "Rio Grande do Norte",
+              "rio grande do norte"
+            ]
+          },
+          {
+            "value": "AL",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 117
+                }
+              }
+            ],
+            "synonyms": [
+              "al",
+              "Alagoas",
+              "alagoas"
+            ]
+          },
+          {
+            "value": "PI",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 118
+                }
+              }
+            ],
+            "synonyms": [
+              "pi",
+              "Piauí",
+              "piauí"
+            ]
+          },
+          {
+            "value": "SE",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 119
+                }
+              }
+            ],
+            "synonyms": [
+              "se",
+              "Sergipe",
+              "sergipe"
+            ]
+          },
+          {
+            "value": "PA",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 120
+                }
+              }
+            ],
+            "synonyms": [
+              "pa",
+              "Pará",
+              "pará"
+            ]
+          },
+          {
+            "value": "AM",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 121
+                }
+              }
+            ],
+            "synonyms": [
+              "am",
+              "Amazonas",
+              "amazonas"
+            ]
+          },
+          {
+            "value": "RO",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 122
+                }
+              }
+            ],
+            "synonyms": [
+              "ro",
+              "Rondônia",
+              "rondônia"
+            ]
+          },
+          {
+            "value": "TO",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 123
+                }
+              }
+            ],
+            "synonyms": [
+              "to",
+              "Tocantins",
+              "tocantins"
+            ]
+          },
+          {
+            "value": "AC",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 124
+                }
+              }
+            ],
+            "synonyms": [
+              "ac",
+              "Acre",
+              "acre"
+            ]
+          },
+          {
+            "value": "AP",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 125
+                }
+              }
+            ],
+            "synonyms": [
+              "ap",
+              "Amapá",
+              "amapá"
+            ]
+          },
+          {
+            "value": "RR",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 126
+                }
+              }
+            ],
+            "synonyms": [
+              "rr",
+              "Roraima",
+              "roraima"
+            ]
+          },
+          {
+            "type": "else",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 37
+                }
+              }
+            ]
+          }
+        ]
+      }
     ]
   },
   "39": {
-    "block_uuid": "a5957f75-ea9e-48e4-8238-7e97d6ffaab1",
+    "block_uuid": "9e76828c-4562-45d9-a301-1a4a31b04bf6",
     "question": [
       {
         "handler": "send_message",
@@ -1260,7 +1810,7 @@
     ]
   },
   "40": {
-    "block_uuid": "841e0fd4-06b7-4fe9-9ec2-ba4c63c13f06",
+    "block_uuid": "0b38e8ac-175f-4eea-99bc-c510a2d402c7",
     "question": [
       {
         "handler": "action",
@@ -1339,7 +1889,7 @@
     ]
   },
   "50": {
-    "block_uuid": "e11d8b24-dd3c-4c0c-8c78-6fe0cb132f97",
+    "block_uuid": "2dfc8612-133b-408a-8578-87f022ca7557",
     "question": [
       {
         "handler": "send_message",
@@ -1503,7 +2053,7 @@
     ]
   },
   "51": {
-    "block_uuid": "100da414-5925-416a-85ec-028e83f4f8c5",
+    "block_uuid": "6b871e24-6269-46af-9618-8904253771b2",
     "question": [
       {
         "handler": "action",
@@ -1582,7 +2132,7 @@
     ]
   },
   "52": {
-    "block_uuid": "fd74f911-ef75-43f7-ac5f-6bf8e73142c9",
+    "block_uuid": "f2823337-9080-417c-8f77-35cbb6bcd6f6",
     "question": [
       {
         "handler": "send_message",
@@ -1638,7 +2188,7 @@
     ]
   },
   "60": {
-    "block_uuid": "76410955-d70f-4846-91f4-c7fb87ab6d72",
+    "block_uuid": "befaef0c-af42-41c9-8260-43aa8381cdb3",
     "question": [
       {
         "handler": "send_message",
@@ -1665,7 +2215,7 @@
     ]
   },
   "61": {
-    "block_uuid": "62af47c3-1060-45d7-8516-fdaf7697c861",
+    "block_uuid": "759a12a2-cb06-4d5b-bb23-7a023155bc6a",
     "question": [
       {
         "handler": "action",
@@ -1686,30 +2236,8 @@
       }
     ]
   },
-  "62": {
-    "block_uuid": "04c960dc-55eb-41fa-ac21-0b2aab658605",
-    "question": [
-      {
-        "handler": "action",
-        "params": {
-          "name": "set_custom_fields",
-          "params": {
-            "value": "{{message_text}}",
-            "custom_field": "{{lead.cf.4381528}}"
-          }
-        }
-      },
-      {
-        "handler": "goto",
-        "params": {
-          "type": "question",
-          "step": 63
-        }
-      }
-    ]
-  },
   "63": {
-    "block_uuid": "5b98794a-bf61-434d-b80b-f626c6cdb14a",
+    "block_uuid": "2246d485-1a56-4d80-bf6e-2b383a63a8b3",
     "question": [
       {
         "handler": "send_message",
@@ -1736,7 +2264,7 @@
     ]
   },
   "64": {
-    "block_uuid": "c95283ef-4feb-4378-9518-02e0ea01e4f8",
+    "block_uuid": "54e2b6a4-9f96-4521-a089-f5c360746489",
     "question": [
       {
         "handler": "waits",
@@ -1759,7 +2287,7 @@
     ]
   },
   "65": {
-    "block_uuid": "6f43fc75-b566-473f-8dfd-1651462714a5",
+    "block_uuid": "fdf55dab-2fa0-4e97-84ee-1c375df379c4",
     "question": [
       {
         "handler": "action",
@@ -1832,7 +2360,7 @@
     ]
   },
   "66": {
-    "block_uuid": "1d0f8425-8e75-479b-b50a-20f5c399f9f7",
+    "block_uuid": "fedbd4cc-de58-4b1b-bae3-ab8f8198c1a3",
     "question": [
       {
         "handler": "action",
@@ -1849,6 +2377,1372 @@
         "params": {
           "type": "question",
           "step": 39
+        }
+      }
+    ]
+  },
+  "70": {
+    "block_uuid": "92a7d6e6-5348-47fc-9487-e92df196f558",
+    "question": [
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "E qual estado?",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null,
+          "buttons": [
+            {
+              "type": "inline",
+              "text": "MG"
+            },
+            {
+              "type": "inline",
+              "text": "SP"
+            },
+            {
+              "type": "inline",
+              "text": "RJ"
+            },
+            {
+              "type": "inline",
+              "text": "ES"
+            }
+          ]
+        }
+      }
+    ],
+    "answer": [
+      {
+        "handler": "buttons",
+        "params": [
+          {
+            "value": "MG",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 100
+                }
+              }
+            ],
+            "synonyms": [
+              "mg",
+              "Minas Gerais",
+              "minas gerais"
+            ]
+          },
+          {
+            "value": "SP",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 101
+                }
+              }
+            ],
+            "synonyms": [
+              "sp",
+              "São Paulo",
+              "são paulo"
+            ]
+          },
+          {
+            "value": "RJ",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 102
+                }
+              }
+            ],
+            "synonyms": [
+              "rj",
+              "Rio de Janeiro",
+              "rio de janeiro"
+            ]
+          },
+          {
+            "value": "ES",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 103
+                }
+              }
+            ],
+            "synonyms": [
+              "es",
+              "Espírito Santo",
+              "espírito santo"
+            ]
+          },
+          {
+            "type": "else",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 70
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "71": {
+    "block_uuid": "d0b4597e-1735-400b-9f36-c40773be89b5",
+    "question": [
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "E qual estado?",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null,
+          "buttons": [
+            {
+              "type": "inline",
+              "text": "PR"
+            },
+            {
+              "type": "inline",
+              "text": "SC"
+            },
+            {
+              "type": "inline",
+              "text": "RS"
+            }
+          ]
+        }
+      }
+    ],
+    "answer": [
+      {
+        "handler": "buttons",
+        "params": [
+          {
+            "value": "PR",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 104
+                }
+              }
+            ],
+            "synonyms": [
+              "pr",
+              "Paraná",
+              "paraná"
+            ]
+          },
+          {
+            "value": "SC",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 105
+                }
+              }
+            ],
+            "synonyms": [
+              "sc",
+              "Santa Catarina",
+              "santa catarina"
+            ]
+          },
+          {
+            "value": "RS",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 106
+                }
+              }
+            ],
+            "synonyms": [
+              "rs",
+              "Rio Grande do Sul",
+              "rio grande do sul"
+            ]
+          },
+          {
+            "type": "else",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 71
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "72": {
+    "block_uuid": "6051c5b1-efe4-4b60-8cea-e429cc9d4b7d",
+    "question": [
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "E qual estado?",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null,
+          "buttons": [
+            {
+              "type": "inline",
+              "text": "GO"
+            },
+            {
+              "type": "inline",
+              "text": "MT"
+            },
+            {
+              "type": "inline",
+              "text": "MS"
+            },
+            {
+              "type": "inline",
+              "text": "DF"
+            }
+          ]
+        }
+      }
+    ],
+    "answer": [
+      {
+        "handler": "buttons",
+        "params": [
+          {
+            "value": "GO",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 107
+                }
+              }
+            ],
+            "synonyms": [
+              "go",
+              "Goiás",
+              "goiás"
+            ]
+          },
+          {
+            "value": "MT",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 108
+                }
+              }
+            ],
+            "synonyms": [
+              "mt",
+              "Mato Grosso",
+              "mato grosso"
+            ]
+          },
+          {
+            "value": "MS",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 109
+                }
+              }
+            ],
+            "synonyms": [
+              "ms",
+              "Mato Grosso do Sul",
+              "mato grosso do sul"
+            ]
+          },
+          {
+            "value": "DF",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 110
+                }
+              }
+            ],
+            "synonyms": [
+              "df",
+              "Distrito Federal",
+              "distrito federal"
+            ]
+          },
+          {
+            "type": "else",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 72
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "73": {
+    "block_uuid": "2c2be6fd-97cd-49d8-849a-97b41e3351fa",
+    "question": [
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "E qual estado?",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null,
+          "buttons": [
+            {
+              "type": "inline",
+              "text": "BA"
+            },
+            {
+              "type": "inline",
+              "text": "PE"
+            },
+            {
+              "type": "inline",
+              "text": "CE"
+            },
+            {
+              "type": "inline",
+              "text": "MA"
+            },
+            {
+              "type": "inline",
+              "text": "PB"
+            },
+            {
+              "type": "inline",
+              "text": "RN"
+            },
+            {
+              "type": "inline",
+              "text": "AL"
+            },
+            {
+              "type": "inline",
+              "text": "PI"
+            },
+            {
+              "type": "inline",
+              "text": "SE"
+            }
+          ]
+        }
+      }
+    ],
+    "answer": [
+      {
+        "handler": "buttons",
+        "params": [
+          {
+            "value": "BA",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 111
+                }
+              }
+            ],
+            "synonyms": [
+              "ba",
+              "Bahia",
+              "bahia"
+            ]
+          },
+          {
+            "value": "PE",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 112
+                }
+              }
+            ],
+            "synonyms": [
+              "pe",
+              "Pernambuco",
+              "pernambuco"
+            ]
+          },
+          {
+            "value": "CE",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 113
+                }
+              }
+            ],
+            "synonyms": [
+              "ce",
+              "Ceará",
+              "ceará"
+            ]
+          },
+          {
+            "value": "MA",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 114
+                }
+              }
+            ],
+            "synonyms": [
+              "ma",
+              "Maranhão",
+              "maranhão"
+            ]
+          },
+          {
+            "value": "PB",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 115
+                }
+              }
+            ],
+            "synonyms": [
+              "pb",
+              "Paraíba",
+              "paraíba"
+            ]
+          },
+          {
+            "value": "RN",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 116
+                }
+              }
+            ],
+            "synonyms": [
+              "rn",
+              "Rio Grande do Norte",
+              "rio grande do norte"
+            ]
+          },
+          {
+            "value": "AL",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 117
+                }
+              }
+            ],
+            "synonyms": [
+              "al",
+              "Alagoas",
+              "alagoas"
+            ]
+          },
+          {
+            "value": "PI",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 118
+                }
+              }
+            ],
+            "synonyms": [
+              "pi",
+              "Piauí",
+              "piauí"
+            ]
+          },
+          {
+            "value": "SE",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 119
+                }
+              }
+            ],
+            "synonyms": [
+              "se",
+              "Sergipe",
+              "sergipe"
+            ]
+          },
+          {
+            "type": "else",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 73
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "74": {
+    "block_uuid": "69d85200-692c-4173-a912-98bdf8a8e2e0",
+    "question": [
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "E qual estado?",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null,
+          "buttons": [
+            {
+              "type": "inline",
+              "text": "PA"
+            },
+            {
+              "type": "inline",
+              "text": "AM"
+            },
+            {
+              "type": "inline",
+              "text": "RO"
+            },
+            {
+              "type": "inline",
+              "text": "TO"
+            },
+            {
+              "type": "inline",
+              "text": "AC"
+            },
+            {
+              "type": "inline",
+              "text": "AP"
+            },
+            {
+              "type": "inline",
+              "text": "RR"
+            }
+          ]
+        }
+      }
+    ],
+    "answer": [
+      {
+        "handler": "buttons",
+        "params": [
+          {
+            "value": "PA",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 120
+                }
+              }
+            ],
+            "synonyms": [
+              "pa",
+              "Pará",
+              "pará"
+            ]
+          },
+          {
+            "value": "AM",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 121
+                }
+              }
+            ],
+            "synonyms": [
+              "am",
+              "Amazonas",
+              "amazonas"
+            ]
+          },
+          {
+            "value": "RO",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 122
+                }
+              }
+            ],
+            "synonyms": [
+              "ro",
+              "Rondônia",
+              "rondônia"
+            ]
+          },
+          {
+            "value": "TO",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 123
+                }
+              }
+            ],
+            "synonyms": [
+              "to",
+              "Tocantins",
+              "tocantins"
+            ]
+          },
+          {
+            "value": "AC",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 124
+                }
+              }
+            ],
+            "synonyms": [
+              "ac",
+              "Acre",
+              "acre"
+            ]
+          },
+          {
+            "value": "AP",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 125
+                }
+              }
+            ],
+            "synonyms": [
+              "ap",
+              "Amapá",
+              "amapá"
+            ]
+          },
+          {
+            "value": "RR",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 126
+                }
+              }
+            ],
+            "synonyms": [
+              "rr",
+              "Roraima",
+              "roraima"
+            ]
+          },
+          {
+            "type": "else",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 74
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "100": {
+    "block_uuid": "8a1f347f-0ed8-4288-b799-e84c3d1558b7",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "MG",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 63
+        }
+      }
+    ]
+  },
+  "101": {
+    "block_uuid": "5eb12c30-1fe4-47e9-98b2-d3f1156e114a",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "SP",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 63
+        }
+      }
+    ]
+  },
+  "102": {
+    "block_uuid": "c4618bcb-ff9d-4fb7-b7fd-9e3af8922a3f",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "RJ",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 63
+        }
+      }
+    ]
+  },
+  "103": {
+    "block_uuid": "56cefd9d-50e2-4c9b-a000-68376ba39037",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "ES",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 63
+        }
+      }
+    ]
+  },
+  "104": {
+    "block_uuid": "75301fae-0cd3-47da-a086-a6143011cfbc",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "PR",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 63
+        }
+      }
+    ]
+  },
+  "105": {
+    "block_uuid": "9ceca5df-73d8-4cc5-a546-8dbd087aaec8",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "SC",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 63
+        }
+      }
+    ]
+  },
+  "106": {
+    "block_uuid": "cca7c29a-1842-49d9-9261-c27c34202f18",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "RS",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 63
+        }
+      }
+    ]
+  },
+  "107": {
+    "block_uuid": "7989a49b-26de-4cf7-b862-cde1fb2cad85",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "GO",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 63
+        }
+      }
+    ]
+  },
+  "108": {
+    "block_uuid": "ee9cf9ed-682e-4211-9d68-9cfee3e7b55c",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "MT",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 63
+        }
+      }
+    ]
+  },
+  "109": {
+    "block_uuid": "6486da50-9fef-4d1f-87fb-b93e56d72b66",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "MS",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 63
+        }
+      }
+    ]
+  },
+  "110": {
+    "block_uuid": "955b8840-3c37-4931-9fa7-01c8741ce5d8",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "DF",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 63
+        }
+      }
+    ]
+  },
+  "111": {
+    "block_uuid": "0b72149e-6ba8-4012-be11-3a9f54bdcd4f",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "BA",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 63
+        }
+      }
+    ]
+  },
+  "112": {
+    "block_uuid": "83598c6b-c93a-43c2-9819-24171cff87e1",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "PE",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 63
+        }
+      }
+    ]
+  },
+  "113": {
+    "block_uuid": "d4ed1f59-cf3f-4979-94e5-48b6b13dca7d",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "CE",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 63
+        }
+      }
+    ]
+  },
+  "114": {
+    "block_uuid": "d2eb89df-6afa-4ecc-84e2-ec3648b9d0bd",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "MA",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 63
+        }
+      }
+    ]
+  },
+  "115": {
+    "block_uuid": "df6c82e2-4d06-41b1-a1b1-b9803aa2807f",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "PB",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 63
+        }
+      }
+    ]
+  },
+  "116": {
+    "block_uuid": "2ea0383d-e5fc-4e1a-ba4f-55047a02d91c",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "RN",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 63
+        }
+      }
+    ]
+  },
+  "117": {
+    "block_uuid": "6bb821af-5e67-409b-849b-243f01bc0f92",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "AL",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 63
+        }
+      }
+    ]
+  },
+  "118": {
+    "block_uuid": "1dd147dd-397e-4461-8982-014256255d79",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "PI",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 63
+        }
+      }
+    ]
+  },
+  "119": {
+    "block_uuid": "5c8a9694-c781-4c83-bd76-3c30972f692c",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "SE",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 63
+        }
+      }
+    ]
+  },
+  "120": {
+    "block_uuid": "47a70c03-206d-457d-833b-4b26de653395",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "PA",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 63
+        }
+      }
+    ]
+  },
+  "121": {
+    "block_uuid": "63ff7912-2cba-4a77-9f28-e30e4448dd89",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "AM",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 63
+        }
+      }
+    ]
+  },
+  "122": {
+    "block_uuid": "52f1740d-6e6a-447e-a820-a040d16b4653",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "RO",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 63
+        }
+      }
+    ]
+  },
+  "123": {
+    "block_uuid": "0bb1ee0b-eeba-4a01-8511-adb16ec72108",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "TO",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 63
+        }
+      }
+    ]
+  },
+  "124": {
+    "block_uuid": "3139818f-6722-4e2d-9161-965a059f65ad",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "AC",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 63
+        }
+      }
+    ]
+  },
+  "125": {
+    "block_uuid": "dba4cca8-9c54-4c36-9a02-a3d4308e4ca8",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "AP",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 63
+        }
+      }
+    ]
+  },
+  "126": {
+    "block_uuid": "4cc32fa8-2a97-439e-91e2-bb25751f396b",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "RR",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 63
         }
       }
     ]

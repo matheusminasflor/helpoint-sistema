@@ -36,6 +36,15 @@ const tarefa = (texto) => ({
 
 // Regra do dono (2026-11-08): nenhuma mensagem promete prazo ao cliente ("o lead quer resposta na hora"); o prazo de
 // 30 minutos fica só na tarefa de quem atende.
+const REGIOES = {
+  Sudeste: [['MG', 'Minas Gerais'], ['SP', 'São Paulo'], ['RJ', 'Rio de Janeiro'], ['ES', 'Espírito Santo']],
+  Sul: [['PR', 'Paraná'], ['SC', 'Santa Catarina'], ['RS', 'Rio Grande do Sul']],
+  'Centro-Oeste': [['GO', 'Goiás'], ['MT', 'Mato Grosso'], ['MS', 'Mato Grosso do Sul'], ['DF', 'Distrito Federal']],
+  Nordeste: [['BA', 'Bahia'], ['PE', 'Pernambuco'], ['CE', 'Ceará'], ['MA', 'Maranhão'], ['PB', 'Paraíba'], ['RN', 'Rio Grande do Norte'], ['AL', 'Alagoas'], ['PI', 'Piauí'], ['SE', 'Sergipe']],
+  Norte: [['PA', 'Pará'], ['AM', 'Amazonas'], ['RO', 'Rondônia'], ['TO', 'Tocantins'], ['AC', 'Acre'], ['AP', 'Amapá'], ['RR', 'Roraima']],
+};
+// Um bloco por estado, a partir do 100, que grava a sigla no campo Estado de atuação.
+const UF_BLOCO = Object.fromEntries(Object.values(REGIOES).flat().map(([uf], i) => [uf, 100 + i]));
 const AGUARDE = 'Nossa atendente vai entrar em contato com você, é só aguardar 💜';
 const BOTOES = ['Uso em casa', 'Tenho salão', 'Revendo/distribuo', 'Já sou cliente'];
 const respostaDosBotoes = (seNaoEntender) => [{
@@ -124,9 +133,23 @@ const blocos = {
   35: { question: [esperaResposta(36)] },
   36: { question: [campoLead(CAMPO.cpfCnpj, '{{message_text}}'), goto(37)] },
   // Região de atuação em dois campos (dono, 2026-11-08: "ponto muito importante e para termos indicadores").
-  37: { question: [msg('Em qual estado você pretende atuar como distribuidor? Pode mandar só a sigla, por exemplo: MG'), goto(38)] },
-  38: { question: [esperaResposta(62)] },
-  62: { question: [campoLead(CAMPO.estadoAtuacao, '{{message_text}}'), goto(63)] },
+  // O estado é escolhido por toque (dono, 2026-11-08: "vão preencher errado"): primeiro a região, depois o estado da
+  // região. O WhatsApp mostra até 10 opções por lista; a maior região, o Nordeste, tem 9. Quem digitar a sigla ou o nome
+  // também é entendido; outra coisa repete a pergunta.
+  37: { question: [msg('Em qual região você pretende atuar como distribuidor?', { buttons: Object.keys(REGIOES).map((text) => ({ type: 'inline', text })) })],
+    answer: [{ handler: 'buttons', params: [
+      ...Object.keys(REGIOES).map((r, i) => ({ value: r, params: [goto(70 + i)], synonyms: [r.toLowerCase(), r.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()] })),
+      ...Object.values(REGIOES).flat().map(([uf, nome]) => ({ value: uf, params: [goto(UF_BLOCO[uf])], synonyms: [uf.toLowerCase(), nome, nome.toLowerCase()] })),
+      { type: 'else', params: [goto(37)] },
+    ] }] },
+  ...Object.fromEntries(Object.entries(REGIOES).map(([, ufs], i) => [70 + i, {
+    question: [msg('E qual estado?', { buttons: ufs.map(([uf]) => ({ type: 'inline', text: uf })) })],
+    answer: [{ handler: 'buttons', params: [
+      ...ufs.map(([uf, nome]) => ({ value: uf, params: [goto(UF_BLOCO[uf])], synonyms: [uf.toLowerCase(), nome, nome.toLowerCase()] })),
+      { type: 'else', params: [goto(70 + i)] },
+    ] }],
+  }])),
+  ...Object.fromEntries(Object.values(REGIOES).flat().map(([uf]) => [UF_BLOCO[uf], { question: [campoLead(CAMPO.estadoAtuacao, uf), goto(63)] }])),
   63: { question: [msg('E em qual cidade?'), goto(64)] },
   64: { question: [esperaResposta(66)] },
   66: { question: [campoLead(CAMPO.cidadeAtuacao, '{{message_text}}'), goto(39)] },
