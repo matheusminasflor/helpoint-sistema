@@ -60,25 +60,29 @@ const LINHA_UF = Object.fromEntries(Object.values(REGIOES).flat().map(([uf, nome
 const UF_BLOCO = Object.fromEntries(Object.values(REGIOES).flat().map(([uf], i) => [uf, 100 + i]));
 const AGUARDE = 'Nossa atendente vai entrar em contato com você, é só aguardar 💜';
 const OPCOES = Object.fromEntries(['Uso em casa', 'Tenho salão', 'Revendo/distribuo', 'Já sou cliente'].map((t) => [t, linha(t)]));
-const respostaDosBotoes = (seNaoEntender) => [{
+// A resposta de uma lista não aceita sinônimos (o Kommo recusa a gravação com 400): só o toque conta. Quem escreve
+// cai no bloco 53, que procura "atendente" no texto; o resto recebe a lista de novo.
+const respostaDosBotoes = () => [{
   handler: 'buttons',
   params: [
-    { value: OPCOES['Uso em casa'].id, params: [goto(10)], synonyms: ['Uso em casa', '1', 'casa', 'Consumidor Final', 'consumidor final', 'consumidor', 'pra mim', 'uso pessoal'] },
-    { value: OPCOES['Tenho salão'].id, params: [goto(20)], synonyms: ['Tenho salão', '2', 'Salão', 'salão', 'salao', 'SALÃO', 'cabeleireira', 'cabeleireiro', 'profissional'] },
-    { value: OPCOES['Revendo/distribuo'].id, params: [goto(30)], synonyms: ['Revendo/distribuo', '3', 'Distribuidor', 'distribuidor', 'revenda', 'revendo', 'revender', 'distribuir'] },
-    { value: OPCOES['Já sou cliente'].id, params: [goto(40)], synonyms: ['Já sou cliente', '4', 'já sou cliente', 'pedido', 'meu pedido', 'rastreio', 'troca', 'entrega'] },
-    // Sem botão: cumpre a promessa da saudação ("se preferir falar com alguém, é só pedir").
-    { value: 'Falar com atendente', params: [goto(51)], synonyms: ['atendente', 'falar com atendente', 'quero falar com atendente', 'falar com alguém', 'quero falar com alguém', 'pessoa', 'humano', 'atendimento'] },
-    { type: 'else', params: [goto(seNaoEntender)] },
+    { value: OPCOES['Uso em casa'].id, params: [goto(10)] },
+    { value: OPCOES['Tenho salão'].id, params: [goto(20)] },
+    { value: OPCOES['Revendo/distribuo'].id, params: [goto(30)] },
+    { value: OPCOES['Já sou cliente'].id, params: [goto(40)] },
+    { type: 'else', params: [goto(53)] },
   ],
 }];
+const contem = (palavras, step) => ({ handler: 'conditions', params: { logic: 'or',
+  conditions: palavras.map((term2) => ({ term1: '{{message_text}}', term2, operation: 'contains' })), result: [goto(step)] } });
 
 const blocos = {
   // Saudação e triagem.
-  0: { question: [], answer: respostaDosBotoes(50) }, // a mensagem entra logo abaixo
+  0: { question: [], answer: respostaDosBotoes() }, // a mensagem entra logo abaixo
   // Regra do dono (2026-11-08): o segmento é obrigatório. Quem escreve em vez de escolher recebe as opções de novo,
   // quantas vezes for preciso; só "falar com atendente" passa direto para a Thayná, na Entrada (sem triagem).
-  50: { question: [lista('Para eu te atender certinho, primeiro me diz quem você é 😊 Toque em "Ver opções":', Object.values(OPCOES))], answer: respostaDosBotoes(50) },
+  50: { question: [lista('Para eu te atender certinho, primeiro me diz quem você é 😊 Toque em "Ver opções":', Object.values(OPCOES))], answer: respostaDosBotoes() },
+  // Escreveu em vez de tocar: "atendente" (cumpre a promessa da saudação) vai para a Thayná; o resto repete a lista.
+  53: { question: [contem(['atendente', 'Atendente', 'ATENDENTE', 'falar com alguém', 'Falar com alguém', 'humano', 'pessoa'], 51), goto(50)] },
   51: { question: [etapa(FUNIL.entrada, ETAPA.entradaThayna), etiqueta('pediu-atendente'), msg('Claro! Vou te passar para a nossa atendente, ela continua com você por aqui, é só aguardar 💜'), tarefa('Cliente pediu atendente antes da triagem: responder e preencher o Segmento.'), fim] },
   // Depois do segmento: escreveu o produto em vez de escolher a marca → passa para a Thayná.
   52: { question: [msg('Anotado! Vou te passar para a nossa atendente, ela continua com você por aqui e te ajuda a escolher, é só aguardar 💜'), tarefa('Consumidor escreveu o que quer em vez de escolher a marca: responder pela conversa (até 30 minutos).'), fim] },
@@ -147,18 +151,17 @@ const blocos = {
   36: { question: [campoLead(CAMPO.cpfCnpj, '{{message_text}}'), goto(37)] },
   // Região de atuação em dois campos (dono, 2026-11-08: "ponto muito importante e para termos indicadores").
   // O estado é escolhido por toque (dono, 2026-11-08: "vão preencher errado"): primeiro a região, depois o estado da
-  // região. O WhatsApp mostra até 10 opções por lista; a maior região, o Nordeste, tem 9. Quem digitar a sigla ou o nome
-  // também é entendido; outra coisa repete a pergunta.
+  // região. O WhatsApp mostra até 10 opções por lista; a maior região, o Nordeste, tem 9. Quem escreve em vez de
+  // tocar recebe a pergunta de novo (lista não aceita sinônimos).
   37: { question: [lista('Em qual região você pretende atuar como distribuidor? Toque em "Ver opções":', Object.values(LINHA_REGIAO))],
     answer: [{ handler: 'buttons', params: [
-      ...Object.keys(REGIOES).map((r, i) => ({ value: LINHA_REGIAO[r].id, params: [goto(70 + i)], synonyms: [r, r.toLowerCase(), r.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()] })),
-      ...Object.values(REGIOES).flat().map(([uf, nome]) => ({ value: uf, params: [goto(UF_BLOCO[uf])], synonyms: [uf.toLowerCase(), nome, nome.toLowerCase()] })),
+      ...Object.keys(REGIOES).map((r, i) => ({ value: LINHA_REGIAO[r].id, params: [goto(70 + i)] })),
       { type: 'else', params: [goto(37)] },
     ] }] },
   ...Object.fromEntries(Object.entries(REGIOES).map(([, ufs], i) => [70 + i, {
     question: [lista('E qual estado? Toque em "Ver opções":', ufs.map(([uf]) => LINHA_UF[uf]))],
     answer: [{ handler: 'buttons', params: [
-      ...ufs.map(([uf, nome]) => ({ value: LINHA_UF[uf].id, params: [goto(UF_BLOCO[uf])], synonyms: [uf, uf.toLowerCase(), nome, nome.toLowerCase(), LINHA_UF[uf].title] })),
+      ...ufs.map(([uf]) => ({ value: LINHA_UF[uf].id, params: [goto(UF_BLOCO[uf])] })),
       { type: 'else', params: [goto(70 + i)] },
     ] }],
   }])),
