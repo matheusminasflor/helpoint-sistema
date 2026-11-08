@@ -173,3 +173,9 @@ Os pontos que mais pesam:
 16. **Comentários:** plano B com um Salesbot que move o lead.
 17. **Saúde:** pergunta de saúde vai para pessoa; no 1º mês, ler 20 conversas por semana.
 18. **Histórico:** o recálculo de 400 dias muda os meses passados.
+
+Decisões do dono sobre a revisão (2026-11-08):
+- **Férias:** a empresa tira férias coletivas, então não há pessoa reserva. A Lyra segura a conversa e avisa a data de
+  volta, e a tarefa fica marcada para esse dia.
+- **Aviso dos 30 minutos:** vai para a Thayná, para o dono e para o gestor comercial.
+- **Plano do Kommo:** lembrete no Helpoint em 14/02/2027, 30 dias antes de vencer, para o dono e o admin.
