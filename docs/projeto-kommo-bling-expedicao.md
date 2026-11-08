@@ -204,3 +204,7 @@ Os 15 pontos novos:
 - **33.** O recesso da empresa é cadastrado no Helpoint.
 
 Seis pontos só se provam montando, e cada um tem plano B (seção "Provar na montagem" da página).
+
+Decisões do dono (2026-11-08):
+- os leads "só comentou" são excluídos 30 dias depois de fechados (o Helpoint guarda a contagem antes);
+- o formulário do site é só para distribuidor.
