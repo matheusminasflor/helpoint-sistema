@@ -12,7 +12,7 @@ const FUNIL = { consumidor: 12904179, salao: 12927111, distribuidor: 12927087, a
 // "Com a Lyra" enquanto a Lyra conversa; "Com atendente" só quando precisa de uma pessoa (dono, 2026-11-08: "é importante
 // separar isso"); BY.MF, que compra sozinho no site, vai para "Link enviado". A etapa se chama "Com atendente", e não pelo
 // nome de quem atende hoje, para não precisar mexer quando a pessoa mudar (dono, 2026-11-08).
-const ETAPA = { consumidorLyra: 113891167, salaoLyra: 113891215, distribuidorLyra: 113891223, consumidorLink: 113891171, consumidorAtendente: 99501151, salaoAtendente: 99680859, distribuidorAtendente: 99680647, posVenda: 113891275, entradaAtendente: 113893475 };
+const ETAPA = { entradaContato: 107856359, consumidorLyra: 113891167, salaoLyra: 113891215, distribuidorLyra: 113891223, consumidorLink: 113891171, consumidorAtendente: 99501151, salaoAtendente: 99680859, distribuidorAtendente: 99680647, posVenda: 113891275, entradaAtendente: 113893475 };
 const CAMPO = { segmento: 4381514, cpfCnpj: 4381512, marca: 4381516, estadoAtuacao: 4381528, cidadeAtuacao: 4381530 };
 
 const goto = (step, type = 'question') => ({ handler: 'goto', params: { type, step } });
@@ -223,7 +223,10 @@ for (const [k, b] of Object.entries({ ...blocos })) {
   const [listaDoWhatsapp, botoesDoInstagram] = b.question;
   botoesDoInstagram.params.on_error = goto(Number(k) + 200);
   botoesDoInstagram.params.is_in_starting_block = k === '0';
-  blocos[k] = { ...b, question: [botoesDoInstagram] };
+  // Na saudação, o lead vai primeiro para Entrada › Contato inicial, como fazia o robô de entrada que a Lyra substitui:
+  // sem isso o lead do WhatsApp nasceria em Consumidor Final antes de escolher o segmento e entraria nos indicadores.
+  const antes = k === '0' ? [etapa(FUNIL.entrada, ETAPA.entradaContato)] : [];
+  blocos[k] = { ...b, question: [...antes, botoesDoInstagram] };
   blocos[Number(k) + 200] = { question: [listaDoWhatsapp], answer: b.answer };
 }
 
