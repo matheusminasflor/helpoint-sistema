@@ -37,3 +37,19 @@ formulário do site com `referrer` (Google 15, l.instagram.com 12, site 5).
   ("Expedição só atendimento; etiqueta apagada"): é proposta nova, com tela, antes de construir.
 - Depende das chaves `BLING_CLIENT_ID` e `BLING_CLIENT_SECRET` (`docs/marketing-ligacoes-meta-kommo-bling.md`) e de
   conferir na API do Bling o que ela entrega de etiqueta e DANFE.
+
+## 3. Distribuidor: valor faturado no Forteplus (decidido em 2026-11-07, entra na etapa 2)
+
+Toda venda do segmento Distribuidor passa pelo Forteplus. A venda ganha no Kommo só avisa que **fechou**: o valor que
+ela tem lá não entra no indicador. O valor que vale é o **faturado**.
+
+- **Ligação:** pelo telefone. O telefone do contato no Kommo (últimos 8 dígitos) é comparado com `com_clientes.telefone`.
+  Se não bater, a venda vai para "Para corrigir" e quem cuida dos leads preenche um campo com o código do cliente no Kommo.
+- **Valor:** a soma de `com_vendas_itens.valor_nota` do cliente, com CFOP de venda, das notas emitidas **até 7 dias depois
+  de fechar**. "Pago" foi descartado porque o Forteplus não manda pagamento ao Helpoint.
+- **Situações:** Faturado (com o valor e o número das notas), Aguardando nota e Cliente não encontrado.
+- **Consumidor e Salão:** continuam com o valor do Kommo. Na etapa 3, passam a usar o pedido do Bling.
+- **Caso conferido:** Priscila, lead 118411874, fechou em 26/10 com R$ 5.096. O telefone termina em 8274, igual ao do cliente
+  2147. Os pedidos 11466 e 11467 somam R$ 5.098, e as notas 18843 e 23453 saíram em 27/10. Os pedidos 11475 e 11476
+  (R$ 627, notas 553 e 23452) são outra compra.
+- **Antes de construir:** medir quantas ganhas de Distribuidor batem pelo telefone e fazer a proposta visual.
