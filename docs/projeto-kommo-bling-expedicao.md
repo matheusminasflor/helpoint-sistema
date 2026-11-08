@@ -299,3 +299,5 @@ Seção "Como garantimos", com as camadas de conferência:
 **Catálogos:** estão em `C:\Users\matheus.baeta\Downloads\CATÁLOGOS_` (Styling, ebook Styling, Therapy, BY.MF, Minasflor,
 Backbar, 2 cartelas de cores e o catálogo digital de distribuidores). A base da Lyra fica em `docs/lyra-base/`. O
 catálogo de distribuidores ficou de fora, porque repete os produtos e traz condição de revenda.
+- **Região com distribuidor (dono, 2026-11-08):** o salão ou o consumidor de Minasflor e MF.PRO compra direto, com o link
+  dele, sem olhar a região. A Lyra não encaminha ao distribuidor.
