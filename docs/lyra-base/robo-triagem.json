@@ -1,6 +1,6 @@
 {
   "0": {
-    "block_uuid": "36fd46e0-76ac-434e-8673-97893616b0b8",
+    "block_uuid": "d98c83d6-f084-4f45-9e0c-34bff62def9f",
     "question": [
       {
         "handler": "list_message",
@@ -15,22 +15,22 @@
                 "title": "Opções",
                 "rows": [
                   {
-                    "callback_data": "d1ebe6e6-6306-4436-b38f-33b24ab154aa",
+                    "callback_data": "fa7c3557-922c-473a-968d-f66ffc197d74",
                     "title": "Uso em casa",
                     "description": ""
                   },
                   {
-                    "callback_data": "cc0b009d-f984-4b8f-aa58-f13aa2e08933",
+                    "callback_data": "c09f64ef-3eb8-4fa5-8370-3160474494eb",
                     "title": "Tenho salão",
                     "description": ""
                   },
                   {
-                    "callback_data": "9453f08f-3c74-4a7f-a73e-313cd974be08",
+                    "callback_data": "f6a6aad7-8b48-4ff7-9622-fa90d14725cf",
                     "title": "Revendo/distribuo",
                     "description": ""
                   },
                   {
-                    "callback_data": "adf0a8d8-7d6a-44a3-ae82-c873380e8cc8",
+                    "callback_data": "fccf9a3d-2486-47d8-8fb9-b467d680b177",
                     "title": "Já sou cliente",
                     "description": ""
                   }
@@ -51,7 +51,7 @@
         "handler": "buttons",
         "params": [
           {
-            "value": "d1ebe6e6-6306-4436-b38f-33b24ab154aa",
+            "value": "fa7c3557-922c-473a-968d-f66ffc197d74",
             "params": [
               {
                 "handler": "goto",
@@ -63,7 +63,7 @@
             ]
           },
           {
-            "value": "cc0b009d-f984-4b8f-aa58-f13aa2e08933",
+            "value": "c09f64ef-3eb8-4fa5-8370-3160474494eb",
             "params": [
               {
                 "handler": "goto",
@@ -75,7 +75,7 @@
             ]
           },
           {
-            "value": "9453f08f-3c74-4a7f-a73e-313cd974be08",
+            "value": "f6a6aad7-8b48-4ff7-9622-fa90d14725cf",
             "params": [
               {
                 "handler": "goto",
@@ -87,7 +87,7 @@
             ]
           },
           {
-            "value": "adf0a8d8-7d6a-44a3-ae82-c873380e8cc8",
+            "value": "fccf9a3d-2486-47d8-8fb9-b467d680b177",
             "params": [
               {
                 "handler": "goto",
@@ -115,8 +115,18 @@
     ]
   },
   "9": {
-    "block_uuid": "331405f5-cabd-45c2-9456-cafa9bae28e3",
+    "block_uuid": "9226ac8c-40a6-4f55-a1a2-c1fa798b1484",
     "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "change_status",
+          "params": {
+            "value": 99501151,
+            "pipeline_id": 12904179
+          }
+        }
+      },
       {
         "handler": "send_message",
         "params": {
@@ -182,14 +192,14 @@
     ]
   },
   "10": {
-    "block_uuid": "e55ee89c-9690-43f3-bc58-92ee16752d26",
+    "block_uuid": "a2cb32e2-646c-4fb2-87eb-e0e989296b12",
     "question": [
       {
         "handler": "action",
         "params": {
           "name": "change_status",
           "params": {
-            "value": 99501151,
+            "value": 113891167,
             "pipeline_id": 12904179
           }
         }
@@ -226,7 +236,7 @@
     ]
   },
   "11": {
-    "block_uuid": "0b8c1414-05de-44a8-82de-b9c8a62746f0",
+    "block_uuid": "4ca42110-1595-4f5a-95f6-347783b6817c",
     "question": [
       {
         "handler": "send_message",
@@ -253,7 +263,7 @@
     ]
   },
   "12": {
-    "block_uuid": "4cf2bb48-fd46-46d0-986f-0fa67ab704b7",
+    "block_uuid": "45cbae10-3f45-4886-9d48-ecb201c82c42",
     "question": [
       {
         "handler": "waits",
@@ -276,7 +286,7 @@
     ]
   },
   "13": {
-    "block_uuid": "73783d07-cd26-4218-a7db-6a68fccb49ec",
+    "block_uuid": "977a63ee-b58d-439d-a546-aad15010e888",
     "question": [
       {
         "handler": "action",
@@ -298,7 +308,7 @@
     ]
   },
   "14": {
-    "block_uuid": "e318986f-5a4f-425d-ba47-48450648766a",
+    "block_uuid": "797b46a8-dfcd-423e-ae6a-d4f01557e71f",
     "question": [
       {
         "handler": "send_message",
@@ -408,8 +418,18 @@
     ]
   },
   "15": {
-    "block_uuid": "3cd05635-c7bb-4b28-ae37-e81d254f2052",
+    "block_uuid": "bbe4417f-cb7a-4f4c-8001-0a20f6bdc935",
     "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "change_status",
+          "params": {
+            "value": 113891171,
+            "pipeline_id": 12904179
+          }
+        }
+      },
       {
         "handler": "action",
         "params": {
@@ -456,7 +476,7 @@
     ]
   },
   "16": {
-    "block_uuid": "289de313-b5e6-45d3-9d56-ca330a15ddbe",
+    "block_uuid": "39ce875f-4f02-4144-9a05-567d636af56f",
     "question": [
       {
         "handler": "action",
@@ -493,7 +513,7 @@
     ]
   },
   "17": {
-    "block_uuid": "57d17d85-e690-472f-9562-f9e90da1a48f",
+    "block_uuid": "d052ec37-b56e-4f7d-8fab-8eda64fb6ce0",
     "question": [
       {
         "handler": "action",
@@ -530,7 +550,7 @@
     ]
   },
   "18": {
-    "block_uuid": "53aab0c3-e5ba-454b-973e-2f2b7cf76808",
+    "block_uuid": "0732358d-8762-47e9-b034-5e412c57a068",
     "question": [
       {
         "handler": "send_message",
@@ -557,7 +577,7 @@
     ]
   },
   "19": {
-    "block_uuid": "80be4f57-69d0-4adc-8074-627895995531",
+    "block_uuid": "6220a7db-87e5-450c-acd7-ce3c35c6ebef",
     "question": [
       {
         "handler": "waits",
@@ -580,14 +600,14 @@
     ]
   },
   "20": {
-    "block_uuid": "eb6337d8-bafa-4c02-ac31-807a36e77d55",
+    "block_uuid": "1bcf7bce-7a28-4aec-b2cc-d7abe4c5ce03",
     "question": [
       {
         "handler": "action",
         "params": {
           "name": "change_status",
           "params": {
-            "value": 99680859,
+            "value": 113891215,
             "pipeline_id": 12927111
           }
         }
@@ -624,7 +644,7 @@
     ]
   },
   "21": {
-    "block_uuid": "dc2a91a3-92f3-43cb-ab4e-4a95164e7d3c",
+    "block_uuid": "dd486f4d-9776-4948-8da7-cc2ed2304f8a",
     "question": [
       {
         "handler": "send_message",
@@ -651,7 +671,7 @@
     ]
   },
   "22": {
-    "block_uuid": "f66ac4eb-51fd-4e0c-bca8-66dcdafbbd76",
+    "block_uuid": "4310b401-ec8f-4d78-a9fc-5edd55949a9d",
     "question": [
       {
         "handler": "waits",
@@ -674,7 +694,7 @@
     ]
   },
   "23": {
-    "block_uuid": "a4d88420-e181-4a9b-afcd-c680f15ecc6d",
+    "block_uuid": "492b4118-57fa-44d6-a9a4-c761ffa5c818",
     "question": [
       {
         "handler": "action",
@@ -696,7 +716,7 @@
     ]
   },
   "24": {
-    "block_uuid": "421b5bc1-72c5-4990-908a-7544afe1ca42",
+    "block_uuid": "1c8890e0-6779-43b4-a63f-99652990a774",
     "question": [
       {
         "handler": "send_message",
@@ -785,7 +805,7 @@
     ]
   },
   "25": {
-    "block_uuid": "6c2b41be-b626-45ea-8c44-b3b6ed6936fb",
+    "block_uuid": "079f2288-9a48-4372-b830-0580910469cc",
     "question": [
       {
         "handler": "waits",
@@ -808,7 +828,7 @@
     ]
   },
   "26": {
-    "block_uuid": "70fbe972-6418-401d-b099-fabf52684cbc",
+    "block_uuid": "99ea489b-690f-4e5c-9a79-05703cfb4e56",
     "question": [
       {
         "handler": "action",
@@ -830,7 +850,7 @@
     ]
   },
   "27": {
-    "block_uuid": "fd64db09-114e-48dd-ad5c-47ec8ab23259",
+    "block_uuid": "110f2521-370e-4d56-b51b-5c3752a51ced",
     "question": [
       {
         "handler": "send_message",
@@ -857,7 +877,7 @@
     ]
   },
   "28": {
-    "block_uuid": "0dcb8e9d-3545-4a70-a0b2-1dc9f52fc415",
+    "block_uuid": "031fc43f-21ab-477f-9621-b7c7e425ab3d",
     "question": [
       {
         "handler": "waits",
@@ -880,8 +900,18 @@
     ]
   },
   "29": {
-    "block_uuid": "f24ff951-24a9-439d-8e1f-7c7fe146eceb",
+    "block_uuid": "ea1f86b4-25d1-4fbf-a283-471577909c57",
     "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "change_status",
+          "params": {
+            "value": 99680859,
+            "pipeline_id": 12927111
+          }
+        }
+      },
       {
         "handler": "send_message",
         "params": {
@@ -947,14 +977,14 @@
     ]
   },
   "30": {
-    "block_uuid": "d3e7aac5-3f6d-4c0a-a3af-754e9725de62",
+    "block_uuid": "02e54fdf-d95e-48a7-b074-df18772616b9",
     "question": [
       {
         "handler": "action",
         "params": {
           "name": "change_status",
           "params": {
-            "value": 99680647,
+            "value": 113891223,
             "pipeline_id": 12927087
           }
         }
@@ -991,7 +1021,7 @@
     ]
   },
   "31": {
-    "block_uuid": "b143b419-1857-4831-b8fb-21397148cb20",
+    "block_uuid": "752818dc-4acd-49e3-bfb6-8ee1ce3abbe5",
     "question": [
       {
         "handler": "send_message",
@@ -1018,7 +1048,7 @@
     ]
   },
   "32": {
-    "block_uuid": "9b009167-7c5c-4dbb-87fe-34b7371fb343",
+    "block_uuid": "25ec4fb1-bc9a-4e45-bf66-37619c907b99",
     "question": [
       {
         "handler": "waits",
@@ -1041,7 +1071,7 @@
     ]
   },
   "33": {
-    "block_uuid": "0e62ad43-eefa-4a32-82a8-7244dc971bfb",
+    "block_uuid": "004146de-d227-4649-aa78-8552e4f2272c",
     "question": [
       {
         "handler": "action",
@@ -1063,7 +1093,7 @@
     ]
   },
   "34": {
-    "block_uuid": "9da832a7-2d1b-44ce-af4a-8ae0e5e8bdab",
+    "block_uuid": "53216e64-af74-4d59-8122-939cd1a6ebc9",
     "question": [
       {
         "handler": "send_message",
@@ -1090,7 +1120,7 @@
     ]
   },
   "35": {
-    "block_uuid": "474ee8a2-a078-4e96-bcbb-ef2da91d7ce5",
+    "block_uuid": "259b1feb-3ee5-4fb1-ba21-b1c0ccdcaee9",
     "question": [
       {
         "handler": "waits",
@@ -1113,7 +1143,7 @@
     ]
   },
   "36": {
-    "block_uuid": "64a01152-d04a-40d8-a111-4a35e2b25bfd",
+    "block_uuid": "2ae24a34-7112-4418-9f11-a9f8b5e7a16d",
     "question": [
       {
         "handler": "action",
@@ -1135,7 +1165,7 @@
     ]
   },
   "37": {
-    "block_uuid": "238a911c-3874-487d-bb96-5c8175140868",
+    "block_uuid": "530f38a4-e417-49da-aad1-43ceac20780b",
     "question": [
       {
         "handler": "list_message",
@@ -1150,27 +1180,27 @@
                 "title": "Opções",
                 "rows": [
                   {
-                    "callback_data": "a035add2-bd17-4575-858d-838d6410d8c9",
+                    "callback_data": "4d9e292d-7631-4177-93ef-ce40a815b92a",
                     "title": "Sudeste",
                     "description": ""
                   },
                   {
-                    "callback_data": "6c7bd034-f2cc-4e9e-8883-8832a4b849c3",
+                    "callback_data": "ec0c9c08-cfdb-40d5-a5ab-3653cc0c3b5c",
                     "title": "Sul",
                     "description": ""
                   },
                   {
-                    "callback_data": "90123ab1-b836-4012-9071-eee5dd77bb79",
+                    "callback_data": "51e3a373-50c3-4ce2-888e-4bfa3a0e021b",
                     "title": "Centro-Oeste",
                     "description": ""
                   },
                   {
-                    "callback_data": "f8536b89-a190-4a59-bd6c-9ff1ea474544",
+                    "callback_data": "9c1d14ef-f98d-4b72-b33b-a1d391d9a927",
                     "title": "Nordeste",
                     "description": ""
                   },
                   {
-                    "callback_data": "792bb3ed-79d1-4bc8-befa-bda892266373",
+                    "callback_data": "e0472d57-315a-4870-89fc-fb7808b8ee11",
                     "title": "Norte",
                     "description": ""
                   }
@@ -1191,7 +1221,7 @@
         "handler": "buttons",
         "params": [
           {
-            "value": "a035add2-bd17-4575-858d-838d6410d8c9",
+            "value": "4d9e292d-7631-4177-93ef-ce40a815b92a",
             "params": [
               {
                 "handler": "goto",
@@ -1203,7 +1233,7 @@
             ]
           },
           {
-            "value": "6c7bd034-f2cc-4e9e-8883-8832a4b849c3",
+            "value": "ec0c9c08-cfdb-40d5-a5ab-3653cc0c3b5c",
             "params": [
               {
                 "handler": "goto",
@@ -1215,7 +1245,7 @@
             ]
           },
           {
-            "value": "90123ab1-b836-4012-9071-eee5dd77bb79",
+            "value": "51e3a373-50c3-4ce2-888e-4bfa3a0e021b",
             "params": [
               {
                 "handler": "goto",
@@ -1227,7 +1257,7 @@
             ]
           },
           {
-            "value": "f8536b89-a190-4a59-bd6c-9ff1ea474544",
+            "value": "9c1d14ef-f98d-4b72-b33b-a1d391d9a927",
             "params": [
               {
                 "handler": "goto",
@@ -1239,7 +1269,7 @@
             ]
           },
           {
-            "value": "792bb3ed-79d1-4bc8-befa-bda892266373",
+            "value": "e0472d57-315a-4870-89fc-fb7808b8ee11",
             "params": [
               {
                 "handler": "goto",
@@ -1267,8 +1297,18 @@
     ]
   },
   "39": {
-    "block_uuid": "1c07765d-3c57-4bb6-9d6d-ae575b748592",
+    "block_uuid": "b600cb22-74c1-4358-9fcc-ffffa998a2f5",
     "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "change_status",
+          "params": {
+            "value": 99680647,
+            "pipeline_id": 12927087
+          }
+        }
+      },
       {
         "handler": "send_message",
         "params": {
@@ -1334,7 +1374,7 @@
     ]
   },
   "40": {
-    "block_uuid": "2b9b288f-c91e-4262-8730-37e0609f8add",
+    "block_uuid": "9d0673f7-2690-4bd3-91fd-361f97f3a05b",
     "question": [
       {
         "handler": "action",
@@ -1423,7 +1463,7 @@
     ]
   },
   "50": {
-    "block_uuid": "7937f0bd-62e2-4281-b310-fc590b2b1dc6",
+    "block_uuid": "98df60f1-2ca8-4667-9598-a5caba85cbac",
     "question": [
       {
         "handler": "list_message",
@@ -1438,22 +1478,22 @@
                 "title": "Opções",
                 "rows": [
                   {
-                    "callback_data": "d1ebe6e6-6306-4436-b38f-33b24ab154aa",
+                    "callback_data": "fa7c3557-922c-473a-968d-f66ffc197d74",
                     "title": "Uso em casa",
                     "description": ""
                   },
                   {
-                    "callback_data": "cc0b009d-f984-4b8f-aa58-f13aa2e08933",
+                    "callback_data": "c09f64ef-3eb8-4fa5-8370-3160474494eb",
                     "title": "Tenho salão",
                     "description": ""
                   },
                   {
-                    "callback_data": "9453f08f-3c74-4a7f-a73e-313cd974be08",
+                    "callback_data": "f6a6aad7-8b48-4ff7-9622-fa90d14725cf",
                     "title": "Revendo/distribuo",
                     "description": ""
                   },
                   {
-                    "callback_data": "adf0a8d8-7d6a-44a3-ae82-c873380e8cc8",
+                    "callback_data": "fccf9a3d-2486-47d8-8fb9-b467d680b177",
                     "title": "Já sou cliente",
                     "description": ""
                   }
@@ -1474,7 +1514,7 @@
         "handler": "buttons",
         "params": [
           {
-            "value": "d1ebe6e6-6306-4436-b38f-33b24ab154aa",
+            "value": "fa7c3557-922c-473a-968d-f66ffc197d74",
             "params": [
               {
                 "handler": "goto",
@@ -1486,7 +1526,7 @@
             ]
           },
           {
-            "value": "cc0b009d-f984-4b8f-aa58-f13aa2e08933",
+            "value": "c09f64ef-3eb8-4fa5-8370-3160474494eb",
             "params": [
               {
                 "handler": "goto",
@@ -1498,7 +1538,7 @@
             ]
           },
           {
-            "value": "9453f08f-3c74-4a7f-a73e-313cd974be08",
+            "value": "f6a6aad7-8b48-4ff7-9622-fa90d14725cf",
             "params": [
               {
                 "handler": "goto",
@@ -1510,7 +1550,7 @@
             ]
           },
           {
-            "value": "adf0a8d8-7d6a-44a3-ae82-c873380e8cc8",
+            "value": "fccf9a3d-2486-47d8-8fb9-b467d680b177",
             "params": [
               {
                 "handler": "goto",
@@ -1538,7 +1578,7 @@
     ]
   },
   "51": {
-    "block_uuid": "f5750e84-4bcb-4178-974b-24d3bf41e2ea",
+    "block_uuid": "42a893ac-9e62-410b-b0ab-20bf32a0f7c1",
     "question": [
       {
         "handler": "action",
@@ -1627,8 +1667,18 @@
     ]
   },
   "52": {
-    "block_uuid": "2cb6bad4-14a2-475f-af0c-b3d11faece14",
+    "block_uuid": "6674b68c-1924-480a-b1e7-5691eb33bf50",
     "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "change_status",
+          "params": {
+            "value": 99501151,
+            "pipeline_id": 12904179
+          }
+        }
+      },
       {
         "handler": "send_message",
         "params": {
@@ -1694,7 +1744,7 @@
     ]
   },
   "53": {
-    "block_uuid": "d02ba896-3c15-43ce-8bfe-6ef2e4019a1b",
+    "block_uuid": "96bdc0f2-3f95-46f8-ab4d-81087bf36909",
     "question": [
       {
         "handler": "conditions",
@@ -1758,8 +1808,18 @@
     ]
   },
   "54": {
-    "block_uuid": "400c93c1-0fef-426d-973a-1fb8e4177991",
+    "block_uuid": "5a3d0ed0-b6a2-4bb0-8ee6-988128886248",
     "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "change_status",
+          "params": {
+            "value": 99501151,
+            "pipeline_id": 12904179
+          }
+        }
+      },
       {
         "handler": "send_message",
         "params": {
@@ -1814,7 +1874,7 @@
     ]
   },
   "55": {
-    "block_uuid": "f19fce10-2b15-4ede-a03e-936ca538b69f",
+    "block_uuid": "e4ab16f4-8492-420a-83e2-a03c97c0d556",
     "question": [
       {
         "handler": "send_message",
@@ -1841,7 +1901,7 @@
     ]
   },
   "60": {
-    "block_uuid": "e653eea4-68f4-43ef-8d9a-7260118a7a9a",
+    "block_uuid": "41b7ea61-bb07-4bd8-8a4d-6c89c9017199",
     "question": [
       {
         "handler": "send_message",
@@ -1868,7 +1928,7 @@
     ]
   },
   "61": {
-    "block_uuid": "d97143bb-9916-4d82-b3c7-02a0d66abcf1",
+    "block_uuid": "9984f187-41d7-47ec-a716-792e0f58fd9d",
     "question": [
       {
         "handler": "action",
@@ -1890,7 +1950,7 @@
     ]
   },
   "63": {
-    "block_uuid": "6a4ad08e-bc07-4fa3-b13f-4f1d43ae2f42",
+    "block_uuid": "399b7230-a1de-4e59-806f-1f3d51517c0b",
     "question": [
       {
         "handler": "send_message",
@@ -1917,7 +1977,7 @@
     ]
   },
   "64": {
-    "block_uuid": "21553a95-8c0f-4a46-a0d0-8cb453b4ef18",
+    "block_uuid": "015e8fff-c757-4c11-b5dc-f1d1a37dd63d",
     "question": [
       {
         "handler": "waits",
@@ -1940,14 +2000,14 @@
     ]
   },
   "65": {
-    "block_uuid": "447aa915-121c-4562-b313-92e792341668",
+    "block_uuid": "a7a66a81-d30d-4f5b-a34d-c248acfc329b",
     "question": [
       {
         "handler": "action",
         "params": {
           "name": "change_status",
           "params": {
-            "value": 99501151,
+            "value": 113891167,
             "pipeline_id": 12904179
           }
         }
@@ -2011,7 +2071,7 @@
     ]
   },
   "66": {
-    "block_uuid": "603fe4e9-2e14-4a75-9a65-077894f0d6c8",
+    "block_uuid": "af7d19bc-08f7-4178-8b81-ad4fc15773d9",
     "question": [
       {
         "handler": "action",
@@ -2033,7 +2093,7 @@
     ]
   },
   "70": {
-    "block_uuid": "87579820-af2f-4447-8bd2-49e625bd392d",
+    "block_uuid": "ba021af0-afd8-4954-8bce-488e07a4f22f",
     "question": [
       {
         "handler": "list_message",
@@ -2048,22 +2108,22 @@
                 "title": "Opções",
                 "rows": [
                   {
-                    "callback_data": "6d52deac-c4df-4d37-a2b4-44f7bdabca7e",
+                    "callback_data": "3f485663-fe1e-4ac8-8665-367a03ca1d05",
                     "title": "MG · Minas Gerais",
                     "description": ""
                   },
                   {
-                    "callback_data": "6cc99b01-6b87-4aca-a61b-f9c9ac69feea",
+                    "callback_data": "62e831aa-e3a1-459d-90a1-daa48309f0d5",
                     "title": "SP · São Paulo",
                     "description": ""
                   },
                   {
-                    "callback_data": "86a3b8cd-be6d-44a4-a0f9-93b6e50954fa",
+                    "callback_data": "ee20aec0-f935-4cd5-ad67-da85093b551a",
                     "title": "RJ · Rio de Janeiro",
                     "description": ""
                   },
                   {
-                    "callback_data": "50dd5651-0996-4f0f-8e2b-9a0eebd6611a",
+                    "callback_data": "18851b0d-27ae-4bf6-9ad6-ba41af55891b",
                     "title": "ES · Espírito Santo",
                     "description": ""
                   }
@@ -2084,7 +2144,7 @@
         "handler": "buttons",
         "params": [
           {
-            "value": "6d52deac-c4df-4d37-a2b4-44f7bdabca7e",
+            "value": "3f485663-fe1e-4ac8-8665-367a03ca1d05",
             "params": [
               {
                 "handler": "goto",
@@ -2096,7 +2156,7 @@
             ]
           },
           {
-            "value": "6cc99b01-6b87-4aca-a61b-f9c9ac69feea",
+            "value": "62e831aa-e3a1-459d-90a1-daa48309f0d5",
             "params": [
               {
                 "handler": "goto",
@@ -2108,7 +2168,7 @@
             ]
           },
           {
-            "value": "86a3b8cd-be6d-44a4-a0f9-93b6e50954fa",
+            "value": "ee20aec0-f935-4cd5-ad67-da85093b551a",
             "params": [
               {
                 "handler": "goto",
@@ -2120,7 +2180,7 @@
             ]
           },
           {
-            "value": "50dd5651-0996-4f0f-8e2b-9a0eebd6611a",
+            "value": "18851b0d-27ae-4bf6-9ad6-ba41af55891b",
             "params": [
               {
                 "handler": "goto",
@@ -2148,7 +2208,7 @@
     ]
   },
   "71": {
-    "block_uuid": "20e5d792-9a6b-4c3b-b37c-6cad9d38e16f",
+    "block_uuid": "2006a547-e8dd-40e5-ae9f-ee6513071234",
     "question": [
       {
         "handler": "list_message",
@@ -2163,17 +2223,17 @@
                 "title": "Opções",
                 "rows": [
                   {
-                    "callback_data": "3ac17043-d95f-4f68-bb7f-40a3ec616167",
+                    "callback_data": "2128465b-7e43-4cf2-bed0-802b6db200c7",
                     "title": "PR · Paraná",
                     "description": ""
                   },
                   {
-                    "callback_data": "4e70f88f-c87a-4133-8404-d8edaec2be93",
+                    "callback_data": "3773cff7-b3cf-42e9-bd57-955310c00719",
                     "title": "SC · Santa Catarina",
                     "description": ""
                   },
                   {
-                    "callback_data": "9c89137d-4b32-4799-b10c-0053fb8b2d7f",
+                    "callback_data": "beddd03f-152e-442f-9dcb-cf3ed2c3d238",
                     "title": "RS · Rio Grande do Sul",
                     "description": ""
                   }
@@ -2194,7 +2254,7 @@
         "handler": "buttons",
         "params": [
           {
-            "value": "3ac17043-d95f-4f68-bb7f-40a3ec616167",
+            "value": "2128465b-7e43-4cf2-bed0-802b6db200c7",
             "params": [
               {
                 "handler": "goto",
@@ -2206,7 +2266,7 @@
             ]
           },
           {
-            "value": "4e70f88f-c87a-4133-8404-d8edaec2be93",
+            "value": "3773cff7-b3cf-42e9-bd57-955310c00719",
             "params": [
               {
                 "handler": "goto",
@@ -2218,7 +2278,7 @@
             ]
           },
           {
-            "value": "9c89137d-4b32-4799-b10c-0053fb8b2d7f",
+            "value": "beddd03f-152e-442f-9dcb-cf3ed2c3d238",
             "params": [
               {
                 "handler": "goto",
@@ -2246,7 +2306,7 @@
     ]
   },
   "72": {
-    "block_uuid": "b200d20a-3a72-45d7-abba-9c3424de6c8e",
+    "block_uuid": "34e5feb6-dd22-4034-ac34-b2c436b677f4",
     "question": [
       {
         "handler": "list_message",
@@ -2261,22 +2321,22 @@
                 "title": "Opções",
                 "rows": [
                   {
-                    "callback_data": "5dbc9cdd-0d5e-4207-80b3-87f022e1b0de",
+                    "callback_data": "06138c05-6653-4ccf-965d-c4a227e27f63",
                     "title": "GO · Goiás",
                     "description": ""
                   },
                   {
-                    "callback_data": "c5fa79e5-b709-4e6a-92d5-eb4013fa6053",
+                    "callback_data": "47cfa4bd-2191-4dc1-a841-c8d9b580d3a0",
                     "title": "MT · Mato Grosso",
                     "description": ""
                   },
                   {
-                    "callback_data": "19ba9ed3-b632-4e59-a89f-df4fed960462",
+                    "callback_data": "0b232edd-dd6c-4744-9fb5-7b9bdf96cf5c",
                     "title": "MS · Mato Grosso do Sul",
                     "description": ""
                   },
                   {
-                    "callback_data": "db2b9dc7-9359-49eb-8d7a-b8ddf8687364",
+                    "callback_data": "bc6157f0-6334-4537-81f1-295be8d882cf",
                     "title": "DF · Distrito Federal",
                     "description": ""
                   }
@@ -2297,7 +2357,7 @@
         "handler": "buttons",
         "params": [
           {
-            "value": "5dbc9cdd-0d5e-4207-80b3-87f022e1b0de",
+            "value": "06138c05-6653-4ccf-965d-c4a227e27f63",
             "params": [
               {
                 "handler": "goto",
@@ -2309,7 +2369,7 @@
             ]
           },
           {
-            "value": "c5fa79e5-b709-4e6a-92d5-eb4013fa6053",
+            "value": "47cfa4bd-2191-4dc1-a841-c8d9b580d3a0",
             "params": [
               {
                 "handler": "goto",
@@ -2321,7 +2381,7 @@
             ]
           },
           {
-            "value": "19ba9ed3-b632-4e59-a89f-df4fed960462",
+            "value": "0b232edd-dd6c-4744-9fb5-7b9bdf96cf5c",
             "params": [
               {
                 "handler": "goto",
@@ -2333,7 +2393,7 @@
             ]
           },
           {
-            "value": "db2b9dc7-9359-49eb-8d7a-b8ddf8687364",
+            "value": "bc6157f0-6334-4537-81f1-295be8d882cf",
             "params": [
               {
                 "handler": "goto",
@@ -2361,7 +2421,7 @@
     ]
   },
   "73": {
-    "block_uuid": "f594ae52-8022-4722-a254-fe52a6405ffe",
+    "block_uuid": "ec91f5dd-a52b-477a-b0b1-f220991b3c06",
     "question": [
       {
         "handler": "list_message",
@@ -2376,47 +2436,47 @@
                 "title": "Opções",
                 "rows": [
                   {
-                    "callback_data": "26547b7d-1f70-4afc-bfc4-e4b79b3ea14b",
+                    "callback_data": "39b70e71-fa34-4960-893b-0728ff42894f",
                     "title": "BA · Bahia",
                     "description": ""
                   },
                   {
-                    "callback_data": "4ca2d64f-e03e-49e2-a859-c8d4ac90f708",
+                    "callback_data": "281ec542-0a32-4ced-bdda-4c1252d6a80f",
                     "title": "PE · Pernambuco",
                     "description": ""
                   },
                   {
-                    "callback_data": "1fd40670-9e82-47c8-869f-21a51bfde10f",
+                    "callback_data": "d0623df1-94c3-48c0-b28a-27457c4fa4db",
                     "title": "CE · Ceará",
                     "description": ""
                   },
                   {
-                    "callback_data": "d25a95e5-bbae-4825-ad8f-4a4c75071c2b",
+                    "callback_data": "59f4bedf-2e59-4718-808d-119b68388856",
                     "title": "MA · Maranhão",
                     "description": ""
                   },
                   {
-                    "callback_data": "d097cea7-a0a3-49bb-abf2-86088645bb3e",
+                    "callback_data": "e1adac68-4998-47fd-8c0e-aa6324aed5e7",
                     "title": "PB · Paraíba",
                     "description": ""
                   },
                   {
-                    "callback_data": "74907d89-3a39-4089-b4ec-5ab3e51db799",
+                    "callback_data": "3e040271-c8e8-4c4d-9e08-48e14edb051f",
                     "title": "RN · Rio Grande do Norte",
                     "description": ""
                   },
                   {
-                    "callback_data": "f233e815-98cd-4454-9e5c-b83d21df9de9",
+                    "callback_data": "78148812-adf2-4dc4-b825-7d189a2e60ba",
                     "title": "AL · Alagoas",
                     "description": ""
                   },
                   {
-                    "callback_data": "a067175c-c116-48ca-ba55-2ef2e475596b",
+                    "callback_data": "8c1e4f04-5e89-44d6-ae77-275f0d4b2be2",
                     "title": "PI · Piauí",
                     "description": ""
                   },
                   {
-                    "callback_data": "97781f89-b8e3-481f-bd0f-494f300e278d",
+                    "callback_data": "42355331-b245-42b9-b5d2-2b36c2cebb73",
                     "title": "SE · Sergipe",
                     "description": ""
                   }
@@ -2437,7 +2497,7 @@
         "handler": "buttons",
         "params": [
           {
-            "value": "26547b7d-1f70-4afc-bfc4-e4b79b3ea14b",
+            "value": "39b70e71-fa34-4960-893b-0728ff42894f",
             "params": [
               {
                 "handler": "goto",
@@ -2449,7 +2509,7 @@
             ]
           },
           {
-            "value": "4ca2d64f-e03e-49e2-a859-c8d4ac90f708",
+            "value": "281ec542-0a32-4ced-bdda-4c1252d6a80f",
             "params": [
               {
                 "handler": "goto",
@@ -2461,7 +2521,7 @@
             ]
           },
           {
-            "value": "1fd40670-9e82-47c8-869f-21a51bfde10f",
+            "value": "d0623df1-94c3-48c0-b28a-27457c4fa4db",
             "params": [
               {
                 "handler": "goto",
@@ -2473,7 +2533,7 @@
             ]
           },
           {
-            "value": "d25a95e5-bbae-4825-ad8f-4a4c75071c2b",
+            "value": "59f4bedf-2e59-4718-808d-119b68388856",
             "params": [
               {
                 "handler": "goto",
@@ -2485,7 +2545,7 @@
             ]
           },
           {
-            "value": "d097cea7-a0a3-49bb-abf2-86088645bb3e",
+            "value": "e1adac68-4998-47fd-8c0e-aa6324aed5e7",
             "params": [
               {
                 "handler": "goto",
@@ -2497,7 +2557,7 @@
             ]
           },
           {
-            "value": "74907d89-3a39-4089-b4ec-5ab3e51db799",
+            "value": "3e040271-c8e8-4c4d-9e08-48e14edb051f",
             "params": [
               {
                 "handler": "goto",
@@ -2509,7 +2569,7 @@
             ]
           },
           {
-            "value": "f233e815-98cd-4454-9e5c-b83d21df9de9",
+            "value": "78148812-adf2-4dc4-b825-7d189a2e60ba",
             "params": [
               {
                 "handler": "goto",
@@ -2521,7 +2581,7 @@
             ]
           },
           {
-            "value": "a067175c-c116-48ca-ba55-2ef2e475596b",
+            "value": "8c1e4f04-5e89-44d6-ae77-275f0d4b2be2",
             "params": [
               {
                 "handler": "goto",
@@ -2533,7 +2593,7 @@
             ]
           },
           {
-            "value": "97781f89-b8e3-481f-bd0f-494f300e278d",
+            "value": "42355331-b245-42b9-b5d2-2b36c2cebb73",
             "params": [
               {
                 "handler": "goto",
@@ -2561,7 +2621,7 @@
     ]
   },
   "74": {
-    "block_uuid": "0f896587-d395-48b9-818d-e9873386efa8",
+    "block_uuid": "48da6b7d-9c7c-4142-9de9-8b62af8803d1",
     "question": [
       {
         "handler": "list_message",
@@ -2576,37 +2636,37 @@
                 "title": "Opções",
                 "rows": [
                   {
-                    "callback_data": "b0fb4cfb-d0b2-4e8b-94d0-de7b8a7380ec",
+                    "callback_data": "bf05e2b7-6c7c-460b-82d4-c53b3914632b",
                     "title": "PA · Pará",
                     "description": ""
                   },
                   {
-                    "callback_data": "8e99f6c0-04c3-4f0d-8255-2b8678b3a9bf",
+                    "callback_data": "681e9124-14a4-42c0-b776-306f9530d968",
                     "title": "AM · Amazonas",
                     "description": ""
                   },
                   {
-                    "callback_data": "6b86439d-502b-4076-9674-9f704f0e6e58",
+                    "callback_data": "06805029-6788-4bd1-a7d4-09a5fa9cd785",
                     "title": "RO · Rondônia",
                     "description": ""
                   },
                   {
-                    "callback_data": "59e7199b-4f65-400c-99aa-3f994da4a86c",
+                    "callback_data": "2436bac1-ff6b-460f-8c92-320f5ace481e",
                     "title": "TO · Tocantins",
                     "description": ""
                   },
                   {
-                    "callback_data": "9fc5b684-3614-4ca3-90d6-2f7814883447",
+                    "callback_data": "343e8709-e700-49dd-9f72-676b8b20d2a4",
                     "title": "AC · Acre",
                     "description": ""
                   },
                   {
-                    "callback_data": "30fd6e97-19a2-4260-93cb-7150d7ff1458",
+                    "callback_data": "e430bf9e-d6ee-4ec6-8d16-c04bd0847677",
                     "title": "AP · Amapá",
                     "description": ""
                   },
                   {
-                    "callback_data": "1e9e338e-def0-4f42-b610-dbce01e5f83d",
+                    "callback_data": "306abe7c-8654-4cae-9837-6b14e974d707",
                     "title": "RR · Roraima",
                     "description": ""
                   }
@@ -2627,7 +2687,7 @@
         "handler": "buttons",
         "params": [
           {
-            "value": "b0fb4cfb-d0b2-4e8b-94d0-de7b8a7380ec",
+            "value": "bf05e2b7-6c7c-460b-82d4-c53b3914632b",
             "params": [
               {
                 "handler": "goto",
@@ -2639,7 +2699,7 @@
             ]
           },
           {
-            "value": "8e99f6c0-04c3-4f0d-8255-2b8678b3a9bf",
+            "value": "681e9124-14a4-42c0-b776-306f9530d968",
             "params": [
               {
                 "handler": "goto",
@@ -2651,7 +2711,7 @@
             ]
           },
           {
-            "value": "6b86439d-502b-4076-9674-9f704f0e6e58",
+            "value": "06805029-6788-4bd1-a7d4-09a5fa9cd785",
             "params": [
               {
                 "handler": "goto",
@@ -2663,7 +2723,7 @@
             ]
           },
           {
-            "value": "59e7199b-4f65-400c-99aa-3f994da4a86c",
+            "value": "2436bac1-ff6b-460f-8c92-320f5ace481e",
             "params": [
               {
                 "handler": "goto",
@@ -2675,7 +2735,7 @@
             ]
           },
           {
-            "value": "9fc5b684-3614-4ca3-90d6-2f7814883447",
+            "value": "343e8709-e700-49dd-9f72-676b8b20d2a4",
             "params": [
               {
                 "handler": "goto",
@@ -2687,7 +2747,7 @@
             ]
           },
           {
-            "value": "30fd6e97-19a2-4260-93cb-7150d7ff1458",
+            "value": "e430bf9e-d6ee-4ec6-8d16-c04bd0847677",
             "params": [
               {
                 "handler": "goto",
@@ -2699,7 +2759,7 @@
             ]
           },
           {
-            "value": "1e9e338e-def0-4f42-b610-dbce01e5f83d",
+            "value": "306abe7c-8654-4cae-9837-6b14e974d707",
             "params": [
               {
                 "handler": "goto",
@@ -2727,7 +2787,7 @@
     ]
   },
   "100": {
-    "block_uuid": "cf729510-3819-4062-a249-bf210cb34cc9",
+    "block_uuid": "70db954f-8773-4473-98a0-61556336ff9b",
     "question": [
       {
         "handler": "action",
@@ -2749,7 +2809,7 @@
     ]
   },
   "101": {
-    "block_uuid": "37e5a7eb-b8e7-4450-8ed6-d6df722eaf23",
+    "block_uuid": "00597a2d-640c-4915-8ef8-c9d4b336b0fd",
     "question": [
       {
         "handler": "action",
@@ -2771,7 +2831,7 @@
     ]
   },
   "102": {
-    "block_uuid": "31777aa7-2498-491b-8cd5-103e4ff2d3a6",
+    "block_uuid": "5d2aeb50-8500-48bf-a7f2-c6b812639551",
     "question": [
       {
         "handler": "action",
@@ -2793,7 +2853,7 @@
     ]
   },
   "103": {
-    "block_uuid": "7b225925-6bc1-418a-aa84-8f9c220ad1b5",
+    "block_uuid": "e9ed98da-a6bd-4db3-9236-8a957db806e5",
     "question": [
       {
         "handler": "action",
@@ -2815,7 +2875,7 @@
     ]
   },
   "104": {
-    "block_uuid": "63de06c5-3c37-48fc-8590-843fa0557fb2",
+    "block_uuid": "6905bb43-73fb-4048-8b74-44c8ac5da5ba",
     "question": [
       {
         "handler": "action",
@@ -2837,7 +2897,7 @@
     ]
   },
   "105": {
-    "block_uuid": "39cc2961-e7b7-44a1-8ee2-bb7cfe137271",
+    "block_uuid": "09b93957-58c2-4a1d-848e-aa3ece235543",
     "question": [
       {
         "handler": "action",
@@ -2859,7 +2919,7 @@
     ]
   },
   "106": {
-    "block_uuid": "25a786f8-94da-41e9-84f4-5dc60dee9a5e",
+    "block_uuid": "d1f13f10-697d-485c-8b79-b54ededb6ab4",
     "question": [
       {
         "handler": "action",
@@ -2881,7 +2941,7 @@
     ]
   },
   "107": {
-    "block_uuid": "62c79e9c-ca69-4ea7-aeb2-920ee7d6a939",
+    "block_uuid": "1cb3aaca-54fe-49c9-83bd-5e3ec72e5740",
     "question": [
       {
         "handler": "action",
@@ -2903,7 +2963,7 @@
     ]
   },
   "108": {
-    "block_uuid": "5fe90922-a4eb-4eb0-87ad-2e76687a69af",
+    "block_uuid": "78ce272b-c168-4594-835c-00391e1c20d7",
     "question": [
       {
         "handler": "action",
@@ -2925,7 +2985,7 @@
     ]
   },
   "109": {
-    "block_uuid": "804d15bd-60c5-4211-9ff3-58832fc8eec3",
+    "block_uuid": "ad43fe08-ac2b-441e-ae41-da5aa672e629",
     "question": [
       {
         "handler": "action",
@@ -2947,7 +3007,7 @@
     ]
   },
   "110": {
-    "block_uuid": "0a81fc49-992b-480c-a2a9-f8822ef9b04f",
+    "block_uuid": "ea70af32-e5bc-45b5-afc8-852814eadc17",
     "question": [
       {
         "handler": "action",
@@ -2969,7 +3029,7 @@
     ]
   },
   "111": {
-    "block_uuid": "7471932f-4419-474f-a9e7-e21ed55a86a2",
+    "block_uuid": "059f904a-7860-4616-b225-b733dc6758e4",
     "question": [
       {
         "handler": "action",
@@ -2991,7 +3051,7 @@
     ]
   },
   "112": {
-    "block_uuid": "6c670ea3-554d-45a0-b79a-bd58e1ef0f37",
+    "block_uuid": "dbaae21d-4945-49b6-9bb3-47d3ac3d864e",
     "question": [
       {
         "handler": "action",
@@ -3013,7 +3073,7 @@
     ]
   },
   "113": {
-    "block_uuid": "cb677f70-fe9c-4b48-8647-afb3d4d0afb2",
+    "block_uuid": "a852cc93-ab25-4896-b70d-e2341f50a752",
     "question": [
       {
         "handler": "action",
@@ -3035,7 +3095,7 @@
     ]
   },
   "114": {
-    "block_uuid": "8aecb609-80e6-4029-bef5-97e3b5ae13ec",
+    "block_uuid": "33510fa4-24e5-4f09-b4ea-f69757122fe8",
     "question": [
       {
         "handler": "action",
@@ -3057,7 +3117,7 @@
     ]
   },
   "115": {
-    "block_uuid": "25f4dbb9-639f-4554-8c35-016cc8fff2af",
+    "block_uuid": "5ddb8614-c7dc-46e0-90ce-6921b3142dc2",
     "question": [
       {
         "handler": "action",
@@ -3079,7 +3139,7 @@
     ]
   },
   "116": {
-    "block_uuid": "3c88c832-26bd-4a75-a03d-471bdb11e900",
+    "block_uuid": "dfd84f19-38ee-4596-af40-68382cc9a596",
     "question": [
       {
         "handler": "action",
@@ -3101,7 +3161,7 @@
     ]
   },
   "117": {
-    "block_uuid": "8acae9db-f838-4d11-a79d-f8e0716714a3",
+    "block_uuid": "acf73e8c-1084-4806-b57c-9e04255f9757",
     "question": [
       {
         "handler": "action",
@@ -3123,7 +3183,7 @@
     ]
   },
   "118": {
-    "block_uuid": "4ef952f8-e4c7-4df8-9bef-c93f5e1edaa3",
+    "block_uuid": "0fadb5e0-dfbc-4e0d-89a7-bfd9beae904a",
     "question": [
       {
         "handler": "action",
@@ -3145,7 +3205,7 @@
     ]
   },
   "119": {
-    "block_uuid": "04e67739-1158-4820-9350-ed42d82e445b",
+    "block_uuid": "33954a07-00a3-4664-8019-91b8a9dbc941",
     "question": [
       {
         "handler": "action",
@@ -3167,7 +3227,7 @@
     ]
   },
   "120": {
-    "block_uuid": "352a11bf-b63b-49b7-9faf-4a179d430644",
+    "block_uuid": "dfb0f972-8d53-4995-ae40-1edf3ad10363",
     "question": [
       {
         "handler": "action",
@@ -3189,7 +3249,7 @@
     ]
   },
   "121": {
-    "block_uuid": "e2a0c4ca-c9ae-462e-95d5-b756e2348017",
+    "block_uuid": "60ab0424-9101-46fc-8fdc-d1ec1cde8b50",
     "question": [
       {
         "handler": "action",
@@ -3211,7 +3271,7 @@
     ]
   },
   "122": {
-    "block_uuid": "479b4be6-7fd6-4ff9-9623-40d7943edc3c",
+    "block_uuid": "552b10df-6833-41fe-a399-2f3a69743f6e",
     "question": [
       {
         "handler": "action",
@@ -3233,7 +3293,7 @@
     ]
   },
   "123": {
-    "block_uuid": "923e5f17-7e4c-420b-b904-deecd50d5317",
+    "block_uuid": "a0f1db6d-2065-4c17-b61e-e1a0689d1464",
     "question": [
       {
         "handler": "action",
@@ -3255,7 +3315,7 @@
     ]
   },
   "124": {
-    "block_uuid": "bef03775-9735-4e81-aa9a-04d49f6b3cd4",
+    "block_uuid": "f5b3a10f-7a2b-4bc3-b44e-2c51a341d20f",
     "question": [
       {
         "handler": "action",
@@ -3277,7 +3337,7 @@
     ]
   },
   "125": {
-    "block_uuid": "76706c69-d703-4344-a1dd-9552167f098a",
+    "block_uuid": "c9d19efe-53d1-404f-9f7f-53323b673553",
     "question": [
       {
         "handler": "action",
@@ -3299,7 +3359,7 @@
     ]
   },
   "126": {
-    "block_uuid": "113dcf84-0f42-47ca-897e-2d4036df84c0",
+    "block_uuid": "eb0e88d3-f1d7-4c1f-a378-3a52b0045fff",
     "question": [
       {
         "handler": "action",

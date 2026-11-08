@@ -9,7 +9,9 @@ import { randomUUID } from 'node:crypto';
 
 // Números da conta ticminasflor (leitura de 2026-11-08).
 const FUNIL = { consumidor: 12904179, salao: 12927111, distribuidor: 12927087, atendimento: 14739451, entrada: 13975223 };
-const ETAPA = { consumidorThayna: 99501151, salaoThayna: 99680859, distribuidorThayna: 99680647, posVenda: 113891275, entradaThayna: 113893475 };
+// "Com a Lyra" enquanto a Lyra conversa; "Com a Thayná" só quando precisa dela (dono, 2026-11-08: "é importante separar
+// isso"); BY.MF, que compra sozinho no site, vai para "Link enviado".
+const ETAPA = { consumidorLyra: 113891167, salaoLyra: 113891215, distribuidorLyra: 113891223, consumidorLink: 113891171, consumidorThayna: 99501151, salaoThayna: 99680859, distribuidorThayna: 99680647, posVenda: 113891275, entradaThayna: 113893475 };
 const CAMPO = { segmento: 4381514, cpfCnpj: 4381512, marca: 4381516, estadoAtuacao: 4381528, cidadeAtuacao: 4381530 };
 
 const goto = (step, type = 'question') => ({ handler: 'goto', params: { type, step } });
@@ -85,14 +87,14 @@ const blocos = {
   53: { question: [contem(['atendente', 'Atendente', 'ATENDENTE', 'falar com alguém', 'Falar com alguém', 'humano', 'pessoa'], 51), goto(50)] },
   51: { question: [etapa(FUNIL.entrada, ETAPA.entradaThayna), etiqueta('pediu-atendente'), msg('Claro! Vou te passar para a nossa atendente, ela continua com você por aqui, é só aguardar 💜'), tarefa('Cliente pediu atendente antes da triagem: responder e preencher o Segmento.'), esperaResposta(55)] },
   // Depois do segmento: escreveu o produto em vez de escolher a marca → passa para a Thayná.
-  52: { question: [msg('Anotado! Vou te passar para a nossa atendente, ela continua com você por aqui e te ajuda a escolher, é só aguardar 💜'), tarefa('Consumidor escreveu o que quer em vez de escolher a marca: responder pela conversa (até 30 minutos).'), esperaResposta(55)] },
+  52: { question: [etapa(FUNIL.consumidor, ETAPA.consumidorThayna), msg('Anotado! Vou te passar para a nossa atendente, ela continua com você por aqui e te ajuda a escolher, é só aguardar 💜'), tarefa('Consumidor escreveu o que quer em vez de escolher a marca: responder pela conversa (até 30 minutos).'), esperaResposta(55)] },
   // Regra do dono (2026-11-08): a conversa não morre no fim do caminho. Quem escreve de novo é passado para a Thayná:
   // no BY.MF ninguém foi acionado ainda, então nasce a tarefa; nos outros finais a tarefa já existe e só se avisa.
-  54: { question: [msg('Vou te passar para a nossa atendente, ela continua com você por aqui, é só aguardar 💜'), tarefa('Cliente mandou mensagem depois do link da BY.MF: responder pela conversa (até 30 minutos).'), fim] },
+  54: { question: [etapa(FUNIL.consumidor, ETAPA.consumidorThayna), msg('Vou te passar para a nossa atendente, ela continua com você por aqui, é só aguardar 💜'), tarefa('Cliente mandou mensagem depois do link da BY.MF: responder pela conversa (até 30 minutos).'), fim] },
   55: { question: [msg('Recebi! Já passei para a nossa atendente, ela continua com você por aqui 💜'), fim] },
 
   // Uso em casa.
-  10: { question: [etapa(FUNIL.consumidor, ETAPA.consumidorThayna), campoLead(CAMPO.segmento, 'Consumidor final'), etiqueta('consumidor-final'), goto(11)] },
+  10: { question: [etapa(FUNIL.consumidor, ETAPA.consumidorLyra), campoLead(CAMPO.segmento, 'Consumidor final'), etiqueta('consumidor-final'), goto(11)] },
   11: { question: [msg('Que bom! 💜 Como você se chama?'), goto(12)] },
   12: { question: [esperaResposta(13)] },
   13: { question: [nomeDoLead, goto(14)] },
@@ -107,7 +109,7 @@ const blocos = {
       { value: 'Fusion (MF.PRO)', params: [goto(17)], synonyms: ['fusion', 'Fusion', 'mf.pro', 'MF.PRO', 'mfpro', 'MF PRO', 'mf pro', 'therapy'] },
       { type: 'else', params: [goto(52)] },
     ] }] },
-  15: { question: [campoLead(CAMPO.marca, 'BY.MF'), msg('Perfeito! A loja da BY.MF é https://bymfpro.com.br/ , com Pix ou cartão e o frete calculado pelo seu CEP 💜 Se tiver qualquer dúvida, é só me chamar aqui.'), esperaResposta(54)] },
+  15: { question: [etapa(FUNIL.consumidor, ETAPA.consumidorLink), campoLead(CAMPO.marca, 'BY.MF'), msg('Perfeito! A loja da BY.MF é https://bymfpro.com.br/ , com Pix ou cartão e o frete calculado pelo seu CEP 💜 Se tiver qualquer dúvida, é só me chamar aqui.'), esperaResposta(54)] },
   16: { question: [campoLead(CAMPO.marca, 'Minasflor'), msg('Para usar em casa, a Minasflor tem as versões home care, de 300 ml e 300 g 💜 (as de litro e as embalagens profissionais são só para salão).'), goto(18)] },
   17: { question: [campoLead(CAMPO.marca, 'MF.PRO'), msg(
     'Da MF.PRO, para usar em casa temos o Fusion da linha Therapy: shampoo e balm de base neutra, que você personaliza com um óleo essencial conforme o que o seu couro cabeludo pede 🌿\n\n' +
@@ -119,10 +121,10 @@ const blocos = {
     'A quantidade de gotas a nossa equipe te orienta certinho.'), goto(18)] },
   18: { question: [msg('Me conta quais produtos e quantas unidades você quer (no Fusion, diga também qual óleo) 😊 Nossa equipe monta um link de pagamento só para você, com Pix ou cartão.'), goto(19)] },
   19: { question: [esperaResposta(9)] },
-  9: { question: [msg(`Anotado! ${AGUARDE}`), tarefa('Consumidor pediu Minasflor/MF.PRO pela Lyra: montar o link de pagamento da Yampi com os produtos da conversa (até 30 minutos).'), esperaResposta(55)] },
+  9: { question: [etapa(FUNIL.consumidor, ETAPA.consumidorThayna), msg(`Anotado! ${AGUARDE}`), tarefa('Consumidor pediu Minasflor/MF.PRO pela Lyra: montar o link de pagamento da Yampi com os produtos da conversa (até 30 minutos).'), esperaResposta(55)] },
 
   // Salão.
-  20: { question: [etapa(FUNIL.salao, ETAPA.salaoThayna), campoLead(CAMPO.segmento, 'Salão'), etiqueta('salao'), goto(21)] },
+  20: { question: [etapa(FUNIL.salao, ETAPA.salaoLyra), campoLead(CAMPO.segmento, 'Salão'), etiqueta('salao'), goto(21)] },
   21: { question: [msg('Que bom! 💇‍♀️ Como você se chama, e qual é o nome do salão?'), goto(22)] },
   22: { question: [esperaResposta(23)] },
   23: { question: [nomeDoLead, goto(24)] },
@@ -140,12 +142,12 @@ const blocos = {
   61: { question: [campoLead(CAMPO.cpfCnpj, '{{message_text}}'), goto(27)] },
   27: { question: [msg('Perfeito! Me conta quais produtos você tem interesse e quantas unidades, que eu já deixo o seu pedido anotado 😊'), goto(28)] },
   28: { question: [esperaResposta(29)] },
-  29: { question: [msg('Anotado! Nossa atendente vai entrar em contato para fechar o seu pedido, é só aguardar 💜'), tarefa('Salão (CNPJ no lead) fez o pedido pela Lyra: montar o pedido com os produtos da conversa (até 30 minutos).'), esperaResposta(55)] },
-  65: { question: [etapa(FUNIL.consumidor, ETAPA.consumidorThayna), campoLead(CAMPO.segmento, 'Consumidor final'), etiqueta('consumidor-final'), etiqueta('profissional-sem-cnpj'),
+  29: { question: [etapa(FUNIL.salao, ETAPA.salaoThayna), msg('Anotado! Nossa atendente vai entrar em contato para fechar o seu pedido, é só aguardar 💜'), tarefa('Salão (CNPJ no lead) fez o pedido pela Lyra: montar o pedido com os produtos da conversa (até 30 minutos).'), esperaResposta(55)] },
+  65: { question: [etapa(FUNIL.consumidor, ETAPA.consumidorLyra), campoLead(CAMPO.segmento, 'Consumidor final'), etiqueta('consumidor-final'), etiqueta('profissional-sem-cnpj'),
     msg('Sem problema! O preço profissional é só para salão com CNPJ, mas para usar em casa temos ótimas opções 💜'), goto(14)] },
 
   // Revenda / distribuidor.
-  30: { question: [etapa(FUNIL.distribuidor, ETAPA.distribuidorThayna), campoLead(CAMPO.segmento, 'Distribuidor'), etiqueta('distribuidor'), goto(31)] },
+  30: { question: [etapa(FUNIL.distribuidor, ETAPA.distribuidorLyra), campoLead(CAMPO.segmento, 'Distribuidor'), etiqueta('distribuidor'), goto(31)] },
   31: { question: [msg('Ótimo! Como você se chama, e qual é o nome da empresa?'), goto(32)] },
   32: { question: [esperaResposta(33)] },
   33: { question: [nomeDoLead, goto(34)] },
@@ -175,7 +177,7 @@ const blocos = {
   66: { question: [campoLead(CAMPO.cidadeAtuacao, '{{message_text}}'), goto(39)] },
   // Pasta "Na ponta dos dedos" do Drive (dono, 2026-11-08): catálogos, fotos e vídeos, mockups e campanhas que o
   // distribuidor usa para divulgar nas redes; ele já conhece a linha antes da ligação. Link e não PDF: o Direct do Instagram não aceita arquivo e o Drive troca sozinho.
-  39: { question: [msg('Obrigada! Um representante da nossa equipe vai entrar em contato com você, é só aguardar 💜\n\nEnquanto isso, já deixo aqui o nosso material para distribuidores 📲 Catálogos, fotos e vídeos dos produtos, mockups e campanhas prontas para você divulgar nas suas redes sociais: https://drive.google.com/drive/folders/1nAI-QmLyxgK_T5eBHvRumMsnFIufmSaR'), tarefa('Distribuidor triado pela Lyra (CNPJ, estado e cidade de atuação no lead): encaminhar ao representante (até 30 minutos).'), esperaResposta(55)] },
+  39: { question: [etapa(FUNIL.distribuidor, ETAPA.distribuidorThayna), msg('Obrigada! Um representante da nossa equipe vai entrar em contato com você, é só aguardar 💜\n\nEnquanto isso, já deixo aqui o nosso material para distribuidores 📲 Catálogos, fotos e vídeos dos produtos, mockups e campanhas prontas para você divulgar nas suas redes sociais: https://drive.google.com/drive/folders/1nAI-QmLyxgK_T5eBHvRumMsnFIufmSaR'), tarefa('Distribuidor triado pela Lyra (CNPJ, estado e cidade de atuação no lead): encaminhar ao representante (até 30 minutos).'), esperaResposta(55)] },
 
   // Já é cliente: pós-venda, fora dos indicadores.
   40: { question: [etapa(FUNIL.atendimento, ETAPA.posVenda), etiqueta('pos-venda'), msg(`Claro! Me conta o número do pedido ou o que aconteceu. ${AGUARDE}`), tarefa('Pós-venda: cliente pediu ajuda com pedido, troca ou entrega.'), esperaResposta(55)] },
