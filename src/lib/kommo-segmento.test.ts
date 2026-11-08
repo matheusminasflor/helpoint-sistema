@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { etapasDeTriagem, segmentoDoCampo, segmentoDoLead } from '../../supabase/functions/_shared/kommo-segmento';
+import { ehLimpeza, etapasDeTriagem, segmentoDoCampo, segmentoDoLead } from '../../supabase/functions/_shared/kommo-segmento';
 
 const ENTRADA = 13975223, CONSUMIDOR = 12904179, SALAO = 12927111, DISTRIBUIDOR = 12927087, EDUCACIONAL = 12927031;
 const COM_A_LYRA = 900001, EM_ATENDIMENTO = 900002, GANHA = 142;
@@ -50,5 +50,14 @@ describe('etapasDeTriagem', () => {
       { id: EDUCACIONAL, _embedded: { statuses: [{ id: 900009, name: 'com a lyra' }] } },
     ];
     expect([...etapasDeTriagem(funis)]).toEqual([COM_A_LYRA]);
+  });
+});
+
+describe('ehLimpeza', () => {
+  it('o motivo da limpeza de 08/11 não conta como perda, com qualquer caixa ou acento', () => {
+    expect(ehLimpeza('Limpeza de cadastro')).toBe(true);
+    expect(ehLimpeza(' LIMPEZA DE CADASTRO ')).toBe(true);
+    expect(ehLimpeza('Orçamento insuficiente')).toBe(false);
+    expect(ehLimpeza(null)).toBe(false);
   });
 });

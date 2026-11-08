@@ -53,3 +53,8 @@ export function etapasDeTriagem(funis: { id: number; _embedded?: { statuses?: { 
   return new Set(funis.flatMap((f) => (FUNIL_DE_VENDA[f.id] ? f._embedded?.statuses ?? [] : [])
     .filter((s) => normaliza(s.name) === 'com a lyra').map((s) => s.id)));
 }
+
+// Perda que não é perda de venda (dono, 2026-11-08): os 252 contatos que o robô antigo deixou na Entrada e ninguém atendeu
+// foram fechados na limpeza com este motivo. Eles não entram na contagem de perdidas nem na lista de vendas.
+export const MOTIVO_LIMPEZA = 'limpeza de cadastro';
+export const ehLimpeza = (motivo: string | null | undefined) => !!motivo && normaliza(motivo) === MOTIVO_LIMPEZA;

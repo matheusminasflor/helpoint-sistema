@@ -12,7 +12,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient, type SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { requireServiceRole } from '../_shared/require-service-role.ts';
-import { etapasDeTriagem, FUNIL_DE_VENDA, segmentoDoLead, type LeadParaSegmento } from '../_shared/kommo-segmento.ts';
+import { ehLimpeza, etapasDeTriagem, FUNIL_DE_VENDA, segmentoDoLead, type LeadParaSegmento } from '../_shared/kommo-segmento.ts';
 
 const json = (corpo: unknown, status = 200) =>
   new Response(JSON.stringify(corpo), { status, headers: { 'Content-Type': 'application/json' } });
@@ -84,6 +84,7 @@ async function rodada(db: SupabaseClient, tenant: string) {
   for (const l of await leads('closed_at', de)) {
     const funil = segmentoDoLead(l, triagem);
     if (!funil || !l.closed_at || (l.status_id !== GANHA && l.status_id !== PERDIDA)) continue;
+    if (l.status_id === PERDIDA && ehLimpeza(l.loss_reason_id ? motivoDo.get(l.loss_reason_id) : null)) continue;
     const dia = diaBR(l.closed_at * 1000);
     const n = linha(dia, funil);
     const contatos = l._embedded?.contacts ?? [];
