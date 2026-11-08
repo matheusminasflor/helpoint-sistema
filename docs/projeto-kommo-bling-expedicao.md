@@ -148,3 +148,28 @@ Com isso, a origem do Direct passa a ser automática pela conta.
   - Filtros salvos no Kommo: "Vieram de comentário" e "Só comentou".
   - Novo indicador no Helpoint: comentários → conversas → vendas, por conta.
   - Regra do Instagram: uma única mensagem no Direct por comentário, até 7 dias depois dele.
+
+## 7. Revisão antes de aprovar (versão 6, 2026-11-08): 18 correções
+
+Os pontos que mais pesam:
+1. **Passo 0, antes de mexer no Kommo.** Hoje `mkt-kommo-coletar` procura os funis pelo nome e exige os 4, com a
+   Entrada (`segmentoDo.size < 4`, linha 69). Arquivar ou renomear um funil derruba a leitura. Ele precisa passar a mapear
+   os funis pelo id, aceitar a Entrada arquivada e ignorar os funis que não são de venda.
+2. **Entrada arquivada, não apagada.** Os leads abertos são triados antes.
+3. **Marco nos Indicadores** avisando a mudança da régua: comentário, pós-venda e números internos deixam de contar.
+4. **4ª opção na lista**, "Já sou cliente": vai para a etapa Pós-venda, fora dos indicadores.
+5. **Horário:** a mensagem de prazo segue o expediente e os feriados.
+6. **Pessoa reserva e gestor do aviso:** decisão do dono.
+7. **Créditos da IA:** conferir o consumo toda semana. O controle dos 30 minutos também pega a Lyra parada.
+8. **Janela de 24 h do WhatsApp:** o lembrete sai em 20 h; depois disso, só com modelo aprovado.
+9. **CPF/CNPJ:** conferir os dígitos verificadores.
+10. **Duplicados:** uma pessoa conta uma vez só, pelo CPF/CNPJ ou pelo telefone.
+11. **Números da empresa:** o Helpoint põe a etiqueta `interno` nos contatos do Kommo.
+12. **LGPD:** dizer a finalidade e mandar a política de privacidade. O consumidor não informa CPF no chat.
+13. **Yampi:** confirmar a loja e a tabela do salão; desativar os links usados; ligar o pagamento ao lead pelo id do link,
+    ou pelo CPF/telefone.
+14. **Endpoints com assinatura:** a chamada do Kommo e o aviso da Yampi só entram assinados.
+15. **Plano do Kommo** vence em 16/03/2027 com a renovação desligada: decisão do dono.
+16. **Comentários:** plano B com um Salesbot que move o lead.
+17. **Saúde:** pergunta de saúde vai para pessoa; no 1º mês, ler 20 conversas por semana.
+18. **Histórico:** o recálculo de 400 dias muda os meses passados.
