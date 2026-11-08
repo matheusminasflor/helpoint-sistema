@@ -1,6 +1,6 @@
 {
   "0": {
-    "block_uuid": "923fdec5-8e0e-47f3-8f88-4448c2db7017",
+    "block_uuid": "ce4c239a-23f7-4b62-b9ae-49f201bada3a",
     "question": [
       {
         "handler": "send_message",
@@ -164,13 +164,13 @@
     ]
   },
   "9": {
-    "block_uuid": "50b0f2af-80d0-4c03-98dd-628079f84844",
+    "block_uuid": "7b0f8750-41a4-46fb-bfb7-6cf92249b713",
     "question": [
       {
         "handler": "send_message",
         "params": {
           "tag": "",
-          "text": "Anotado! Nossa equipe te responde em até 30 minutos no horário comercial. Fora dele, falamos com você assim que abrirmos 💜",
+          "text": "Anotado! Nossa atendente vai entrar em contato com você, é só aguardar 💜",
           "type": "external",
           "recipient": {
             "type": "all_contacts",
@@ -220,7 +220,7 @@
     ]
   },
   "10": {
-    "block_uuid": "fc654a0c-26e8-41ba-a0a3-de1bd6d6eb83",
+    "block_uuid": "84a1ac18-4b73-4550-9177-f6f8de885cf5",
     "question": [
       {
         "handler": "action",
@@ -265,7 +265,7 @@
     ]
   },
   "11": {
-    "block_uuid": "6a3b80c3-f1aa-413e-9e79-2b968cec7e17",
+    "block_uuid": "98fce930-7930-4ed0-865a-f52724982249",
     "question": [
       {
         "handler": "send_message",
@@ -292,7 +292,7 @@
     ]
   },
   "12": {
-    "block_uuid": "41158078-ad85-4b90-9ef7-6f730adb9fb2",
+    "block_uuid": "b173efb3-32e6-4cbf-82e2-474179a7fb39",
     "question": [
       {
         "handler": "waits",
@@ -315,7 +315,7 @@
     ]
   },
   "13": {
-    "block_uuid": "61dbcf09-8915-4f19-a3b2-84c647117f0a",
+    "block_uuid": "9dcea15a-34c9-4625-a75e-257c9a725dff",
     "question": [
       {
         "handler": "action",
@@ -337,13 +337,13 @@
     ]
   },
   "14": {
-    "block_uuid": "196b9090-fbc4-4806-9776-36918b5b86ff",
+    "block_uuid": "742a414b-ca52-49d5-a700-d582ad86ad86",
     "question": [
       {
         "handler": "send_message",
         "params": {
           "tag": "",
-          "text": "Prazer! 😊 Qual destas você procura?",
+          "text": "Qual destas você procura? 😊",
           "type": "external",
           "recipient": {
             "type": "all_contacts",
@@ -447,7 +447,7 @@
     ]
   },
   "15": {
-    "block_uuid": "accd40df-b63b-434b-95af-85c9a7174fd3",
+    "block_uuid": "749f6196-8bc8-4f89-a8c3-3d474e2f1df0",
     "question": [
       {
         "handler": "action",
@@ -484,7 +484,7 @@
     ]
   },
   "16": {
-    "block_uuid": "077da0d8-3517-4cd9-94b3-347a67fa9597",
+    "block_uuid": "35a1fe5a-8620-4323-ac70-eae86343b8ff",
     "question": [
       {
         "handler": "action",
@@ -521,7 +521,7 @@
     ]
   },
   "17": {
-    "block_uuid": "6a85eb4a-60af-4d73-8f03-b049a0772a60",
+    "block_uuid": "14be2a54-a1d1-4fa2-9255-4d98451e1d8f",
     "question": [
       {
         "handler": "action",
@@ -558,7 +558,7 @@
     ]
   },
   "18": {
-    "block_uuid": "6b4e9c6d-b4f8-4d9e-a91d-f702f6c81198",
+    "block_uuid": "ebe99993-02e2-4ff6-8034-62bace8cf122",
     "question": [
       {
         "handler": "send_message",
@@ -585,7 +585,7 @@
     ]
   },
   "19": {
-    "block_uuid": "29270c16-7609-4978-aff8-2724d40ea395",
+    "block_uuid": "6142f539-a621-49c1-ada3-be387d39f934",
     "question": [
       {
         "handler": "waits",
@@ -608,7 +608,7 @@
     ]
   },
   "20": {
-    "block_uuid": "e6d2c6fd-9b9b-43aa-af35-8e8e8e5ecedc",
+    "block_uuid": "9d2a5075-c279-4b0e-9d44-9102e5afb6c6",
     "question": [
       {
         "handler": "action",
@@ -653,7 +653,7 @@
     ]
   },
   "21": {
-    "block_uuid": "a8fecb66-ee3c-47ea-bd86-3ed3f704e098",
+    "block_uuid": "336cfc70-b554-4f3e-a3f0-d6395490a705",
     "question": [
       {
         "handler": "send_message",
@@ -680,7 +680,7 @@
     ]
   },
   "22": {
-    "block_uuid": "aaa6c185-7981-4c67-9667-4373cd986199",
+    "block_uuid": "dced33a2-c6dd-4391-96f8-ded4bdffbe3f",
     "question": [
       {
         "handler": "waits",
@@ -703,7 +703,7 @@
     ]
   },
   "23": {
-    "block_uuid": "526c0cfd-c33f-4971-a06b-f0e0d9a9e195",
+    "block_uuid": "0a402afb-d6d8-4c7d-b1dd-2091e977a300",
     "question": [
       {
         "handler": "action",
@@ -725,13 +725,13 @@
     ]
   },
   "24": {
-    "block_uuid": "f0059ffb-ddd4-4f7c-a751-ff6412467044",
+    "block_uuid": "9ef85d7a-35a2-45cd-9ffb-38766e65f021",
     "question": [
       {
         "handler": "send_message",
         "params": {
           "tag": "",
-          "text": "Prazer! Para liberar o preço profissional, me passa o CNPJ do salão ou o seu CPF? Uso só para isso 🔒",
+          "text": "Prazer! O preço profissional é para salão com CNPJ. Você tem o CNPJ do salão?",
           "type": "external",
           "recipient": {
             "type": "all_contacts",
@@ -739,20 +739,82 @@
           },
           "is_in_starting_block": false,
           "send_to_all_chat_sources": true,
-          "on_error": null
+          "on_error": null,
+          "buttons": [
+            {
+              "type": "inline",
+              "text": "Tenho CNPJ"
+            },
+            {
+              "type": "inline",
+              "text": "Não tenho"
+            }
+          ]
         }
-      },
+      }
+    ],
+    "answer": [
       {
-        "handler": "goto",
-        "params": {
-          "type": "question",
-          "step": 25
-        }
+        "handler": "buttons",
+        "params": [
+          {
+            "value": "Tenho CNPJ",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 60
+                }
+              }
+            ],
+            "synonyms": [
+              "tenho",
+              "sim",
+              "Sim",
+              "tenho cnpj"
+            ]
+          },
+          {
+            "value": "Não tenho",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 65
+                }
+              }
+            ],
+            "synonyms": [
+              "não",
+              "nao",
+              "Não",
+              "não tenho",
+              "nao tenho",
+              "sou autônoma",
+              "autônoma",
+              "autonoma"
+            ]
+          },
+          {
+            "type": "else",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 61
+                }
+              }
+            ]
+          }
+        ]
       }
     ]
   },
   "25": {
-    "block_uuid": "0d8a5c64-4553-49d5-bfc5-76c9a04ea922",
+    "block_uuid": "eab891e7-ffc8-4175-8b98-3f494e7bc14d",
     "question": [
       {
         "handler": "waits",
@@ -775,7 +837,7 @@
     ]
   },
   "26": {
-    "block_uuid": "15ce0f82-39d2-4a5f-9c6d-98bb9aba6570",
+    "block_uuid": "e97ce626-2c0b-42e7-bd14-38b078164804",
     "question": [
       {
         "handler": "action",
@@ -797,13 +859,63 @@
     ]
   },
   "27": {
-    "block_uuid": "335d6c67-306e-4f56-b811-231a677ca666",
+    "block_uuid": "3a56b37c-5102-4960-8651-caf2cd0764a8",
     "question": [
       {
         "handler": "send_message",
         "params": {
           "tag": "",
-          "text": "Obrigada! Nossa equipe te responde em até 30 minutos no horário comercial. Fora dele, falamos com você assim que abrirmos 💜",
+          "text": "Perfeito! Me conta quais produtos você tem interesse e quantas unidades, que eu já deixo o seu pedido anotado 😊",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 28
+        }
+      }
+    ]
+  },
+  "28": {
+    "block_uuid": "f8de4b90-b560-4cf8-b44f-7509adc7e743",
+    "question": [
+      {
+        "handler": "waits",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "event": {
+                "action": "received",
+                "source": "message"
+              },
+              "action": {
+                "type": "question",
+                "step": 29
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "29": {
+    "block_uuid": "edde60bd-afc4-48ab-b99e-e1953c65c2cf",
+    "question": [
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "Anotado! Nossa atendente vai entrar em contato para fechar o seu pedido, é só aguardar 💜",
           "type": "external",
           "recipient": {
             "type": "all_contacts",
@@ -824,7 +936,7 @@
               ""
             ],
             "settings": {
-              "task_text": "Salão triado pela Lyra: responder em até 30 minutos (CPF/CNPJ no lead).",
+              "task_text": "Salão (CNPJ no lead) fez o pedido pela Lyra: montar o pedido com os produtos da conversa (até 30 minutos).",
               "task_type": "1",
               "deadline-days": "",
               "deadline-hours": "",
@@ -853,7 +965,7 @@
     ]
   },
   "30": {
-    "block_uuid": "31197e74-a28f-44d2-bb83-85ee6d4748a8",
+    "block_uuid": "3b1d809c-7ecd-4c24-8eba-a1ce62eb14ee",
     "question": [
       {
         "handler": "action",
@@ -898,7 +1010,7 @@
     ]
   },
   "31": {
-    "block_uuid": "58d85aae-d5f9-49ee-87b4-35df399de050",
+    "block_uuid": "755ddece-2a9c-4ccd-a1ec-d0d009b7d9b0",
     "question": [
       {
         "handler": "send_message",
@@ -925,7 +1037,7 @@
     ]
   },
   "32": {
-    "block_uuid": "72925910-b44b-4121-8440-acc53e38ecd1",
+    "block_uuid": "261a54e6-8b6e-4179-b9d1-c4017663d48d",
     "question": [
       {
         "handler": "waits",
@@ -948,7 +1060,7 @@
     ]
   },
   "33": {
-    "block_uuid": "bc918ac0-9ee1-4809-909d-0f24f70142bd",
+    "block_uuid": "3fa4e796-8fbc-40e6-8bf0-38134121e1fc",
     "question": [
       {
         "handler": "action",
@@ -970,13 +1082,13 @@
     ]
   },
   "34": {
-    "block_uuid": "bf623b1c-2809-4799-a994-e7aa06d23ba3",
+    "block_uuid": "962b1d2e-58f1-4cb3-a7d4-620d898f5de4",
     "question": [
       {
         "handler": "send_message",
         "params": {
           "tag": "",
-          "text": "Prazer! Para te passar a condição de revenda e o representante da sua região, qual é o CNPJ da empresa?",
+          "text": "Prazer! Qual é o CNPJ da empresa?",
           "type": "external",
           "recipient": {
             "type": "all_contacts",
@@ -997,7 +1109,7 @@
     ]
   },
   "35": {
-    "block_uuid": "452cfd69-d558-4ba2-a8d3-8db01e87bcfa",
+    "block_uuid": "6a42ef0c-f274-4857-bffd-f7852f7f195d",
     "question": [
       {
         "handler": "waits",
@@ -1020,7 +1132,7 @@
     ]
   },
   "36": {
-    "block_uuid": "8741729d-3e3c-4a24-9f22-dea6465f12a6",
+    "block_uuid": "cd875b03-73b5-428f-adc5-2bdc2f0c49b3",
     "question": [
       {
         "handler": "action",
@@ -1042,13 +1154,63 @@
     ]
   },
   "37": {
-    "block_uuid": "a0ffe4ed-c442-41aa-a3d1-df9fd03980c2",
+    "block_uuid": "58383230-81b5-4bce-85fc-b1d06ca81ce5",
     "question": [
       {
         "handler": "send_message",
         "params": {
           "tag": "",
-          "text": "Obrigada! Já passei para a nossa consultora comercial. Nossa equipe te responde em até 30 minutos no horário comercial. Fora dele, falamos com você assim que abrirmos 💜",
+          "text": "E em qual cidade e estado você pretende atuar como distribuidor?",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 38
+        }
+      }
+    ]
+  },
+  "38": {
+    "block_uuid": "edabecab-f4de-420b-8e83-52498c143d22",
+    "question": [
+      {
+        "handler": "waits",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "event": {
+                "action": "received",
+                "source": "message"
+              },
+              "action": {
+                "type": "question",
+                "step": 39
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "39": {
+    "block_uuid": "e2e8dd64-7e17-4c4b-9192-f729f2fcd928",
+    "question": [
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "Obrigada! Um representante da nossa equipe vai entrar em contato com você, é só aguardar 💜",
           "type": "external",
           "recipient": {
             "type": "all_contacts",
@@ -1069,7 +1231,7 @@
               ""
             ],
             "settings": {
-              "task_text": "Distribuidor triado pela Lyra: responder em até 30 minutos e encaminhar ao representante (CNPJ no lead).",
+              "task_text": "Distribuidor triado pela Lyra (CNPJ no lead; cidade e estado de atuação na conversa): encaminhar ao representante (até 30 minutos).",
               "task_type": "1",
               "deadline-days": "",
               "deadline-hours": "",
@@ -1098,7 +1260,7 @@
     ]
   },
   "40": {
-    "block_uuid": "cd021881-b1f9-4293-9ac2-1c051e6dcb3e",
+    "block_uuid": "6a65e938-34e7-48f5-a84a-df58d9e34a96",
     "question": [
       {
         "handler": "action",
@@ -1127,7 +1289,7 @@
         "handler": "send_message",
         "params": {
           "tag": "",
-          "text": "Claro! Me conta o número do pedido ou o que aconteceu, que já chamo alguém da equipe. Nossa equipe te responde em até 30 minutos no horário comercial. Fora dele, falamos com você assim que abrirmos 💜",
+          "text": "Claro! Me conta o número do pedido ou o que aconteceu. Nossa atendente vai entrar em contato com você, é só aguardar 💜",
           "type": "external",
           "recipient": {
             "type": "all_contacts",
@@ -1177,7 +1339,7 @@
     ]
   },
   "50": {
-    "block_uuid": "e3d60c1b-c848-4485-a266-4b93b10b7572",
+    "block_uuid": "54d5d8b9-e623-491d-8131-92f27e4f67c8",
     "question": [
       {
         "handler": "send_message",
@@ -1341,7 +1503,7 @@
     ]
   },
   "51": {
-    "block_uuid": "d8fc2af0-54f8-4d6a-9088-221daf2dd62d",
+    "block_uuid": "8eb00df5-83dc-4d2e-b864-f04c0dce6f54",
     "question": [
       {
         "handler": "action",
@@ -1370,7 +1532,7 @@
         "handler": "send_message",
         "params": {
           "tag": "",
-          "text": "Claro! Vou te passar para a nossa atendente, ela continua com você por aqui. Nossa equipe te responde em até 30 minutos no horário comercial. Fora dele, falamos com você assim que abrirmos 💜",
+          "text": "Claro! Vou te passar para a nossa atendente, ela continua com você por aqui, é só aguardar 💜",
           "type": "external",
           "recipient": {
             "type": "all_contacts",
@@ -1420,13 +1582,13 @@
     ]
   },
   "52": {
-    "block_uuid": "6b170669-3f5f-4dd5-b069-b7afec05a040",
+    "block_uuid": "b79ced54-3f6f-4f97-9473-da5b23495a60",
     "question": [
       {
         "handler": "send_message",
         "params": {
           "tag": "",
-          "text": "Anotado! Vou te passar para a nossa atendente, ela continua com você por aqui e te ajuda a escolher. Nossa equipe te responde em até 30 minutos no horário comercial. Fora dele, falamos com você assim que abrirmos 💜",
+          "text": "Anotado! Vou te passar para a nossa atendente, ela continua com você por aqui e te ajuda a escolher, é só aguardar 💜",
           "type": "external",
           "recipient": {
             "type": "all_contacts",
@@ -1471,6 +1633,128 @@
         "params": {
           "type": "finish",
           "step": 999
+        }
+      }
+    ]
+  },
+  "60": {
+    "block_uuid": "2dd5bae7-6c46-4ef3-99c8-a36ae50df6d6",
+    "question": [
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "Me passa o CNPJ, por favor 🔒 Uso só para liberar o preço profissional.",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 25
+        }
+      }
+    ]
+  },
+  "61": {
+    "block_uuid": "b4fd3d13-e2dd-43f2-807b-e209d0c30f8b",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "{{message_text}}",
+            "custom_field": "{{lead.cf.4381512}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 27
+        }
+      }
+    ]
+  },
+  "65": {
+    "block_uuid": "0b22bb19-025c-488b-a0cf-0f345fab1247",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "change_status",
+          "params": {
+            "value": 99501151,
+            "pipeline_id": 12904179
+          }
+        }
+      },
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "Consumidor final",
+            "custom_field": "{{lead.cf.4381514}}"
+          }
+        }
+      },
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_tag",
+          "params": {
+            "type": 1,
+            "value": [
+              "consumidor-final"
+            ],
+            "element_type": 2
+          }
+        }
+      },
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_tag",
+          "params": {
+            "type": 1,
+            "value": [
+              "profissional-sem-cnpj"
+            ],
+            "element_type": 2
+          }
+        }
+      },
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "Sem problema! O preço profissional é só para salão com CNPJ, mas para usar em casa temos ótimas opções 💜",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 14
         }
       }
     ]
