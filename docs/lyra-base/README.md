@@ -35,12 +35,12 @@ O catálogo digital de distribuidores ficou de fora: repete os produtos e traz c
 | Distribuidor | representante | pede nome, empresa e CNPJ e passa para a Thayná |
 
 - **O que cada público pode comprar (dono, 2026-11-08):**
-  - **Consumidor final:** BY.MF (site); Minasflor **só home care, 300 ml e 300 g**; da MF.PRO, **só o Fusion** da linha
-    Therapy (shampoo e balm de base neutra, personalizados com óleo essencial).
-  - **Salão:** tudo, inclusive as versões de litro e as embalagens profissionais de Minasflor e MF.PRO.
-  - A Lyra nunca oferece litro, embalagem profissional ou outro produto MF.PRO a consumidor final.
-- **Fusion e óleos essenciais, como a Lyra explica ao consumidor** (linguagem cautelosa; nada de doença; as gotas são
-  com a equipe, porque a tabela do catálogo saiu desalinhada e precisa de conferência):
+  - **Consumidor final:** BY.MF (site) e Minasflor home care (300 ml e 300 g). **Nada da MF.PRO**, nem o Fusion (o dono
+    tirou o Fusion na revisão do robô: "consumidor final não usa linha MF.PRO").
+  - **Salão e distribuidor:** tudo, inclusive toda a MF.PRO e as versões de litro e embalagens profissionais.
+  - A Lyra nunca oferece litro, embalagem profissional ou qualquer produto MF.PRO a consumidor final.
+- **Fusion e óleos essenciais, como a Lyra explica a um salão** (linguagem cautelosa; nada de doença; as gotas são com
+  a equipe, porque a tabela do catálogo saiu desalinhada e precisa de conferência):
   - Hortelã-pimenta: sensação refrescante, ajuda a controlar a oleosidade (pode arder se usar demais);
   - Melaleuca: sensação de limpeza, para couro cabeludo oleoso ou com descamação;
   - Lavanda: ação calmante, para couro cabeludo sensível;

@@ -101,12 +101,12 @@ const blocos = {
   13: { question: [nomeDoLead, goto(14)] },
   // Consumidor escolhe a marca: BY.MF compra sozinho no site; Minasflor e MF.PRO não têm loja aberta (para não
   // concorrer com o distribuidor), então a Lyra anota os produtos e a equipe gera o link de pagamento da Yampi.
-  // Regra do dono (2026-11-08): da MF.PRO, o consumidor compra só o Fusion da linha Therapy.
-  14: { question: [msg('Obrigada! Qual marca você procura? 🛍️', botoes(['BY.MF', 'Minasflor', 'Fusion (MF.PRO)']))],
+  // Regra do dono (2026-11-08): a MF.PRO é só para salão e distribuidor; o consumidor não compra nada dela, nem o Fusion.
+  // Quem escreve "mf.pro" ou outra coisa em vez de tocar passa para atendente (bloco 52).
+  14: { question: [msg('Obrigada! Qual marca você procura? 🛍️', botoes(['BY.MF', 'Minasflor']))],
     answer: [{ handler: 'buttons', params: [
       { value: 'BY.MF', params: [goto(15)], synonyms: ['by.mf', 'bymf', 'BYMF', 'by mf'] },
       { value: 'Minasflor', params: [goto(16)], synonyms: ['minasflor', 'Minas Flor', 'minas flor'] },
-      { value: 'Fusion (MF.PRO)', params: [goto(17)], synonyms: ['fusion', 'Fusion', 'mf.pro', 'MF.PRO', 'mfpro', 'MF PRO', 'mf pro', 'therapy'] },
       { type: 'else', params: [goto(52)] },
     ] }] },
   // BY.MF (dono, 2026-11-08): o site não avisa o Kommo da compra, então no dia seguinte nasce a tarefa de conferir; e a
@@ -120,17 +120,9 @@ const blocos = {
     ] }] },
   // Site institucional da Minasflor (dono, 2026-11-08): quem não conhece os produtos olha lá e depois diz o que quer.
   16: { question: [campoLead(CAMPO.marca, 'Minasflor'), msg('Você pode conhecer toda a linha Minasflor no nosso site: https://minasflor.com.br/'), goto(18)] },
-  17: { question: [campoLead(CAMPO.marca, 'MF.PRO'), msg(
-    'Da MF.PRO, para uso em casa indicamos o Fusion, da linha Therapy: shampoo e balm de base neutra, personalizados com um óleo essencial de acordo com a necessidade do couro cabeludo 🌿\n\n' +
-    '• Hortelã-pimenta: sensação refrescante, ajuda a controlar a oleosidade\n' +
-    '• Melaleuca: sensação de limpeza, para couro cabeludo oleoso ou com descamação\n' +
-    '• Lavanda: ação calmante, para couro cabeludo sensível\n' +
-    '• Laranja doce: calmante, com aroma relaxante\n' +
-    '• Alecrim: energizante, ajuda a fortalecer os fios\n\n' +
-    'A quantidade de gotas é orientada pela nossa equipe.'), goto(18)] },
-  18: { question: [msg('Por favor, informe os produtos e as quantidades que deseja (no Fusion, informe também o óleo escolhido). A nossa equipe vai preparar um link de pagamento exclusivo para você, com Pix ou cartão 📝'), goto(19)] },
+  18: { question: [msg('Por favor, informe os produtos e as quantidades que deseja. A nossa equipe vai preparar um link de pagamento exclusivo para você, com Pix ou cartão 📝'), goto(19)] },
   19: { question: [esperaResposta(9)] },
-  9: { question: [etapa(FUNIL.consumidor, ETAPA.consumidorAtendente), msg('Pedido anotado ✅ A nossa equipe vai entrar em contato por aqui para finalizar a sua compra. 💙'), tarefa('Consumidor pediu Minasflor/MF.PRO pela Lyra: montar o link de pagamento da Yampi com os produtos da conversa (até 30 minutos).'), esperaResposta(55)] },
+  9: { question: [etapa(FUNIL.consumidor, ETAPA.consumidorAtendente), msg('Pedido anotado ✅ A nossa equipe vai entrar em contato por aqui para finalizar a sua compra. 💙'), tarefa('Consumidor pediu Minasflor pela Lyra: montar o link de pagamento da Yampi com os produtos da conversa (até 30 minutos).'), esperaResposta(55)] },
 
   // Salão.
   20: { question: [etapa(FUNIL.salao, ETAPA.salaoLyra), campoLead(CAMPO.segmento, 'Salão'), etiqueta('salão'), goto(21)] },
