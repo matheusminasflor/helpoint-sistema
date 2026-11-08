@@ -134,3 +134,10 @@ Onde o lead nasce, conforme o canal:
 - formulário do site: Distribuidor.
 
 Com isso, a origem do Direct passa a ser automática pela conta.
+- **Comentários (atualizado em 2026-11-08):** o Kommo não deixa tirar a fonte "Comentários do Instagram". A tela não tem
+  botão para isso, a integração só oferece sair da conta e a documentação não explica. Então:
+  - no Helpoint, lead que veio de comentário não conta nos indicadores;
+  - no Kommo, a automação de comentários convida a pessoa para o Direct;
+  - pergunto ao suporte do Kommo se há como desligar.
+- **Direct:** a Lyra e o Salesbot fazem a triagem igual ao WhatsApp. O Direct não traz o telefone, então a Lyra pede o
+  WhatsApp.
