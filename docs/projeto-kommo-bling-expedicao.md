@@ -115,3 +115,22 @@ Desenho:
     (`POST /v2/{alias}/checkout/payment-link`);
   - o aviso de pago da Yampi marca a venda ganha com o valor pago.
 - **Antes das chaves da Yampi (fase 1):** a Lyra anota o pedido e a Thayná gera o link como hoje.
+
+## 6. Versão 4: os 3 Instagrams ligados (2026-11-08)
+
+O dono ligou minasflor, mf.professional e bymf.br. Cada conta entrou com duas fontes, "Messenger" (o Direct) e
+"Comentários do Instagram", e as duas caem no funil Entrada, com a etapa de aceitar à mão ligada.
+
+Riscos e o que já existe:
+- **Comentário vira lead.** Cada comentário cria um lead, e o robô do Helpoint conta como "Sem triagem". Proposta: tirar
+  "Comentários" das fontes.
+- **Agente de IA:** já existe "Minasflor assistente de suporte", desligado desde 26/03/2026, com 0 créditos usados. Ele
+  vira a Lyra.
+- **Salesbot:** não há nenhum criado.
+
+Onde o lead nasce, conforme o canal:
+- Direct @bymf.br: Consumidor Final;
+- Direct @minasflor, Direct @mf.professional e WhatsApp: Salão;
+- formulário do site: Distribuidor.
+
+Com isso, a origem do Direct passa a ser automática pela conta.
