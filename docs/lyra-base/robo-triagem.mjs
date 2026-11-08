@@ -216,17 +216,18 @@ blocos[0].question = escolha('Olá! ✨ Sou a Lyra, assistente virtual da Minasf
   texto: 'Olá! ✨ Sou a Lyra, assistente virtual da Minasflor, e atendo as marcas BY.MF, Minasflor e MF.PRO. Para direcionar o seu atendimento, toque em uma das opções. Se você já é cliente, é só escrever "cliente"; para falar com a nossa equipe, escreva "atendente".', linhas: TRES });
 
 // A lista tem de estar sozinha no seu passo (o Kommo recusa a gravação com 400 se vier outra mensagem junto). Então
-// cada escolha vira dois passos: o passo N manda os botões só para o Instagram e, quando o canal não é Instagram, a
-// falha de envio ("on_error") desvia para o passo N+200, que manda a lista do WhatsApp. Os dois esperam a mesma resposta.
+// cada escolha vira dois passos, N (botões do Instagram) e N+200 (lista do WhatsApp, que espera a resposta).
 for (const [k, b] of Object.entries({ ...blocos })) {
   if (b.question?.[0]?.handler !== 'list_message') continue;
   const [listaDoWhatsapp, botoesDoInstagram] = b.question;
-  botoesDoInstagram.params.on_error = goto(Number(k) + 200);
+  // A mensagem de outro canal é pulada em silêncio, sem cair no "on_error" (reteste no WhatsApp, 2026-11-08: a saudação
+  // não saiu). Então o passo N manda os botões do Instagram e segue direto para o N+200, que manda a lista do WhatsApp
+  // e espera a resposta; cada cliente recebe só a mensagem do seu canal.
   botoesDoInstagram.params.is_in_starting_block = k === '0';
   // Na saudação, o lead vai primeiro para Entrada › Contato inicial, como fazia o robô de entrada que a Lyra substitui:
   // sem isso o lead do WhatsApp nasceria em Consumidor Final antes de escolher o segmento e entraria nos indicadores.
   const antes = k === '0' ? [etapa(FUNIL.entrada, ETAPA.entradaContato)] : [];
-  blocos[k] = { ...b, question: [...antes, botoesDoInstagram] };
+  blocos[k] = { question: [...antes, botoesDoInstagram, goto(Number(k) + 200)] };
   blocos[Number(k) + 200] = { question: [listaDoWhatsapp], answer: b.answer };
 }
 
