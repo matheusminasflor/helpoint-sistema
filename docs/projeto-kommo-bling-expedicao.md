@@ -238,3 +238,18 @@ Seção "Como garantimos", com as camadas de conferência:
 - 2 semanas lado a lado antes da notícia;
 - lista "Para corrigir";
 - robô vigiado.
+
+## 10. Passo 0 feito (2026-11-08) e achado 34
+
+**Passo 0:**
+- `mkt-kommo-coletar` usa `_shared/kommo-segmento.ts`: o funil é reconhecido pelo id, o campo Segmento vale mais que o
+  funil, e lead na etapa "Com a Lyra" sem Segmento conta como sem triagem. Testes em `src/lib/kommo-segmento.test.ts`.
+- CI #755 verde. Publicado em produção. A leitura de 08/11 deu os mesmos números de antes, mês a mês.
+
+**Achado 34:**
+- Priscila tem duas vendas ganhas de R$ 5.096:
+  - lead 118411874 (Entrada, fechado em 26/10);
+  - lead 115903858 (Distribuidor, formulário de 12/09, fechado em 05/11).
+- **Correção no Kommo:** deixar só uma.
+- **Regra para o passo 4:** cada nota do Forteplus conta uma vez, para a 1ª venda ganha do cliente; a outra vai para
+  "Para corrigir: venda repetida".
