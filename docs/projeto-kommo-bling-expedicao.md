@@ -326,3 +326,23 @@ Abrir o código é sem volta: o robô deixa de poder ser editado pelos blocos.
 
 **Gatilhos disponíveis no Avançado:** criação ou mudança de etapa, nova conversa, comentário recebido e menção em
 história. Gatilho por etiqueta é do plano Pro.
+
+**O que se viu no Kommo em 2026-11-08 (continuação do passo 3):**
+- **O robô ativo hoje** ("BOT INICIAL MF copiar(1)") **não faz triagem**: só move toda conversa nova para Entrada ›
+  Contato inicial e põe a etiqueta "Entrada". É daí que vêm os leads parados na Entrada.
+- **O robô de triagem antigo** ("BOT INICIAL MF") está desligado. Fluxo do Salão:
+  1. botão;
+  2. muda para Com a Thayná;
+  3. pergunta nome, e-mail, telefone, estado e cidade;
+  4. põe a etiqueta "salão";
+  5. manda o PDF do catálogo técnico;
+  6. cria tarefa de 1 dia.
+
+  São 5 perguntas, e a cada passo mais gente desistia.
+- **Cópias criadas, sem gatilho, sem efeito em cliente:**
+  - "Lyra · Triagem (em teste)": cópia do robô ativo, sem uso, pode ser excluída;
+  - "Lyra · Triagem v2 (em teste)": cópia da triagem antiga. Já tem a saudação da Lyra, os 4 botões (Uso em casa, Tenho
+    salão, Revendo/distribuo, Já sou cliente) e a pergunta de nome nova nos 3 caminhos.
+- **O editor de blocos** é difícil de operar por automação: criar um bloco depois de outro não funcionou de forma
+  confiável. Falta, em cada caminho, o bloco "Definir campo Segmento", cortar e-mail, telefone, estado e cidade, pedir
+  CPF/CNPJ, o caminho "Já sou cliente" e a mensagem final.
