@@ -71,6 +71,8 @@ const tarefa = (texto, { dias } = {}) => ({
   date_exec: 0, handler_code: 'amocrm', execution_condition: { id: 45, name: 'execute_trigger' } }, element_type: 'lead' },
 });
 
+// Os endereços vão sem "https://": o WhatsApp e o Instagram ainda fazem o link, e o Kommo só troca por kommo.cc (o
+// encurtador dele, sem opção de desligar) o que começa com https.
 // Regras do dono (2026-11-08): nenhuma mensagem promete prazo ao cliente; o prazo de 30 minutos fica só na tarefa.
 // Tom profissional, sem gíria, com um emoji por mensagem (o dono achou "frio" sem nenhum), e o coração é azul (💙).
 const REGIOES = {
@@ -136,13 +138,13 @@ const blocos = {
   // mensagem traz o botão "Falar com atendente". Qualquer resposta também passa para uma pessoa.
   15: { question: [etapa(FUNIL.consumidor, ETAPA.consumidorLink), campoLead(CAMPO.marca, 'BY.MF'),
     tarefa('Lead recebeu o link da loja BY.MF: conferir se comprou no site (ganho) ou retomar o contato.', { dias: 1 }),
-    msg('A BY.MF tem loja online 🛍️ https://bymfpro.com.br/\n\nO pagamento é por Pix ou cartão, e o frete é calculado pelo CEP na finalização da compra. Se precisar de ajuda, é só tocar no botão abaixo.', botoes(['Falar com atendente']))],
+    msg('A BY.MF tem loja online 🛍️ bymfpro.com.br\n\nO pagamento é por Pix ou cartão, e o frete é calculado pelo CEP na finalização da compra. Se precisar de ajuda, é só tocar no botão abaixo.', botoes(['Falar com atendente']))],
     answer: [{ handler: 'buttons', params: [
       { value: 'Falar com atendente', params: [goto(54)], synonyms: ['atendente', 'falar com atendente'] },
       { type: 'else', params: [goto(54)] },
     ] }] },
   // Site institucional da Minasflor (dono, 2026-11-08): quem não conhece os produtos olha lá e depois diz o que quer.
-  16: { question: [campoLead(CAMPO.marca, 'Minasflor'), msg('Você pode conhecer toda a linha Minasflor no nosso site: https://minasflor.com.br/'), goto(18)] },
+  16: { question: [campoLead(CAMPO.marca, 'Minasflor'), msg('Você pode conhecer toda a linha Minasflor no nosso site: minasflor.com.br'), goto(18)] },
   18: { question: [msg('Por favor, informe os produtos e as quantidades que deseja. A nossa equipe vai preparar um link de pagamento exclusivo para você, com Pix ou cartão 📝'), goto(19)] },
   19: { question: [esperaResposta(9)] },
   9: { question: [etapa(FUNIL.consumidor, ETAPA.consumidorAtendente), msg('Pedido anotado ✅ A nossa equipe vai entrar em contato por aqui para finalizar a sua compra. 💙'), tarefa('Consumidor pediu Minasflor pela Lyra: montar o link de pagamento da Yampi com os produtos da conversa (até 30 minutos).'), esperaResposta(55)] },
@@ -164,7 +166,7 @@ const blocos = {
   25: { question: [esperaResposta(26)] },
   26: { question: [campoLead(CAMPO.cpfCnpj, '{{message_text}}'), goto(27)] },
   61: { question: [campoLead(CAMPO.cpfCnpj, '{{message_text}}'), goto(27)] },
-  27: { question: [msg('Obrigada! Você pode conhecer todos os nossos produtos em https://minasflor.com.br/\n\nDepois é só me dizer quais produtos e quantidades deseja, que eu deixo o seu pedido anotado 📝'), goto(28)] },
+  27: { question: [msg('Obrigada! Você pode conhecer todos os nossos produtos em minasflor.com.br\n\nDepois é só me dizer quais produtos e quantidades deseja, que eu deixo o seu pedido anotado 📝'), goto(28)] },
   28: { question: [esperaResposta(29)] },
   29: { question: [etapa(FUNIL.salao, ETAPA.salaoAtendente), msg('Pedido anotado ✅ A nossa equipe vai entrar em contato por aqui para finalizar o seu pedido. 💙'), tarefa('Salão (CNPJ no lead) fez o pedido pela Lyra: montar o pedido com os produtos da conversa (até 30 minutos).'), esperaResposta(55)] },
   65: { question: [etapa(FUNIL.consumidor, ETAPA.consumidorLyra), campoLead(CAMPO.segmento, 'Consumidor final'), etiqueta('consumidor-final'), etiqueta('profissional-sem-cnpj'),
@@ -206,7 +208,7 @@ const blocos = {
   66: { question: [campoLead(CAMPO.cidadeAtuacao, '{{message_text}}'), goto(39)] },
   // Pasta "Na ponta dos dedos" do Drive (dono, 2026-11-08): catálogos, fotos e vídeos, mockups e campanhas que o
   // distribuidor usa para divulgar nas redes. Link e não PDF: o Direct do Instagram não aceita arquivo e o Drive troca sozinho.
-  39: { question: [etapa(FUNIL.distribuidor, ETAPA.distribuidorAtendente), msg('Obrigada pelas informações. Um representante da nossa equipe vai entrar em contato com você. 💙\n\nEnquanto isso, deixamos à sua disposição o nosso material para distribuidores: catálogos, fotos e vídeos dos produtos, mockups e campanhas prontas para divulgar nas redes sociais 📲\nhttps://drive.google.com/drive/folders/1nAI-QmLyxgK_T5eBHvRumMsnFIufmSaR'), tarefa('Distribuidor triado pela Lyra (CNPJ, estado e cidade de atuação no lead): encaminhar ao representante (até 30 minutos).'), esperaResposta(55)] },
+  39: { question: [etapa(FUNIL.distribuidor, ETAPA.distribuidorAtendente), msg('Obrigada pelas informações. Um representante da nossa equipe vai entrar em contato com você. 💙\n\nEnquanto isso, deixamos à sua disposição o nosso material para distribuidores: catálogos, fotos e vídeos dos produtos, mockups e campanhas prontas para divulgar nas redes sociais 📲\ndrive.google.com/drive/folders/1nAI-QmLyxgK_T5eBHvRumMsnFIufmSaR'), tarefa('Distribuidor triado pela Lyra (CNPJ, estado e cidade de atuação no lead): encaminhar ao representante (até 30 minutos).'), esperaResposta(55)] },
 
   // Já é cliente: pós-venda, fora dos indicadores.
   40: { question: [etapa(FUNIL.atendimento, ETAPA.posVenda), etiqueta('pos-venda'), msg('Por favor, informe o número do pedido ou descreva o que aconteceu 📦 A nossa equipe vai dar continuidade ao seu atendimento por aqui. 💙'), tarefa('Pós-venda: cliente pediu ajuda com pedido, troca ou entrega.'), esperaResposta(55)] },
