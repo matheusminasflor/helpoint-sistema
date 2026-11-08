@@ -169,9 +169,9 @@ const blocos = {
   63: { question: [msg('E em qual cidade?'), goto(64)] },
   64: { question: [esperaResposta(66)] },
   66: { question: [campoLead(CAMPO.cidadeAtuacao, '{{message_text}}'), goto(39)] },
-  // Pasta "Na ponta dos dedos" do Drive (dono, 2026-11-08): catálogos e fotos dos produtos, para o distribuidor já
-  // conhecer a linha antes da ligação. Link e não PDF: o Direct do Instagram não aceita arquivo e o Drive troca sozinho.
-  39: { question: [msg('Obrigada! Um representante da nossa equipe vai entrar em contato com você, é só aguardar 💜\n\nEnquanto isso, aqui estão os nossos catálogos e as fotos dos produtos: https://drive.google.com/drive/folders/1nAI-QmLyxgK_T5eBHvRumMsnFIufmSaR'), tarefa('Distribuidor triado pela Lyra (CNPJ, estado e cidade de atuação no lead): encaminhar ao representante (até 30 minutos).'), fim] },
+  // Pasta "Na ponta dos dedos" do Drive (dono, 2026-11-08): catálogos, fotos e vídeos, mockups e campanhas que o
+  // distribuidor usa para divulgar nas redes; ele já conhece a linha antes da ligação. Link e não PDF: o Direct do Instagram não aceita arquivo e o Drive troca sozinho.
+  39: { question: [msg('Obrigada! Um representante da nossa equipe vai entrar em contato com você, é só aguardar 💜\n\nEnquanto isso, já deixo aqui o nosso material para distribuidores 📲 Catálogos, fotos e vídeos dos produtos, mockups e campanhas prontas para você divulgar nas suas redes sociais: https://drive.google.com/drive/folders/1nAI-QmLyxgK_T5eBHvRumMsnFIufmSaR'), tarefa('Distribuidor triado pela Lyra (CNPJ, estado e cidade de atuação no lead): encaminhar ao representante (até 30 minutos).'), fim] },
 
   // Já é cliente: pós-venda, fora dos indicadores.
   40: { question: [etapa(FUNIL.atendimento, ETAPA.posVenda), etiqueta('pos-venda'), msg(`Claro! Me conta o número do pedido ou o que aconteceu. ${AGUARDE}`), tarefa('Pós-venda: cliente pediu ajuda com pedido, troca ou entrega.'), fim] },
