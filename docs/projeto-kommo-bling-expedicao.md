@@ -208,3 +208,33 @@ Seis pontos só se provam montando, e cada um tem plano B (seção "Provar na mo
 Decisões do dono (2026-11-08):
 - os leads "só comentou" são excluídos 30 dias depois de fechados (o Helpoint guarda a contagem antes);
 - o formulário do site é só para distribuidor.
+
+## 9. Comercial › Atendimento do CRM (versão 8, 2026-11-08, pedido do dono)
+
+Uma tela nova no Comercial, separada dos indicadores das vendedoras do Forteplus.
+
+**Por atendente do Kommo:** leads, vendas, vendido, taxa, 1ª resposta (mediana, só no expediente), fora do prazo, sem
+resposta, tarefas atrasadas e perdidas sem motivo.
+
+**Por segmento × atendente:**
+- vendido no Distribuidor = nota do Forteplus;
+- vendido em Salão e Consumidor = pago na Yampi, depois nota do Bling na etapa 3.
+
+**Regras:**
+- **Usuário novo:** todo usuário do Kommo aparece sozinho na visão da equipe.
+- **"Meus":** depende de ligar o login do Kommo à pessoa do Helpoint. A ligação é pelo e-mail; quando o e-mail não bate, o
+  admin liga uma vez. A Thayná é ligada à mão, porque o login dela usa o e-mail tic.minasflor@gmail.com.
+- **Lyra:** tem linha própria. A venda é da Lyra quando nenhuma pessoa mandou mensagem no lead.
+- **Lead que trocou de mãos:** a venda conta para quem fechou; a 1ª resposta, para quem recebeu primeiro.
+- **Distribuidor sem nota:** fica em "Aguardando nota", fora do Vendido.
+- **Quem vê tudo:** dono, admin e gestor comercial.
+
+Os Indicadores do Marketing mostram o mesmo vendido, porque leem a mesma tabela.
+
+Seção "Como garantimos", com as camadas de conferência:
+- testes de cada regra e CI verde;
+- conferência com o conector do Kommo;
+- conferência venda por venda com as notas do Forteplus e os pedidos da Yampi;
+- 2 semanas lado a lado antes da notícia;
+- lista "Para corrigir";
+- robô vigiado.
