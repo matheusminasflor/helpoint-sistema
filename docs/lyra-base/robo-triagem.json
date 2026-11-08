@@ -1,6 +1,6 @@
 {
   "0": {
-    "block_uuid": "cf1fa38c-4db6-4c42-b30a-049b82a6b795",
+    "block_uuid": "786a3f23-4621-40c2-bbb0-90361f3e9511",
     "question": [
       {
         "handler": "send_message",
@@ -141,8 +141,64 @@
       }
     ]
   },
+  "9": {
+    "block_uuid": "3818bf92-a430-41bb-b844-779b6aecfe2f",
+    "question": [
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "Anotado! Nossa equipe te responde em até 30 minutos no horário comercial. Fora dele, falamos com você assim que abrirmos 💜",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null
+        }
+      },
+      {
+        "handler": "trigger",
+        "params": {
+          "trigger": {
+            "delay": 0,
+            "action": "create_task",
+            "segments": [
+              ""
+            ],
+            "settings": {
+              "task_text": "Consumidor pediu Minasflor/MF.PRO pela Lyra: montar o link de pagamento da Yampi com os produtos da conversa (até 30 minutos).",
+              "task_type": "1",
+              "deadline-days": "",
+              "deadline-hours": "",
+              "task_type_name": "Acompanhar",
+              "within-deadline": "",
+              "deadline-minutes": "30",
+              "responsible_user": "current"
+            },
+            "date_exec": 0,
+            "handler_code": "amocrm",
+            "execution_condition": {
+              "id": 45,
+              "name": "execute_trigger"
+            }
+          },
+          "element_type": "lead"
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "finish",
+          "step": 999
+        }
+      }
+    ]
+  },
   "10": {
-    "block_uuid": "341e9a96-1300-4ac2-8fa7-eb4b52992934",
+    "block_uuid": "27922f4d-912a-4595-a973-13879740ee4b",
     "question": [
       {
         "handler": "action",
@@ -187,7 +243,7 @@
     ]
   },
   "11": {
-    "block_uuid": "75e36557-ae6a-4d38-a590-59dec63c5626",
+    "block_uuid": "0b76be2e-eeb9-438d-b955-e02817194952",
     "question": [
       {
         "handler": "send_message",
@@ -214,7 +270,7 @@
     ]
   },
   "12": {
-    "block_uuid": "c8253b07-5255-4e53-9e6c-48a6b6f9f388",
+    "block_uuid": "58ba7272-1c6e-4adc-b4c6-3dac39667bfb",
     "question": [
       {
         "handler": "waits",
@@ -237,7 +293,7 @@
     ]
   },
   "13": {
-    "block_uuid": "d9a45bcc-eeac-4012-8b88-88b527bcfb65",
+    "block_uuid": "37cf082c-f55c-41a0-8cd8-f076832ac9fd",
     "question": [
       {
         "handler": "action",
@@ -259,13 +315,129 @@
     ]
   },
   "14": {
-    "block_uuid": "2313e74c-b79c-41ed-8fa2-dd934ae3d802",
+    "block_uuid": "c6ab55b9-c4d2-454d-8512-30a24afaaf5f",
     "question": [
       {
         "handler": "send_message",
         "params": {
           "tag": "",
-          "text": "Prazer! 😊 Se quiser comprar BY.MF, a loja é https://bymfpro.com.br/ . Para Minasflor e MF.PRO, nossa equipe monta o seu pedido. Nossa equipe te responde em até 30 minutos no horário comercial. Fora dele, falamos com você assim que abrirmos 💜",
+          "text": "Prazer! 😊 Qual marca você procura?",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null,
+          "buttons": [
+            {
+              "type": "inline",
+              "text": "BY.MF"
+            },
+            {
+              "type": "inline",
+              "text": "Minasflor"
+            },
+            {
+              "type": "inline",
+              "text": "MF.PRO"
+            }
+          ]
+        }
+      }
+    ],
+    "answer": [
+      {
+        "handler": "buttons",
+        "params": [
+          {
+            "value": "BY.MF",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 15
+                }
+              }
+            ],
+            "synonyms": [
+              "by.mf",
+              "bymf",
+              "BYMF",
+              "by mf"
+            ]
+          },
+          {
+            "value": "Minasflor",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 16
+                }
+              }
+            ],
+            "synonyms": [
+              "minasflor",
+              "Minas Flor",
+              "minas flor"
+            ]
+          },
+          {
+            "value": "MF.PRO",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 17
+                }
+              }
+            ],
+            "synonyms": [
+              "mf.pro",
+              "mfpro",
+              "MF PRO",
+              "mf pro"
+            ]
+          },
+          {
+            "type": "else",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 18
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "15": {
+    "block_uuid": "ad22ff82-7bde-43fb-b12c-9fe2e29d1747",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "BY.MF",
+            "custom_field": "{{lead.cf.4381516}}"
+          }
+        }
+      },
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "Perfeito! A loja da BY.MF é https://bymfpro.com.br/ , com Pix ou cartão e o frete calculado pelo seu CEP 💜 Se tiver qualquer dúvida, é só me chamar aqui.",
           "type": "external",
           "recipient": {
             "type": "all_contacts",
@@ -277,35 +449,6 @@
         }
       },
       {
-        "handler": "trigger",
-        "params": {
-          "trigger": {
-            "delay": 0,
-            "action": "create_task",
-            "segments": [
-              ""
-            ],
-            "settings": {
-              "task_text": "Consumidor triado pela Lyra: responder em até 30 minutos.",
-              "task_type": "1",
-              "deadline-days": "",
-              "deadline-hours": "",
-              "task_type_name": "Acompanhar",
-              "within-deadline": "",
-              "deadline-minutes": "30",
-              "responsible_user": "current"
-            },
-            "date_exec": 0,
-            "handler_code": "amocrm",
-            "execution_condition": {
-              "id": 45,
-              "name": "execute_trigger"
-            }
-          },
-          "element_type": "lead"
-        }
-      },
-      {
         "handler": "goto",
         "params": {
           "type": "finish",
@@ -314,8 +457,102 @@
       }
     ]
   },
+  "16": {
+    "block_uuid": "8f4ab020-2011-429e-a77d-32b86895cd49",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "Minasflor",
+            "custom_field": "{{lead.cf.4381516}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 18
+        }
+      }
+    ]
+  },
+  "17": {
+    "block_uuid": "d388942d-b644-4cea-941c-741f716bf185",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "MF.PRO",
+            "custom_field": "{{lead.cf.4381516}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 18
+        }
+      }
+    ]
+  },
+  "18": {
+    "block_uuid": "dc9b2336-7256-4b3d-8dda-c314a542755e",
+    "question": [
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "Ótimo! Me conta quais produtos e quantas unidades você quer 😊 Nossa equipe monta um link de pagamento só para você, com Pix ou cartão.",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 19
+        }
+      }
+    ]
+  },
+  "19": {
+    "block_uuid": "4a48cdd9-3384-4eda-8063-b15957222359",
+    "question": [
+      {
+        "handler": "waits",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "event": {
+                "action": "received",
+                "source": "message"
+              },
+              "action": {
+                "type": "question",
+                "step": 9
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
   "20": {
-    "block_uuid": "0371762b-620d-43be-bc44-6349255a947f",
+    "block_uuid": "978bdf65-b52f-45dc-bb73-2b303a2ac93b",
     "question": [
       {
         "handler": "action",
@@ -360,7 +597,7 @@
     ]
   },
   "21": {
-    "block_uuid": "0a71e5cf-464f-43bb-ae2f-793726adc152",
+    "block_uuid": "c1720c2f-91d0-4ca5-9034-983b08be186d",
     "question": [
       {
         "handler": "send_message",
@@ -387,7 +624,7 @@
     ]
   },
   "22": {
-    "block_uuid": "60844b71-efcc-4ddd-84ae-c4039a9cac69",
+    "block_uuid": "bcc9fe26-8734-40ea-b92e-82ce4ffdbc73",
     "question": [
       {
         "handler": "waits",
@@ -410,7 +647,7 @@
     ]
   },
   "23": {
-    "block_uuid": "50939bbc-fb77-4cac-bc24-916e0187dd24",
+    "block_uuid": "9c2d329d-eb5b-4036-9930-fe8e237c09ef",
     "question": [
       {
         "handler": "action",
@@ -432,7 +669,7 @@
     ]
   },
   "24": {
-    "block_uuid": "b711dfe8-8b26-4c41-99ae-cfb3abde041b",
+    "block_uuid": "24886029-a4a2-4ddb-b734-5dc541b4884d",
     "question": [
       {
         "handler": "send_message",
@@ -459,7 +696,7 @@
     ]
   },
   "25": {
-    "block_uuid": "dc637097-9972-4317-b697-8686a4212c1c",
+    "block_uuid": "bb5c87b4-7d87-4452-9a73-6f95e69c21c4",
     "question": [
       {
         "handler": "waits",
@@ -482,7 +719,7 @@
     ]
   },
   "26": {
-    "block_uuid": "e13206fa-b3e9-4574-912b-26aaab4141bb",
+    "block_uuid": "18d7cd86-3ef3-4990-b6f6-9d17925596e2",
     "question": [
       {
         "handler": "action",
@@ -504,7 +741,7 @@
     ]
   },
   "27": {
-    "block_uuid": "75caa8a1-cd35-4d06-bb18-1bdef9686ade",
+    "block_uuid": "dddb9fd7-6bf2-4b53-9d3a-771457c5c921",
     "question": [
       {
         "handler": "send_message",
@@ -560,7 +797,7 @@
     ]
   },
   "30": {
-    "block_uuid": "53a48fcb-9c3a-41f2-a755-cccac9117a5f",
+    "block_uuid": "3e01b1c0-1766-4c4e-b7b3-09ce787b71b2",
     "question": [
       {
         "handler": "action",
@@ -605,7 +842,7 @@
     ]
   },
   "31": {
-    "block_uuid": "7716121e-ab12-42ef-92c2-98f8c397d8ad",
+    "block_uuid": "8f57c505-80f0-432b-8b35-59aebd7d1e18",
     "question": [
       {
         "handler": "send_message",
@@ -632,7 +869,7 @@
     ]
   },
   "32": {
-    "block_uuid": "651b1c8a-0ebe-411a-93e0-1134130249dd",
+    "block_uuid": "95bfae26-79e7-473f-b3aa-f26d322d10b6",
     "question": [
       {
         "handler": "waits",
@@ -655,7 +892,7 @@
     ]
   },
   "33": {
-    "block_uuid": "a134d624-0f9a-4608-b19d-e7b06b86320c",
+    "block_uuid": "055f4889-ce3f-4650-b0d2-f83fa73fc165",
     "question": [
       {
         "handler": "action",
@@ -677,7 +914,7 @@
     ]
   },
   "34": {
-    "block_uuid": "7fe0acd0-f1ff-40f1-9edd-8e7253f9c8b7",
+    "block_uuid": "8da1b2f2-87f5-4b43-82ff-7af3283e7e4d",
     "question": [
       {
         "handler": "send_message",
@@ -704,7 +941,7 @@
     ]
   },
   "35": {
-    "block_uuid": "4581c428-5391-4f06-8eed-9f62c65776c3",
+    "block_uuid": "7451c470-7a5c-4ec9-a07c-935db7d6cb28",
     "question": [
       {
         "handler": "waits",
@@ -727,7 +964,7 @@
     ]
   },
   "36": {
-    "block_uuid": "caa9b5ee-351e-4172-81be-09b11850d366",
+    "block_uuid": "2e3952f5-30ef-49c6-8b51-d921064cc4df",
     "question": [
       {
         "handler": "action",
@@ -749,7 +986,7 @@
     ]
   },
   "37": {
-    "block_uuid": "fbf48b4f-7d0b-47cd-9aa9-7a32010a5705",
+    "block_uuid": "93a30b81-6286-4b04-bec3-6e0819f5a601",
     "question": [
       {
         "handler": "send_message",
@@ -805,7 +1042,7 @@
     ]
   },
   "40": {
-    "block_uuid": "505cb9b4-dcaa-434c-8e53-7c419d5e7c3f",
+    "block_uuid": "fc55e119-527e-4ee7-8142-efbaa6e11e08",
     "question": [
       {
         "handler": "action",
@@ -884,7 +1121,7 @@
     ]
   },
   "50": {
-    "block_uuid": "d8e0ca72-f5cf-46d3-8a79-196da7b23e6c",
+    "block_uuid": "48485a5e-d52d-46cf-a0eb-2b5173f28dee",
     "question": [
       {
         "handler": "send_message",
@@ -1026,7 +1263,7 @@
     ]
   },
   "51": {
-    "block_uuid": "60b6d2fa-95c9-4e31-9df8-774445b5388e",
+    "block_uuid": "fad6f434-afc0-466f-a219-a6664b63fb62",
     "question": [
       {
         "handler": "send_message",

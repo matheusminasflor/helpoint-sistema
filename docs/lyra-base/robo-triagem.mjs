@@ -10,7 +10,7 @@ import { randomUUID } from 'node:crypto';
 // Números da conta ticminasflor (leitura de 2026-11-08).
 const FUNIL = { consumidor: 12904179, salao: 12927111, distribuidor: 12927087, atendimento: 14739451 };
 const ETAPA = { consumidorThayna: 99501151, salaoThayna: 99680859, distribuidorThayna: 99680647, posVenda: 113891275 };
-const CAMPO = { segmento: 4381514, cpfCnpj: 4381512 };
+const CAMPO = { segmento: 4381514, cpfCnpj: 4381512, marca: 4381516 };
 
 const goto = (step, type = 'question') => ({ handler: 'goto', params: { type, step } });
 const fim = { handler: 'goto', params: { type: 'finish', step: 999 } };
@@ -59,7 +59,21 @@ const blocos = {
   11: { question: [msg('Que bom! 💜 Como você se chama?'), goto(12)] },
   12: { question: [esperaResposta(13)] },
   13: { question: [nomeDoLead, goto(14)] },
-  14: { question: [msg(`Prazer! 😊 Se quiser comprar BY.MF, a loja é https://bymfpro.com.br/ . Para Minasflor e MF.PRO, nossa equipe monta o seu pedido. ${PRAZO}`), tarefa('Consumidor triado pela Lyra: responder em até 30 minutos.'), fim] },
+  // Consumidor escolhe a marca: BY.MF compra sozinho no site; Minasflor e MF.PRO não têm loja aberta (para não
+  // concorrer com o distribuidor), então a Lyra anota os produtos e a Thayná gera o link de pagamento da Yampi.
+  14: { question: [msg('Prazer! 😊 Qual marca você procura?', { buttons: ['BY.MF', 'Minasflor', 'MF.PRO'].map((text) => ({ type: 'inline', text })) })],
+    answer: [{ handler: 'buttons', params: [
+      { value: 'BY.MF', params: [goto(15)], synonyms: ['by.mf', 'bymf', 'BYMF', 'by mf'] },
+      { value: 'Minasflor', params: [goto(16)], synonyms: ['minasflor', 'Minas Flor', 'minas flor'] },
+      { value: 'MF.PRO', params: [goto(17)], synonyms: ['mf.pro', 'mfpro', 'MF PRO', 'mf pro'] },
+      { type: 'else', params: [goto(18)] },
+    ] }] },
+  15: { question: [campoLead(CAMPO.marca, 'BY.MF'), msg('Perfeito! A loja da BY.MF é https://bymfpro.com.br/ , com Pix ou cartão e o frete calculado pelo seu CEP 💜 Se tiver qualquer dúvida, é só me chamar aqui.'), fim] },
+  16: { question: [campoLead(CAMPO.marca, 'Minasflor'), goto(18)] },
+  17: { question: [campoLead(CAMPO.marca, 'MF.PRO'), goto(18)] },
+  18: { question: [msg('Ótimo! Me conta quais produtos e quantas unidades você quer 😊 Nossa equipe monta um link de pagamento só para você, com Pix ou cartão.'), goto(19)] },
+  19: { question: [esperaResposta(9)] },
+  9: { question: [msg(`Anotado! ${PRAZO}`), tarefa('Consumidor pediu Minasflor/MF.PRO pela Lyra: montar o link de pagamento da Yampi com os produtos da conversa (até 30 minutos).'), fim] },
 
   // Salão.
   20: { question: [etapa(FUNIL.salao, ETAPA.salaoThayna), campoLead(CAMPO.segmento, 'Salão'), etiqueta('salao'), goto(21)] },
