@@ -217,7 +217,8 @@ const blocos = {
 // Bloco 0: a saudação, em lista.
 const TRES = [OPCOES['Uso em casa'], OPCOES['Tenho salão'], OPCOES['Revendo/distribuo']];
 blocos[0].question = escolha('Olá! ✨ Sou a Lyra, assistente virtual da Minasflor, e atendo as marcas BY.MF, Minasflor e MF.PRO. Para direcionar o seu atendimento, {toque} para selecionar o seu perfil. Se preferir falar com a nossa equipe, é só escrever "atendente".', Object.values(OPCOES), {
-  texto: 'Olá! ✨ Sou a Lyra, assistente virtual da Minasflor, e atendo as marcas BY.MF, Minasflor e MF.PRO. Para direcionar o seu atendimento, toque em uma das opções. Se você já é cliente, é só escrever "cliente"; para falar com a nossa equipe, escreva "atendente".', linhas: TRES });
+  // Cada Instagram é de uma marca (dono, 2026-11-08): a saudação ali não cita marca nenhuma.
+  texto: 'Olá! ✨ Sou a Lyra, assistente virtual. Para direcionar o seu atendimento, toque em uma das opções. Se você já é cliente, é só escrever "cliente"; para falar com a nossa equipe, escreva "atendente".', linhas: TRES });
 
 // Na saudação, o lead vai primeiro para Entrada › Contato inicial, como fazia o robô de entrada que a Lyra substitui:
 // sem isso o lead do WhatsApp nasceria em Consumidor Final antes de escolher o segmento e entraria nos indicadores.
