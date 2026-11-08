@@ -85,3 +85,33 @@ Decisões do dono:
 4. Lead **sem resposta de pessoa em 30 minutos**, contados no horário comercial, vira tarefa.
 
 Depois da etapa 2, voltar na etapa 1 e conferir se os números batem.
+
+## 5. Versão 3 do projeto do Kommo: Lyra e link da Yampi (2026-11-08)
+
+Mesma página da proposta (versão 3). Decisões do dono:
+- **Lyra, assistente da Minasflor:** usa emoji e atende no WhatsApp as 3 marcas (BY.MF, Minasflor e MF.PRO).
+- **CPF/CNPJ:** o robô pede ao Salão e ao Distribuidor.
+- **A IA só classifica e tira dúvidas pela base.** Não fala de preço de revenda nem de condição.
+- **Base de produtos:** eu faço o rascunho, o Marketing revisa e o dono aprova.
+
+O que foi conferido na conta e na documentação do Kommo:
+- **Plano:** Avançado (legado), 1 licença, válido até 16/03/2027.
+- **Agente de IA:** o Avançado permite até 3. Cada resposta custa cerca de 15 créditos; 1.250 créditos por licença dão cerca
+  de 83 respostas por mês; créditos extras são vendidos de 5.000 em 5.000.
+- **Campo obrigatório por etapa:** existe no Avançado. Motivo de perda obrigatório não está confirmado; a saída é um campo
+  obrigatório na etapa de perdida.
+- **Sem resposta:** o Kommo não tem alerta automático; o controle será tarefa criada pelo Salesbot mais o aviso do Helpoint.
+- **Leads de entrada:** a etapa pode ser desligada em cada funil. O Salesbot muda o lead de funil.
+- **Chamadas para fora:** a IA não acessa sistemas de fora. Só o Salesbot (passo de widget, `widget_request`) chama um
+  endereço externo e usa a resposta.
+- **Instagram:** 0 de 3 contas ligadas, então o Direct não entra no Kommo.
+
+Desenho:
+- **Quem faz o quê:** o Salesbot faz o que é fixo e não gasta crédito; a Lyra entra só nas dúvidas escritas.
+- **Funis:** Com a Lyra → Com a Thayná → Link enviado (ou Enviado ao representante) → Venda ganha / perdida.
+- **Link de compra por loja:**
+  - BY.MF: link do site;
+  - Minasflor e MF.PRO: link de pagamento da Yampi gerado pelo Helpoint para aquele lead
+    (`POST /v2/{alias}/checkout/payment-link`);
+  - o aviso de pago da Yampi marca a venda ganha com o valor pago.
+- **Antes das chaves da Yampi (fase 1):** a Lyra anota o pedido e a Thayná gera o link como hoje.
