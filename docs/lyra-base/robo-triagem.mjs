@@ -10,7 +10,7 @@ import { randomUUID } from 'node:crypto';
 // Números da conta ticminasflor (leitura de 2026-11-08).
 const FUNIL = { consumidor: 12904179, salao: 12927111, distribuidor: 12927087, atendimento: 14739451, entrada: 13975223 };
 const ETAPA = { consumidorThayna: 99501151, salaoThayna: 99680859, distribuidorThayna: 99680647, posVenda: 113891275, entradaThayna: 113893475 };
-const CAMPO = { segmento: 4381514, cpfCnpj: 4381512, marca: 4381516 };
+const CAMPO = { segmento: 4381514, cpfCnpj: 4381512, marca: 4381516, estadoAtuacao: 4381528, cidadeAtuacao: 4381530 };
 
 const goto = (step, type = 'question') => ({ handler: 'goto', params: { type, step } });
 const fim = { handler: 'goto', params: { type: 'finish', step: 999 } };
@@ -123,9 +123,14 @@ const blocos = {
   34: { question: [msg('Prazer! Qual é o CNPJ da empresa?'), goto(35)] },
   35: { question: [esperaResposta(36)] },
   36: { question: [campoLead(CAMPO.cpfCnpj, '{{message_text}}'), goto(37)] },
-  37: { question: [msg('E em qual cidade e estado você pretende atuar como distribuidor?'), goto(38)] },
-  38: { question: [esperaResposta(39)] },
-  39: { question: [msg('Obrigada! Um representante da nossa equipe vai entrar em contato com você, é só aguardar 💜'), tarefa('Distribuidor triado pela Lyra (CNPJ no lead; cidade e estado de atuação na conversa): encaminhar ao representante (até 30 minutos).'), fim] },
+  // Região de atuação em dois campos (dono, 2026-11-08: "ponto muito importante e para termos indicadores").
+  37: { question: [msg('Em qual estado você pretende atuar como distribuidor? Pode mandar só a sigla, por exemplo: MG'), goto(38)] },
+  38: { question: [esperaResposta(62)] },
+  62: { question: [campoLead(CAMPO.estadoAtuacao, '{{message_text}}'), goto(63)] },
+  63: { question: [msg('E em qual cidade?'), goto(64)] },
+  64: { question: [esperaResposta(66)] },
+  66: { question: [campoLead(CAMPO.cidadeAtuacao, '{{message_text}}'), goto(39)] },
+  39: { question: [msg('Obrigada! Um representante da nossa equipe vai entrar em contato com você, é só aguardar 💜'), tarefa('Distribuidor triado pela Lyra (CNPJ, estado e cidade de atuação no lead): encaminhar ao representante (até 30 minutos).'), fim] },
 
   // Já é cliente: pós-venda, fora dos indicadores.
   40: { question: [etapa(FUNIL.atendimento, ETAPA.posVenda), etiqueta('pos-venda'), msg(`Claro! Me conta o número do pedido ou o que aconteceu. ${AGUARDE}`), tarefa('Pós-venda: cliente pediu ajuda com pedido, troca ou entrega.'), fim] },

@@ -346,3 +346,11 @@ história. Gatilho por etiqueta é do plano Pro.
 - **O editor de blocos** é difícil de operar por automação: criar um bloco depois de outro não funcionou de forma
   confiável. Falta, em cada caminho, o bloco "Definir campo Segmento", cortar e-mail, telefone, estado e cidade, pedir
   CPF/CNPJ, o caminho "Já sou cliente" e a mensagem final.
+
+## 14. Região de atuação do distribuidor (dono, 2026-11-08)
+
+"Precisa ter campo região de atuação, esse é um ponto muito importante e para termos indicadores."
+- **Campos de lead criados:** "Estado de atuação" (4381528) e "Cidade de atuação" (4381530), os dois de texto.
+- **Triagem:** a Lyra pergunta o estado (pede a sigla, ex.: MG) e depois a cidade, e grava cada um no seu campo.
+- **No Helpoint (passo 4 / 4b):** normalizar o estado para a sigla ("Minas", "minas gerais" → MG) e mostrar distribuidores
+  interessados por estado e por cidade nos indicadores.

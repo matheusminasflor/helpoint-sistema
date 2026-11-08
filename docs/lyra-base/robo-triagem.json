@@ -1,6 +1,6 @@
 {
   "0": {
-    "block_uuid": "ce4c239a-23f7-4b62-b9ae-49f201bada3a",
+    "block_uuid": "85bcc4d2-852b-4928-98b7-0f7d6bf74c3f",
     "question": [
       {
         "handler": "send_message",
@@ -164,7 +164,7 @@
     ]
   },
   "9": {
-    "block_uuid": "7b0f8750-41a4-46fb-bfb7-6cf92249b713",
+    "block_uuid": "4654491e-052e-468c-911d-6b088be0737b",
     "question": [
       {
         "handler": "send_message",
@@ -220,7 +220,7 @@
     ]
   },
   "10": {
-    "block_uuid": "84a1ac18-4b73-4550-9177-f6f8de885cf5",
+    "block_uuid": "95992d1b-84d8-4810-8302-338b9fa96ac1",
     "question": [
       {
         "handler": "action",
@@ -265,7 +265,7 @@
     ]
   },
   "11": {
-    "block_uuid": "98fce930-7930-4ed0-865a-f52724982249",
+    "block_uuid": "916774fb-dfba-46e2-b2d4-3f0c3842d27d",
     "question": [
       {
         "handler": "send_message",
@@ -292,7 +292,7 @@
     ]
   },
   "12": {
-    "block_uuid": "b173efb3-32e6-4cbf-82e2-474179a7fb39",
+    "block_uuid": "28d6a26d-144a-4df0-9523-d0a00ab49edb",
     "question": [
       {
         "handler": "waits",
@@ -315,7 +315,7 @@
     ]
   },
   "13": {
-    "block_uuid": "9dcea15a-34c9-4625-a75e-257c9a725dff",
+    "block_uuid": "c452a1fb-473c-4c9c-942c-13f33e1ecff7",
     "question": [
       {
         "handler": "action",
@@ -337,7 +337,7 @@
     ]
   },
   "14": {
-    "block_uuid": "742a414b-ca52-49d5-a700-d582ad86ad86",
+    "block_uuid": "0452d611-1deb-4842-a5be-4e2d9905a1a4",
     "question": [
       {
         "handler": "send_message",
@@ -447,7 +447,7 @@
     ]
   },
   "15": {
-    "block_uuid": "749f6196-8bc8-4f89-a8c3-3d474e2f1df0",
+    "block_uuid": "80015fff-6106-4b67-b0b6-64464c903ed8",
     "question": [
       {
         "handler": "action",
@@ -484,7 +484,7 @@
     ]
   },
   "16": {
-    "block_uuid": "35a1fe5a-8620-4323-ac70-eae86343b8ff",
+    "block_uuid": "73061ca0-e370-48f4-bd10-04a4e03f185e",
     "question": [
       {
         "handler": "action",
@@ -521,7 +521,7 @@
     ]
   },
   "17": {
-    "block_uuid": "14be2a54-a1d1-4fa2-9255-4d98451e1d8f",
+    "block_uuid": "a4f65115-a080-4b9f-b37b-d70d9522fded",
     "question": [
       {
         "handler": "action",
@@ -558,7 +558,7 @@
     ]
   },
   "18": {
-    "block_uuid": "ebe99993-02e2-4ff6-8034-62bace8cf122",
+    "block_uuid": "5f0cea30-2c4a-43d0-8d0d-d9e6a4c4960a",
     "question": [
       {
         "handler": "send_message",
@@ -585,7 +585,7 @@
     ]
   },
   "19": {
-    "block_uuid": "6142f539-a621-49c1-ada3-be387d39f934",
+    "block_uuid": "c3d787ef-8cab-4380-b2f0-cefb6f8e74ef",
     "question": [
       {
         "handler": "waits",
@@ -608,7 +608,7 @@
     ]
   },
   "20": {
-    "block_uuid": "9d2a5075-c279-4b0e-9d44-9102e5afb6c6",
+    "block_uuid": "8c99b56c-cc84-43bd-9ead-4c24c00b9ec3",
     "question": [
       {
         "handler": "action",
@@ -653,7 +653,7 @@
     ]
   },
   "21": {
-    "block_uuid": "336cfc70-b554-4f3e-a3f0-d6395490a705",
+    "block_uuid": "154dc8ec-50f6-4d19-945d-2e93ea28eefe",
     "question": [
       {
         "handler": "send_message",
@@ -680,7 +680,7 @@
     ]
   },
   "22": {
-    "block_uuid": "dced33a2-c6dd-4391-96f8-ded4bdffbe3f",
+    "block_uuid": "6d2062d0-4dd9-4484-87a2-fcb310a7f91b",
     "question": [
       {
         "handler": "waits",
@@ -703,7 +703,7 @@
     ]
   },
   "23": {
-    "block_uuid": "0a402afb-d6d8-4c7d-b1dd-2091e977a300",
+    "block_uuid": "3e4836b4-6312-4377-bdeb-dda52c952c58",
     "question": [
       {
         "handler": "action",
@@ -725,7 +725,7 @@
     ]
   },
   "24": {
-    "block_uuid": "9ef85d7a-35a2-45cd-9ffb-38766e65f021",
+    "block_uuid": "194a7254-8bc2-4db3-a4d1-cbffff22868e",
     "question": [
       {
         "handler": "send_message",
@@ -814,7 +814,7 @@
     ]
   },
   "25": {
-    "block_uuid": "eab891e7-ffc8-4175-8b98-3f494e7bc14d",
+    "block_uuid": "ee4ec9ba-6e69-4317-880d-1c4a8a495c1f",
     "question": [
       {
         "handler": "waits",
@@ -837,7 +837,7 @@
     ]
   },
   "26": {
-    "block_uuid": "e97ce626-2c0b-42e7-bd14-38b078164804",
+    "block_uuid": "a42c7a15-12cc-4940-ae07-6a162d384510",
     "question": [
       {
         "handler": "action",
@@ -859,7 +859,7 @@
     ]
   },
   "27": {
-    "block_uuid": "3a56b37c-5102-4960-8651-caf2cd0764a8",
+    "block_uuid": "87c2b07d-992c-4069-b2a9-3d5ef0fa865f",
     "question": [
       {
         "handler": "send_message",
@@ -886,7 +886,7 @@
     ]
   },
   "28": {
-    "block_uuid": "f8de4b90-b560-4cf8-b44f-7509adc7e743",
+    "block_uuid": "931ed29d-514e-4416-b878-a826842add47",
     "question": [
       {
         "handler": "waits",
@@ -909,7 +909,7 @@
     ]
   },
   "29": {
-    "block_uuid": "edde60bd-afc4-48ab-b99e-e1953c65c2cf",
+    "block_uuid": "3c540442-d026-4861-a572-7d9abd997349",
     "question": [
       {
         "handler": "send_message",
@@ -965,7 +965,7 @@
     ]
   },
   "30": {
-    "block_uuid": "3b1d809c-7ecd-4c24-8eba-a1ce62eb14ee",
+    "block_uuid": "7eff1c44-59d2-4e3b-a934-8d33b19268f7",
     "question": [
       {
         "handler": "action",
@@ -1010,7 +1010,7 @@
     ]
   },
   "31": {
-    "block_uuid": "755ddece-2a9c-4ccd-a1ec-d0d009b7d9b0",
+    "block_uuid": "56547ab0-0430-4675-af6b-440daee8f986",
     "question": [
       {
         "handler": "send_message",
@@ -1037,7 +1037,7 @@
     ]
   },
   "32": {
-    "block_uuid": "261a54e6-8b6e-4179-b9d1-c4017663d48d",
+    "block_uuid": "d31d78f6-efaf-4425-b1ca-7eb93541c75c",
     "question": [
       {
         "handler": "waits",
@@ -1060,7 +1060,7 @@
     ]
   },
   "33": {
-    "block_uuid": "3fa4e796-8fbc-40e6-8bf0-38134121e1fc",
+    "block_uuid": "19d857c3-7089-47ce-91c2-89804da4b5c4",
     "question": [
       {
         "handler": "action",
@@ -1082,7 +1082,7 @@
     ]
   },
   "34": {
-    "block_uuid": "962b1d2e-58f1-4cb3-a7d4-620d898f5de4",
+    "block_uuid": "ad7bd5ec-3da9-4068-a370-6514e8a7fa7e",
     "question": [
       {
         "handler": "send_message",
@@ -1109,7 +1109,7 @@
     ]
   },
   "35": {
-    "block_uuid": "6a42ef0c-f274-4857-bffd-f7852f7f195d",
+    "block_uuid": "b3c63d90-822c-47cd-b241-b1ea0b6ac149",
     "question": [
       {
         "handler": "waits",
@@ -1132,7 +1132,7 @@
     ]
   },
   "36": {
-    "block_uuid": "cd875b03-73b5-428f-adc5-2bdc2f0c49b3",
+    "block_uuid": "9fc39ab7-c5f7-456a-a97a-bb3d41cb3356",
     "question": [
       {
         "handler": "action",
@@ -1154,13 +1154,13 @@
     ]
   },
   "37": {
-    "block_uuid": "58383230-81b5-4bce-85fc-b1d06ca81ce5",
+    "block_uuid": "ce8d9a1d-7c78-4677-8650-1341c07edb62",
     "question": [
       {
         "handler": "send_message",
         "params": {
           "tag": "",
-          "text": "E em qual cidade e estado você pretende atuar como distribuidor?",
+          "text": "Em qual estado você pretende atuar como distribuidor? Pode mandar só a sigla, por exemplo: MG",
           "type": "external",
           "recipient": {
             "type": "all_contacts",
@@ -1181,7 +1181,7 @@
     ]
   },
   "38": {
-    "block_uuid": "edabecab-f4de-420b-8e83-52498c143d22",
+    "block_uuid": "092484a7-35e6-4247-a16a-d14b87e1dda2",
     "question": [
       {
         "handler": "waits",
@@ -1195,7 +1195,7 @@
               },
               "action": {
                 "type": "question",
-                "step": 39
+                "step": 62
               }
             }
           ]
@@ -1204,7 +1204,7 @@
     ]
   },
   "39": {
-    "block_uuid": "e2e8dd64-7e17-4c4b-9192-f729f2fcd928",
+    "block_uuid": "a5957f75-ea9e-48e4-8238-7e97d6ffaab1",
     "question": [
       {
         "handler": "send_message",
@@ -1231,7 +1231,7 @@
               ""
             ],
             "settings": {
-              "task_text": "Distribuidor triado pela Lyra (CNPJ no lead; cidade e estado de atuação na conversa): encaminhar ao representante (até 30 minutos).",
+              "task_text": "Distribuidor triado pela Lyra (CNPJ, estado e cidade de atuação no lead): encaminhar ao representante (até 30 minutos).",
               "task_type": "1",
               "deadline-days": "",
               "deadline-hours": "",
@@ -1260,7 +1260,7 @@
     ]
   },
   "40": {
-    "block_uuid": "6a65e938-34e7-48f5-a84a-df58d9e34a96",
+    "block_uuid": "841e0fd4-06b7-4fe9-9ec2-ba4c63c13f06",
     "question": [
       {
         "handler": "action",
@@ -1339,7 +1339,7 @@
     ]
   },
   "50": {
-    "block_uuid": "54d5d8b9-e623-491d-8131-92f27e4f67c8",
+    "block_uuid": "e11d8b24-dd3c-4c0c-8c78-6fe0cb132f97",
     "question": [
       {
         "handler": "send_message",
@@ -1503,7 +1503,7 @@
     ]
   },
   "51": {
-    "block_uuid": "8eb00df5-83dc-4d2e-b864-f04c0dce6f54",
+    "block_uuid": "100da414-5925-416a-85ec-028e83f4f8c5",
     "question": [
       {
         "handler": "action",
@@ -1582,7 +1582,7 @@
     ]
   },
   "52": {
-    "block_uuid": "b79ced54-3f6f-4f97-9473-da5b23495a60",
+    "block_uuid": "fd74f911-ef75-43f7-ac5f-6bf8e73142c9",
     "question": [
       {
         "handler": "send_message",
@@ -1638,7 +1638,7 @@
     ]
   },
   "60": {
-    "block_uuid": "2dd5bae7-6c46-4ef3-99c8-a36ae50df6d6",
+    "block_uuid": "76410955-d70f-4846-91f4-c7fb87ab6d72",
     "question": [
       {
         "handler": "send_message",
@@ -1665,7 +1665,7 @@
     ]
   },
   "61": {
-    "block_uuid": "b4fd3d13-e2dd-43f2-807b-e209d0c30f8b",
+    "block_uuid": "62af47c3-1060-45d7-8516-fdaf7697c861",
     "question": [
       {
         "handler": "action",
@@ -1686,8 +1686,80 @@
       }
     ]
   },
+  "62": {
+    "block_uuid": "04c960dc-55eb-41fa-ac21-0b2aab658605",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "{{message_text}}",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 63
+        }
+      }
+    ]
+  },
+  "63": {
+    "block_uuid": "5b98794a-bf61-434d-b80b-f626c6cdb14a",
+    "question": [
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "E em qual cidade?",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 64
+        }
+      }
+    ]
+  },
+  "64": {
+    "block_uuid": "c95283ef-4feb-4378-9518-02e0ea01e4f8",
+    "question": [
+      {
+        "handler": "waits",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "event": {
+                "action": "received",
+                "source": "message"
+              },
+              "action": {
+                "type": "question",
+                "step": 66
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
   "65": {
-    "block_uuid": "0b22bb19-025c-488b-a0cf-0f345fab1247",
+    "block_uuid": "6f43fc75-b566-473f-8dfd-1651462714a5",
     "question": [
       {
         "handler": "action",
@@ -1755,6 +1827,28 @@
         "params": {
           "type": "question",
           "step": 14
+        }
+      }
+    ]
+  },
+  "66": {
+    "block_uuid": "1d0f8425-8e75-479b-b50a-20f5c399f9f7",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "{{message_text}}",
+            "custom_field": "{{lead.cf.4381530}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 39
         }
       }
     ]
