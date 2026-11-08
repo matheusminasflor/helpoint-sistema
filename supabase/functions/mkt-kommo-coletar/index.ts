@@ -1,7 +1,8 @@
 // OS LEADS E AS VENDAS DO KOMMO para os Indicadores do Marketing (dono, 2026-11-07, proposta v4
 // https://claude.ai/artifact/4YkGvumGgu6Z9JmgmwodQr): por dia e por segmento, quantos leads chegaram (pelo funil em que
 // estão agora), quantas vendas ganhas e perdidas (no dia em que fecharam), o valor ganho e o motivo de cada perda.
-// O funil Entrada é o "Sem triagem"; Educacional, MF LOVER, Serviços prestados e ENAD não entram.
+// O segmento sai de `_shared/kommo-segmento.ts`: o funil pelo número e, acima dele, o campo "Segmento" da triagem;
+// a Entrada (arquivada ou não) e a etapa "Com a Lyra" sem Segmento são o "Sem triagem". Funil que não é de venda não entra.
 //
 // Quem chama: o pg_cron, a cada 3 horas (20270212640000), com a chave de serviço. Toda leitura reconta desde 1º/01/2026
 // (no máximo os últimos 400 dias) e troca as linhas de uma vez (`mkt_kommo_gravar`): o lead triado ou fechado depois
@@ -11,6 +12,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient, type SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { requireServiceRole } from '../_shared/require-service-role.ts';
+import { etapasDeTriagem, FUNIL_DE_VENDA, segmentoDoLead, type LeadParaSegmento } from '../_shared/kommo-segmento.ts';
 
 const json = (corpo: unknown, status = 200) =>
   new Response(JSON.stringify(corpo), { status, headers: { 'Content-Type': 'application/json' } });
@@ -21,14 +23,6 @@ const inicioBR = (iso: string) => Date.parse(`${iso}T00:00:00-03:00`);
 const GANHA = 142;
 const PERDIDA = 143;
 
-// O nome do funil no Kommo → o segmento dos Indicadores.
-const SEGMENTO: Record<string, string> = {
-  'entrada': 'sem_triagem',
-  'consumidor final': 'consumidor',
-  'salao de beleza': 'salao',
-  'distribuidor': 'distribuidor',
-};
-const normaliza = (t: string) => t.normalize('NFD').replace(/\p{M}/gu, '').trim().toLowerCase();
 
 async function kommo<T>(caminho: string): Promise<T | null> {
   const sub = Deno.env.get('KOMMO_SUBDOMINIO')?.trim();
@@ -43,8 +37,8 @@ async function kommo<T>(caminho: string): Promise<T | null> {
   return await r.json() as T;
 }
 
-interface Lead {
-  id: number; name: string; pipeline_id: number; status_id: number; price: number | null; created_at: number; closed_at: number | null;
+interface Lead extends LeadParaSegmento {
+  id: number; name: string; price: number | null; created_at: number; closed_at: number | null;
   loss_reason_id: number | null; _embedded?: { contacts?: { id: number; is_main?: boolean }[] };
 }
 
@@ -61,12 +55,11 @@ async function leads(campo: 'created_at' | 'closed_at', de: number): Promise<Lea
 }
 
 async function rodada(db: SupabaseClient, tenant: string) {
-  const funis = await kommo<{ _embedded: { pipelines: { id: number; name: string }[] } }>('leads/pipelines');
-  const segmentoDo = new Map((funis?._embedded.pipelines ?? []).flatMap((p) => {
-    const s = SEGMENTO[normaliza(p.name)];
-    return s ? [[p.id, s] as const] : [];
-  }));
-  if (segmentoDo.size < 4) throw new Error('não achei no Kommo os funis Entrada, Consumidor Final, Salão de Beleza e Distribuidor');
+  const funis = (await kommo<{ _embedded: { pipelines: { id: number; name: string; _embedded?: { statuses?: { id: number; name: string }[] } }[] } }>('leads/pipelines'))?._embedded.pipelines ?? [];
+  // A Entrada pode estar arquivada; os três funis de venda, não. Sem eles a chave é de outra conta ou um funil foi apagado.
+  const faltam = Object.entries(FUNIL_DE_VENDA).filter(([id, s]) => s !== 'sem_triagem' && !funis.some((p) => p.id === Number(id)));
+  if (faltam.length) throw new Error(`não achei no Kommo os funis de venda ${faltam.map(([id]) => id).join(', ')} (Consumidor Final, Salão de Beleza, Distribuidor)`);
+  const triagem = etapasDeTriagem(funis);
   // Sem a lista de motivos a perda ainda conta, só sem o nome do motivo.
   const motivos = await kommo<{ _embedded: { loss_reasons: { id: number; name: string }[] } }>('leads/loss_reasons')
     .catch((e) => { console.warn('motivos de perda:', e instanceof Error ? e.message : e); return null; });
@@ -83,13 +76,13 @@ async function rodada(db: SupabaseClient, tenant: string) {
   const perdas = new Map<string, { dia: string; funil: string; motivo: string | null; quantos: number }>();
 
   for (const l of await leads('created_at', de)) {
-    const funil = segmentoDo.get(l.pipeline_id);
+    const funil = segmentoDoLead(l, triagem);
     if (funil) linha(diaBR(l.created_at * 1000), funil).chegaram++;
   }
   const vendas: { lead_id: number; nome: string; contato: number | null; funil: string; situacao: string; valor: number; fechou: string; motivo: string | null; link: string }[] = [];
   const sub = Deno.env.get('KOMMO_SUBDOMINIO')!.trim();
   for (const l of await leads('closed_at', de)) {
-    const funil = segmentoDo.get(l.pipeline_id);
+    const funil = segmentoDoLead(l, triagem);
     if (!funil || !l.closed_at || (l.status_id !== GANHA && l.status_id !== PERDIDA)) continue;
     const dia = diaBR(l.closed_at * 1000);
     const n = linha(dia, funil);
