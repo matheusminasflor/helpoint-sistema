@@ -17,7 +17,8 @@
 --  15  a troca de etapa é gravada (20270212720000)
 --  16  com a Lyra: a vez da atendente começa em "Com atendente"; o que a Lyra resolveu sozinha não é sem resposta
 --  17  ... o robô: a Lyra enquanto o lead está em "Com a Lyra" e a transmissão para 5 leads
---  18  ... e a linha da Thayná: mensagens, sem nome, respondidos, ativos (procurou sem o cliente escrever) e no prazo
+--  18  ... e a linha da Thayná: mensagens, sem nome, respondidos, ativos (procurou sem o cliente escrever), no prazo e
+--      tarefas (a do lead da equipe não conta)
 --  19  cliente esperando há mais de 45 min de expediente avisa a responsável pelo lead e quem administra
 --  20  ... uma vez só por espera
 --  21  ... e a espera que acabou de começar não avisa
@@ -158,16 +159,18 @@ select public.kommo_gravar_atendimento((select a from f),
    || jsonb_build_array(jsonb_build_object('lead_id', 15, 'nome', 'Matheus', 'funil', 'Consumidor Final', 'segmento', 'consumidor',
                                            'responsavel', 10, 'link', 'k/15', 'interno', true),
                         jsonb_build_object('lead_id', 18, 'nome', 'Cliente antiga', 'funil', 'Consumidor Final', 'segmento', 'consumidor',
-                                           'responsavel', 10, 'link', 'k/18')), null, null);
+                                           'responsavel', 10, 'link', 'k/18')), null,
+  -- Tarefa fechada no lead da equipe (o 15) não é atendimento (20270212720500).
+  jsonb_build_array(jsonb_build_object('id', 2, 'responsavel', 10, 'feita_em', (select dia from l) + 9300, 'lead_id', 15)));
 
 select tests.authenticate_as('dona@crmatend.test');
 create temporary table q on commit drop as select public.crm_atendimento('2026-11-09', '2026-11-09') as v;
 select is((select format('%s/%s/%s/%s', v->>'conversas', v->>'so_lyra', v->>'sem_resposta', v->>'primeira_resposta') from q), '5/1/2/19',
   'a vez da atendente começa em "Com atendente"; o que a Lyra resolveu sozinha e a equipe não são sem resposta');
 select is((select (v->'robo'->>'leads') || '/' || (v->'robo'->>'mensagens') from q), '8/9', 'o robô: a Lyra nos leads 7 e 13, a transmissão e a resposta automática do Instagram');
-select is((select format('%s/%s/%s/%s/%s', x->>'mensagens', x->>'sem_nome', x->>'respondidos', x->>'ativos', x->>'no_prazo')
+select is((select format('%s/%s/%s/%s/%s/%s', x->>'mensagens', x->>'sem_nome', x->>'respondidos', x->>'ativos', x->>'no_prazo', x->>'tarefas')
              from q, jsonb_array_elements(v->'atendentes') x where (x->>'kommo_id')::int = 10),
-  '3/2/2/1/2', 'a Thayná: 3 mensagens, 2 sem nome, 2 respondidos (11 e 27 min, no prazo) e 1 ativo');
+  '3/2/2/1/2/0', 'a Thayná: 3 mensagens, 2 sem nome, 2 respondidos (11 e 27 min, no prazo), 1 ativo e a tarefa do lead da equipe fora');
 select tests.clear_authentication();
 
 -- Aviso de cliente esperando: o 16 escreveu há quase 3 dias e ninguém respondeu; o 17 acabou de escrever.

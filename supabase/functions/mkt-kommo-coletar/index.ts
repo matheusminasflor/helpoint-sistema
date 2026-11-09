@@ -292,11 +292,11 @@ async function atendimento(db: SupabaseClient, tenant: string) {
 
   const usuarios = ((await kommo<{ _embedded: { users: { id: number; name: string; email: string }[] } }>('users?limit=250'))?._embedded.users ?? [])
     .map((u) => ({ kommo_id: u.id, nome: u.name, email: u.email }));
-  const tarefas: { id: number; responsavel: number; feita_em: number }[] = [];
+  const tarefas: { id: number; responsavel: number; feita_em: number; lead_id: number }[] = [];
   for (let pagina = 1; ; pagina++) {
     const r = await kommo<{ _embedded: { tasks: (Tarefa & { responsible_user_id: number; updated_at: number })[] }; _links?: { next?: unknown } }>(
       `tasks?filter[is_completed]=1&filter[entity_type]=leads&filter[updated_at][from]=${de}&limit=250&page=${pagina}`);
-    for (const t of r?._embedded.tasks ?? []) tarefas.push({ id: t.id, responsavel: t.responsible_user_id, feita_em: t.updated_at });
+    for (const t of r?._embedded.tasks ?? []) tarefas.push({ id: t.id, responsavel: t.responsible_user_id, feita_em: t.updated_at, lead_id: t.entity_id });
     if (!r?._links?.next) break;
   }
 
