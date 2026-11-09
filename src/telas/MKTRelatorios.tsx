@@ -413,7 +413,7 @@ export default function MKTRelatorios() {
         periodOptions={PERIODOS_DA_REUNIAO}
         actions={
           <>
-            <SeloDaMeta meta={ligacaoMeta.data} podeBuscar={podeConectarMeta} />
+            <SeloDaMeta meta={ligacaoMeta.data} podeBuscar={role === 'owner' || role === 'admin'} />
             <TutorialDoRelatorio id="mkt-indicadores" />
             {podeLancar && (
               <Button size="sm" variant="outline" onClick={() => setLancando(true)}>

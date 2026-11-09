@@ -3,7 +3,7 @@
 //   Corpo opcional: { "desde": "2026-10-01T00:00:00-03:00", "avisar": false } importa o histórico sem mandar mensagem.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { requireServiceRole } from "../_shared/require-service-role.ts";
+import { servicoOuAdmin } from "../_shared/servico-ou-admin.ts";
 import { lerDoGoogle, textoDoArquivo, tokenDoGoogle } from "../_shared/google.ts";
 
 // A conta que organiza, grava e guarda as reuniões da Minasflor (Workspace minasflor.com).
@@ -413,28 +413,29 @@ async function rodada(db: SupabaseClient, tenant: string, corpo: { desde?: strin
 }
 
 serve(async (req) => {
-  const recusa = requireServiceRole(req);
-  if (recusa) return recusa;
-  const corpo = await req.json().catch(() => ({})) as { desde?: string; avisar?: boolean };
-
   const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+  // O pg_cron, ou o dono/admin pelo "Ler agora" de Configurações › Integrações (sem desde/avisar: a leitura de sempre).
+  const quem = await servicoOuAdmin(req, db);
+  if (quem instanceof Response) return quem;
+  const corpo = quem.servico ? await req.json().catch(() => ({})) as { desde?: string; avisar?: boolean } : {};
+
   // ponytail: uma conta do Google, de uma empresa. Com outra empresa, a conta vira configuração por empresa.
   const { data: empresa, error: erroEmpresa } = await db.from('tenants').select('id').order('created_at').limit(1).single();
   if (erroEmpresa) return json({ error: erroEmpresa.message }, 500);
   const tenant = empresa.id as string;
+  if (!quem.servico && quem.tenantId !== tenant) return json({ error: 'o Google ligado é de outra empresa' }, 403);
 
   try {
     const resultado = await rodada(db, tenant, corpo);
-    const { error } = await db.from('reuniao_robo').upsert({
-      tenant_id: tenant, ok_em: new Date().toISOString(), caiu_em: null, ultimo_erro: resultado.falhas[0] ?? null,
-    });
+    const { error } = await db.rpc('leitura_ok', { p_robo: 'reunioes', p_tenant: tenant, p_aviso: resultado.falhas[0] ?? null });
     if (error) throw error;
     return json(resultado);
   } catch (erro) {
-    // A leitura inteira parou: chave recusada ou Google fora. Avisa quem administra, uma vez por queda.
+    // A leitura inteira parou: chave recusada ou Google fora. Chave recusada avisa na hora; o resto, na 2ª seguida.
     const motivo = String((erro as Error).message).slice(0, 200);
-    const { error } = await db.rpc('reuniao_robo_caiu', { p_tenant: tenant, p_motivo: motivo });
-    if (error) console.error('reuniao_robo_caiu:', error.message);
+    const { error } = await db.rpc('leitura_falhou', { p_robo: 'reunioes', p_tenant: tenant, p_motivo: motivo,
+      p_na_hora: /recus|invalid_grant|unauthorized|forbidden|401|403/i.test(motivo) });
+    if (error) console.error('leitura_falhou:', error.message);
     return json({ error: motivo }, 500);
   }
 });

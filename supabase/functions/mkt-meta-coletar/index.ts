@@ -570,14 +570,14 @@ serve(async (req) => {
       return json({ ok: true, resultados });
     }
 
-    // "Buscar agora": a empresa de quem clicou, gestor ou acima.
+    // "Buscar agora": a empresa de quem clicou, dono ou admin (decisão do dono, 2026-11-08).
     const usuario = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, { global: { headers: { Authorization: auth } } });
     const { data: claims, error: claimsErro } = await usuario.auth.getClaims(auth.slice(7));
     if (claimsErro || !claims?.claims?.sub) return json({ error: 'Unauthorized' }, 401);
     const userId = claims.claims.sub as string;
-    const { data: ehGestor, error: papelErro } = await admin.rpc('is_supervisor_or_higher', { _user_id: userId });
+    const { data: ehAdmin, error: papelErro } = await admin.rpc('is_admin_or_higher', { _user_id: userId });
     if (papelErro) throw papelErro;
-    if (!ehGestor) return json({ error: 'só gestor ou acima busca os números da Meta' }, 403);
+    if (!ehAdmin) return json({ error: 'só o dono e o admin buscam os números da Meta' }, 403);
     const { data: perfil, error: perfilErro } = await admin.from('profiles').select('tenant_id').eq('id', userId).maybeSingle();
     if (perfilErro) throw perfilErro;
     const tenantId = (perfil as { tenant_id: string } | null)?.tenant_id;

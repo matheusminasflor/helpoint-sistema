@@ -11,7 +11,7 @@
 // ponytail: Brasília é UTC−3 fixo, como em `mkt-meta-coletar`; uma conta do Kommo, de uma empresa.
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient, type SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { requireServiceRole } from '../_shared/require-service-role.ts';
+import { servicoOuAdmin } from '../_shared/servico-ou-admin.ts';
 import { documentoDoLead, ehLimpeza, etapasDeTriagem, FUNIL_DE_VENDA, segmentoDoLead, type LeadParaSegmento } from '../_shared/kommo-segmento.ts';
 
 const json = (corpo: unknown, status = 200) =>
@@ -28,7 +28,18 @@ async function kommo<T>(caminho: string): Promise<T | null> {
   const sub = Deno.env.get('KOMMO_SUBDOMINIO')?.trim();
   const token = Deno.env.get('KOMMO_TOKEN')?.trim();
   if (!sub || !token) throw new Error('a chave do Kommo não está no cofre (KOMMO_TOKEN e KOMMO_SUBDOMINIO)');
-  const r = await fetch(`https://${sub}.kommo.com/api/v4/${caminho}`, { headers: { Authorization: `Bearer ${token}` } });
+  // A rede com o Kommo falha às vezes por segundos ("error sending request", 06:20 e 21:20 de 08/11): tenta de novo
+  // 3 vezes antes de dar a leitura por perdida. Resposta do Kommo (401, 500…) não é falha de rede e não repete.
+  let r: Response | null = null;
+  for (let tentativa = 1; ; tentativa++) {
+    try {
+      r = await fetch(`https://${sub}.kommo.com/api/v4/${caminho}`, { headers: { Authorization: `Bearer ${token}` } });
+      break;
+    } catch (e) {
+      if (tentativa >= 3) throw e;
+      await new Promise((ok) => setTimeout(ok, tentativa * 3000));
+    }
+  }
   if (r.status === 204) return null;
   if (r.status === 401 || r.status === 403) {
     throw new Error('o Kommo recusou a chave: gere outro token na integração Helpoint do Kommo e troque KOMMO_TOKEN no cofre');
@@ -178,27 +189,38 @@ async function diagnostico(dias: number) {
 }
 
 serve(async (req) => {
-  const recusa = requireServiceRole(req);
-  if (recusa) return recusa;
+  const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+  // O pg_cron a cada 3 horas, ou o dono/admin pelo "Ler agora" de Configurações › Integrações.
+  const quem = await servicoOuAdmin(req, db);
+  if (quem instanceof Response) return quem;
   const corpo = await req.json().catch(() => ({})) as { diagnostico?: number };
-  if (corpo.diagnostico) {
+  if (corpo.diagnostico && quem.servico) {
     try { return json(await diagnostico(Math.min(365, Number(corpo.diagnostico) || 60))); } catch (e) { return json({ error: String(e) }, 500); }
   }
 
-  const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
   const { data: empresa, error: erroEmpresa } = await db.from('tenants').select('id').order('created_at').limit(1).single();
   if (erroEmpresa) return json({ error: erroEmpresa.message }, 500);
   const tenant = empresa.id as string;
+  // ponytail: uma conta do Kommo, da primeira empresa; o admin de outra empresa não lê esta.
+  if (!quem.servico && quem.tenantId !== tenant) return json({ error: 'o Kommo ligado é de outra empresa' }, 403);
+  if (!quem.servico) {
+    // Clique repetido: o Kommo limita as chamadas, e uma leitura leva quase um minuto.
+    const { data: robo, error: erroRobo } = await db.from('mkt_kommo_robo').select('ok_em').eq('tenant_id', tenant).maybeSingle();
+    if (erroRobo) return json({ error: erroRobo.message }, 500);
+    const ok = (robo as { ok_em: string | null } | null)?.ok_em;
+    if (ok && Date.now() - Date.parse(ok) < 2 * 60_000) return json({ error: 'a última leitura foi há menos de 2 minutos; tente daqui a pouco' }, 429);
+  }
 
   try {
     const resultado = await rodada(db, tenant);
-    const { error } = await db.from('mkt_kommo_robo').upsert({ tenant_id: tenant, ok_em: new Date().toISOString(), caiu_em: null, ultimo_erro: null });
+    const { error } = await db.rpc('leitura_ok', { p_robo: 'kommo', p_tenant: tenant, p_aviso: null });
     if (error) throw error;
     return json(resultado);
   } catch (erro) {
     const motivo = String((erro as Error).message).slice(0, 200);
-    const { error } = await db.rpc('mkt_kommo_robo_caiu', { p_tenant: tenant, p_motivo: motivo });
-    if (error) console.error('mkt_kommo_robo_caiu:', error.message);
+    // Chave recusada avisa na hora; erro de rede ou do Kommo, só na 2ª leitura seguida (20270212690000).
+    const { error } = await db.rpc('leitura_falhou', { p_robo: 'kommo', p_tenant: tenant, p_motivo: motivo, p_na_hora: /recusou a chave/.test(motivo) });
+    if (error) console.error('leitura_falhou:', error.message);
     return json({ error: motivo }, 500);
   }
 });
