@@ -232,7 +232,7 @@ interface Evento {
 
 /**
  * Atendimento do CRM (parte 4b, 20270212710000): as mensagens que entraram e saíram desde a última guardada (com 2 horas
- * de folga; na primeira vez, 35 dias), os leads delas e os mexidos nesse tempo, as pessoas do Kommo e as tarefas
+ * de folga; na primeira vez, desde 01/10), os leads delas e os mexidos nesse tempo, as pessoas do Kommo e as tarefas
  * concluídas. O banco conta o resto.
  * ponytail: mensagem de conversa sem lead (só contato) não entra; a Lyra e a transmissão saem com autor 0, juntas.
  */
@@ -240,8 +240,8 @@ async function atendimento(db: SupabaseClient, tenant: string) {
   const { data: ultima, error } = await db.from('kommo_mensagens').select('quando').eq('tenant_id', tenant)
     .order('quando', { ascending: false }).limit(1).maybeSingle();
   if (error) throw error;
-  const agora = Math.floor(Date.now() / 1000);
-  const de = Math.max(agora - 35 * 24 * 3600, ultima ? Math.floor(Date.parse((ultima as { quando: string }).quando) / 1000) - 7200 : 0);
+  // Dono, 2026-11-09: só outubro e novembro para trás; depois, só o que chegou desde a última leitura.
+  const de = Math.max(Math.floor(inicioBR('2026-10-01') / 1000), ultima ? Math.floor(Date.parse((ultima as { quando: string }).quando) / 1000) - 7200 : 0);
 
   const mensagens: { id: string; lead_id: number; quando: number; entrou: boolean; autor: number; canal: string | null }[] = [];
   for (let pagina = 1; ; pagina++) {
