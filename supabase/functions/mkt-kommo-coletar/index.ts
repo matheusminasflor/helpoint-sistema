@@ -71,8 +71,8 @@ const contatoPrincipal = (l: Lead) => {
   return (cs.find((c) => c.is_main) ?? cs[0])?.id ?? null;
 };
 
-/** Etiqueta que tira o lead ou o contato do Atendimento do CRM (dono, 2026-11-09; 20270212720300). */
-const FORA_DOS_INDICADORES = /^(equipe interna|fornecedor)$/i;
+/** Etiqueta que tira o lead ou o contato do Atendimento do CRM: equipe, fornecedor e os artistas da marca (dono, 2026-11-09; 20270212720300). */
+const FORA_DOS_INDICADORES = /^(equipe interna|fornecedor|artistas?)$/i;
 const foraDosIndicadores = (tags?: { name: string }[]) => (tags ?? []).some((t) => FORA_DOS_INDICADORES.test(t.name.trim()));
 
 /** O nome e o telefone (só os dígitos) de cada contato, e os da equipe ou de fornecedor. O nome do contato diz quem é; "Lead #118411874", não. */
