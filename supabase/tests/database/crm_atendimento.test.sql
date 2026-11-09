@@ -118,7 +118,8 @@ grant select on l to authenticated;
 select is(public.kommo_gravar_etapas((select a from f), jsonb_build_array(
   jsonb_build_object('id', 'e1', 'lead_id', 7, 'quando', (select dia from l) - 60, 'etapa', 'Com a Lyra'),
   jsonb_build_object('id', 'e2', 'lead_id', 7, 'quando', (select dia from l) + 180, 'etapa', 'Com atendente'),
-  jsonb_build_object('id', 'e3', 'lead_id', 13, 'quando', (select dia from l) + 7190, 'etapa', 'Com a Lyra'),
+  -- A Lyra responde (11h00min05s) antes de o Kommo mostrar a etapa (11h00min30s): 20270212720100.
+  jsonb_build_object('id', 'e3', 'lead_id', 13, 'quando', (select dia from l) + 7230, 'etapa', 'Com a Lyra'),
   jsonb_build_object('id', 'e4', 'lead_id', 13, 'quando', (select dia from l) + 7500, 'etapa', 'Link enviado'))), 4,
   'grava a troca de etapa');
 select public.kommo_gravar_atendimento((select a from f),
