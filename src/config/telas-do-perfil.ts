@@ -103,6 +103,8 @@ export const TELAS_DO_PERFIL: TelaDoPerfil[] = [
   { prefixo: '/comercial/pedidos', setor: 'comercial', secoes: ['lancamentos'] },
   { prefixo: '/comercial/carteiras', setor: 'comercial', secoes: ['carteiras'] },
   { prefixo: '/comercial/indicadores', setor: 'comercial', secoes: ['reports'] },
+  // Atendimento do CRM (2026-11-09): a caixinha dos Indicadores; o banco recorta a atendente ao que é dela.
+  { prefixo: '/comercial/crm', setor: 'comercial', secoes: ['reports'] },
   { prefixo: '/comercial/clientes-parados', setor: 'comercial', secoes: ['clientes'] },
   { prefixo: '/comercial/distribuidores', setor: 'comercial', secoes: ['clientes'] },
   { prefixo: '/comercial/vendas', setor: 'comercial', secoes: ['vendas'] },

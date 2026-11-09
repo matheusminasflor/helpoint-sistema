@@ -9,7 +9,7 @@ import {
   CheckCircle2, Receipt, HeartPulse, FolderLock, Palette,
   Gift, FileSignature, Banknote, CalendarOff, PanelLeftClose, PanelLeftOpen, X, Wallet, TrendingUp, PiggyBank, FileBarChart,
   ShoppingCart, Package, Boxes, Handshake, GraduationCap, KanbanSquare, PackageCheck, Factory, Building2, Upload,
-  IdCard, ClipboardList, Gauge, Briefcase, Clock, BookMarked, Newspaper, Store, ListChecks, Star, PlugZap, Building } from 'lucide-react';
+  IdCard, ClipboardList, Gauge, Briefcase, Clock, BookMarked, Newspaper, Store, ListChecks, Star, PlugZap, Building, Headset } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useVisibleModules } from '@/hooks/useVisibleModules';
@@ -193,6 +193,8 @@ const comercialMenuItems: MenuItem[] = [
   { to: '/comercial/pedidos', icon: PackageCheck, label: 'Pedidos enviados', title: 'Os checklists enviados ao Financeiro e em que pé cada um está', secao: MEU_DIA },
   { to: '/comercial/carteiras', icon: Briefcase, label: 'Carteira', title: 'Cada cliente da carteira, e a carteira contra a meta da Diretoria', secao: MEU_DIA },
   { to: '/comercial/indicadores', icon: Gauge, label: 'Indicadores', title: 'Meta e realizado de cada indicador (os seus, ou da equipe para o gestor)', secao: MEU_DIA },
+  // Projeto do Kommo, parte 4b (dono, 2026-11-09): ao lado de Carteira e Indicadores.
+  { to: '/comercial/crm', icon: Headset, label: 'Atendimento do CRM', title: 'Quem escreveu no Kommo, quem respondeu e em quanto tempo', secao: MEU_DIA },
   { to: '/comercial/chamados', icon: Ticket, label: 'Fila de chamados', title: 'Fila de chamados do Comercial', secao: MEU_DIA },
   { to: '/comercial/distribuidores', icon: Store, label: 'Distribuidores', title: 'Os distribuidores no portal: salões, estoque, pedidos e carrinhos abertos', secao: MEU_DIA },
   ...visoesDoGrupo(RELATORIOS),

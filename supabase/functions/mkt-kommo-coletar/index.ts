@@ -50,19 +50,41 @@ async function kommo<T>(caminho: string): Promise<T | null> {
 
 interface Lead extends LeadParaSegmento {
   id: number; name: string; price: number | null; created_at: number; closed_at: number | null;
-  loss_reason_id: number | null; _embedded?: { contacts?: { id: number; is_main?: boolean }[] };
+  loss_reason_id: number | null; responsible_user_id?: number | null; _embedded?: { contacts?: { id: number; is_main?: boolean }[] };
 }
 
-/** Todos os leads com `campo` (criado ou fechado) entre `de` e agora, em segundos; os fechados vêm com os contatos. */
-async function leads(campo: 'created_at' | 'closed_at', de: number): Promise<Lead[]> {
+/** Todos os leads com `campo` (criado, fechado ou mexido) entre `de` e agora, em segundos; fechados e mexidos vêm com os contatos. */
+async function leads(campo: 'created_at' | 'closed_at' | 'updated_at', de: number): Promise<Lead[]> {
   const todos: Lead[] = [];
-  const com = campo === 'closed_at' ? '&with=contacts' : '';
+  const com = campo !== 'created_at' ? '&with=contacts' : '';
   for (let pagina = 1; ; pagina++) {
     const r = await kommo<{ _embedded: { leads: Lead[] }; _links?: { next?: unknown } }>(
       `leads?limit=250&page=${pagina}${com}&filter[${campo}][from]=${de}&filter[${campo}][to]=${Math.floor(Date.now() / 1000)}`);
     todos.push(...(r?._embedded.leads ?? []));
     if (!r?._links?.next) return todos;
   }
+}
+
+const contatoPrincipal = (l: Lead) => {
+  const cs = l._embedded?.contacts ?? [];
+  return (cs.find((c) => c.is_main) ?? cs[0])?.id ?? null;
+};
+
+/** O nome e o telefone (só os dígitos) de cada contato. O nome do contato diz quem é; "Lead #118411874", não. */
+async function contatos(lista: (number | null)[]) {
+  const ids = [...new Set(lista.filter((x): x is number => x !== null))];
+  const nomeDo = new Map<number, string>();
+  const telefoneDo = new Map<number, string>();
+  for (let i = 0; i < ids.length; i += 200) {
+    const filtro = ids.slice(i, i + 200).map((id) => `filter[id][]=${id}`).join('&');
+    const r = await kommo<{ _embedded: { contacts: { id: number; name: string; custom_fields_values?: { field_code?: string; values?: { value?: unknown }[] }[] | null }[] } }>(`contacts?limit=250&${filtro}`);
+    for (const c of r?._embedded.contacts ?? []) {
+      if (c.name?.trim()) nomeDo.set(c.id, c.name.trim());
+      const tel = String(c.custom_fields_values?.find((f) => f.field_code === 'PHONE')?.values?.[0]?.value ?? '').replace(/\D/g, '');
+      if (tel.length >= 8 && tel.length <= 15) telefoneDo.set(c.id, tel);
+    }
+  }
+  return { nomeDo, telefoneDo };
 }
 
 async function rodada(db: SupabaseClient, tenant: string) {
@@ -90,7 +112,7 @@ async function rodada(db: SupabaseClient, tenant: string) {
     const funil = segmentoDoLead(l, triagem);
     if (funil) linha(diaBR(l.created_at * 1000), funil).chegaram++;
   }
-  const vendas: { lead_id: number; nome: string; contato: number | null; funil: string; situacao: string; valor: number; fechou: string; motivo: string | null; link: string; documento: string | null; whatsapp: string | null }[] = [];
+  const vendas: { lead_id: number; nome: string; contato: number | null; funil: string; responsavel: number | null; situacao: string; valor: number; fechou: string; motivo: string | null; link: string; documento: string | null; whatsapp: string | null }[] = [];
   const sub = Deno.env.get('KOMMO_SUBDOMINIO')!.trim();
   for (const l of await leads('closed_at', de)) {
     const funil = segmentoDoLead(l, triagem);
@@ -98,10 +120,10 @@ async function rodada(db: SupabaseClient, tenant: string) {
     if (l.status_id === PERDIDA && ehLimpeza(l.loss_reason_id ? motivoDo.get(l.loss_reason_id) : null)) continue;
     const dia = diaBR(l.closed_at * 1000);
     const n = linha(dia, funil);
-    const contatos = l._embedded?.contacts ?? [];
     vendas.push({
-      lead_id: l.id, nome: l.name, contato: (contatos.find((c) => c.is_main) ?? contatos[0])?.id ?? null, funil,
+      lead_id: l.id, nome: l.name, contato: contatoPrincipal(l), funil,
       situacao: l.status_id === GANHA ? 'ganha' : 'perdida', valor: Number(l.price ?? 0), fechou: dia,
+      responsavel: l.responsible_user_id ?? null,
       motivo: l.status_id === PERDIDA ? (l.loss_reason_id && motivoDo.get(l.loss_reason_id)) || null : null,
       link: `https://${sub}.kommo.com/leads/detail/${l.id}`,
       // Parte 4.3: o CPF/CNPJ liga a venda de Distribuidor às notas do Forteplus (mkt_kommo_faturado).
@@ -126,20 +148,9 @@ async function rodada(db: SupabaseClient, tenant: string) {
   });
   if (error) throw error;
 
-  // O nome é o do contato principal do lead ("Lead #118411874" não diz quem é); sem contato, fica o nome do lead.
-  // O telefone do contato só SUGERE o cliente na lista "Para corrigir" (parte 4.3); a ligação é pelo CPF/CNPJ.
-  const ids = [...new Set(vendas.map((v) => v.contato).filter((x): x is number => x !== null))];
-  const nomeDo = new Map<number, string>();
-  const telefoneDo = new Map<number, string>();
-  for (let i = 0; i < ids.length; i += 200) {
-    const filtro = ids.slice(i, i + 200).map((id) => `filter[id][]=${id}`).join('&');
-    const r = await kommo<{ _embedded: { contacts: { id: number; name: string; custom_fields_values?: { field_code?: string; values?: { value?: unknown }[] }[] | null }[] } }>(`contacts?limit=250&${filtro}`);
-    for (const c of r?._embedded.contacts ?? []) {
-      if (c.name?.trim()) nomeDo.set(c.id, c.name.trim());
-      const tel = String(c.custom_fields_values?.find((f) => f.field_code === 'PHONE')?.values?.[0]?.value ?? '').replace(/\D/g, '');
-      if (tel.length >= 8 && tel.length <= 15) telefoneDo.set(c.id, tel);
-    }
-  }
+  // O nome é o do contato principal do lead; sem contato, fica o nome do lead. O telefone do contato só SUGERE o
+  // cliente na lista "Para corrigir" (parte 4.3); a ligação é pelo CPF/CNPJ.
+  const { nomeDo, telefoneDo } = await contatos(vendas.map((v) => v.contato));
   const { error: e2 } = await db.rpc('mkt_kommo_gravar_vendas', {
     p_tenant: tenant, p_desde: desde,
     // Sem telefone no contato (o Direct do Instagram não traz), vale o WhatsApp que a Lyra pediu.
@@ -214,6 +225,76 @@ async function semResposta(db: SupabaseClient, tenant: string) {
   return { abertas: tarefas.length, avisos: data };
 }
 
+interface Evento {
+  id: string; type: string; entity_id: number; entity_type: string; created_by: number; created_at: number;
+  value_after?: { message?: { origin?: string } }[] | null;
+}
+
+/**
+ * Atendimento do CRM (parte 4b, 20270212710000): as mensagens que entraram e saíram desde a última guardada (com 2 horas
+ * de folga; na primeira vez, 35 dias), os leads delas e os mexidos nesse tempo, as pessoas do Kommo e as tarefas
+ * concluídas. O banco conta o resto.
+ * ponytail: mensagem de conversa sem lead (só contato) não entra; a Lyra e a transmissão saem com autor 0, juntas.
+ */
+async function atendimento(db: SupabaseClient, tenant: string) {
+  const { data: ultima, error } = await db.from('kommo_mensagens').select('quando').eq('tenant_id', tenant)
+    .order('quando', { ascending: false }).limit(1).maybeSingle();
+  if (error) throw error;
+  const agora = Math.floor(Date.now() / 1000);
+  const de = Math.max(agora - 35 * 24 * 3600, ultima ? Math.floor(Date.parse((ultima as { quando: string }).quando) / 1000) - 7200 : 0);
+
+  const mensagens: { id: string; lead_id: number; quando: number; entrou: boolean; autor: number; canal: string | null }[] = [];
+  for (let pagina = 1; ; pagina++) {
+    const r = await kommo<{ _embedded: { events: Evento[] }; _links?: { next?: unknown } }>(
+      `events?limit=100&page=${pagina}&filter[type][]=incoming_chat_message&filter[type][]=outgoing_chat_message&filter[created_at][from]=${de}`);
+    for (const e of r?._embedded.events ?? []) {
+      if (e.entity_type !== 'lead') continue;
+      mensagens.push({ id: e.id, lead_id: e.entity_id, quando: e.created_at, entrou: e.type === 'incoming_chat_message',
+        autor: e.created_by || 0, canal: e.value_after?.[0]?.message?.origin ?? null });
+    }
+    if (!r?._links?.next) break;
+  }
+
+  const porId = new Map((await leads('updated_at', de)).map((l) => [l.id, l]));
+  const faltam = [...new Set(mensagens.map((m) => m.lead_id))].filter((id) => !porId.has(id));
+  for (let i = 0; i < faltam.length; i += 200) {
+    const filtro = faltam.slice(i, i + 200).map((id) => `filter[id][]=${id}`).join('&');
+    const r = await kommo<{ _embedded: { leads: Lead[] } }>(`leads?limit=250&with=contacts&${filtro}`);
+    for (const l of r?._embedded.leads ?? []) porId.set(l.id, l);
+  }
+  const funis = (await kommo<{ _embedded: { pipelines: { id: number; name: string; _embedded?: { statuses?: { id: number; name: string }[] } }[] } }>('leads/pipelines'))?._embedded.pipelines ?? [];
+  const triagem = etapasDeTriagem(funis);
+  const nomeDoFunil = new Map(funis.map((p) => [p.id, p.name]));
+  const nomeDaEtapa = new Map(funis.flatMap((p) => (p._embedded?.statuses ?? []).map((st) => [`${p.id}|${st.id}`, st.name] as const)));
+  const { nomeDo } = await contatos([...porId.values()].map(contatoPrincipal));
+  const sub = Deno.env.get('KOMMO_SUBDOMINIO')!.trim();
+  const leadsAtendidos = [...porId.values()].map((l) => {
+    const contato = contatoPrincipal(l);
+    return {
+      lead_id: l.id, nome: (contato !== null && nomeDo.get(contato)) || l.name, segmento: segmentoDoLead(l, triagem),
+      funil: nomeDoFunil.get(l.pipeline_id) ?? null, etapa: nomeDaEtapa.get(`${l.pipeline_id}|${l.status_id}`) ?? null,
+      fechado: l.status_id === GANHA || l.status_id === PERDIDA, responsavel: l.responsible_user_id ?? null,
+      link: `https://${sub}.kommo.com/leads/detail/${l.id}`,
+    };
+  });
+
+  const usuarios = ((await kommo<{ _embedded: { users: { id: number; name: string; email: string }[] } }>('users?limit=250'))?._embedded.users ?? [])
+    .map((u) => ({ kommo_id: u.id, nome: u.name, email: u.email }));
+  const tarefas: { id: number; responsavel: number; feita_em: number }[] = [];
+  for (let pagina = 1; ; pagina++) {
+    const r = await kommo<{ _embedded: { tasks: (Tarefa & { responsible_user_id: number; updated_at: number })[] }; _links?: { next?: unknown } }>(
+      `tasks?filter[is_completed]=1&filter[entity_type]=leads&filter[updated_at][from]=${de}&limit=250&page=${pagina}`);
+    for (const t of r?._embedded.tasks ?? []) tarefas.push({ id: t.id, responsavel: t.responsible_user_id, feita_em: t.updated_at });
+    if (!r?._links?.next) break;
+  }
+
+  const { data, error: e2 } = await db.rpc('kommo_gravar_atendimento', {
+    p_tenant: tenant, p_mensagens: mensagens, p_leads: leadsAtendidos, p_usuarios: usuarios, p_tarefas: tarefas,
+  });
+  if (e2) throw e2;
+  return data;
+}
+
 serve(async (req) => {
   const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
   // O pg_cron a cada 3 horas, ou o dono/admin pelo "Ler agora" de Configurações › Integrações.
@@ -237,10 +318,11 @@ serve(async (req) => {
     if (ok && Date.now() - Date.parse(ok) < 2 * 60_000) return json({ error: 'a última leitura foi há menos de 2 minutos; tente daqui a pouco' }, 429);
   }
 
-  // A cada 10 minutos, à parte da leitura de 3 em 3 horas: falha aqui não marca a leitura como parada.
+  // A cada 10 minutos, à parte da leitura de 3 em 3 horas: o aviso de lead sem resposta e as conversas do Atendimento do
+  // CRM. Falha aqui não marca a leitura como parada.
   if (corpo.semResposta) {
     if (!quem.servico) return json({ error: 'só o robô confere os leads sem resposta' }, 403);
-    try { return json(await semResposta(db, tenant)); } catch (e) { return json({ error: String((e as Error).message).slice(0, 200) }, 500); }
+    try { return json({ ...await semResposta(db, tenant), atendimento: await atendimento(db, tenant) }); } catch (e) { return json({ error: String((e as Error).message).slice(0, 200) }, 500); }
   }
 
   try {
