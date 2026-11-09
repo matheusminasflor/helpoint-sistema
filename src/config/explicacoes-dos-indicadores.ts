@@ -867,6 +867,85 @@ export const EXPLICACOES = {
     deOndeVem: `A venda (${VENDA_CURTA}) de cada carteira e a da empresa.`,
     comoCalcula: 'Realizado da carteira ÷ realizado de todas as carteiras juntas. As carteiras somam 100%.',
   },
+  // ── Atendimento do CRM (Comercial › Atendimento do CRM; a conta é `crm_atendimento`, 20270212720400). ──
+  'crm.conversas': {
+    titulo: "Conversas",
+    oQueE: "Clientes que mandaram mensagem no período.",
+    deOndeVem: "As conversas do WhatsApp e do Instagram no Kommo, lidas a cada 10 minutos. Equipe, fornecedores e artistas (etiquetas no Kommo) não entram.",
+    comoCalcula: "Cada cliente conta uma vez, mesmo que tenha mandado várias mensagens.",
+  },
+  'crm.so_lyra': {
+    titulo: "Só Lyra",
+    oQueE: "Clientes que a Lyra atendeu do começo ao fim, sem precisar de pessoa (ex.: recebeu o link da loja BY.MF).",
+    deOndeVem: "As conversas do WhatsApp e do Instagram no Kommo, lidas a cada 10 minutos. Equipe, fornecedores e artistas (etiquetas no Kommo) não entram.",
+    comoCalcula: "O cliente caiu com a Lyra e o lead nunca chegou em \"Com atendente\".",
+  },
+  'crm.na_fila': {
+    titulo: "Na fila",
+    oQueE: "Clientes que precisaram da atendente.",
+    deOndeVem: "As conversas do WhatsApp e do Instagram no Kommo, lidas a cada 10 minutos. Equipe, fornecedores e artistas (etiquetas no Kommo) não entram.",
+    comoCalcula: "Conversas menos \"Só Lyra\".",
+  },
+  'crm.respondidos': {
+    titulo: "Respondidos",
+    oQueE: "Da fila, os clientes que a atendente respondeu.",
+    deOndeVem: "As conversas do WhatsApp e do Instagram no Kommo, lidas a cada 10 minutos. Equipe, fornecedores e artistas (etiquetas no Kommo) não entram.",
+    comoCalcula: "A vez da atendente começa quando o lead chega em \"Com atendente\" (com a Lyra) ou na mensagem do cliente (antes da Lyra, que entrou no ar em 08/11 às 18h56). Resposta que o Kommo grava sem o nome da atendente conta para a responsável pelo lead.",
+  },
+  'crm.no_prazo': {
+    titulo: "No prazo",
+    oQueE: "Respondidos dentro da meta de 45 minutos.",
+    deOndeVem: "As conversas do WhatsApp e do Instagram no Kommo, lidas a cada 10 minutos. Equipe, fornecedores e artistas (etiquetas no Kommo) não entram.",
+    comoCalcula: "A vez da atendente começa quando o lead chega em \"Com atendente\" (com a Lyra) ou na mensagem do cliente (antes da Lyra, que entrou no ar em 08/11 às 18h56). O relógio é o dos chamados: só anda das 8h às 18h, em dia útil.",
+  },
+  'crm.sem_resposta': {
+    titulo: "Sem resposta",
+    oQueE: "Da fila, os clientes que ninguém respondeu.",
+    deOndeVem: "As conversas do WhatsApp e do Instagram no Kommo, lidas a cada 10 minutos. Equipe, fornecedores e artistas (etiquetas no Kommo) não entram.",
+    comoCalcula: "Na fila e sem nenhuma mensagem de pessoa depois que a vez da atendente começou.",
+  },
+  'crm.tempo': {
+    titulo: "Tempo",
+    oQueE: "Quanto a atendente leva, em média, para dar a 1ª resposta.",
+    deOndeVem: "As conversas do WhatsApp e do Instagram no Kommo, lidas a cada 10 minutos. Equipe, fornecedores e artistas (etiquetas no Kommo) não entram.",
+    comoCalcula: "A vez da atendente começa quando o lead chega em \"Com atendente\" (com a Lyra) ou na mensagem do cliente (antes da Lyra, que entrou no ar em 08/11 às 18h56). Conta só o expediente (8h às 18h, dia útil). Meta: 45 minutos.",
+  },
+  'crm.aguardando': {
+    titulo: "Aguardando resposta",
+    oQueE: "Clientes esperando agora: escreveram por último e ninguém respondeu depois.",
+    deOndeVem: "As conversas do WhatsApp e do Instagram no Kommo, lidas a cada 10 minutos. Equipe, fornecedores e artistas (etiquetas no Kommo) não entram.",
+    comoCalcula: "Últimos 7 dias, lead aberto e fora de \"Com a Lyra\". \"Desde\" é a 1ª mensagem da espera ou a chegada em \"Com atendente\", o que veio depois. Com 45 minutos de expediente, a responsável e o gestor recebem aviso.",
+  },
+  'crm.cadastro': {
+    titulo: "Cadastro incompleto",
+    oQueE: "Vendas e perdas do período com campo obrigatório vazio no Kommo.",
+    deOndeVem: "Os leads fechados do Kommo no período.",
+    comoCalcula: "CNPJ, telefone, valor da venda ganha e motivo da perda. No distribuidor, o valor vem do faturado do Forteplus; sem valor digitado no Kommo, o aviso continua como \"digitar no Kommo\".",
+  },
+  'crm.ativos': {
+    titulo: "Ativos",
+    oQueE: "Clientes que a atendente procurou primeiro, sem eles terem escrito no período (retorno, pós-venda, cobrança).",
+    deOndeVem: "As conversas do WhatsApp e do Instagram no Kommo, lidas a cada 10 minutos. Equipe, fornecedores e artistas (etiquetas no Kommo) não entram.",
+    comoCalcula: "Leads com mensagem dela e sem nenhuma mensagem do cliente no período.",
+  },
+  'crm.segmento': {
+    titulo: "Por segmento",
+    oQueE: "O atendimento de cada segmento.",
+    deOndeVem: "As conversas do WhatsApp e do Instagram no Kommo, lidas a cada 10 minutos. Equipe, fornecedores e artistas (etiquetas no Kommo) não entram.",
+    comoCalcula: "O segmento do lead no Kommo (campo \"Segmento\" ou o funil). Clique num estado para ver só ele.",
+  },
+  'crm.estado': {
+    titulo: "Por estado",
+    oQueE: "De onde vieram as conversas.",
+    deOndeVem: "O estado do cliente no Kommo.",
+    comoCalcula: "O campo \"Estado de atuação\" do lead ou \"Estado\" do contato; sem eles, o DDD do telefone. Até 8 estados com nome; o resto junto em \"Outros\".",
+  },
+  'crm.lyra': {
+    titulo: "Lyra",
+    oQueE: "O que a Lyra mandou no período.",
+    deOndeVem: "As conversas do WhatsApp e do Instagram no Kommo, lidas a cada 10 minutos. Equipe, fornecedores e artistas (etiquetas no Kommo) não entram.",
+    comoCalcula: "Mensagens sem nome enquanto o lead estava em \"Com a Lyra\", a resposta automática do Instagram e as transmissões. Antes de 08/11 às 18h56 não havia robô.",
+  },
 } satisfies Record<string, Explicacao>;
 
 export type IdDaExplicacao = keyof typeof EXPLICACOES;

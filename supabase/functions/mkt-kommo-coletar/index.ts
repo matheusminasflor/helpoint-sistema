@@ -12,6 +12,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient, type SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { servicoOuAdmin } from '../_shared/servico-ou-admin.ts';
+import { ufDoCliente } from '../_shared/kommo-uf.ts';
 import { documentoDoLead, ehLimpeza, whatsappDoLead, etapasDeTriagem, FUNIL_DE_VENDA, segmentoDoLead, type LeadParaSegmento } from '../_shared/kommo-segmento.ts';
 
 const json = (corpo: unknown, status = 200) =>
@@ -81,17 +82,20 @@ async function contatos(lista: (number | null)[]) {
   const nomeDo = new Map<number, string>();
   const telefoneDo = new Map<number, string>();
   const fora = new Set<number>();
+  const estadoDo = new Map<number, string>();
   for (let i = 0; i < ids.length; i += 200) {
     const filtro = ids.slice(i, i + 200).map((id) => `filter[id][]=${id}`).join('&');
-    const r = await kommo<{ _embedded: { contacts: { id: number; name: string; custom_fields_values?: { field_code?: string; values?: { value?: unknown }[] }[] | null; _embedded?: { tags?: { name: string }[] } }[] } }>(`contacts?limit=250&${filtro}`);
+    const r = await kommo<{ _embedded: { contacts: { id: number; name: string; custom_fields_values?: { field_code?: string; field_name?: string; values?: { value?: unknown }[] }[] | null; _embedded?: { tags?: { name: string }[] } }[] } }>(`contacts?limit=250&${filtro}`);
     for (const c of r?._embedded.contacts ?? []) {
       if (c.name?.trim()) nomeDo.set(c.id, c.name.trim());
       if (foraDosIndicadores(c._embedded?.tags)) fora.add(c.id);
+      const estado = c.custom_fields_values?.find((f) => f.field_name?.trim().toLowerCase() === 'estado')?.values?.[0]?.value;
+      if (typeof estado === 'string' && estado.trim()) estadoDo.set(c.id, estado);
       const tel = String(c.custom_fields_values?.find((f) => f.field_code === 'PHONE')?.values?.[0]?.value ?? '').replace(/\D/g, '');
       if (tel.length >= 8 && tel.length <= 15) telefoneDo.set(c.id, tel);
     }
   }
-  return { nomeDo, telefoneDo, fora };
+  return { nomeDo, telefoneDo, fora, estadoDo };
 }
 
 async function rodada(db: SupabaseClient, tenant: string) {
@@ -210,28 +214,6 @@ async function diagnostico(dias: number) {
 
 interface Tarefa { id: number; entity_id: number; entity_type: string; text: string; created_at: number; complete_till: number }
 
-/**
- * Lead sem resposta (parte 4.4, 20270212700100): as tarefas abertas de prazo curto (as de 30 minutos que a Lyra cria ao
- * passar o lead) dos últimos 4 dias vão para o banco, que conta os minutos de expediente e avisa uma vez por tarefa.
- */
-async function semResposta(db: SupabaseClient, tenant: string) {
-  const desde = Math.floor(Date.now() / 1000) - 4 * 24 * 3600;
-  const tarefas: { id: number; lead_id: number; texto: string; criada_em: number }[] = [];
-  for (let pagina = 1; ; pagina++) {
-    const r = await kommo<{ _embedded: { tasks: Tarefa[] }; _links?: { next?: unknown } }>(
-      `tasks?filter[is_completed]=0&filter[entity_type]=leads&limit=250&page=${pagina}`);
-    for (const t of r?._embedded.tasks ?? []) {
-      if (t.created_at >= desde && t.complete_till - t.created_at <= 3600) {
-        tarefas.push({ id: t.id, lead_id: t.entity_id, texto: t.text, criada_em: t.created_at });
-      }
-    }
-    if (!r?._links?.next) break;
-  }
-  const { data, error } = await db.rpc('kommo_avisar_sem_resposta', { p_tenant: tenant, p_tarefas: tarefas });
-  if (error) throw error;
-  return { abertas: tarefas.length, avisos: data };
-}
-
 interface Evento {
   id: string; type: string; entity_id: number; entity_type: string; created_by: number; created_at: number;
   value_after?: { message?: { origin?: string }; lead_status?: { id: number; pipeline_id: number } }[] | null;
@@ -276,7 +258,11 @@ async function atendimento(db: SupabaseClient, tenant: string) {
   }
 
   const porId = new Map((await leads('updated_at', de)).map((l) => [l.id, l]));
-  const faltam = [...new Set(mensagens.map((m) => m.lead_id))].filter((id) => !porId.has(id));
+  // Lead que ainda não tem o estado (gravado antes de 20270212720400) entra também, 200 por leitura, até completar.
+  const { data: semUf, error: erroUf } = await db.from('kommo_leads').select('lead_id').eq('tenant_id', tenant).is('uf', null).limit(200);
+  if (erroUf) throw erroUf;
+  const faltam = [...new Set([...mensagens.map((m) => m.lead_id), ...(semUf ?? []).map((l) => (l as { lead_id: number }).lead_id)])]
+    .filter((id) => !porId.has(id));
   for (let i = 0; i < faltam.length; i += 200) {
     const filtro = faltam.slice(i, i + 200).map((id) => `filter[id][]=${id}`).join('&');
     const r = await kommo<{ _embedded: { leads: Lead[] } }>(`leads?limit=250&with=contacts&${filtro}`);
@@ -286,7 +272,7 @@ async function atendimento(db: SupabaseClient, tenant: string) {
   const triagem = etapasDeTriagem(funis);
   const nomeDoFunil = new Map(funis.map((p) => [p.id, p.name]));
   const nomeDaEtapa = new Map(funis.flatMap((p) => (p._embedded?.statuses ?? []).map((st) => [`${p.id}|${st.id}`, st.name] as const)));
-  const { nomeDo, fora } = await contatos([...porId.values()].map(contatoPrincipal));
+  const { nomeDo, fora, telefoneDo, estadoDo } = await contatos([...porId.values()].map(contatoPrincipal));
   const sub = Deno.env.get('KOMMO_SUBDOMINIO')!.trim();
   const leadsAtendidos = [...porId.values()].map((l) => {
     const contato = contatoPrincipal(l);
@@ -296,6 +282,11 @@ async function atendimento(db: SupabaseClient, tenant: string) {
       fechado: l.status_id === GANHA || l.status_id === PERDIDA, responsavel: l.responsible_user_id ?? null,
       link: `https://${sub}.kommo.com/leads/detail/${l.id}`,
       interno: foraDosIndicadores(l._embedded?.tags) || (contato !== null && fora.has(contato)),
+      // O campo do lead (a Lyra pergunta ao distribuidor), o do contato e, sem eles, o DDD; '' = não deu para saber.
+      uf: ufDoCliente([
+        (l as LeadParaSegmento).custom_fields_values?.find((c) => c.field_name?.trim().toLowerCase() === 'estado de atuação')?.values?.[0]?.value,
+        contato !== null ? estadoDo.get(contato) : null,
+      ], contato !== null ? telefoneDo.get(contato) : null) ?? '',
     };
   });
 
@@ -361,7 +352,13 @@ serve(async (req) => {
   // CRM. Falha aqui não marca a leitura como parada.
   if (corpo.semResposta) {
     if (!quem.servico) return json({ error: 'só o robô confere os leads sem resposta' }, 403);
-    try { return json({ ...await semResposta(db, tenant), atendimento: await atendimento(db, tenant) }); } catch (e) { return json({ error: String((e as Error).message).slice(0, 200) }, 500); }
+    try {
+      const lido = await atendimento(db, tenant);
+      // Cliente esperando a atendente há 45 minutos de expediente (20270212720400): o banco decide e avisa.
+      const { data: avisos, error } = await db.rpc('kommo_avisar_esperas', { p_tenant: tenant });
+      if (error) throw error;
+      return json({ atendimento: lido, avisos });
+    } catch (e) { return json({ error: String((e as Error).message).slice(0, 200) }, 500); }
   }
 
   try {
