@@ -4,6 +4,8 @@
 // as vendas com campo obrigatório vazio no Kommo, para a atendente completar (dono, mesmo dia).
 // Cor com significado: vermelho é o que espera alguém (sem resposta, acima da meta, campo vazio), verde o que está em
 // dia, lilás o robô. O dono, o admin e o gestor comercial veem todas; a atendente, só o dela (o banco recorta).
+// Robô é só a Lyra (desde 08/11 18h56) com o lead em "Com a Lyra", e a transmissão; a vez da atendente começa em
+// "Com atendente" (dono, 2026-11-09, migration 20270212720000).
 import { AlertTriangle, Bot, CheckCircle2, Clock, ExternalLink, MessageSquare, ThumbsDown, ThumbsUp } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
@@ -14,7 +16,7 @@ import { usePeriodoNaUrl } from '@/hooks/usePeriodoNaUrl';
 import { PERIODOS_DA_REUNIAO, intervaloDoPeriodoRapido, rotuloDoIntervalo } from '@/lib/period';
 import { dataHora, diaCurto } from '@/lib/dates';
 import {
-  CAMPO_OBRIGATORIO, META_DA_PRIMEIRA_RESPOSTA, contagemDosCampos, dentroDaMeta, minutos, nomeDoFunil,
+  CAMPO_OBRIGATORIO, LYRA_NO_AR, META_DA_PRIMEIRA_RESPOSTA, contagemDosCampos, dentroDaMeta, minutos, nomeDoFunil,
 } from '@/lib/crm-atendimento';
 import { formatBRL } from '@/lib/crm';
 import { cn } from '@/lib/utils';
@@ -39,13 +41,6 @@ export default function ComercialAtendimentoCrm() {
         periodOptions={PERIODOS_DA_REUNIAO}
       />
 
-      {/* Dono, 2026-11-09: o Kommo grava sem nome muita resposta de pessoa, que aqui virou robô. Sai com a correção. */}
-      <Card className="p-4 text-sm border-status-warning bg-status-warning/10" role="status">
-        <strong>Números de resposta em revisão.</strong> O Kommo grava sem o nome da atendente boa parte das respostas, e esta tela
-        está contando essas respostas como do robô. Por isso "Sem resposta", "1ª resposta" e a linha do robô aparecem piores do que
-        são. Conversas recebidas, vendas e campos vazios estão certos.
-      </Card>
-
       {error && (
         <Card className="p-4 text-sm text-status-danger" role="alert">Não deu para ler o Atendimento do CRM: {(error as Error).message}</Card>
       )}
@@ -54,23 +49,24 @@ export default function ComercialAtendimentoCrm() {
       {data && (
         <>
           <KPIGrid lgCols={5}>
-            <KPICard label="Conversas recebidas" value={data.conversas} color="blue" icon={MessageSquare} nota="leads que escreveram no período" />
+            <KPICard label="Conversas recebidas" value={data.conversas} color="blue" icon={MessageSquare} nota={data.so_lyra ? `${data.so_lyra} a Lyra resolveu sozinha` : 'leads que escreveram no período'} />
             <KPICard label="Sem resposta de pessoa" value={data.sem_resposta} color={data.sem_resposta ? 'red' : 'green'} icon={AlertTriangle}
-              nota={`${pct(data.sem_resposta, data.conversas)} só falaram com o robô ou com ninguém`} notaRuim={data.sem_resposta > 0} />
-            <KPICard label="1ª resposta (expediente)" value={minutos(data.primeira_resposta)} icon={Clock}
+              nota={`${pct(data.sem_resposta, data.conversas - data.so_lyra)} dos que eram da atendente`} notaRuim={data.sem_resposta > 0} />
+            <KPICard label="1ª resposta da atendente" value={minutos(data.primeira_resposta)} icon={Clock}
               color={data.primeira_resposta === null ? 'grey' : dentroDaMeta(data.primeira_resposta) ? 'green' : 'red'}
-              nota={`meta: até ${META_DA_PRIMEIRA_RESPOSTA} min · ${data.no_prazo} de ${data.respondidas} no prazo`}
+              nota={`em expediente, desde "Com atendente" · meta ${META_DA_PRIMEIRA_RESPOSTA} min · ${data.no_prazo} de ${data.respondidas} no prazo`}
               notaRuim={data.primeira_resposta !== null && !dentroDaMeta(data.primeira_resposta)} />
             <KPICard label="Vendas ganhas" value={data.ganhas} color="green" icon={ThumbsUp}
               nota={`${formatBRL(data.valor_ganho)}${data.todos ? ' · digitado + faturado dos distribuidores' : ' digitados no Kommo'}`} />
             <KPICard label="Vendas perdidas" value={data.perdidas} color="orange" icon={ThumbsDown} nota="a limpeza de cadastro não entra" />
           </KPIGrid>
 
-          {data.robo && (
+          {data.todos && (
             <p className="flex items-center gap-2 rounded-lg border border-[hsl(var(--monday-purple))]/40 bg-[hsl(var(--monday-purple))]/10 px-4 py-3 text-sm">
               <Bot className="h-4 w-4 text-[hsl(var(--monday-purple))]" aria-hidden="true" />
-              O robô do Kommo mandou <strong>{data.robo.mensagens} mensagens</strong> para <strong>{data.robo.leads} leads</strong>: a Lyra, o
-              robô antigo, as respostas automáticas e as transmissões (o Kommo não separa um do outro).
+              {data.robo
+                ? <>A Lyra mandou <strong>{data.robo.mensagens} mensagens</strong> para <strong>{data.robo.leads} leads</strong> (com as transmissões).</>
+                : <>A Lyra entrou no ar em {LYRA_NO_AR}: antes disso não havia robô, e toda resposta é da atendente.</>}
             </p>
           )}
 
@@ -94,7 +90,7 @@ export default function ComercialAtendimentoCrm() {
                     <tr key={a.kommo_id} className="border-b last:border-0">
                       <td className="py-2 pr-3 font-semibold">{a.nome}</td>
                       <td className="py-2 px-3 text-right tabular-nums">{a.leads}</td>
-                      <td className="py-2 px-3 text-right tabular-nums">{a.mensagens}</td>
+                      <td className="py-2 px-3 text-right tabular-nums" title={a.sem_nome ? `${a.sem_nome} gravadas sem nome no Kommo` : undefined}>{a.mensagens}</td>
                       <td className={cn('py-2 px-3 text-right tabular-nums font-semibold',
                         a.primeira_resposta !== null && (dentroDaMeta(a.primeira_resposta) ? 'text-status-success' : 'text-status-danger'))}>
                         {minutos(a.primeira_resposta)}
@@ -104,12 +100,12 @@ export default function ComercialAtendimentoCrm() {
                       <td className="py-2 pl-3 text-right tabular-nums">{a.perdidas}</td>
                     </tr>
                   ))}
-                  {data.robo && (
+                  {data.todos && (
                     <tr className="text-[hsl(var(--monday-purple))]">
-                      <td className="py-2 pr-3 font-semibold">Robô e mensagens automáticas</td>
-                      <td className="py-2 px-3 text-right tabular-nums">{data.robo.leads}</td>
-                      <td className="py-2 px-3 text-right tabular-nums">{data.robo.mensagens}</td>
-                      <td className="py-2 px-3 text-right">na hora</td>
+                      <td className="py-2 pr-3 font-semibold">Lyra (robô)</td>
+                      <td className="py-2 px-3 text-right tabular-nums">{data.robo?.leads ?? '—'}</td>
+                      <td className="py-2 px-3 text-right tabular-nums">{data.robo?.mensagens ?? '—'}</td>
+                      <td className="py-2 px-3 text-right">{data.robo ? 'na hora' : '—'}</td>
                       <td className="py-2 px-3 text-right">—</td>
                       <td className="py-2 px-3 text-right">—</td>
                       <td className="py-2 pl-3 text-right">—</td>
@@ -197,7 +193,7 @@ export default function ComercialAtendimentoCrm() {
           </Card>
 
           <p className="text-xs text-muted-foreground">
-            O Kommo só sabe da resposta dada pelo próprio Kommo. Quem respondeu um cliente pelo WhatsApp do celular, fora do Kommo, aparece aqui como sem resposta.
+            Resposta que o Kommo grava sem o nome da atendente conta para a responsável pelo lead. A vez da atendente começa quando o lead vai para "Com atendente".
             As conversas são lidas a cada 10 minutos.
           </p>
         </>

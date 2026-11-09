@@ -227,14 +227,14 @@ async function semResposta(db: SupabaseClient, tenant: string) {
 
 interface Evento {
   id: string; type: string; entity_id: number; entity_type: string; created_by: number; created_at: number;
-  value_after?: { message?: { origin?: string } }[] | null;
+  value_after?: { message?: { origin?: string }; lead_status?: { id: number; pipeline_id: number } }[] | null;
 }
 
 /**
  * Atendimento do CRM (parte 4b, 20270212710000): as mensagens que entraram e saíram desde a última guardada (com 2 horas
  * de folga; na primeira vez, desde 01/10), os leads delas e os mexidos nesse tempo, as pessoas do Kommo e as tarefas
- * concluídas. O banco conta o resto.
- * ponytail: mensagem de conversa sem lead (só contato) não entra; a Lyra e a transmissão saem com autor 0, juntas.
+ * concluídas, e as trocas de etapa (20270212720000: a mensagem de autor 0 é do robô só em "Com a Lyra"). O banco conta o resto.
+ * A mensagem que ficou só no contato (conversa que ainda não virou lead) vai para o lead mais novo dele.
  */
 async function atendimento(db: SupabaseClient, tenant: string) {
   const { data: ultima, error } = await db.from('kommo_mensagens').select('quando').eq('tenant_id', tenant)
@@ -244,15 +244,28 @@ async function atendimento(db: SupabaseClient, tenant: string) {
   const de = Math.max(Math.floor(inicioBR('2026-10-01') / 1000), ultima ? Math.floor(Date.parse((ultima as { quando: string }).quando) / 1000) - 7200 : 0);
 
   const mensagens: { id: string; lead_id: number; quando: number; entrou: boolean; autor: number; canal: string | null }[] = [];
+  const doContato: Evento[] = [];
   for (let pagina = 1; ; pagina++) {
     const r = await kommo<{ _embedded: { events: Evento[] }; _links?: { next?: unknown } }>(
       `events?limit=100&page=${pagina}&filter[type][]=incoming_chat_message&filter[type][]=outgoing_chat_message&filter[created_at][from]=${de}`);
     for (const e of r?._embedded.events ?? []) {
+      if (e.entity_type === 'contact') doContato.push(e);
       if (e.entity_type !== 'lead') continue;
       mensagens.push({ id: e.id, lead_id: e.entity_id, quando: e.created_at, entrou: e.type === 'incoming_chat_message',
         autor: e.created_by || 0, canal: e.value_after?.[0]?.message?.origin ?? null });
     }
     if (!r?._links?.next) break;
+  }
+  const ids = [...new Set(doContato.map((e) => e.entity_id))];
+  for (let i = 0; i < ids.length; i += 200) {
+    const filtro = ids.slice(i, i + 200).map((id) => `filter[id][]=${id}`).join('&');
+    const r = await kommo<{ _embedded: { contacts: { id: number; _embedded?: { leads?: { id: number }[] } }[] } }>(`contacts?limit=250&with=leads&${filtro}`);
+    const leadDo = new Map((r?._embedded.contacts ?? []).map((c) => [c.id, Math.max(0, ...(c._embedded?.leads ?? []).map((l) => l.id))]));
+    for (const e of doContato) {
+      const lead = leadDo.get(e.entity_id);
+      if (lead) mensagens.push({ id: e.id, lead_id: lead, quando: e.created_at, entrou: e.type === 'incoming_chat_message',
+        autor: e.created_by || 0, canal: e.value_after?.[0]?.message?.origin ?? null });
+    }
   }
 
   const porId = new Map((await leads('updated_at', de)).map((l) => [l.id, l]));
@@ -292,7 +305,25 @@ async function atendimento(db: SupabaseClient, tenant: string) {
     p_tenant: tenant, p_mensagens: mensagens, p_leads: leadsAtendidos, p_usuarios: usuarios, p_tarefas: tarefas,
   });
   if (e2) throw e2;
-  return data;
+
+  // As trocas de etapa, desde a última guardada (com 2 horas de folga; na primeira vez, desde 01/10).
+  const { data: ultimaEtapa, error: e3 } = await db.from('kommo_etapas').select('quando').eq('tenant_id', tenant)
+    .order('quando', { ascending: false }).limit(1).maybeSingle();
+  if (e3) throw e3;
+  const deEtapa = Math.max(Math.floor(inicioBR('2026-10-01') / 1000), ultimaEtapa ? Math.floor(Date.parse((ultimaEtapa as { quando: string }).quando) / 1000) - 7200 : 0);
+  const etapas: { id: string; lead_id: number; quando: number; etapa: string | null }[] = [];
+  for (let pagina = 1; ; pagina++) {
+    const r = await kommo<{ _embedded: { events: Evento[] }; _links?: { next?: unknown } }>(
+      `events?limit=100&page=${pagina}&filter[type][]=lead_status_changed&filter[created_at][from]=${deEtapa}`);
+    for (const e of r?._embedded.events ?? []) {
+      const st = e.value_after?.[0]?.lead_status;
+      if (e.entity_type === 'lead' && st) etapas.push({ id: e.id, lead_id: e.entity_id, quando: e.created_at, etapa: nomeDaEtapa.get(`${st.pipeline_id}|${st.id}`) ?? null });
+    }
+    if (!r?._links?.next) break;
+  }
+  const { data: novasEtapas, error: e4 } = await db.rpc('kommo_gravar_etapas', { p_tenant: tenant, p_etapas: etapas });
+  if (e4) throw e4;
+  return { ...data, etapas: novasEtapas, do_contato: doContato.length };
 }
 
 serve(async (req) => {

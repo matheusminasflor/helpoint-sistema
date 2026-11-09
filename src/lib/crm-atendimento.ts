@@ -6,8 +6,13 @@ import { SEGMENTOS, type Segmento } from '@/lib/leads-e-vendas';
 /** A meta da 1ª resposta (decisão 2 do dono): 30 minutos de expediente, a mesma do aviso de lead sem resposta. */
 export const META_DA_PRIMEIRA_RESPOSTA = 30;
 
+/** Quando a Lyra entrou no ar no WhatsApp (`kommo_lyra_no_ar` no banco): antes disso não havia robô. */
+export const LYRA_NO_AR = '08/11 às 18h56';
+
 export interface LinhaDaAtendente {
   kommo_id: number; nome: string; leads: number; mensagens: number; primeira_resposta: number | null;
+  /** As mensagens dela que o Kommo gravou sem nome (fora de "Com a Lyra"; 20270212720000). */
+  sem_nome: number;
   tarefas: number; ganhas: number; perdidas: number;
 }
 export interface LeadParaResponder {
@@ -20,10 +25,12 @@ export interface VendaComCampoFaltando {
 export interface AtendimentoDoCrm {
   todos: boolean;
   conversas: number; sem_resposta: number; respondidas: number; no_prazo: number; primeira_resposta: number | null;
+  /** As conversas que a Lyra resolveu sozinha, sem passar para "Com atendente". */
+  so_lyra: number;
   ganhas: number; perdidas: number;
   /** O digitado no Kommo e, para quem gere as carteiras, o faturado dos distribuidores. */
   valor_ganho: number;
-  /** As mensagens que nenhuma pessoa digitou: a Lyra, o robô antigo, a resposta automática e a transmissão. */
+  /** A Lyra (lead em "Com a Lyra") e a transmissão; null quando o período é todo antes de ela entrar no ar, ou para a atendente. */
   robo: { leads: number; mensagens: number } | null;
   atendentes: LinhaDaAtendente[];
   sem_resposta_por_funil: { segmento: Segmento | null; funil: string | null; quantos: number }[];
