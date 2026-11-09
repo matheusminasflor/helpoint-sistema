@@ -5,11 +5,11 @@
 --   4  o dono vê as conversas do período e quantas ficaram sem resposta de pessoa
 --   5  a 1ª resposta é a média, em minutos de expediente, só das respondidas por uma pessoa
 --   6  a linha da atendente: leads, mensagens, 1ª resposta, tarefas, ganhas e perdidas
---   7  a Lyra conta à parte
+--   7  o robô conta à parte
 --   8  sem resposta por funil, com o nome do funil que não é de venda
 --   9  para responder agora: só o lead aberto cuja última mensagem é do cliente
 --  10  campos faltando: CNPJ, telefone, valor da ganha e motivo da perdida
---  11  a atendente vê só o dela, sem a Lyra e sem a outra atendente
+--  11  a atendente vê só o dela, sem o robô e sem a outra atendente
 --  12  ... e as conversas só dos leads dela
 --  13  quem não tem os Indicadores do Comercial não abre
 --  14  o navegador não lê as tabelas
@@ -83,7 +83,7 @@ select is((select (v->>'primeira_resposta')::int from d), 40, '1ª resposta: mé
 select is((select format('%s/%s/%s/%s/%s/%s', x->>'leads', x->>'mensagens', x->>'primeira_resposta', x->>'tarefas', x->>'ganhas', x->>'perdidas')
              from d, jsonb_array_elements(v->'atendentes') x where (x->>'kommo_id')::int = 10),
   '1/1/20/1/1/1', 'a linha da Thayná');
-select is((select (v->'lyra'->>'leads') || '/' || (v->'lyra'->>'mensagens') from d), '2/2', 'a Lyra à parte');
+select is((select (v->'robo'->>'leads') || '/' || (v->'robo'->>'mensagens') from d), '2/2', 'o robô à parte');
 select is((select v->'sem_resposta_por_funil' from d), '[{"funil": "ENAD", "quantos": 1, "segmento": null}]'::jsonb, 'sem resposta por funil');
 select is((select string_agg(x->>'lead_id', ',') from d, jsonb_array_elements(v->'para_responder') x), '1',
   'para responder: o lead aberto que escreveu por último');
@@ -94,8 +94,8 @@ select tests.clear_authentication();
 
 select tests.authenticate_as('thay@crmatend.test');
 create temporary table t on commit drop as select public.crm_atendimento('2026-11-04', '2026-11-04') as v;
-select is((select string_agg(x->>'kommo_id', ',') || '/' || coalesce(v->>'lyra', 'sem lyra') from t, jsonb_array_elements(v->'atendentes') x group by v),
-  '10/sem lyra', 'a atendente vê só a linha dela');
+select is((select string_agg(x->>'kommo_id', ',') || '/' || coalesce(v->>'robo', 'sem robo') from t, jsonb_array_elements(v->'atendentes') x group by v),
+  '10/sem robo', 'a atendente vê só a linha dela');
 select is((select (v->>'conversas') || '/' || (v->>'sem_resposta') || '/' || (v->>'ganhas') from t), '2/1/1', 'e só os leads dela');
 select tests.clear_authentication();
 
