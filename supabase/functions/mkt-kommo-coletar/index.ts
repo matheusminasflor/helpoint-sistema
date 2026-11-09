@@ -190,12 +190,36 @@ async function diagnostico(dias: number) {
   return { dias, total, porCanal: lista(porCanal), fontes, campos: campos?._embedded.custom_fields.map((c) => c.name), porFonte: lista(porFonte), porEtiqueta: lista(porEtiqueta), porCampo: lista(porCampo), origens: lista(formatos) };
 }
 
+interface Tarefa { id: number; entity_id: number; entity_type: string; text: string; created_at: number; complete_till: number }
+
+/**
+ * Lead sem resposta (parte 4.4, 20270212700100): as tarefas abertas de prazo curto (as de 30 minutos que a Lyra cria ao
+ * passar o lead) dos últimos 4 dias vão para o banco, que conta os minutos de expediente e avisa uma vez por tarefa.
+ */
+async function semResposta(db: SupabaseClient, tenant: string) {
+  const desde = Math.floor(Date.now() / 1000) - 4 * 24 * 3600;
+  const tarefas: { id: number; lead_id: number; texto: string; criada_em: number }[] = [];
+  for (let pagina = 1; ; pagina++) {
+    const r = await kommo<{ _embedded: { tasks: Tarefa[] }; _links?: { next?: unknown } }>(
+      `tasks?filter[is_completed]=0&filter[entity_type]=leads&limit=250&page=${pagina}`);
+    for (const t of r?._embedded.tasks ?? []) {
+      if (t.created_at >= desde && t.complete_till - t.created_at <= 3600) {
+        tarefas.push({ id: t.id, lead_id: t.entity_id, texto: t.text, criada_em: t.created_at });
+      }
+    }
+    if (!r?._links?.next) break;
+  }
+  const { data, error } = await db.rpc('kommo_avisar_sem_resposta', { p_tenant: tenant, p_tarefas: tarefas });
+  if (error) throw error;
+  return { abertas: tarefas.length, avisos: data };
+}
+
 serve(async (req) => {
   const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
   // O pg_cron a cada 3 horas, ou o dono/admin pelo "Ler agora" de Configurações › Integrações.
   const quem = await servicoOuAdmin(req, db);
   if (quem instanceof Response) return quem;
-  const corpo = await req.json().catch(() => ({})) as { diagnostico?: number };
+  const corpo = await req.json().catch(() => ({})) as { diagnostico?: number; semResposta?: boolean };
   if (corpo.diagnostico && quem.servico) {
     try { return json(await diagnostico(Math.min(365, Number(corpo.diagnostico) || 60))); } catch (e) { return json({ error: String(e) }, 500); }
   }
@@ -211,6 +235,12 @@ serve(async (req) => {
     if (erroRobo) return json({ error: erroRobo.message }, 500);
     const ok = (robo as { ok_em: string | null } | null)?.ok_em;
     if (ok && Date.now() - Date.parse(ok) < 2 * 60_000) return json({ error: 'a última leitura foi há menos de 2 minutos; tente daqui a pouco' }, 429);
+  }
+
+  // A cada 10 minutos, à parte da leitura de 3 em 3 horas: falha aqui não marca a leitura como parada.
+  if (corpo.semResposta) {
+    if (!quem.servico) return json({ error: 'só o robô confere os leads sem resposta' }, 403);
+    try { return json(await semResposta(db, tenant)); } catch (e) { return json({ error: String((e as Error).message).slice(0, 200) }, 500); }
   }
 
   try {
