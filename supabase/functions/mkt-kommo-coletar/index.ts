@@ -50,7 +50,8 @@ async function kommo<T>(caminho: string): Promise<T | null> {
 
 interface Lead extends LeadParaSegmento {
   id: number; name: string; price: number | null; created_at: number; closed_at: number | null;
-  loss_reason_id: number | null; responsible_user_id?: number | null; _embedded?: { contacts?: { id: number; is_main?: boolean }[] };
+  loss_reason_id: number | null; responsible_user_id?: number | null;
+  _embedded?: { contacts?: { id: number; is_main?: boolean }[]; tags?: { name: string }[] };
 }
 
 /** Todos os leads com `campo` (criado, fechado ou mexido) entre `de` e agora, em segundos; fechados e mexidos vêm com os contatos. */
@@ -70,21 +71,27 @@ const contatoPrincipal = (l: Lead) => {
   return (cs.find((c) => c.is_main) ?? cs[0])?.id ?? null;
 };
 
-/** O nome e o telefone (só os dígitos) de cada contato. O nome do contato diz quem é; "Lead #118411874", não. */
+/** Etiqueta que tira o lead ou o contato do Atendimento do CRM (dono, 2026-11-09; 20270212720300). */
+const FORA_DOS_INDICADORES = /^(equipe interna|fornecedor)$/i;
+const foraDosIndicadores = (tags?: { name: string }[]) => (tags ?? []).some((t) => FORA_DOS_INDICADORES.test(t.name.trim()));
+
+/** O nome e o telefone (só os dígitos) de cada contato, e os da equipe ou de fornecedor. O nome do contato diz quem é; "Lead #118411874", não. */
 async function contatos(lista: (number | null)[]) {
   const ids = [...new Set(lista.filter((x): x is number => x !== null))];
   const nomeDo = new Map<number, string>();
   const telefoneDo = new Map<number, string>();
+  const fora = new Set<number>();
   for (let i = 0; i < ids.length; i += 200) {
     const filtro = ids.slice(i, i + 200).map((id) => `filter[id][]=${id}`).join('&');
-    const r = await kommo<{ _embedded: { contacts: { id: number; name: string; custom_fields_values?: { field_code?: string; values?: { value?: unknown }[] }[] | null }[] } }>(`contacts?limit=250&${filtro}`);
+    const r = await kommo<{ _embedded: { contacts: { id: number; name: string; custom_fields_values?: { field_code?: string; values?: { value?: unknown }[] }[] | null; _embedded?: { tags?: { name: string }[] } }[] } }>(`contacts?limit=250&${filtro}`);
     for (const c of r?._embedded.contacts ?? []) {
       if (c.name?.trim()) nomeDo.set(c.id, c.name.trim());
+      if (foraDosIndicadores(c._embedded?.tags)) fora.add(c.id);
       const tel = String(c.custom_fields_values?.find((f) => f.field_code === 'PHONE')?.values?.[0]?.value ?? '').replace(/\D/g, '');
       if (tel.length >= 8 && tel.length <= 15) telefoneDo.set(c.id, tel);
     }
   }
-  return { nomeDo, telefoneDo };
+  return { nomeDo, telefoneDo, fora };
 }
 
 async function rodada(db: SupabaseClient, tenant: string) {
@@ -279,7 +286,7 @@ async function atendimento(db: SupabaseClient, tenant: string) {
   const triagem = etapasDeTriagem(funis);
   const nomeDoFunil = new Map(funis.map((p) => [p.id, p.name]));
   const nomeDaEtapa = new Map(funis.flatMap((p) => (p._embedded?.statuses ?? []).map((st) => [`${p.id}|${st.id}`, st.name] as const)));
-  const { nomeDo } = await contatos([...porId.values()].map(contatoPrincipal));
+  const { nomeDo, fora } = await contatos([...porId.values()].map(contatoPrincipal));
   const sub = Deno.env.get('KOMMO_SUBDOMINIO')!.trim();
   const leadsAtendidos = [...porId.values()].map((l) => {
     const contato = contatoPrincipal(l);
@@ -288,6 +295,7 @@ async function atendimento(db: SupabaseClient, tenant: string) {
       funil: nomeDoFunil.get(l.pipeline_id) ?? null, etapa: nomeDaEtapa.get(`${l.pipeline_id}|${l.status_id}`) ?? null,
       fechado: l.status_id === GANHA || l.status_id === PERDIDA, responsavel: l.responsible_user_id ?? null,
       link: `https://${sub}.kommo.com/leads/detail/${l.id}`,
+      interno: foraDosIndicadores(l._embedded?.tags) || (contato !== null && fora.has(contato)),
     };
   });
 

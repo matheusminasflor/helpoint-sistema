@@ -113,7 +113,8 @@ select tests.clear_authentication();
 -- Segunda, 09/11, com a Lyra no ar: o lead 6 não passou pela Lyra e é respondido sem nome em 11 min; o 7 cai com a Lyra,
 -- passa para "Com atendente" às 9h03 (a despedida da Lyra sai logo depois) e a atendente responde sem nome às 9h30
 -- (27 min); o 8 só recebe a transmissão; o 13 a Lyra resolveu sozinha (foi para "Link enviado"); o 14 escreveu no
--- Instagram e só a resposta automática dele, 5 segundos depois, respondeu (20270212720200).
+-- Instagram e só a resposta automática dele, 5 segundos depois, respondeu (20270212720200); o 15 é da equipe (etiqueta
+-- "Equipe interna", 20270212720300) e não entra em conta nenhuma, mesmo sem resposta.
 create temporary table l on commit drop as select (select nove from h) + 5 * 86400 as dia;
 grant select on l to authenticated;
 select is(public.kommo_gravar_etapas((select a from f), jsonb_build_array(
@@ -140,15 +141,18 @@ select public.kommo_gravar_atendimento((select a from f),
     jsonb_build_object('id', 'n13', 'lead_id', 13, 'quando', (select dia from l) + 7200, 'entrou', true),
     jsonb_build_object('id', 'r13', 'lead_id', 13, 'quando', (select dia from l) + 7205, 'entrou', false),
     jsonb_build_object('id', 'n14', 'lead_id', 14, 'quando', (select dia from l) + 9000, 'entrou', true, 'canal', 'instagram_business'),
-    jsonb_build_object('id', 'r14', 'lead_id', 14, 'quando', (select dia from l) + 9005, 'entrou', false, 'canal', 'instagram_business')),
+    jsonb_build_object('id', 'r14', 'lead_id', 14, 'quando', (select dia from l) + 9005, 'entrou', false, 'canal', 'instagram_business'),
+    jsonb_build_object('id', 'n15', 'lead_id', 15, 'quando', (select dia from l) + 9100, 'entrou', true)),
   (select jsonb_agg(jsonb_build_object('lead_id', i, 'nome', 'Lead ' || i, 'funil', 'Consumidor Final', 'segmento', 'consumidor',
                                        'fechado', i >= 8, 'responsavel', 10, 'link', 'k/' || i))
-     from generate_series(6, 14) i), null, null);
+     from generate_series(6, 14) i)
+   || jsonb_build_array(jsonb_build_object('lead_id', 15, 'nome', 'Matheus', 'funil', 'Consumidor Final', 'segmento', 'consumidor',
+                                           'responsavel', 10, 'link', 'k/15', 'interno', true)), null, null);
 
 select tests.authenticate_as('dona@crmatend.test');
 create temporary table q on commit drop as select public.crm_atendimento('2026-11-09', '2026-11-09') as v;
 select is((select format('%s/%s/%s/%s', v->>'conversas', v->>'so_lyra', v->>'sem_resposta', v->>'primeira_resposta') from q), '5/1/2/19',
-  'a vez da atendente começa em "Com atendente"; o que a Lyra resolveu sozinha não é sem resposta');
+  'a vez da atendente começa em "Com atendente"; o que a Lyra resolveu sozinha e a equipe não são sem resposta');
 select is((select (v->'robo'->>'leads') || '/' || (v->'robo'->>'mensagens') from q), '8/9', 'o robô: a Lyra nos leads 7 e 13, a transmissão e a resposta automática do Instagram');
 select is((select (x->>'mensagens') || '/' || (x->>'sem_nome') from q, jsonb_array_elements(v->'atendentes') x where (x->>'kommo_id')::int = 10),
   '2/2', 'a Thayná com as duas sem nome');
