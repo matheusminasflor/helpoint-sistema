@@ -39,6 +39,13 @@ export default function ComercialAtendimentoCrm() {
         periodOptions={PERIODOS_DA_REUNIAO}
       />
 
+      {/* Dono, 2026-11-09: o Kommo grava sem nome muita resposta de pessoa, que aqui virou robô. Sai com a correção. */}
+      <Card className="p-4 text-sm border-status-warning bg-status-warning/10" role="status">
+        <strong>Números de resposta em revisão.</strong> O Kommo grava sem o nome da atendente boa parte das respostas, e esta tela
+        está contando essas respostas como do robô. Por isso "Sem resposta", "1ª resposta" e a linha do robô aparecem piores do que
+        são. Conversas recebidas, vendas e campos vazios estão certos.
+      </Card>
+
       {error && (
         <Card className="p-4 text-sm text-status-danger" role="alert">Não deu para ler o Atendimento do CRM: {(error as Error).message}</Card>
       )}
