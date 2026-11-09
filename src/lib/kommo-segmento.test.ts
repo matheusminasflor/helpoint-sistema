@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { documentoDoLead, ehLimpeza, etapasDeTriagem, segmentoDoCampo, segmentoDoLead } from '../../supabase/functions/_shared/kommo-segmento';
+import { documentoDoLead, ehLimpeza, whatsappDoLead, etapasDeTriagem, segmentoDoCampo, segmentoDoLead } from '../../supabase/functions/_shared/kommo-segmento';
 
 const ENTRADA = 13975223, CONSUMIDOR = 12904179, SALAO = 12927111, DISTRIBUIDOR = 12927087, EDUCACIONAL = 12927031;
 const COM_A_LYRA = 900001, EM_ATENDIMENTO = 900002, GANHA = 142;
@@ -71,5 +71,17 @@ describe('documentoDoLead', () => {
   it('número incompleto ou campo vazio não liga a ninguém', () => {
     expect(documentoDoLead(lead('0831913800016'))).toBeNull();
     expect(documentoDoLead({ pipeline_id: DISTRIBUIDOR, status_id: GANHA })).toBeNull();
+  });
+});
+
+describe('whatsappDoLead', () => {
+  const lead = (valor: unknown) => ({ pipeline_id: DISTRIBUIDOR, status_id: GANHA, custom_fields_values: [{ field_name: 'WhatsApp', values: [{ value: valor }] }] });
+  it('guarda só os dígitos de um número com DDD', () => {
+    expect(whatsappDoLead(lead('(31) 98311-3111'))).toBe('31983113111');
+    expect(whatsappDoLead(lead('+55 31 98311-3111'))).toBe('5531983113111');
+  });
+  it('número curto ou texto não vale', () => {
+    expect(whatsappDoLead(lead('pular'))).toBeNull();
+    expect(whatsappDoLead(lead('98311'))).toBeNull();
   });
 });

@@ -12,7 +12,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient, type SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { servicoOuAdmin } from '../_shared/servico-ou-admin.ts';
-import { documentoDoLead, ehLimpeza, etapasDeTriagem, FUNIL_DE_VENDA, segmentoDoLead, type LeadParaSegmento } from '../_shared/kommo-segmento.ts';
+import { documentoDoLead, ehLimpeza, whatsappDoLead, etapasDeTriagem, FUNIL_DE_VENDA, segmentoDoLead, type LeadParaSegmento } from '../_shared/kommo-segmento.ts';
 
 const json = (corpo: unknown, status = 200) =>
   new Response(JSON.stringify(corpo), { status, headers: { 'Content-Type': 'application/json' } });
@@ -90,7 +90,7 @@ async function rodada(db: SupabaseClient, tenant: string) {
     const funil = segmentoDoLead(l, triagem);
     if (funil) linha(diaBR(l.created_at * 1000), funil).chegaram++;
   }
-  const vendas: { lead_id: number; nome: string; contato: number | null; funil: string; situacao: string; valor: number; fechou: string; motivo: string | null; link: string; documento: string | null }[] = [];
+  const vendas: { lead_id: number; nome: string; contato: number | null; funil: string; situacao: string; valor: number; fechou: string; motivo: string | null; link: string; documento: string | null; whatsapp: string | null }[] = [];
   const sub = Deno.env.get('KOMMO_SUBDOMINIO')!.trim();
   for (const l of await leads('closed_at', de)) {
     const funil = segmentoDoLead(l, triagem);
@@ -106,6 +106,7 @@ async function rodada(db: SupabaseClient, tenant: string) {
       link: `https://${sub}.kommo.com/leads/detail/${l.id}`,
       // Parte 4.3: o CPF/CNPJ liga a venda de Distribuidor às notas do Forteplus (mkt_kommo_faturado).
       documento: documentoDoLead(l),
+      whatsapp: whatsappDoLead(l),
     });
     if (l.status_id === GANHA) {
       n.ganhas++;
@@ -141,8 +142,9 @@ async function rodada(db: SupabaseClient, tenant: string) {
   }
   const { error: e2 } = await db.rpc('mkt_kommo_gravar_vendas', {
     p_tenant: tenant, p_desde: desde,
-    p_vendas: vendas.map(({ contato, ...v }) => ({ ...v, nome: (contato !== null && nomeDo.get(contato)) || v.nome,
-      telefone: (contato !== null && telefoneDo.get(contato)) || null })),
+    // Sem telefone no contato (o Direct do Instagram não traz), vale o WhatsApp que a Lyra pediu.
+    p_vendas: vendas.map(({ contato, whatsapp, ...v }) => ({ ...v, nome: (contato !== null && nomeDo.get(contato)) || v.nome,
+      telefone: (contato !== null && telefoneDo.get(contato)) || whatsapp })),
   });
   if (e2) throw e2;
   const soma = (k: 'chegaram' | 'ganhas' | 'perdidas') => [...dias.values()].reduce((s, d) => s + d[k], 0);

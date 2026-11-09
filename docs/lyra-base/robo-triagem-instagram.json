@@ -1,6 +1,6 @@
 {
   "0": {
-    "block_uuid": "14f7025b-bec4-453e-ab15-b42a5be10680",
+    "block_uuid": "d76a950c-b24f-4c55-9d21-2fa2a44e1908",
     "question": [
       {
         "handler": "action",
@@ -47,7 +47,7 @@
         "handler": "buttons",
         "params": [
           {
-            "value": "6b699aef-074a-47b2-9a90-fe7144cd8482",
+            "value": "0e142b3f-5235-4ffe-88ed-a27cf966b26e",
             "params": [
               {
                 "handler": "goto",
@@ -71,7 +71,7 @@
             ]
           },
           {
-            "value": "b71a3f9e-5401-4acd-8af6-b3236b08e1d9",
+            "value": "95374abd-565c-459d-8a44-9b8be9912750",
             "params": [
               {
                 "handler": "goto",
@@ -95,7 +95,7 @@
             ]
           },
           {
-            "value": "48b566b9-8173-4c1c-9e51-703610fb5861",
+            "value": "4e6fa544-9188-4a75-a32e-34886984a96c",
             "params": [
               {
                 "handler": "goto",
@@ -119,7 +119,7 @@
             ]
           },
           {
-            "value": "93d0ed68-7fb4-4315-a044-af5ad1317335",
+            "value": "d8750d41-f89d-4208-b253-f3205b4b7259",
             "params": [
               {
                 "handler": "goto",
@@ -159,7 +159,7 @@
     ]
   },
   "9": {
-    "block_uuid": "26262515-cfd6-481d-a1ae-0bffa87aa270",
+    "block_uuid": "2a9d075f-8500-4ad4-8927-57ac83386fa6",
     "question": [
       {
         "handler": "action",
@@ -236,7 +236,7 @@
     ]
   },
   "10": {
-    "block_uuid": "c40e9781-5423-4fa0-8fa4-47bf01acd7d0",
+    "block_uuid": "7db58deb-db23-4d29-b29f-b9a32a9f004e",
     "question": [
       {
         "handler": "action",
@@ -280,7 +280,7 @@
     ]
   },
   "11": {
-    "block_uuid": "54643e47-3c45-40c1-a073-f61a37eac8b7",
+    "block_uuid": "01b8f5fe-25ec-4109-a2d6-86cf3f3a50f7",
     "question": [
       {
         "handler": "send_message",
@@ -307,7 +307,7 @@
     ]
   },
   "12": {
-    "block_uuid": "4ce20ae3-1b03-4c79-b5ad-4614c6c341a9",
+    "block_uuid": "8d5a7927-6416-40c9-91fd-aad289f695be",
     "question": [
       {
         "handler": "waits",
@@ -330,7 +330,7 @@
     ]
   },
   "13": {
-    "block_uuid": "59755ceb-2fc8-4542-bff0-ef35b4771737",
+    "block_uuid": "d11ca8bb-7603-4810-bcce-be37c9053737",
     "question": [
       {
         "handler": "action",
@@ -346,13 +346,13 @@
         "handler": "goto",
         "params": {
           "type": "question",
-          "step": 14
+          "step": 80
         }
       }
     ]
   },
   "14": {
-    "block_uuid": "68cdfb77-173b-48a2-acb2-d1a0ec0e4fae",
+    "block_uuid": "5fcdac4c-fbd6-4e2d-b1b4-53b5c6cc79b5",
     "question": [
       {
         "handler": "send_message",
@@ -436,7 +436,7 @@
     ]
   },
   "15": {
-    "block_uuid": "418732a5-5b1a-4f01-8fb3-da2bbedf4719",
+    "block_uuid": "98f3602e-11fc-43ea-aa83-31c9c7da441f",
     "question": [
       {
         "handler": "action",
@@ -546,7 +546,7 @@
     ]
   },
   "16": {
-    "block_uuid": "93902a32-6a72-4220-96bb-472df0a36915",
+    "block_uuid": "32a26101-22b5-4903-bc3f-553646576508",
     "question": [
       {
         "handler": "action",
@@ -583,7 +583,7 @@
     ]
   },
   "18": {
-    "block_uuid": "b5a19200-23a6-4eef-aca9-390725b5c7d9",
+    "block_uuid": "6539093a-7f29-417e-852d-b968034bad90",
     "question": [
       {
         "handler": "send_message",
@@ -610,7 +610,7 @@
     ]
   },
   "19": {
-    "block_uuid": "91557462-8868-4718-877a-1877540e12c7",
+    "block_uuid": "b446d52c-61fc-4bb7-b16c-02ea1419363d",
     "question": [
       {
         "handler": "waits",
@@ -633,7 +633,7 @@
     ]
   },
   "20": {
-    "block_uuid": "a087ef1b-fc14-4037-9a86-e3eaf010b12f",
+    "block_uuid": "c7b9a155-c1c1-4675-8230-ad364b914c96",
     "question": [
       {
         "handler": "action",
@@ -677,7 +677,7 @@
     ]
   },
   "21": {
-    "block_uuid": "c788c333-29ec-46f7-8672-c176f8a68e8e",
+    "block_uuid": "05c9a826-813e-4373-b1f1-db33ba91e15e",
     "question": [
       {
         "handler": "send_message",
@@ -704,7 +704,7 @@
     ]
   },
   "22": {
-    "block_uuid": "77de81b7-47e8-4248-8ead-e3984f71e4aa",
+    "block_uuid": "bf212914-6c36-406e-af29-92835013eff5",
     "question": [
       {
         "handler": "waits",
@@ -727,7 +727,7 @@
     ]
   },
   "23": {
-    "block_uuid": "84356a7d-6aed-4608-b369-151cb34ae089",
+    "block_uuid": "872c2a41-97ed-48c7-8da8-159a489e10c2",
     "question": [
       {
         "handler": "action",
@@ -743,13 +743,13 @@
         "handler": "goto",
         "params": {
           "type": "question",
-          "step": 24
+          "step": 83
         }
       }
     ]
   },
   "24": {
-    "block_uuid": "0ecb6ac9-b5fe-4424-9e7a-c5ac0c66f584",
+    "block_uuid": "1dce4f35-6824-4c72-a83d-ade01ea13a41",
     "question": [
       {
         "handler": "send_message",
@@ -838,7 +838,7 @@
     ]
   },
   "25": {
-    "block_uuid": "75ca2912-7d94-47b8-839b-56c5fd55e4be",
+    "block_uuid": "8fd7487d-c1d5-4446-9d9d-a5d2ca95fd49",
     "question": [
       {
         "handler": "waits",
@@ -861,7 +861,7 @@
     ]
   },
   "26": {
-    "block_uuid": "2d0aae88-a925-4f81-944c-e13aac4a7b2f",
+    "block_uuid": "493d92f4-71a3-40f2-83f2-6a3f8104c068",
     "question": [
       {
         "handler": "action",
@@ -883,7 +883,7 @@
     ]
   },
   "27": {
-    "block_uuid": "45286728-ec5c-4194-b9b5-97e129e8e6fe",
+    "block_uuid": "dc890b62-60c5-4c52-b889-0b7adf6617ee",
     "question": [
       {
         "handler": "send_message",
@@ -910,7 +910,7 @@
     ]
   },
   "28": {
-    "block_uuid": "3555aa3b-5c11-45f6-9a8f-062f1ed5780f",
+    "block_uuid": "2ed9c61c-34e0-4afc-a995-8b3c8692fae6",
     "question": [
       {
         "handler": "waits",
@@ -933,7 +933,7 @@
     ]
   },
   "29": {
-    "block_uuid": "15970898-f74e-49ac-bf38-dfe9d619a932",
+    "block_uuid": "55b59820-1049-4f99-9813-2c15579f6307",
     "question": [
       {
         "handler": "action",
@@ -1010,7 +1010,7 @@
     ]
   },
   "30": {
-    "block_uuid": "83fb9598-4574-4228-bc70-6834bdd3735d",
+    "block_uuid": "effc1952-2549-4f5e-9a67-b9a6ddddec85",
     "question": [
       {
         "handler": "action",
@@ -1054,7 +1054,7 @@
     ]
   },
   "31": {
-    "block_uuid": "e230c2e1-e776-4261-ac87-ea069dc03f3c",
+    "block_uuid": "b95399d4-c3a9-470b-b2c8-06371dbab102",
     "question": [
       {
         "handler": "send_message",
@@ -1081,7 +1081,7 @@
     ]
   },
   "32": {
-    "block_uuid": "b23160c0-94a6-4ebb-90c3-a53941befff8",
+    "block_uuid": "6459cf41-475f-4d28-ab78-48220be305f6",
     "question": [
       {
         "handler": "waits",
@@ -1104,7 +1104,7 @@
     ]
   },
   "33": {
-    "block_uuid": "4b4fd3b7-ede3-4a1a-84cf-41ccf8aba7c0",
+    "block_uuid": "41ce1ca0-7f57-43f3-a1e3-335ac26449a5",
     "question": [
       {
         "handler": "action",
@@ -1120,13 +1120,13 @@
         "handler": "goto",
         "params": {
           "type": "question",
-          "step": 34
+          "step": 86
         }
       }
     ]
   },
   "34": {
-    "block_uuid": "f9ffc031-6ffe-4de7-ba02-dc1e6e8a04c5",
+    "block_uuid": "771d0c4b-0c8d-42d0-a108-b248b7ed309e",
     "question": [
       {
         "handler": "send_message",
@@ -1153,7 +1153,7 @@
     ]
   },
   "35": {
-    "block_uuid": "c61975ef-de0c-44c7-bb91-dfe3fd2a4104",
+    "block_uuid": "60a2ea14-f396-4e8e-ac31-e43db663a5c6",
     "question": [
       {
         "handler": "waits",
@@ -1176,7 +1176,7 @@
     ]
   },
   "36": {
-    "block_uuid": "1cfabb71-5ec1-4e08-87b9-d3578401294e",
+    "block_uuid": "7bc09698-a5a9-41c3-b600-0bce91939b01",
     "question": [
       {
         "handler": "action",
@@ -1198,7 +1198,7 @@
     ]
   },
   "37": {
-    "block_uuid": "4fd0b1e1-dc0a-4dee-aa45-28fcf52a3183",
+    "block_uuid": "26de39a5-ae64-4072-a769-ec092e2530ba",
     "question": [
       {
         "handler": "send_message",
@@ -1221,7 +1221,7 @@
         "handler": "buttons",
         "params": [
           {
-            "value": "4a17570b-9f0a-4e38-9179-c89cac642bd5",
+            "value": "2e65eb69-eefa-491a-a613-d33b35cccc6b",
             "params": [
               {
                 "handler": "goto",
@@ -1245,7 +1245,7 @@
             ]
           },
           {
-            "value": "efab6d41-1cd7-4a37-8699-9e501330d70b",
+            "value": "df2cf102-c257-4afa-a8cc-e903497ac9f7",
             "params": [
               {
                 "handler": "goto",
@@ -1269,7 +1269,7 @@
             ]
           },
           {
-            "value": "a4eb4c2d-33bd-484c-a764-f3fab3dac253",
+            "value": "dc19406c-61fb-473b-b940-5f5e7e4d9956",
             "params": [
               {
                 "handler": "goto",
@@ -1293,7 +1293,7 @@
             ]
           },
           {
-            "value": "7cd2f86a-e37a-4ad8-9d9b-2c572b988eb2",
+            "value": "1b77d8f3-ccd7-471b-b523-48fe8b602987",
             "params": [
               {
                 "handler": "goto",
@@ -1317,7 +1317,7 @@
             ]
           },
           {
-            "value": "6f536fd2-2e76-4c10-83b0-d2cc2e6e6b1a",
+            "value": "7b4e04fd-f704-4a5b-8d2b-39c9fa455cc8",
             "params": [
               {
                 "handler": "goto",
@@ -2653,7 +2653,7 @@
     ]
   },
   "39": {
-    "block_uuid": "33293d37-7268-4ed8-8400-e9b8ec87be23",
+    "block_uuid": "52e6e2ea-7e86-4126-8478-553667872c95",
     "question": [
       {
         "handler": "action",
@@ -2730,7 +2730,7 @@
     ]
   },
   "40": {
-    "block_uuid": "66ff0139-4be1-4acb-99ae-ec651a258a87",
+    "block_uuid": "dabfbfb6-d389-4174-944d-50efbf3cdb4f",
     "question": [
       {
         "handler": "action",
@@ -2819,7 +2819,7 @@
     ]
   },
   "50": {
-    "block_uuid": "983c7fea-d25d-4a48-b4ca-7709a804f539",
+    "block_uuid": "5b5c8382-3ccc-452c-88d2-d4ef09fb5104",
     "question": [
       {
         "handler": "send_message",
@@ -2856,7 +2856,7 @@
         "handler": "buttons",
         "params": [
           {
-            "value": "6b699aef-074a-47b2-9a90-fe7144cd8482",
+            "value": "0e142b3f-5235-4ffe-88ed-a27cf966b26e",
             "params": [
               {
                 "handler": "goto",
@@ -2880,7 +2880,7 @@
             ]
           },
           {
-            "value": "b71a3f9e-5401-4acd-8af6-b3236b08e1d9",
+            "value": "95374abd-565c-459d-8a44-9b8be9912750",
             "params": [
               {
                 "handler": "goto",
@@ -2904,7 +2904,7 @@
             ]
           },
           {
-            "value": "48b566b9-8173-4c1c-9e51-703610fb5861",
+            "value": "4e6fa544-9188-4a75-a32e-34886984a96c",
             "params": [
               {
                 "handler": "goto",
@@ -2928,7 +2928,7 @@
             ]
           },
           {
-            "value": "93d0ed68-7fb4-4315-a044-af5ad1317335",
+            "value": "d8750d41-f89d-4208-b253-f3205b4b7259",
             "params": [
               {
                 "handler": "goto",
@@ -2968,7 +2968,7 @@
     ]
   },
   "51": {
-    "block_uuid": "e3391b39-817b-4857-9eee-a6c1b53f0756",
+    "block_uuid": "ebca911a-1bb9-4bad-95cc-5127bfc800b3",
     "question": [
       {
         "handler": "action",
@@ -3057,7 +3057,7 @@
     ]
   },
   "52": {
-    "block_uuid": "72cc67e2-5b53-4b73-986d-4ba3efcc8c0f",
+    "block_uuid": "f218b1f5-aa5f-43dd-82d6-9a2006481644",
     "question": [
       {
         "handler": "action",
@@ -3134,7 +3134,7 @@
     ]
   },
   "53": {
-    "block_uuid": "b8f7bf99-3f47-4a5f-ad1c-660dffbf7a7c",
+    "block_uuid": "8bd78b2b-1958-4d91-858e-4b0dfa0ee32f",
     "question": [
       {
         "handler": "conditions",
@@ -3270,7 +3270,7 @@
     ]
   },
   "54": {
-    "block_uuid": "5b72a660-e459-4cc3-9017-4faa3dda58f6",
+    "block_uuid": "4d0dac0e-77d1-4c09-a376-4ac7ded59b74",
     "question": [
       {
         "handler": "action",
@@ -3336,7 +3336,7 @@
     ]
   },
   "55": {
-    "block_uuid": "d312eb43-7074-45fa-a494-e2956f1c8f25",
+    "block_uuid": "c2c351ec-b4b0-4d5a-8d7e-e13401eadbe9",
     "question": [
       {
         "handler": "send_message",
@@ -3363,7 +3363,7 @@
     ]
   },
   "60": {
-    "block_uuid": "28d76918-b16c-4069-a856-a3d1bc859dbe",
+    "block_uuid": "c39c994f-627a-431c-a5c1-23b82ccf6e1d",
     "question": [
       {
         "handler": "send_message",
@@ -3390,7 +3390,7 @@
     ]
   },
   "61": {
-    "block_uuid": "04d1e48c-7e9d-405e-8f84-95461f58bd4a",
+    "block_uuid": "7e980eb6-6518-4a3c-9f4d-757ebf8ef114",
     "question": [
       {
         "handler": "action",
@@ -3412,7 +3412,7 @@
     ]
   },
   "63": {
-    "block_uuid": "fbced327-a441-4343-8106-b8967efbfd6b",
+    "block_uuid": "08666bfa-e8fa-4460-86bc-076ef0ec5c43",
     "question": [
       {
         "handler": "send_message",
@@ -3439,7 +3439,7 @@
     ]
   },
   "64": {
-    "block_uuid": "39a7f44b-2543-4b3f-a691-0f1bcbbba5a7",
+    "block_uuid": "21dd7a85-c05c-4709-99af-f2d45feeb8e1",
     "question": [
       {
         "handler": "waits",
@@ -3462,7 +3462,7 @@
     ]
   },
   "65": {
-    "block_uuid": "084fed12-6dd1-48af-903f-ea10fac7bdfc",
+    "block_uuid": "d7f850e8-a762-4846-a61f-489582056fa9",
     "question": [
       {
         "handler": "action",
@@ -3533,7 +3533,7 @@
     ]
   },
   "66": {
-    "block_uuid": "b57d2572-c2dc-4b63-a6e5-e157c3e44e48",
+    "block_uuid": "d19423be-9217-41e6-af50-6a598ad1026f",
     "question": [
       {
         "handler": "action",
@@ -3555,7 +3555,7 @@
     ]
   },
   "70": {
-    "block_uuid": "146441c3-e08e-47e4-849b-6349d3fad524",
+    "block_uuid": "7effbbf1-0455-41de-8025-f07b18458f36",
     "question": [
       {
         "handler": "send_message",
@@ -3578,7 +3578,7 @@
         "handler": "buttons",
         "params": [
           {
-            "value": "05535a5a-19dc-48fa-ae8f-e7c33d939481",
+            "value": "03d72d80-7b95-437c-bc22-30c860e7b05e",
             "params": [
               {
                 "handler": "goto",
@@ -3602,7 +3602,7 @@
             ]
           },
           {
-            "value": "e86b7154-cb01-4fbf-86ff-0a3d571bc8d5",
+            "value": "a305742a-b41b-4ab8-a924-2b7859ec800c",
             "params": [
               {
                 "handler": "goto",
@@ -3626,7 +3626,7 @@
             ]
           },
           {
-            "value": "5c7908a2-21fa-4d0f-bac7-6a5f8898f7de",
+            "value": "b05aebb7-9392-44fc-a577-cc312d0ce039",
             "params": [
               {
                 "handler": "goto",
@@ -3650,7 +3650,7 @@
             ]
           },
           {
-            "value": "3dcb6b90-34c4-4a4d-906f-2190b4fc9452",
+            "value": "b664490b-64fd-45f2-82d1-87e6af1df237",
             "params": [
               {
                 "handler": "goto",
@@ -3690,7 +3690,7 @@
     ]
   },
   "71": {
-    "block_uuid": "6d0685e4-4d1c-46fa-937e-ab2ebc24c85a",
+    "block_uuid": "ae47efcf-25b2-4f11-a990-b73400c5f5a9",
     "question": [
       {
         "handler": "send_message",
@@ -3713,7 +3713,7 @@
         "handler": "buttons",
         "params": [
           {
-            "value": "f4b4688c-a910-49d2-97c0-ce1e8786a233",
+            "value": "2fdc1707-c5d8-473e-b430-d80d694348b9",
             "params": [
               {
                 "handler": "goto",
@@ -3737,7 +3737,7 @@
             ]
           },
           {
-            "value": "5eeb2ba6-8805-482e-9686-9df501f428ba",
+            "value": "25d4f859-10f4-4e8c-a723-7ef5866e0bed",
             "params": [
               {
                 "handler": "goto",
@@ -3761,7 +3761,7 @@
             ]
           },
           {
-            "value": "301547dc-8fc6-42d4-b613-db2a224640ee",
+            "value": "971432f1-7dae-4655-be4d-ba6e0c7b7a58",
             "params": [
               {
                 "handler": "goto",
@@ -3801,7 +3801,7 @@
     ]
   },
   "72": {
-    "block_uuid": "645cdc87-47a8-4858-a967-2a4a8266192d",
+    "block_uuid": "2e256a54-f0d5-4f3e-8d1b-652a5e99113f",
     "question": [
       {
         "handler": "send_message",
@@ -3824,7 +3824,7 @@
         "handler": "buttons",
         "params": [
           {
-            "value": "b8936216-9f3c-4b72-8a22-2d6c9a582a25",
+            "value": "b50a2609-5ce9-4e3f-8b26-b3739c6d42a2",
             "params": [
               {
                 "handler": "goto",
@@ -3848,7 +3848,7 @@
             ]
           },
           {
-            "value": "0771e0e4-3a59-4074-b8da-6baa9d730573",
+            "value": "17c0f687-9f41-4107-a73c-11a96e97559a",
             "params": [
               {
                 "handler": "goto",
@@ -3872,7 +3872,7 @@
             ]
           },
           {
-            "value": "dcb87f09-65e8-4c03-9480-0e6859d48306",
+            "value": "da076875-f3a2-4608-82ed-29d4aa401b3f",
             "params": [
               {
                 "handler": "goto",
@@ -3896,7 +3896,7 @@
             ]
           },
           {
-            "value": "cee008fd-bb6d-42fd-b874-9badd0b4ddcf",
+            "value": "babdfc21-fe0f-4bbd-bb05-92058cecb15f",
             "params": [
               {
                 "handler": "goto",
@@ -3936,7 +3936,7 @@
     ]
   },
   "73": {
-    "block_uuid": "54b22236-49a0-479d-89ea-c45da32713dc",
+    "block_uuid": "0476987e-3a37-4758-b3d0-a4a45e4dd407",
     "question": [
       {
         "handler": "send_message",
@@ -3959,7 +3959,7 @@
         "handler": "buttons",
         "params": [
           {
-            "value": "38ea3c57-64b5-4abe-9dfa-485a582e6b2c",
+            "value": "a987ebe5-ff96-4965-8d48-2e49cac410ed",
             "params": [
               {
                 "handler": "goto",
@@ -3983,7 +3983,7 @@
             ]
           },
           {
-            "value": "88a31fcd-c1cf-4702-b7e7-1cbda31fb65e",
+            "value": "965eeebd-a5b1-4faa-8cdb-0268e7b129b1",
             "params": [
               {
                 "handler": "goto",
@@ -4007,7 +4007,7 @@
             ]
           },
           {
-            "value": "0cee13e9-c26e-4eb0-9706-ffbda17100f9",
+            "value": "81441a1f-69d1-414f-8ff8-236e0e42d328",
             "params": [
               {
                 "handler": "goto",
@@ -4031,7 +4031,7 @@
             ]
           },
           {
-            "value": "5f49fc06-bc46-41af-923e-e1618412d0f5",
+            "value": "931781d5-abaf-4dd7-8ede-7c2e22fb6ef4",
             "params": [
               {
                 "handler": "goto",
@@ -4055,7 +4055,7 @@
             ]
           },
           {
-            "value": "fba3e163-6274-4341-ac31-a3b85eb36bf2",
+            "value": "26bbf393-6e6f-40f7-8d0d-d804aca025d9",
             "params": [
               {
                 "handler": "goto",
@@ -4079,7 +4079,7 @@
             ]
           },
           {
-            "value": "87a226e3-2916-40d8-aeb2-fc9e31f99ce2",
+            "value": "12931735-0efb-4328-859e-8354447f367c",
             "params": [
               {
                 "handler": "goto",
@@ -4103,7 +4103,7 @@
             ]
           },
           {
-            "value": "3b3f412c-1da8-4a3a-a3e3-48040ad4980b",
+            "value": "a08ddb45-12cf-4d0e-a0cb-10b7ced0a4e1",
             "params": [
               {
                 "handler": "goto",
@@ -4127,7 +4127,7 @@
             ]
           },
           {
-            "value": "60c05e86-8c03-45e8-910c-67d3e3409f8c",
+            "value": "2b0f7528-1df8-48ab-88dd-36165bb06318",
             "params": [
               {
                 "handler": "goto",
@@ -4151,7 +4151,7 @@
             ]
           },
           {
-            "value": "26f23fc9-c876-4e53-8333-4d08bafeae01",
+            "value": "e0597323-146d-4c78-9868-507c5090c866",
             "params": [
               {
                 "handler": "goto",
@@ -4191,7 +4191,7 @@
     ]
   },
   "74": {
-    "block_uuid": "d35d4c0f-60bc-4933-8089-0a1f157faa63",
+    "block_uuid": "87deaa61-4e3a-4c7a-9e04-c4e1068d49be",
     "question": [
       {
         "handler": "send_message",
@@ -4214,7 +4214,7 @@
         "handler": "buttons",
         "params": [
           {
-            "value": "44edc34c-7d40-4062-ba58-6647e24c0f6e",
+            "value": "6b2d14ae-fe99-4d48-8f9e-cd3cb304aa44",
             "params": [
               {
                 "handler": "goto",
@@ -4238,7 +4238,7 @@
             ]
           },
           {
-            "value": "d9d125e7-a8db-4d0c-9156-32824ea32eff",
+            "value": "c0275ad3-0a20-41f7-b742-0f7adb32a32e",
             "params": [
               {
                 "handler": "goto",
@@ -4262,7 +4262,7 @@
             ]
           },
           {
-            "value": "1e30ba03-7159-4b36-8dd8-6209cd227a52",
+            "value": "b3923b5b-04aa-4222-a2fc-735e269a9210",
             "params": [
               {
                 "handler": "goto",
@@ -4286,7 +4286,7 @@
             ]
           },
           {
-            "value": "18cf4436-d6c3-4447-85d3-9c69b7fe2092",
+            "value": "e1ded548-b076-410d-b007-9e1434d1932c",
             "params": [
               {
                 "handler": "goto",
@@ -4310,7 +4310,7 @@
             ]
           },
           {
-            "value": "ccd2cba7-2fc7-4dd3-8126-22478327607e",
+            "value": "30210dbe-fb6e-4b48-9b38-100e16309532",
             "params": [
               {
                 "handler": "goto",
@@ -4334,7 +4334,7 @@
             ]
           },
           {
-            "value": "93796aee-0434-48f3-83a6-feb4bd400b43",
+            "value": "aa9f4695-7445-4ca1-8e6a-b3690c232de8",
             "params": [
               {
                 "handler": "goto",
@@ -4358,7 +4358,7 @@
             ]
           },
           {
-            "value": "8705c8da-8119-40cc-90a6-afb7f897c7c3",
+            "value": "5390d7f6-e48d-4fa0-8d9b-8c8a311bd852",
             "params": [
               {
                 "handler": "goto",
@@ -4397,8 +4397,418 @@
       }
     ]
   },
+  "80": {
+    "block_uuid": "d6d5d616-456b-43c4-ab2c-1ec42f459500",
+    "question": [
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "Se quiser, informe o seu WhatsApp com DDD para a nossa equipe falar com você por lá também 📱 Para continuar só por aqui, escreva \"pular\".",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null
+        }
+      },
+      {
+        "handler": "waits",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "event": {
+                "action": "received",
+                "source": "message"
+              },
+              "action": {
+                "type": "question",
+                "step": 81
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "81": {
+    "block_uuid": "66da09c6-00cb-4dc9-94c0-a53372912c4f",
+    "question": [
+      {
+        "handler": "conditions",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "term1": "{{message_text}}",
+              "term2": "pular",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "Pular",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "PULAR",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "não",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "Não",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "nao",
+              "operation": "contains"
+            }
+          ],
+          "result": [
+            {
+              "handler": "goto",
+              "params": {
+                "type": "question",
+                "step": 14
+              }
+            }
+          ]
+        }
+      },
+      {
+        "handler": "validations",
+        "params": {
+          "logic": "and",
+          "result": [
+            {
+              "handler": "goto",
+              "params": {
+                "type": "question",
+                "step": 82
+              }
+            }
+          ],
+          "conditions": [
+            {
+              "type": "phone",
+              "operation": "contains",
+              "client_value": "{{message_text}}",
+              "condition_value": ""
+            }
+          ]
+        }
+      },
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "Por favor, informe o número com DDD, por exemplo: 31 99999-9999, ou escreva \"pular\".",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null
+        }
+      },
+      {
+        "handler": "waits",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "event": {
+                "action": "received",
+                "source": "message"
+              },
+              "action": {
+                "type": "question",
+                "step": 81
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "82": {
+    "block_uuid": "a2d549f1-970c-410d-9b6c-a0a276d05654",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "{{message_text}}",
+            "custom_field": "{{lead.cf.4381554}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 14
+        }
+      }
+    ]
+  },
+  "83": {
+    "block_uuid": "a46648d4-52a9-4644-a8cf-96608203e7d6",
+    "question": [
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "Qual é o seu WhatsApp com DDD? A nossa equipe usa para continuar o seu atendimento 📱",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null
+        }
+      },
+      {
+        "handler": "waits",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "event": {
+                "action": "received",
+                "source": "message"
+              },
+              "action": {
+                "type": "question",
+                "step": 84
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "84": {
+    "block_uuid": "83a40ab3-fd03-4ca6-8143-bdb044befe44",
+    "question": [
+      {
+        "handler": "validations",
+        "params": {
+          "logic": "and",
+          "result": [
+            {
+              "handler": "goto",
+              "params": {
+                "type": "question",
+                "step": 85
+              }
+            }
+          ],
+          "conditions": [
+            {
+              "type": "phone",
+              "operation": "contains",
+              "client_value": "{{message_text}}",
+              "condition_value": ""
+            }
+          ]
+        }
+      },
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "Por favor, informe o número com DDD, por exemplo: 31 99999-9999.",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null
+        }
+      },
+      {
+        "handler": "waits",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "event": {
+                "action": "received",
+                "source": "message"
+              },
+              "action": {
+                "type": "question",
+                "step": 84
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "85": {
+    "block_uuid": "a1e98a49-1d5c-4181-8170-fa0aa7037330",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "{{message_text}}",
+            "custom_field": "{{lead.cf.4381554}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 24
+        }
+      }
+    ]
+  },
+  "86": {
+    "block_uuid": "bc2dc9cb-d343-4d66-b1dd-5ca44c540e40",
+    "question": [
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "Qual é o seu WhatsApp com DDD? A nossa equipe usa para continuar o seu atendimento 📱",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null
+        }
+      },
+      {
+        "handler": "waits",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "event": {
+                "action": "received",
+                "source": "message"
+              },
+              "action": {
+                "type": "question",
+                "step": 87
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "87": {
+    "block_uuid": "338592cb-7f6f-4949-b724-a74263450c61",
+    "question": [
+      {
+        "handler": "validations",
+        "params": {
+          "logic": "and",
+          "result": [
+            {
+              "handler": "goto",
+              "params": {
+                "type": "question",
+                "step": 88
+              }
+            }
+          ],
+          "conditions": [
+            {
+              "type": "phone",
+              "operation": "contains",
+              "client_value": "{{message_text}}",
+              "condition_value": ""
+            }
+          ]
+        }
+      },
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "Por favor, informe o número com DDD, por exemplo: 31 99999-9999.",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null
+        }
+      },
+      {
+        "handler": "waits",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "event": {
+                "action": "received",
+                "source": "message"
+              },
+              "action": {
+                "type": "question",
+                "step": 87
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "88": {
+    "block_uuid": "071fcb6f-ed25-4d28-abde-aaa3e68cadc8",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "{{message_text}}",
+            "custom_field": "{{lead.cf.4381554}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 34
+        }
+      }
+    ]
+  },
   "100": {
-    "block_uuid": "4288cec0-6111-4d68-83cf-79654ff45196",
+    "block_uuid": "23eccfc6-2c6f-462a-9332-d5a11d281c5f",
     "question": [
       {
         "handler": "action",
@@ -4420,7 +4830,7 @@
     ]
   },
   "101": {
-    "block_uuid": "4b9b4d64-4012-4f87-8a3d-48afdbb7ac71",
+    "block_uuid": "f31fff27-eb6a-4cdf-b7d6-ba1fbcc53c83",
     "question": [
       {
         "handler": "action",
@@ -4442,7 +4852,7 @@
     ]
   },
   "102": {
-    "block_uuid": "ebf1d691-380c-4407-a4e4-a7ae1ab90cb2",
+    "block_uuid": "faa0110f-1e8f-4c99-86bc-de266852cd71",
     "question": [
       {
         "handler": "action",
@@ -4464,7 +4874,7 @@
     ]
   },
   "103": {
-    "block_uuid": "6a4c0929-11ed-40c5-b992-86ea597c4eed",
+    "block_uuid": "49488c9d-6ed3-4412-89b8-e89c7b917fee",
     "question": [
       {
         "handler": "action",
@@ -4486,7 +4896,7 @@
     ]
   },
   "104": {
-    "block_uuid": "98da3722-c066-4bed-bac8-829f4b9361cb",
+    "block_uuid": "3f5b9d05-ec17-4af7-89ff-1de4b314a5b8",
     "question": [
       {
         "handler": "action",
@@ -4508,7 +4918,7 @@
     ]
   },
   "105": {
-    "block_uuid": "56796df6-7c9b-4c4b-9f0f-eba726d2c151",
+    "block_uuid": "e2679f70-78c7-4842-90a5-cda5bfea5c15",
     "question": [
       {
         "handler": "action",
@@ -4530,7 +4940,7 @@
     ]
   },
   "106": {
-    "block_uuid": "a62cbe7f-a7ae-4c38-aef0-60c71d9250f7",
+    "block_uuid": "b6e57539-e5bc-4c82-8b8e-395a4fac8931",
     "question": [
       {
         "handler": "action",
@@ -4552,7 +4962,7 @@
     ]
   },
   "107": {
-    "block_uuid": "5e425c9b-b884-44dd-8cfc-ede723ebb4ef",
+    "block_uuid": "6d11693b-de21-48a6-b0e7-48fbfbe2ce44",
     "question": [
       {
         "handler": "action",
@@ -4574,7 +4984,7 @@
     ]
   },
   "108": {
-    "block_uuid": "8c89912a-b8a7-41ff-8200-f8e961c35ebb",
+    "block_uuid": "f3a3d457-acd9-4dc4-93d1-f8920090f6f4",
     "question": [
       {
         "handler": "action",
@@ -4596,7 +5006,7 @@
     ]
   },
   "109": {
-    "block_uuid": "81845000-29b6-4b19-923e-d8cd280c10df",
+    "block_uuid": "189cd6af-c297-4b47-9f16-d1f6ce30e980",
     "question": [
       {
         "handler": "action",
@@ -4618,7 +5028,7 @@
     ]
   },
   "110": {
-    "block_uuid": "3daefd3f-fac0-465b-a8c7-d2a5ae38d987",
+    "block_uuid": "98625480-734e-4be4-bb86-36b6833c4691",
     "question": [
       {
         "handler": "action",
@@ -4640,7 +5050,7 @@
     ]
   },
   "111": {
-    "block_uuid": "12f535db-afd7-4f72-9143-4a4262ac4447",
+    "block_uuid": "b7c65fd1-36f8-4aee-8f09-f9d31adfcf74",
     "question": [
       {
         "handler": "action",
@@ -4662,7 +5072,7 @@
     ]
   },
   "112": {
-    "block_uuid": "649c1a56-dfb0-4f26-a289-7fbfbaa9eb41",
+    "block_uuid": "205aa397-cfee-442d-9c51-1e6277295f04",
     "question": [
       {
         "handler": "action",
@@ -4684,7 +5094,7 @@
     ]
   },
   "113": {
-    "block_uuid": "229ff105-ff12-41b6-83f2-b9d33d73f0ac",
+    "block_uuid": "29448233-c30a-49c3-be38-81f654e46521",
     "question": [
       {
         "handler": "action",
@@ -4706,7 +5116,7 @@
     ]
   },
   "114": {
-    "block_uuid": "4ee51ea2-0794-4b04-892f-335b6454a9b6",
+    "block_uuid": "05eb6570-e2b8-4fa0-9ca1-12d77c938bfc",
     "question": [
       {
         "handler": "action",
@@ -4728,7 +5138,7 @@
     ]
   },
   "115": {
-    "block_uuid": "80dc8a87-02f4-498f-8311-b43e291d99cb",
+    "block_uuid": "e3ae4f2c-f574-4f45-bea2-1f509deee0fc",
     "question": [
       {
         "handler": "action",
@@ -4750,7 +5160,7 @@
     ]
   },
   "116": {
-    "block_uuid": "38bfa3f7-8a56-4866-b455-f93678a342a3",
+    "block_uuid": "4755ae45-ae25-4c05-b3d2-99a7625fd3be",
     "question": [
       {
         "handler": "action",
@@ -4772,7 +5182,7 @@
     ]
   },
   "117": {
-    "block_uuid": "4951ae8f-b7a7-4944-a343-2dfee86e15c5",
+    "block_uuid": "55418261-f6f7-41c5-a8c5-75686f9df893",
     "question": [
       {
         "handler": "action",
@@ -4794,7 +5204,7 @@
     ]
   },
   "118": {
-    "block_uuid": "b42f1190-3307-4f4c-9abe-1038437b53e6",
+    "block_uuid": "e71009a4-a997-4901-ac0c-5638ba6b59fc",
     "question": [
       {
         "handler": "action",
@@ -4816,7 +5226,7 @@
     ]
   },
   "119": {
-    "block_uuid": "8021bd72-d97b-4e84-ab8e-33b53c0182e9",
+    "block_uuid": "32bec763-371d-4aec-af87-558665cb0de1",
     "question": [
       {
         "handler": "action",
@@ -4838,7 +5248,7 @@
     ]
   },
   "120": {
-    "block_uuid": "8942f1a6-edfd-418a-8923-624300751411",
+    "block_uuid": "1c779fa7-5ac8-4313-a431-7c73f5fc021e",
     "question": [
       {
         "handler": "action",
@@ -4860,7 +5270,7 @@
     ]
   },
   "121": {
-    "block_uuid": "3b8190fe-a11e-46f8-965d-26f360b6bc05",
+    "block_uuid": "4eb84d6a-526e-4de5-bca9-2251a9dc1773",
     "question": [
       {
         "handler": "action",
@@ -4882,7 +5292,7 @@
     ]
   },
   "122": {
-    "block_uuid": "caf4f697-f79b-4012-8d23-4851ecbf3785",
+    "block_uuid": "8778de48-cd41-4863-8fda-e4aedb3349f4",
     "question": [
       {
         "handler": "action",
@@ -4904,7 +5314,7 @@
     ]
   },
   "123": {
-    "block_uuid": "c025d438-dd58-4cbd-a1b5-0ec0e4effba7",
+    "block_uuid": "46db1b29-d5b9-4a9e-b4d2-d8d1f08d909e",
     "question": [
       {
         "handler": "action",
@@ -4926,7 +5336,7 @@
     ]
   },
   "124": {
-    "block_uuid": "a65460ba-5b30-4f0a-a6f4-59b28e1aa85a",
+    "block_uuid": "83b7b477-23a5-4f4a-a51f-409eac07a494",
     "question": [
       {
         "handler": "action",
@@ -4948,7 +5358,7 @@
     ]
   },
   "125": {
-    "block_uuid": "38716b8d-547e-4b7d-ac87-116789df5400",
+    "block_uuid": "27b1ae9c-afc5-4ce0-8042-d6c1e5ed7e7f",
     "question": [
       {
         "handler": "action",
@@ -4970,7 +5380,7 @@
     ]
   },
   "126": {
-    "block_uuid": "337e1aa3-a884-40b2-a5aa-b88b2b0d7549",
+    "block_uuid": "05449690-0005-40ec-bec2-3b6802ac23f5",
     "question": [
       {
         "handler": "action",

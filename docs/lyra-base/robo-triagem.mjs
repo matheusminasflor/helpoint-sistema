@@ -22,7 +22,7 @@ const FUNIL = { consumidor: 12904179, salao: 12927111, distribuidor: 12927087, a
 // separar isso"); BY.MF, que compra sozinho no site, vai para "Link enviado". A etapa se chama "Com atendente", e não pelo
 // nome de quem atende hoje, para não precisar mexer quando a pessoa mudar (dono, 2026-11-08).
 const ETAPA = { entradaContato: 107856359, consumidorLyra: 113891167, salaoLyra: 113891215, distribuidorLyra: 113891223, consumidorLink: 113891171, consumidorAtendente: 99501151, salaoAtendente: 99680859, distribuidorAtendente: 99680647, posVenda: 113891275, entradaAtendente: 113893475 };
-const CAMPO = { segmento: 4381514, cpfCnpj: 4381512, marca: 4381516, estadoAtuacao: 4381528, cidadeAtuacao: 4381530 };
+const CAMPO = { segmento: 4381514, cpfCnpj: 4381512, marca: 4381516, estadoAtuacao: 4381528, cidadeAtuacao: 4381530, whatsapp: 4381554 };
 
 const goto = (step, type = 'question') => ({ handler: 'goto', params: { type, step } });
 const fim = { handler: 'goto', params: { type: 'finish', step: 999 } };
@@ -224,6 +224,31 @@ blocos[0].question = escolha('Olá! ✨ Sou a Lyra, assistente virtual da Minasf
 // sem isso o lead do WhatsApp nasceria em Consumidor Final antes de escolher o segmento e entraria nos indicadores.
 // A lista tem de estar sozinha no seu passo (o Kommo recusa a gravação com 400), então no WhatsApp a saudação mora no 200.
 const paraEntrada = etapa(FUNIL.entrada, ETAPA.entradaContato);
+
+// No Instagram o Direct não traz o telefone (dono, 2026-11-08): depois do nome, a Lyra pede o WhatsApp e grava no campo
+// "WhatsApp" do lead. Obrigatório para Salão e Distribuidor (a atendente e o representante ligam); opcional para o
+// consumidor, que pode escrever "pular" e seguir pelo Direct. O número é conferido pela validação de telefone do Kommo.
+const telefoneValido = (step) => ({ handler: 'validations', params: { logic: 'and', result: [goto(step)],
+  conditions: [{ type: 'phone', operation: 'contains', client_value: '{{message_text}}', condition_value: '' }] } });
+const pedeWhatsapp = (inicio, depois, obrigatorio) => ({
+  [inicio]: { question: [msg(obrigatorio
+    ? 'Qual é o seu WhatsApp com DDD? A nossa equipe usa para continuar o seu atendimento 📱'
+    : 'Se quiser, informe o seu WhatsApp com DDD para a nossa equipe falar com você por lá também 📱 Para continuar só por aqui, escreva "pular".'),
+    esperaResposta(inicio + 1)] },
+  [inicio + 1]: { question: [
+    ...(obrigatorio ? [] : [contem(['pular', 'Pular', 'PULAR', 'não', 'Não', 'nao'], depois)]),
+    telefoneValido(inicio + 2),
+    msg(obrigatorio ? 'Por favor, informe o número com DDD, por exemplo: 31 99999-9999.'
+      : 'Por favor, informe o número com DDD, por exemplo: 31 99999-9999, ou escreva "pular".'),
+    esperaResposta(inicio + 1)] },
+  [inicio + 2]: { question: [campoLead(CAMPO.whatsapp, '{{message_text}}'), goto(depois)] },
+});
+if (!noWhatsapp) {
+  Object.assign(blocos, pedeWhatsapp(80, 14, false), pedeWhatsapp(83, 24, true), pedeWhatsapp(86, 34, true));
+  blocos[13] = { question: [nomeDoLead, goto(80)] };
+  blocos[23] = { question: [nomeDoLead, goto(83)] };
+  blocos[33] = { question: [nomeDoLead, goto(86)] };
+}
 if (noWhatsapp) {
   blocos[200] = { question: blocos[0].question, answer: blocos[0].answer };
   blocos[0] = { question: [paraEntrada, goto(200)] };

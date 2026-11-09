@@ -59,6 +59,13 @@ export function etapasDeTriagem(funis: { id: number; _embedded?: { statuses?: { 
 export const MOTIVO_LIMPEZA = 'limpeza de cadastro';
 export const ehLimpeza = (motivo: string | null | undefined) => !!motivo && normaliza(motivo) === MOTIVO_LIMPEZA;
 
+// O WhatsApp que a Lyra pede no Instagram (campo "WhatsApp" do lead, 2026-11-08): só os dígitos, de 10 a 13.
+export function whatsappDoLead(lead: LeadParaSegmento): string | null {
+  const campo = lead.custom_fields_values?.find((c) => normaliza(c.field_name ?? '') === 'whatsapp');
+  const d = String(campo?.values?.[0]?.value ?? '').replace(/\D/g, '');
+  return d.length >= 10 && d.length <= 13 ? d : null;
+}
+
 // O CPF/CNPJ do lead (campo "CPF/CNPJ", parte 4.3 do projeto): só os dígitos, e só com 11 (CPF) ou 14 (CNPJ). Outra
 // coisa escrita no campo não liga a venda a cliente nenhum, e ela vai para "Para corrigir" como sem CNPJ.
 export function documentoDoLead(lead: LeadParaSegmento): string | null {
