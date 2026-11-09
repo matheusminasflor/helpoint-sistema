@@ -56,7 +56,8 @@ select public.kommo_gravar_atendimento((select a from f),
     jsonb_build_object('lead_id', 1, 'nome', 'Salão da Ana', 'segmento', 'salao', 'funil', 'Salão de Beleza', 'etapa', 'Com atendente', 'responsavel', 10, 'link', 'k/1'),
     jsonb_build_object('lead_id', 2, 'nome', 'Distribuidora', 'segmento', 'distribuidor', 'funil', 'Distribuidor', 'responsavel', 20, 'link', 'k/2'),
     jsonb_build_object('lead_id', 3, 'nome', 'Fechado', 'segmento', 'consumidor', 'funil', 'Consumidor Final', 'fechado', true, 'responsavel', 10, 'link', 'k/3'),
-    jsonb_build_object('lead_id', 4, 'nome', 'Aluna', 'funil', 'ENAD', 'responsavel', 10, 'link', 'k/4')),
+    -- Fechado para não cair em "para responder" (escreveu em 04/11, e só a Lyra respondeu).
+    jsonb_build_object('lead_id', 4, 'nome', 'Aluna', 'funil', 'ENAD', 'fechado', true, 'responsavel', 10, 'link', 'k/4')),
   jsonb_build_array(
     jsonb_build_object('kommo_id', 10, 'nome', 'Thayná', 'email', 'thay.pessoal@gmail.test'),
     jsonb_build_object('kommo_id', 20, 'nome', 'Atendente 01', 'email', 'atendente@crmatend.test')),
