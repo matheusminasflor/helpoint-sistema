@@ -2,6 +2,9 @@
 // volta. Fica DESLIGADO. Antes do recesso, o admin (ou o Claude, a pedido) troca a data em VOLTA, gera de novo
 // (`node docs/lyra-base/robo-ferias.mjs`), cola no robô, desliga "Lyra · WhatsApp" e "Lyra · Instagram" e liga este.
 // Na volta, desfaz. A tarefa nasce para a atendente responder; a conversa fica em Entrada › Contato inicial.
+// No Kommo é o robô 158380 (2026-11-08): criar robô novo dava "Ups! Algo deu errado" (copiar, importar e a API
+// recusam), então ele nasceu da cópia vazia "BOT INICIAL MF copiar(1)". Está desligado e SEM gatilho: ao ligar,
+// pôr nele os gatilhos de "Lyra · WhatsApp" e "Lyra · Instagram" (mensagem recebida no WhatsApp e nos 3 Instagrams).
 import fs from 'node:fs';
 import { randomUUID } from 'node:crypto';
 
