@@ -400,6 +400,10 @@ história. Gatilho por etiqueta é do plano Pro.
 - 4.2: a limpeza não conta.
 - 4.3: Distribuidor pelo faturado do Forteplus, com a lista "Para corrigir".
 - 4.4: aviso de lead sem resposta, pela tarefa de 30 minutos da Lyra, contando só o expediente, os feriados e o recesso.
+  **No ar em 09/11** (20270212700100): a cada 10 minutos o `mkt-kommo-coletar` manda as tarefas abertas de prazo curto
+  (até 1 hora) dos últimos 4 dias; passados 30 minutos de expediente (relógio dos chamados, módulo comercial), dono,
+  admin e gestor comercial recebem "Lead sem resposta há 30 minutos", uma vez por tarefa. A atendente entra quando o
+  usuário do Kommo for ligado ao do Helpoint.
 - 4.5: canais, funil dos comentários e distribuidores por estado (proposta visual antes).
 - 4.6: aviso de 80% do limite de leads e lembrete do plano.
 - 4.7: números internos e duplicados.
