@@ -21,7 +21,10 @@ export interface AtendimentoDoCrm {
   todos: boolean;
   conversas: number; sem_resposta: number; respondidas: number; no_prazo: number; primeira_resposta: number | null;
   ganhas: number; perdidas: number;
-  lyra: { leads: number; mensagens: number } | null;
+  /** O digitado no Kommo e, para quem gere as carteiras, o faturado dos distribuidores. */
+  valor_ganho: number;
+  /** As mensagens que nenhuma pessoa digitou: a Lyra, o robô antigo, a resposta automática e a transmissão. */
+  robo: { leads: number; mensagens: number } | null;
   atendentes: LinhaDaAtendente[];
   sem_resposta_por_funil: { segmento: Segmento | null; funil: string | null; quantos: number }[];
   para_responder: LeadParaResponder[];

@@ -1,9 +1,9 @@
 // Comercial › Atendimento do CRM (projeto do Kommo, parte 4b, aprovada pelo dono em 2026-11-09,
 // https://claude.ai/artifact/XGuhzJXvTEze4kajUNcdvz): por atendente, quem escreveu pelo WhatsApp e pelo Instagram, quem
-// foi respondido por uma pessoa e em quanto tempo de expediente, o que virou venda e o que a Lyra fez sozinha. Embaixo,
+// foi respondido por uma pessoa e em quanto tempo de expediente, o que virou venda e o que o robô mandou sozinho. Embaixo,
 // as vendas com campo obrigatório vazio no Kommo, para a atendente completar (dono, mesmo dia).
 // Cor com significado: vermelho é o que espera alguém (sem resposta, acima da meta, campo vazio), verde o que está em
-// dia, lilás a Lyra. O dono, o admin e o gestor comercial veem todas; a atendente, só o dela (o banco recorta).
+// dia, lilás o robô. O dono, o admin e o gestor comercial veem todas; a atendente, só o dela (o banco recorta).
 import { AlertTriangle, Bot, CheckCircle2, Clock, ExternalLink, MessageSquare, ThumbsDown, ThumbsUp } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
@@ -16,6 +16,7 @@ import { dataHora, diaCurto } from '@/lib/dates';
 import {
   CAMPO_OBRIGATORIO, META_DA_PRIMEIRA_RESPOSTA, contagemDosCampos, dentroDaMeta, minutos, nomeDoFunil,
 } from '@/lib/crm-atendimento';
+import { formatBRL } from '@/lib/crm';
 import { cn } from '@/lib/utils';
 
 const pct = (parte: number, todo: number) => (todo ? `${Math.round((parte / todo) * 100)}%` : '—');
@@ -48,19 +49,21 @@ export default function ComercialAtendimentoCrm() {
           <KPIGrid lgCols={5}>
             <KPICard label="Conversas recebidas" value={data.conversas} color="blue" icon={MessageSquare} nota="leads que escreveram no período" />
             <KPICard label="Sem resposta de pessoa" value={data.sem_resposta} color={data.sem_resposta ? 'red' : 'green'} icon={AlertTriangle}
-              nota={`${pct(data.sem_resposta, data.conversas)} só falaram com a Lyra ou com ninguém`} notaRuim={data.sem_resposta > 0} />
+              nota={`${pct(data.sem_resposta, data.conversas)} só falaram com o robô ou com ninguém`} notaRuim={data.sem_resposta > 0} />
             <KPICard label="1ª resposta (expediente)" value={minutos(data.primeira_resposta)} icon={Clock}
               color={data.primeira_resposta === null ? 'grey' : dentroDaMeta(data.primeira_resposta) ? 'green' : 'red'}
               nota={`meta: até ${META_DA_PRIMEIRA_RESPOSTA} min · ${data.no_prazo} de ${data.respondidas} no prazo`}
               notaRuim={data.primeira_resposta !== null && !dentroDaMeta(data.primeira_resposta)} />
-            <KPICard label="Vendas ganhas" value={data.ganhas} color="green" icon={ThumbsUp} />
+            <KPICard label="Vendas ganhas" value={data.ganhas} color="green" icon={ThumbsUp}
+              nota={`${formatBRL(data.valor_ganho)}${data.todos ? ' · digitado + faturado dos distribuidores' : ' digitados no Kommo'}`} />
             <KPICard label="Vendas perdidas" value={data.perdidas} color="orange" icon={ThumbsDown} nota="a limpeza de cadastro não entra" />
           </KPIGrid>
 
-          {data.lyra && (
+          {data.robo && (
             <p className="flex items-center gap-2 rounded-lg border border-[hsl(var(--monday-purple))]/40 bg-[hsl(var(--monday-purple))]/10 px-4 py-3 text-sm">
               <Bot className="h-4 w-4 text-[hsl(var(--monday-purple))]" aria-hidden="true" />
-              A Lyra atendeu <strong>{data.lyra.leads} leads</strong>, com <strong>{data.lyra.mensagens} mensagens</strong>.
+              O robô do Kommo mandou <strong>{data.robo.mensagens} mensagens</strong> para <strong>{data.robo.leads} leads</strong>: a Lyra, o
+              robô antigo, as respostas automáticas e as transmissões (o Kommo não separa um do outro).
             </p>
           )}
 
@@ -94,18 +97,18 @@ export default function ComercialAtendimentoCrm() {
                       <td className="py-2 pl-3 text-right tabular-nums">{a.perdidas}</td>
                     </tr>
                   ))}
-                  {data.lyra && (
+                  {data.robo && (
                     <tr className="text-[hsl(var(--monday-purple))]">
-                      <td className="py-2 pr-3 font-semibold">Lyra (robô)</td>
-                      <td className="py-2 px-3 text-right tabular-nums">{data.lyra.leads}</td>
-                      <td className="py-2 px-3 text-right tabular-nums">{data.lyra.mensagens}</td>
+                      <td className="py-2 pr-3 font-semibold">Robô e mensagens automáticas</td>
+                      <td className="py-2 px-3 text-right tabular-nums">{data.robo.leads}</td>
+                      <td className="py-2 px-3 text-right tabular-nums">{data.robo.mensagens}</td>
                       <td className="py-2 px-3 text-right">na hora</td>
                       <td className="py-2 px-3 text-right">—</td>
                       <td className="py-2 px-3 text-right">—</td>
                       <td className="py-2 pl-3 text-right">—</td>
                     </tr>
                   )}
-                  {!data.atendentes.length && !data.lyra && (
+                  {!data.atendentes.length && !data.robo && (
                     <tr><td colSpan={7} className="py-4 text-muted-foreground">Seu usuário do Kommo ainda não está ligado ao seu login. Peça ao administrador.</td></tr>
                   )}
                 </tbody>
@@ -135,7 +138,7 @@ export default function ComercialAtendimentoCrm() {
 
             <Card className="p-4 sm:p-6">
               <h2 className="text-base font-bold mb-1">Para responder agora <span className="text-status-danger tabular-nums">· {data.para_responder.length} leads</span></h2>
-              <p className="text-xs text-muted-foreground mb-3">A última mensagem é do cliente. Os mais antigos primeiro; cada nome abre o lead no Kommo.</p>
+              <p className="text-xs text-muted-foreground mb-3">Nos últimos 7 dias, o cliente escreveu e nenhuma pessoa respondeu depois. Os mais antigos primeiro; cada nome abre o lead no Kommo.</p>
               {data.para_responder.length ? (
                 <ul className="divide-y text-sm max-h-96 overflow-y-auto">
                   {data.para_responder.map((l) => (
