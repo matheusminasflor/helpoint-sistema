@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   farolDaAtividade, faseAtual, hojeNaJanela, iniciais, janelaDoCronograma, mesesDaJanela, numerarCronograma,
-  andamentoDaSituacao, diasAlemDoTermino, percentualMedio, posicaoNaJanela, resumoDosProjetos, seloDoConjunto, seloDoProjeto, setoresSemPlano,
+  andamentoDaSituacao, diasAlemDoTermino, entreguesNaSemana, percentualMedio, posicaoNaJanela, resumoDosProjetos, seloDoConjunto, seloDoProjeto, setoresSemPlano,
   situacaoDaTarefa, type AtividadeBase,
 } from './projetos';
 
@@ -123,6 +123,12 @@ describe('projetos nos Indicadores (rodada 2 da TI)', () => {
   it('o resumo da planilha: em andamento, pendentes e quantos passaram do término', () => {
     const lista = [p('active', '2026-08-31'), p('active', '2026-10-26'), p('planned', '2026-12-20'),
       p('planned', '2026-10-30'), p('planned', '2026-10-20'), p('done', '2026-09-18'), p('cancelled', '2026-09-01')];
-    expect(resumoDosProjetos(lista, hoje)).toEqual({ emAndamento: 2, pendentes: 3, alemDoTermino: 4 });
+    expect(resumoDosProjetos(lista, hoje)).toEqual({ emAndamento: 2, pendentes: 3, alemDoTermino: 4, entregues: 0 });
+  });
+
+  it('entregue na semana: concluído com término nos últimos 7 dias, hoje incluso, o mais recente primeiro', () => {
+    const lista = [p('done', '2026-10-27'), p('done', '2026-10-26'), p('done', '2026-11-02'), p('done', '2026-11-03'),
+      p('done', null), p('active', '2026-11-01'), p('cancelled', '2026-11-01')];
+    expect(entreguesNaSemana(lista, hoje).map((x) => x.due_date)).toEqual(['2026-11-02', '2026-10-27']);
   });
 });

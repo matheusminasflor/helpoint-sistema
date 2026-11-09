@@ -1,3 +1,4 @@
+import { fromLocalISODate, toLocalISODate } from './dates';
 // As contas do projeto por setor (docs/plano-projetos.md) — puras, para a tela e o teste falarem a
 // mesma língua. O banco guarda; aqui se numera (1.1, 1.2…, como na planilha do dono), se acende o farol
 // e se desenha a barra do tempo.
@@ -220,10 +221,23 @@ export function diasAlemDoTermino(p: ProjetoNoIndicador, hojeISO: string): numbe
   return Math.round((Date.parse(`${hojeISO}T12:00:00`) - Date.parse(`${p.due_date}T12:00:00`)) / 86_400_000);
 }
 
+/**
+ * Entregue na semana (dono, 2026-11-08): concluído com o término nos últimos 7 dias, hoje incluso. O término do
+ * projeto concluído é o dia da entrega. Os mais recentes primeiro.
+ */
+export function entreguesNaSemana<P extends ProjetoNoIndicador>(lista: P[], hojeISO: string): P[] {
+  const d = fromLocalISODate(hojeISO);
+  const inicio = toLocalISODate(new Date(d.getFullYear(), d.getMonth(), d.getDate() - 6));
+  return lista
+    .filter((p) => p.status === 'done' && !!p.due_date && p.due_date >= inicio && p.due_date <= hojeISO)
+    .sort((a, b) => (b.due_date ?? '').localeCompare(a.due_date ?? ''));
+}
+
 export function resumoDosProjetos(lista: ProjetoNoIndicador[], hojeISO: string) {
   return {
     emAndamento: lista.filter((p) => p.status === 'active').length,
     pendentes: lista.filter((p) => p.status === 'planned').length,
     alemDoTermino: lista.filter((p) => diasAlemDoTermino(p, hojeISO) > 0).length,
+    entregues: entreguesNaSemana(lista, hojeISO).length,
   };
 }

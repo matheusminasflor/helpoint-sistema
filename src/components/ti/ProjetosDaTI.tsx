@@ -1,15 +1,16 @@
 // TI › Indicadores › Projetos (dono, 2026-11-02, rodada 2): a parte "Demandas — projetos em andamento" da planilha da
 // reunião de segunda. Lê o módulo Projetos (os projetos em que a TI participa): em andamento, pendentes e os que
 // passaram do término, em vermelho primeiro (Von Restorff); a barra é o % das atividades (gradiente de objetivo).
-// É retrato de hoje, não do período.
+// É retrato de hoje, não do período. Embaixo, em verde, o que foi entregue nos últimos 7 dias (dono, 2026-11-08): concluído
+// sumia do cartão, e a reunião de segunda mostra o desempenho da semana.
 import { Link } from 'react-router-dom';
-import { FolderKanban } from 'lucide-react';
+import { CheckCircle2, FolderKanban } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { useProjetosDoSetor } from '@/hooks/useProjetos';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { diaCurto, todayISO } from '@/lib/dates';
-import { diasAlemDoTermino, resumoDosProjetos } from '@/lib/projetos';
+import { diasAlemDoTermino, entreguesNaSemana, resumoDosProjetos } from '@/lib/projetos';
 import { cn } from '@/lib/utils';
 
 const STATUS: Record<string, { texto: string; classe: string }> = {
@@ -26,6 +27,7 @@ export function ProjetosDaTI({ id = 'projetos-da-ti' }: { id?: string }) {
     .map((p) => ({ p, atraso: diasAlemDoTermino(p, hoje) }))
     .sort((a, b) => b.atraso - a.atraso || (a.p.due_date ?? '9999').localeCompare(b.p.due_date ?? '9999'));
   const resumo = resumoDosProjetos(projetos, hoje);
+  const entregues = entreguesNaSemana(projetos, hoje);
 
   return (
     <Card id={id} className="p-5 space-y-4 scroll-mt-20">
@@ -37,14 +39,15 @@ export function ProjetosDaTI({ id = 'projetos-da-ti' }: { id?: string }) {
         <Link to={tenantPath('/projetos')} className="text-xs text-primary hover:underline">Abrir Projetos →</Link>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { v: resumo.emAndamento, r: 'Em andamento' },
           { v: resumo.pendentes, r: 'Pendentes' },
           { v: resumo.alemDoTermino, r: 'Passaram do término', ruim: resumo.alemDoTermino > 0 },
+          { v: resumo.entregues, r: 'Entregues na semana', bom: resumo.entregues > 0 },
         ].map((c) => (
-          <div key={c.r} className={cn('rounded-lg border p-3 border-t-4', c.ruim ? 'border-t-status-danger' : 'border-t-border')}>
-            <div className={cn('text-2xl font-bold font-mono tabular-nums', c.ruim ? 'text-status-danger' : 'text-foreground')}>{c.v}</div>
+          <div key={c.r} className={cn('rounded-lg border p-3 border-t-4', c.ruim ? 'border-t-status-danger' : c.bom ? 'border-t-status-success' : 'border-t-border')}>
+            <div className={cn('text-2xl font-bold font-mono tabular-nums', c.ruim ? 'text-status-danger' : c.bom ? 'text-status-success' : 'text-foreground')}>{c.v}</div>
             <div className="text-[12px] uppercase tracking-wider text-muted-foreground">{c.r}</div>
           </div>
         ))}
@@ -71,6 +74,21 @@ export function ProjetosDaTI({ id = 'projetos-da-ti' }: { id?: string }) {
             </li>
           ))}
         </ul>
+      )}
+
+      {entregues.length > 0 && (
+        <div className="space-y-1">
+          <h4 className="text-[12px] uppercase tracking-wider text-status-success font-semibold">Entregues na semana</h4>
+          <ul className="divide-y">
+            {entregues.map((p) => (
+              <li key={p.id} className="flex items-center gap-3 py-2 text-sm">
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-status-success" aria-hidden="true" />
+                <Link to={tenantPath(`/projetos/${p.id}`)} className="font-medium hover:underline min-w-0 flex-1 break-words">{p.name}</Link>
+                <span className="text-xs text-muted-foreground whitespace-nowrap">entregue {diaCurto(p.due_date!)}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
     </Card>
   );
