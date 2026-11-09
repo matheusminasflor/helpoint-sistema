@@ -243,6 +243,21 @@ const pedeWhatsapp = (inicio, depois, obrigatorio) => ({
     esperaResposta(inicio + 1)] },
   [inicio + 2]: { question: [campoLead(CAMPO.whatsapp, '{{message_text}}'), goto(depois)] },
 });
+// Mensagem que o Kommo não consegue ler (dono, teste de 09/11): o Instagram manda, logo depois do número de telefone, uma
+// mensagem "could not be displayed due to API restrictions". Ela respondeu sozinha a "O seu salão tem CNPJ?", foi gravada
+// como CNPJ, e o toque em "Tenho CNPJ" virou o pedido. Onde a Lyra grava uma resposta, mensagem ilegível volta a esperar.
+const ILEGIVEL = ['could not be displayed', 'API restrictions', 'restrições do Instagram'];
+const ignoraIlegivel = (numero, esperar) => { blocos[numero].question.unshift(contem(ILEGIVEL, esperar)); };
+ignoraIlegivel(26, 25); // CNPJ do salão
+ignoraIlegivel(36, 35); // CNPJ do distribuidor
+ignoraIlegivel(29, 28); // pedido do salão
+ignoraIlegivel(9, 19); // pedido do consumidor
+// O "senão" de "tem CNPJ?" (quem digitou o número): se for ilegível, espera a resposta de verdade e decide por ela.
+ignoraIlegivel(61, 70);
+blocos[70] = { question: [esperaResposta(71)] };
+blocos[71] = { question: [contem(ILEGIVEL, 70), contem(['Não tenho', 'não', 'Não', 'nao', 'autônoma', 'autonoma'], 65),
+  contem(['Tenho', 'tenho', 'sim', 'Sim'], 60), goto(61)] };
+
 if (!noWhatsapp) {
   Object.assign(blocos, pedeWhatsapp(80, 14, false), pedeWhatsapp(83, 24, true), pedeWhatsapp(86, 34, true));
   blocos[13] = { question: [nomeDoLead, goto(80)] };
