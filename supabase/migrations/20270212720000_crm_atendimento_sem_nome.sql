@@ -72,8 +72,8 @@ language sql stable security definer set search_path = public as $$
     select m.*,
            not m.entrou and m.autor = 0 and m.quando >= public.kommo_lyra_no_ar() and (
              date_trunc('minute', m.quando) in (select minuto from transmissao)
-             or public.kommo_etapa_em(p_tenant, m.lead_id, m.quando + interval '5 seconds') ilike 'com a lyra%'
-             or public.kommo_etapa_em(p_tenant, m.lead_id, m.quando - interval '1 minute') ilike 'com a lyra%'
+             or coalesce(public.kommo_etapa_em(p_tenant, m.lead_id, m.quando + interval '5 seconds'), '') ilike 'com a lyra%'
+             or coalesce(public.kommo_etapa_em(p_tenant, m.lead_id, m.quando - interval '1 minute'), '') ilike 'com a lyra%'
            ) as robo
       from m
   )
