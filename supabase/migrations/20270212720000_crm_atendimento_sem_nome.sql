@@ -44,15 +44,15 @@ revoke all on function public.kommo_gravar_etapas(uuid, jsonb) from public, anon
 grant execute on function public.kommo_gravar_etapas(uuid, jsonb) to service_role;
 
 -- A Lyra entrou no ar no WhatsApp em 08/11/2026 às 18h56 (Brasília): antes disso não havia robô respondendo.
-create function public.kommo_lyra_no_ar() returns timestamptz language sql immutable as $ select timestamptz '2026-11-08 18:56-03' $;
+create function public.kommo_lyra_no_ar() returns timestamptz language sql immutable as $$ select timestamptz '2026-11-08 18:56-03' $$;
 revoke all on function public.kommo_lyra_no_ar() from public, anon;
 
 -- A etapa do lead num instante: a última troca até ali.
 create function public.kommo_etapa_em(p_tenant uuid, p_lead bigint, p_em timestamptz)
-returns text language sql stable security definer set search_path = public as $
+returns text language sql stable security definer set search_path = public as $$
   select e.etapa from public.kommo_etapas e
    where e.tenant_id = p_tenant and e.lead_id = p_lead and e.quando <= p_em order by e.quando desc limit 1;
-$;
+$$;
 revoke all on function public.kommo_etapa_em(uuid, bigint, timestamptz) from public, anon, authenticated;
 
 -- As mensagens desde p_desde com quem de fato mandou: `quem` é a pessoa do Kommo (0 = robô) e `sem_nome` marca a
