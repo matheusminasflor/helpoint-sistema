@@ -103,7 +103,7 @@ export default function ComercialAtendimentoCrm() {
                 <div key={id} className="grid grid-cols-[8.5rem_1fr_3rem] items-center gap-3">
                   <dt><Nome id={id}>{nome}</Nome></dt>
                   <dd className="h-5 rounded bg-muted" aria-hidden="true">
-                    <div className={cn('h-5 rounded', cor)} style={{ width: `${data.conversas ? Math.max(2, (n / data.conversas) * 100) : 0}%` }} />
+                    <div className={cn('h-5 rounded', cor)} style={{ width: `${data.conversas ? (n ? Math.max(2, (n / data.conversas) * 100) : 0) : 0}%` }} />
                   </dd>
                   <dd className="text-right font-bold tabular-nums">{n}</dd>
                 </div>
@@ -213,8 +213,8 @@ export default function ComercialAtendimentoCrm() {
                   {data.todos && (
                     <tr className="text-[hsl(var(--monday-purple))]">
                       <td className="py-2 pr-3 font-semibold"><Nome id="crm.lyra">Lyra</Nome></td>
-                      <td className="py-2 px-2 text-right tabular-nums">{data.robo ? data.so_lyra : '—'}</td>
-                      <td className="py-2 px-2 text-right">{data.robo ? 'na hora' : '—'}</td>
+                      <td className="py-2 px-2 text-right tabular-nums">{data.robo?.mensagens ? data.so_lyra : '—'}</td>
+                      <td className="py-2 px-2 text-right">{data.robo?.mensagens ? 'na hora' : '—'}</td>
                       <td className="py-2 px-2 text-right">—</td>
                       <td className="py-2 px-2 text-right">—</td>
                       <td className="py-2 px-2 text-right">—</td>
@@ -230,7 +230,7 @@ export default function ComercialAtendimentoCrm() {
             </div>
             {data.todos && (
               <p className="mt-3 text-xs text-muted-foreground">
-                {data.robo
+                {data.robo?.mensagens
                   ? `A Lyra mandou ${data.robo.mensagens} mensagens para ${data.robo.leads} leads no período.`
                   : `A Lyra entrou no ar em ${LYRA_NO_AR}: antes disso não havia robô, e toda resposta é da atendente.`}
               </p>
