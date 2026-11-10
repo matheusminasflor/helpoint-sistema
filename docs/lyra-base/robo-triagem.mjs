@@ -22,7 +22,11 @@ const FUNIL = { consumidor: 12904179, salao: 12927111, distribuidor: 12927087, a
 // separar isso"); BY.MF, que compra sozinho no site, vai para "Link enviado". A etapa se chama "Com atendente", e não pelo
 // nome de quem atende hoje, para não precisar mexer quando a pessoa mudar (dono, 2026-11-08).
 const ETAPA = { entradaContato: 107856359, consumidorLyra: 113891167, salaoLyra: 113891215, distribuidorLyra: 113891223, consumidorLink: 113891171, consumidorAtendente: 99501151, salaoAtendente: 99680859, distribuidorAtendente: 99680647, posVenda: 113891275, entradaAtendente: 113893475 };
-const CAMPO = { segmento: 4381514, cpfCnpj: 4381512, marca: 4381516, estadoAtuacao: 4381528, cidadeAtuacao: 4381530, whatsapp: 4381554 };
+const CAMPO = { segmento: 4381514, cpfCnpj: 4381512, marca: 4381516, estadoAtuacao: 4381528, cidadeAtuacao: 4381530, whatsapp: 4381554,
+  linhaInteresse: 4381736, investimento: 4381738 }; // os dois últimos criados em 2026-11-10 (listas)
+// Catálogo em PDF por segmento (dono, 2026-11-10): uso em casa recebe o da Minasflor; salão, Minasflor + MF.PRO.
+// ponytail: links provisórios até o dono mandar as pastas do Drive.
+const CATALOGO = { consumidor: 'minasflor.com.br', salao: 'minasflor.com.br' };
 
 const goto = (step, type = 'question') => ({ handler: 'goto', params: { type, step } });
 const fim = { handler: 'goto', params: { type: 'finish', step: 999 } };
@@ -61,19 +65,19 @@ const escolha = (body, linhas, instagram = {}) => {
 // não aceita (o Kommo recusa a gravação com 400).
 const opcao = (linhaDaLista, params) => [{ value: linhaDaLista.id, params }, { value: linhaDaLista.curto, params }];
 const esperaResposta = (step) => ({ handler: 'waits', params: { logic: 'or', conditions: [{ event: { action: 'received', source: 'message' }, action: { type: 'question', step } }] } });
-// Tarefa para quem cuida do lead. Prazo padrão de 30 minutos ("within-deadline" vazio virava 5 minutos; o certo é
+// Tarefa para quem cuida do lead. Prazo padrão de 45 minutos, a meta do relatório e do aviso (dono, 2026-11-10) ("within-deadline" vazio virava 5 minutos; o certo é
 // "custom"); `dias` troca o prazo por dias.
 const tarefa = (texto, { dias } = {}) => ({
   handler: 'trigger',
   params: { trigger: { delay: 0, action: 'create_task', segments: [''], settings: {
     task_text: texto, task_type: '1', 'deadline-days': dias ? String(dias) : '', 'deadline-hours': '', task_type_name: 'Acompanhar',
-    'within-deadline': 'custom', 'deadline-minutes': dias ? '' : '30', responsible_user: 'current' },
+    'within-deadline': 'custom', 'deadline-minutes': dias ? '' : '45', responsible_user: 'current' },
   date_exec: 0, handler_code: 'amocrm', execution_condition: { id: 45, name: 'execute_trigger' } }, element_type: 'lead' },
 });
 
 // Os endereços vão sem "https://": o WhatsApp e o Instagram ainda fazem o link, e o Kommo só troca por kommo.cc (o
 // encurtador dele, sem opção de desligar) o que começa com https.
-// Regras do dono (2026-11-08): nenhuma mensagem promete prazo ao cliente; o prazo de 30 minutos fica só na tarefa.
+// Regras do dono (2026-11-08): nenhuma mensagem promete prazo ao cliente; o prazo de 45 minutos fica só na tarefa.
 // Tom profissional, sem gíria, com um emoji por mensagem (o dono achou "frio" sem nenhum), e o coração é azul (💙).
 const REGIOES = {
   Sudeste: [['MG', 'Minas Gerais'], ['SP', 'São Paulo'], ['RJ', 'Rio de Janeiro'], ['ES', 'Espírito Santo']],
@@ -86,7 +90,10 @@ const REGIOES = {
 const LINHA_REGIAO = Object.fromEntries(Object.keys(REGIOES).map((r) => [r, linha(r)]));
 const LINHA_UF = Object.fromEntries(Object.values(REGIOES).flat().map(([uf, nome]) => [uf, linha(`${uf} · ${nome}`, uf)]));
 const UF_BLOCO = Object.fromEntries(Object.values(REGIOES).flat().map(([uf], i) => [uf, 100 + i]));
-const OPCOES = Object.fromEntries(['Uso em casa', 'Tenho salão', 'Revendo/distribuo', 'Já sou cliente'].map((t) => [t, linha(t)]));
+// No WhatsApp os nomes são os da conversa curta (dono, 2026-11-10); a chave continua a mesma nos dois canais.
+const NOME_NO_WHATSAPP = { 'Tenho salão': 'Para o salão', 'Revendo/distribuo': 'Revender' };
+const OPCOES = Object.fromEntries(['Uso em casa', 'Tenho salão', 'Revendo/distribuo', 'Já sou cliente']
+  .map((t) => [t, linha(noWhatsapp ? NOME_NO_WHATSAPP[t] ?? t : t)]));
 // Só o toque conta. Quem escreve cai no bloco 53, que procura "atendente" no texto; o resto recebe as opções de novo.
 const respostaDosBotoes = () => [{
   handler: 'buttons',
@@ -113,10 +120,10 @@ const blocos = {
     contem(['cliente', 'Cliente', 'CLIENTE', 'pedido', 'Pedido', 'troca', 'Troca', 'entrega', 'Entrega', 'rastreio', 'Rastreio'], 40), goto(50)] },
   51: { question: [etapa(FUNIL.entrada, ETAPA.entradaAtendente), etiqueta('pediu-atendente'), msg(TRANSFERE), tarefa('Cliente pediu atendente antes da triagem: responder e preencher o Segmento.'), esperaResposta(55)] },
   // Depois do segmento: escreveu o produto em vez de escolher a marca → passa para uma pessoa.
-  52: { question: [etapa(FUNIL.consumidor, ETAPA.consumidorAtendente), msg('Obrigada pela informação. Vou transferir o seu atendimento para a nossa equipe, que vai te ajudar a escolher os produtos. 💙'), tarefa('Consumidor escreveu o que quer em vez de escolher a marca: responder pela conversa (até 30 minutos).'), esperaResposta(55)] },
+  52: { question: [etapa(FUNIL.consumidor, ETAPA.consumidorAtendente), msg('Obrigada pela informação. Vou transferir o seu atendimento para a nossa equipe, que vai te ajudar a escolher os produtos. 💙'), tarefa('Consumidor escreveu o que quer em vez de escolher a marca: responder pela conversa (até 45 minutos).'), esperaResposta(55)] },
   // Regra do dono (2026-11-08): a conversa não morre no fim do caminho. Quem escreve de novo é passado para uma pessoa:
   // no BY.MF ninguém foi acionado ainda, então nasce a tarefa; nos outros finais a tarefa já existe e só se avisa.
-  54: { question: [etapa(FUNIL.consumidor, ETAPA.consumidorAtendente), msg(TRANSFERE), tarefa('Cliente da BY.MF pediu ajuda depois do link da loja: responder pela conversa (até 30 minutos).'), fim] },
+  54: { question: [etapa(FUNIL.consumidor, ETAPA.consumidorAtendente), msg(TRANSFERE), tarefa('Cliente da BY.MF pediu ajuda depois do link da loja: responder pela conversa (até 45 minutos).'), fim] },
   55: { question: [msg('Mensagem recebida. A nossa equipe já está com o seu atendimento e responde por aqui. 💙'), fim] },
 
   // Uso em casa.
@@ -147,7 +154,7 @@ const blocos = {
   16: { question: [campoLead(CAMPO.marca, 'Minasflor'), msg('Você pode conhecer toda a linha Minasflor no nosso site: minasflor.com.br'), goto(18)] },
   18: { question: [msg('Por favor, informe os produtos e as quantidades que deseja. A nossa equipe vai preparar um link de pagamento exclusivo para você, com Pix ou cartão 📝'), goto(19)] },
   19: { question: [esperaResposta(9)] },
-  9: { question: [etapa(FUNIL.consumidor, ETAPA.consumidorAtendente), msg('Pedido anotado ✅ A nossa equipe vai entrar em contato por aqui para finalizar a sua compra. 💙'), tarefa('Consumidor pediu Minasflor pela Lyra: montar o link de pagamento da Yampi com os produtos da conversa (até 30 minutos).'), esperaResposta(55)] },
+  9: { question: [etapa(FUNIL.consumidor, ETAPA.consumidorAtendente), msg('Pedido anotado ✅ A nossa equipe vai entrar em contato por aqui para finalizar a sua compra. 💙'), tarefa('Consumidor pediu Minasflor pela Lyra: montar o link de pagamento da Yampi com os produtos da conversa (até 45 minutos).'), esperaResposta(55)] },
 
   // Salão.
   20: { question: [etapa(FUNIL.salao, ETAPA.salaoLyra), campoLead(CAMPO.segmento, 'Salão'), etiqueta('salão'), goto(21)] },
@@ -168,7 +175,7 @@ const blocos = {
   61: { question: [campoLead(CAMPO.cpfCnpj, '{{message_text}}'), goto(27)] },
   27: { question: [msg('Obrigada! Você pode conhecer todos os nossos produtos em minasflor.com.br\n\nDepois é só me dizer quais produtos e quantidades deseja, que eu deixo o seu pedido anotado 📝'), goto(28)] },
   28: { question: [esperaResposta(29)] },
-  29: { question: [etapa(FUNIL.salao, ETAPA.salaoAtendente), msg('Pedido anotado ✅ A nossa equipe vai entrar em contato por aqui para finalizar o seu pedido. 💙'), tarefa('Salão (CNPJ no lead) fez o pedido pela Lyra: montar o pedido com os produtos da conversa (até 30 minutos).'), esperaResposta(55)] },
+  29: { question: [etapa(FUNIL.salao, ETAPA.salaoAtendente), msg('Pedido anotado ✅ A nossa equipe vai entrar em contato por aqui para finalizar o seu pedido. 💙'), tarefa('Salão (CNPJ no lead) fez o pedido pela Lyra: montar o pedido com os produtos da conversa (até 45 minutos).'), esperaResposta(55)] },
   65: { question: [etapa(FUNIL.consumidor, ETAPA.consumidorLyra), campoLead(CAMPO.segmento, 'Consumidor final'), etiqueta('consumidor-final'), etiqueta('profissional-sem-cnpj'),
     msg('Sem problemas. As condições profissionais são exclusivas para salões com CNPJ, mas temos ótimas opções para uso em casa 😊'), goto(14)] },
 
@@ -208,7 +215,7 @@ const blocos = {
   66: { question: [campoLead(CAMPO.cidadeAtuacao, '{{message_text}}'), goto(39)] },
   // Pasta "Na ponta dos dedos" do Drive (dono, 2026-11-08): catálogos, fotos e vídeos, mockups e campanhas que o
   // distribuidor usa para divulgar nas redes. Link e não PDF: o Direct do Instagram não aceita arquivo e o Drive troca sozinho.
-  39: { question: [etapa(FUNIL.distribuidor, ETAPA.distribuidorAtendente), msg('Obrigada pelas informações. Um representante da nossa equipe vai entrar em contato com você. 💙\n\nEnquanto isso, deixamos à sua disposição o nosso material para distribuidores: catálogos, fotos e vídeos dos produtos, mockups e campanhas prontas para divulgar nas redes sociais 📲\ndrive.google.com/drive/folders/1nAI-QmLyxgK_T5eBHvRumMsnFIufmSaR'), tarefa('Distribuidor triado pela Lyra (CNPJ, estado e cidade de atuação no lead): encaminhar ao representante (até 30 minutos).'), esperaResposta(55)] },
+  39: { question: [etapa(FUNIL.distribuidor, ETAPA.distribuidorAtendente), msg('Obrigada pelas informações. Um representante da nossa equipe vai entrar em contato com você. 💙\n\nEnquanto isso, deixamos à sua disposição o nosso material para distribuidores: catálogos, fotos e vídeos dos produtos, mockups e campanhas prontas para divulgar nas redes sociais 📲\ndrive.google.com/drive/folders/1nAI-QmLyxgK_T5eBHvRumMsnFIufmSaR'), tarefa('Distribuidor triado pela Lyra (CNPJ, estado e cidade de atuação no lead): encaminhar ao representante (até 45 minutos).'), esperaResposta(55)] },
 
   // Já é cliente: pós-venda, fora dos indicadores.
   40: { question: [etapa(FUNIL.atendimento, ETAPA.posVenda), etiqueta('pos-venda'), msg('Por favor, informe o número do pedido ou descreva o que aconteceu 📦 A nossa equipe vai dar continuidade ao seu atendimento por aqui. 💙'), tarefa('Pós-venda: cliente pediu ajuda com pedido, troca ou entrega.'), esperaResposta(55)] },
@@ -216,7 +223,7 @@ const blocos = {
 
 // Bloco 0: a saudação, em lista.
 const TRES = [OPCOES['Uso em casa'], OPCOES['Tenho salão'], OPCOES['Revendo/distribuo']];
-blocos[0].question = escolha('Olá! ✨ Sou a Lyra, assistente virtual da Minasflor, e atendo as marcas BY.MF, Minasflor e MF.PRO. Para direcionar o seu atendimento, {toque} para selecionar o seu perfil. Se preferir falar com a nossa equipe, é só escrever "atendente".', Object.values(OPCOES), {
+blocos[0].question = escolha('Olá! ✨ Sou a Lyra, da Minasflor. Como posso te ajudar? Para responder, {toque}. Se preferir falar com a nossa equipe, é só escrever "atendente".', Object.values(OPCOES), {
   // Cada Instagram é de uma marca (dono, 2026-11-08): a saudação ali não cita marca nenhuma.
   texto: 'Olá! ✨ Sou a Lyra, assistente virtual. Para direcionar o seu atendimento, toque em uma das opções. Se você já é cliente, é só escrever "cliente"; para falar com a nossa equipe, escreva "atendente".', linhas: TRES });
 
@@ -253,10 +260,82 @@ ignoraIlegivel(36, 35); // CNPJ do distribuidor
 ignoraIlegivel(29, 28); // pedido do salão
 ignoraIlegivel(9, 19); // pedido do consumidor
 // O "senão" de "tem CNPJ?" (quem digitou o número): se for ilegível, espera a resposta de verdade e decide por ela.
-ignoraIlegivel(61, 70);
-blocos[70] = { question: [esperaResposta(71)] };
-blocos[71] = { question: [contem(ILEGIVEL, 70), contem(['Não tenho', 'não', 'Não', 'nao', 'autônoma', 'autonoma'], 65),
+// Blocos 90 e 91: o 70 e o 71 são as listas de estado do Sudeste e do Sul (a primeira versão disto as apagava).
+ignoraIlegivel(61, 90);
+blocos[90] = { question: [esperaResposta(91)] };
+blocos[91] = { question: [contem(ILEGIVEL, 90), contem(['Não tenho', 'não', 'Não', 'nao', 'autônoma', 'autonoma'], 65),
   contem(['Tenho', 'tenho', 'sim', 'Sim'], 60), goto(61)] };
+
+// A Lyra curta no WhatsApp (dono, 2026-11-10, proposta https://claude.ai/artifact/Q3Le2UgfJANCSo5TpZxR2z): "o cliente não
+// quer responder pergunta demais". Sai o nome (o WhatsApp já traz), a marca (a BY.MF fica no Instagram dela) e a cidade
+// do distribuidor; a Lyra pergunta a linha ou manda o catálogo; o CNPJ do salão vem depois do pedido; o distribuidor
+// informa o investimento inicial. O Instagram segue como estava.
+if (noWhatsapp) {
+  // Parou de responder por 45 minutos (2700 s) numa pergunta escrita: passa para uma pessoa, com tarefa. Nas listas o
+  // Kommo não deixa esperar com relógio, então ali vale o aviso de 45 minutos do Helpoint.
+  const esperaOuParou = (step, parou) => ({ handler: 'waits', params: { logic: 'or', conditions: [
+    { event: { action: 'received', source: 'message' }, action: { type: 'question', step } },
+    { event: { action: 'ended', source: 'timer', delay: 2700 }, action: { type: 'question', step: parou } }] } });
+  const PAROU = { consumidor: 360, salao: 361, distribuidor: 362 };
+  const parou = (funil, etapaAtendente) => ({ question: [etapa(funil, etapaAtendente),
+    tarefa('Cliente parou no meio da conversa com a Lyra: retomar pela conversa.'), fim] });
+  blocos[PAROU.consumidor] = parou(FUNIL.consumidor, ETAPA.consumidorAtendente);
+  blocos[PAROU.salao] = parou(FUNIL.salao, ETAPA.salaoAtendente);
+  blocos[PAROU.distribuidor] = parou(FUNIL.distribuidor, ETAPA.distribuidorAtendente);
+
+  // Linhas agrupadas por necessidade (dono, 2026-11-10): a Minasflor tem 17 linhas e a lista mostra até 10.
+  const LINHAS = ['Tratamento', 'Reconstrução', 'Liso e redução de volume', 'Loiros', 'Coloração', 'Finalizadores', 'Ainda não sei'].map((t) => linha(t));
+  const VER_CATALOGO = linha('Ver o catálogo');
+  // Uma pergunta de linha por segmento: `inicio` com o catálogo, `inicio + 2` sem ele (depois de mandar o catálogo),
+  // `inicio + 10 + i` grava a linha. Quem escreve em vez de tocar já sabe o que quer: vale como o pedido.
+  const perguntaDaLinha = (inicio, catalogo, depois, pedidoEscrito) => {
+    const respostas = (comCatalogo) => [{ handler: 'buttons', params: [
+      ...(comCatalogo ? opcao(VER_CATALOGO, [goto(inicio + 1)]) : []),
+      ...LINHAS.flatMap((l, i) => opcao(l, [goto(inicio + 10 + i)])),
+      { type: 'else', params: [goto(pedidoEscrito)] }] }];
+    return {
+      [inicio]: { question: escolha('Qual linha te interessa? Se preferir, veja o catálogo primeiro. Para responder, {toque} 👇', [VER_CATALOGO, ...LINHAS]), answer: respostas(true) },
+      [inicio + 1]: { question: [msg(`Aqui está o nosso catálogo 📖 ${catalogo}`), goto(inicio + 2)] },
+      [inicio + 2]: { question: escolha('Quando escolher, me diga qual linha te interessa. Para responder, {toque} 👇', LINHAS), answer: respostas(false) },
+      ...Object.fromEntries(LINHAS.map((l, i) => [inicio + 10 + i, { question: [campoLead(CAMPO.linhaInteresse, l.title), goto(depois)] }])),
+    };
+  };
+
+  // Uso em casa: perfil → linha (ou catálogo) → produtos.
+  blocos[10] = { question: [etapa(FUNIL.consumidor, ETAPA.consumidorLyra), campoLead(CAMPO.segmento, 'Consumidor final'), campoLead(CAMPO.marca, 'Minasflor'), etiqueta('consumidor-final'), goto(300)] };
+  Object.assign(blocos, perguntaDaLinha(300, CATALOGO.consumidor, 18, 9));
+  blocos[18] = { question: [msg('Escreva os produtos e as quantidades, que a nossa equipe monta o seu pedido 📝'), goto(19)] };
+  blocos[19] = { question: [esperaOuParou(9, PAROU.consumidor)] };
+
+  // Salão: perfil → linha (ou catálogo) → produtos → CNPJ. O CNPJ é da Lyra porque a atendente esquecia (dono, 2026-11-10).
+  blocos[20] = { question: [etapa(FUNIL.salao, ETAPA.salaoLyra), campoLead(CAMPO.segmento, 'Salão'), etiqueta('salão'), goto(320)] };
+  Object.assign(blocos, perguntaDaLinha(320, CATALOGO.salao, 27, 29));
+  blocos[27] = { question: [msg('Escreva os produtos e as quantidades 📝'), goto(28)] };
+  blocos[28] = { question: [esperaOuParou(29, PAROU.salao)] };
+  blocos[29] = { question: [msg('Anotado ✅ Para liberar o preço de salão, qual é o CNPJ? 🔒 Ele é usado apenas para isso. Se o salão não tiver CNPJ, toque no botão abaixo.', botoes(['Não tenho CNPJ'])), goto(340)] };
+  blocos[340] = { question: [esperaOuParou(341, PAROU.salao)] };
+  blocos[341] = { question: [contem(['Não tenho', 'não tenho', 'Nao tenho', 'nao tenho', 'Não', 'não', 'autônoma', 'autonoma'], 343), campoLead(CAMPO.cpfCnpj, '{{message_text}}'), goto(342)] };
+  blocos[342] = { question: [etapa(FUNIL.salao, ETAPA.salaoAtendente), msg('Pedido anotado ✅ A nossa equipe vai entrar em contato por aqui para finalizar o seu pedido. 💙'), tarefa('Salão (CNPJ no lead) fez o pedido pela Lyra: montar o pedido com os produtos da conversa (até 45 minutos).'), esperaResposta(55)] };
+  // Sem CNPJ: as condições profissionais não valem, e a equipe atende como uso em casa.
+  blocos[343] = { question: [etapa(FUNIL.consumidor, ETAPA.consumidorAtendente), campoLead(CAMPO.segmento, 'Consumidor final'), etiqueta('consumidor-final'), etiqueta('profissional-sem-cnpj'),
+    msg('Sem problemas. As condições profissionais são exclusivas para salões com CNPJ, e a nossa equipe vai te atender com as opções para uso em casa. 💙'),
+    tarefa('Profissional sem CNPJ fez o pedido pela Lyra: atender como uso em casa (até 45 minutos).'), esperaResposta(55)] };
+
+  // Distribuidor (dono, 2026-11-10): nome do distribuidor, região de atuação, CNPJ e investimento inicial. Sem cidade.
+  blocos[31] = { question: [msg('Será um prazer conversar sobre a distribuição dos nossos produtos 🤝 Qual é o nome do distribuidor (empresa)?'), goto(32)] };
+  blocos[32] = { question: [esperaOuParou(33, PAROU.distribuidor)] };
+  blocos[33] = { question: [nomeDoLead, goto(37)] };
+  for (const [uf] of Object.values(REGIOES).flat()) blocos[UF_BLOCO[uf]] = { question: [campoLead(CAMPO.estadoAtuacao, uf), goto(34)] };
+  blocos[34] = { question: [msg('Obrigada! Qual é o CNPJ da empresa? 🔒 Ele é usado apenas para o cadastro de distribuidor.'), goto(35)] };
+  blocos[35] = { question: [esperaOuParou(36, PAROU.distribuidor)] };
+  blocos[36] = { question: [campoLead(CAMPO.cpfCnpj, '{{message_text}}'), goto(350)] };
+  const FAIXAS = ['Até R$ 5 mil', 'R$ 5 a 15 mil', 'R$ 15 a 50 mil', 'Acima de R$ 50 mil'].map((t) => linha(t));
+  blocos[350] = { question: escolha('Qual investimento inicial você tem em mente? 💼 Para responder, {toque}.', FAIXAS),
+    answer: [{ handler: 'buttons', params: [...FAIXAS.flatMap((f, i) => opcao(f, [goto(351 + i)])), { type: 'else', params: [goto(350)] }] }] };
+  FAIXAS.forEach((f, i) => { blocos[351 + i] = { question: [campoLead(CAMPO.investimento, f.title), goto(39)] }; });
+  blocos[39].question = blocos[39].question.map((p) => (p.handler === 'trigger'
+    ? tarefa('Distribuidor triado pela Lyra (CNPJ, estado e investimento inicial no lead): encaminhar ao representante (até 45 minutos).') : p));
+}
 
 if (!noWhatsapp) {
   Object.assign(blocos, pedeWhatsapp(80, 14, false), pedeWhatsapp(83, 24, true), pedeWhatsapp(86, 34, true));
@@ -271,8 +350,16 @@ if (noWhatsapp) {
   blocos[0].question = [paraEntrada, { ...blocos[0].question[0], params: { ...blocos[0].question[0].params, is_in_starting_block: true } }];
 }
 
+// Só vai para o robô o bloco que se alcança a partir do 0 (no WhatsApp curto, o nome, a marca e a cidade ficam de fora).
+const alcancados = new Set(['0']);
+const anda = (o) => {
+  if (!o || typeof o !== 'object') return;
+  if (o.type === 'question' && 'step' in o && !alcancados.has(String(o.step))) { alcancados.add(String(o.step)); anda(blocos[o.step]); }
+  Object.values(o).forEach(anda);
+};
+anda(blocos[0]);
 const saida = { conversation: false };
-for (const [k, b] of Object.entries(blocos)) saida[k] = { block_uuid: randomUUID(), ...b };
+for (const [k, b] of Object.entries(blocos)) if (alcancados.has(k)) saida[k] = { block_uuid: randomUUID(), ...b };
 const destino = new URL(`./robo-triagem-${CANAL_DO_ROBO}.json`, import.meta.url);
 fs.writeFileSync(destino, JSON.stringify(saida, null, 2));
 if (process.argv[3] === '--min') fs.writeFileSync(new URL(`./robo-triagem-${CANAL_DO_ROBO}.min.json`, import.meta.url), JSON.stringify(saida));
