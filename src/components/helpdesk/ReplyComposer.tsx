@@ -27,7 +27,8 @@ interface ReplyComposerProps {
   showKeepWorking?: boolean;
   placeholder?: string;
   disabled?: boolean;
-  onMentionClick?: () => void;
+  /** Recebe a escolha "Só a equipe" / "Para quem pediu": a menção vai com ela, sem pedir de novo. */
+  onMentionClick?: (isInternal: boolean) => void;
   showMentionButton?: boolean;
 }
 
@@ -171,7 +172,7 @@ export function ReplyComposer({
                 <Button aria-label="Mencionar um colega do TI"
                   variant="ghost"
                   size="icon"
-                  onClick={onMentionClick}
+                  onClick={() => onMentionClick(isInternal)}
                   disabled={disabled || isSending}
                   className="h-10 w-10 flex-shrink-0"
                 >

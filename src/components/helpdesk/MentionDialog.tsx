@@ -9,7 +9,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
 import {
   Select,
   SelectContent,
@@ -29,13 +28,20 @@ interface MentionDialogProps {
   open: boolean;
   onClose: () => void;
   onMention?: () => void;
+  /**
+   * Quem vê a menção. Vem da escolha "Só a equipe" / "Para quem pediu" de quem escreve; pelo menu do chamado é
+   * sempre só a equipe. O diálogo tinha uma chave própria ("Nota Interna / Apenas técnicos") que repetia a escolha e,
+   * ligada, publicava a menção para quem abriu (chamado #386, 2026-11-10).
+   */
+  isInternal?: boolean;
 }
 
 export function MentionDialog({ 
   ticket, 
   open, 
   onClose,
-  onMention
+  onMention,
+  isInternal = true,
 }: MentionDialogProps) {
   const { user } = useAuth();
   const { data: technicians, isLoading: loadingTechnicians } = useTechnicians();
@@ -43,7 +49,6 @@ export function MentionDialog({
   
   const [selectedTechnician, setSelectedTechnician] = useState<string>('');
   const [message, setMessage] = useState('');
-  const [isInternal, setIsInternal] = useState(true);
 
   const availableTechnicians = technicians?.filter(t => t.id !== user?.id) || [];
 
@@ -75,7 +80,6 @@ export function MentionDialog({
   const handleClose = () => {
     setSelectedTechnician('');
     setMessage('');
-    setIsInternal(true);
     onClose();
   };
 
@@ -122,29 +126,10 @@ export function MentionDialog({
             />
           </div>
 
-          <div className="flex items-center justify-between p-3 bg-secondary/60 rounded-md border border-border">
-            <div className="flex items-center gap-2">
-              {isInternal ? (
-                <Lock className="w-4 h-4 text-muted-foreground" />
-              ) : (
-                <Globe className="w-4 h-4 text-muted-foreground" />
-              )}
-              <div>
-                <p className="text-[14px] font-medium text-foreground">
-                  {isInternal ? 'Nota Interna' : 'Resposta Pública'}
-                </p>
-                <p className="text-[13px] text-muted-foreground">
-                  {isInternal 
-                    ? 'Apenas técnicos verão esta mensagem' 
-                    : 'Quem abriu o chamado também verá esta mensagem'}
-                </p>
-              </div>
-            </div>
-            <Switch
-              checked={!isInternal}
-              onCheckedChange={(checked) => setIsInternal(!checked)}
-            />
-          </div>
+          <p className="flex items-center gap-2 text-[13px] text-muted-foreground">
+            {isInternal ? <Lock className="w-4 h-4" aria-hidden="true" /> : <Globe className="w-4 h-4" aria-hidden="true" />}
+            {isInternal ? 'Só a equipe vê esta mensagem' : 'Quem pediu também vê esta mensagem'}
+          </p>
         </div>
 
         <DialogFooter className="gap-2 pt-2">

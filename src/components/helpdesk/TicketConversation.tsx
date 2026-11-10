@@ -39,6 +39,7 @@ export function TicketConversation({
   // Da equipe do setor: age no chamado ou ao menos vê a fila ("Ver os chamados do setor").
   const isTechnician = atende || pode('view_all');
   const [mentionOpen, setMentionOpen] = useState(false);
+  const [mentionInterna, setMentionInterna] = useState(true);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -161,7 +162,7 @@ export function TicketConversation({
           showKeepWorking={isTechnician && ticket?.requester_id !== user?.id}
           placeholder={isTechnician ? "Responda ao usuário…" : "Digite sua resposta…"}
           showMentionButton={isTechnician}
-          onMentionClick={() => setMentionOpen(true)}
+          onMentionClick={(interna) => { setMentionInterna(interna); setMentionOpen(true); }}
         />
       ) : (
         <div className="p-4 border-t border-border bg-muted/30 text-center">
@@ -176,6 +177,7 @@ export function TicketConversation({
         <MentionDialog
           ticket={ticket as any}
           open={mentionOpen}
+          isInternal={mentionInterna}
           onClose={() => setMentionOpen(false)}
           onMention={() => onUpdate?.()}
         />
