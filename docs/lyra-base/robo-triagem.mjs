@@ -10,7 +10,7 @@
 // Formato aprendido do robô antigo "BOT INICIAL MF" e do modelo "Bot de boas-vindas" do próprio Kommo:
 // cada bloco é {block_uuid, question:[...], answer?:[...], no_answer?}; `goto` com type question/finish.
 import fs from 'node:fs';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 
 const CANAL_DO_ROBO = process.argv[2];
 if (!['whatsapp', 'instagram'].includes(CANAL_DO_ROBO)) throw new Error('uso: node robo-triagem.mjs whatsapp|instagram [--min]');
@@ -56,7 +56,9 @@ const lista = (body, linhas) => ({
 });
 // No Instagram vai a mesma pergunta com botões, até 3 (com 4 o Kommo partiu a mensagem em duas). `instagram` traz o
 // texto e os botões próprios desse canal; sem botões, a pessoa responde escrevendo. Botão do Instagram: até 20 letras.
-const linha = (title, curto = title) => ({ id: randomUUID(), title, curto });
+// O id da linha sai do próprio nome, e não é sorteado (teste do dono, 2026-11-10): com id novo a cada geração, quem recebeu
+// a lista antes de o robô ser regravado tocava numa opção que o robô novo não conhecia e recebia a pergunta de novo.
+const linha = (title, curto = title) => ({ id: createHash('sha1').update(title).digest('hex').slice(0, 32), title, curto });
 // `{toque}` no texto vira a instrução do WhatsApp.
 const escolha = (body, linhas, instagram = {}) => {
   if (noWhatsapp) return [lista(body.replace('{toque}', 'toque em "Ver opções"'), linhas)];
