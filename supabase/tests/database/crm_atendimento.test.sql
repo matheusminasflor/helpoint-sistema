@@ -109,11 +109,11 @@ select is((select string_agg((x->>'lead_id') || ':' || array_to_string(array(sel
              from d, jsonb_array_elements(v->'campos_faltando') x),
   '1:cnpj+valor,3:telefone+motivo', 'campos faltando');
 select is((select format('%s|%s', count(*) filter (where x->>'situacao' is not null),
-                         string_agg((x->>'lead_id') || ':' || (x->>'venda') || ':' || (x->>'valor')::numeric, ',' order by (x->>'lead_id')::int)
+                         string_agg((x->>'lead_id') || ':' || (x->>'venda') || ':' || ((x->>'valor')::numeric)::int, ',' order by (x->>'lead_id')::int)
                            filter (where x->>'venda' is not null))
              from d, jsonb_array_elements(v->'leads') x),
   '3|1:ganha:0,2:ganha:0,3:perdida:0,5:ganha:168', 'a lista: as 3 conversas e as 4 vendas e perdas, até a venda sem conversa');
-select is((select format('%s=%s', (select sum((x->>'valor')::numeric) from jsonb_array_elements(v->'vendas_cruzado') x), v->>'valor_ganho') from d),
+select is((select format('%s=%s', (select sum((x->>'valor')::numeric)::int from jsonb_array_elements(v->'vendas_cruzado') x), (v->>'valor_ganho')::numeric::int) from d),
   '168=168', 'o valor por segmento soma o total');
 select tests.clear_authentication();
 
