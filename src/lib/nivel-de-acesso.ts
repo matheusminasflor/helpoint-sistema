@@ -56,6 +56,6 @@ export const ROTULO_DO_GRUPO: Record<GrupoDaTela, string> = {
 /** A ordem do menu (Lei de Jakob): o trabalho do dia a dia primeiro, as configurações por último. */
 export function grupoDaTela(modulo: ModuleSchema): GrupoDaTela {
   if (modulo.label.startsWith('Configurações')) return 'configuracoes';
-  if (modulo.key === 'reports' || /indicador|relat[oó]rio/i.test(modulo.label)) return 'relatorios';
+  if (modulo.relatorio || modulo.key === 'reports' || /indicador|relat[oó]rio/i.test(modulo.label)) return 'relatorios';
   return 'trabalho';
 }

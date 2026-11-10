@@ -33,5 +33,7 @@ describe('nível de acesso por tela', () => {
     const config = ti.modules.find((m) => m.label.startsWith('Configurações'))!;
     expect(grupoDaTela(config)).toBe('configuracoes');
     expect(grupoDaTela(chamados)).toBe('trabalho');
+    // Comercial: Vendas, Bonificação e Cashback estão em "Relatórios" no menu, e o perfil as mostra ali (2026-11-10).
+    expect(grupoDaTela({ ...chamados, key: 'cashback', label: 'Cashback', relatorio: true })).toBe('relatorios');
   });
 });

@@ -12,6 +12,8 @@ export interface ModuleSchema {
   label: string;
   description?: string;
   actions: { key: ActionKey; label: string; sensitive?: boolean }[];
+  /** A tela mora no grupo "Relatórios" do menu: o perfil a mostra no mesmo grupo (dono, 2026-11-10). */
+  relatorio?: boolean;
 }
 
 export interface DepartmentSchema {
@@ -343,7 +345,7 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
       // Base de vendas do Forteplus (L6a): quem só vê o painel não precisa
       // poder importar, e importar não precisa poder substituir um mês já
       // gravado (substituir apaga dado — §4.6 do plano do Painel Comercial).
-      { key: 'vendas', label: 'Vendas (faturado do Forteplus)', actions: [
+      { key: 'vendas', label: 'Vendas (faturado do Forteplus)', relatorio: true, actions: [
         { key: 'view', label: 'Abrir a tela Vendas' },
         { key: 'importar', label: 'Importar planilha', sensitive: true },
         { key: 'substituir', label: 'Substituir um mês já importado', sensitive: true },
@@ -363,7 +365,7 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
       // Cadastrar cliente novo (2026-10-01, decisão do dono): só em Configurações › Cadastro de
       // clientes e só com esta caixinha — vale na tela e no banco (`com_clientes_insert`). Completar
       // os dados de um cliente que já existe continua com a vendedora, no Comercial.
-      { key: 'clientes', label: 'Clientes (parados e ficha)', actions: [
+      { key: 'clientes', label: 'Clientes (parados e ficha)', relatorio: true, actions: [
         { key: 'view', label: 'Abrir Clientes parados e a ficha do cliente' },
         { key: 'cadastrar', label: 'Cadastro de clientes (Configurações) — dono e administradores sempre têm', sensitive: true },
       ]},
@@ -397,9 +399,9 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
         // ligado no Gestor, desligado no Operador (a vendedora), como o dono escolheu.
         { key: 'export', label: 'Exportar para Excel (Vendas, Clientes, Bonificação, Cashback, Indicadores e Carteiras)', sensitive: true },
       ]},
-      { key: 'bonificacao', label: 'Bonificação', actions: [{ key: 'view', label: 'Abrir Bonificação' }] },
-      { key: 'cashback', label: 'Cashback', actions: [{ key: 'view', label: 'Abrir Cashback (apuração por cliente)' }] },
-      { key: 'atendimento', label: 'Atendimento (indicadores dos chamados)', actions: [{ key: 'view', label: 'Abrir Atendimento' }] },
+      { key: 'bonificacao', label: 'Bonificação', relatorio: true, actions: [{ key: 'view', label: 'Abrir Bonificação' }] },
+      { key: 'cashback', label: 'Cashback', relatorio: true, actions: [{ key: 'view', label: 'Abrir Cashback (apuração por cliente)' }] },
+      { key: 'atendimento', label: 'Atendimento (indicadores dos chamados)', relatorio: true, actions: [{ key: 'view', label: 'Abrir Atendimento' }] },
     ],
   },
   educacional: {
