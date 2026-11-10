@@ -28,7 +28,14 @@ export interface LinhaCruzada {
   segmento: Segmento | null; funil: string | null; uf: string | null;
   conversas: number; so_lyra: number; sem_resposta: number; respondidas: number; no_prazo: number; soma_minutos: number;
 }
-export interface VendaCruzada { segmento: Segmento; uf: string | null; ganhas: number; perdidas: number }
+/** `valor`: o mesmo do `valor_ganho` (o digitado no Kommo e, para quem gere as carteiras, o faturado do distribuidor). */
+export interface VendaCruzada { segmento: Segmento; uf: string | null; ganhas: number; perdidas: number; valor: number }
+export type SituacaoDoLead = 'so_lyra' | 'sem_resposta' | 'no_prazo' | 'fora_do_prazo';
+/** Um lead do período: conversou (`situacao`), fechou venda ou perdeu (`venda`), ou os dois. */
+export interface LeadDoPeriodo {
+  lead_id: number; nome: string | null; segmento: Segmento | null; funil: string | null; uf: string | null; link: string | null;
+  atendente: string | null; situacao: SituacaoDoLead | null; minutos: number | null; venda: 'ganha' | 'perdida' | null; valor: number | null;
+}
 export interface AtendimentoDoCrm {
   todos: boolean;
   /** A meta da 1ª resposta, em minutos de expediente (`kommo_meta_resposta`). */
@@ -42,6 +49,7 @@ export interface AtendimentoDoCrm {
   atendentes: LinhaDaAtendente[];
   cruzado: LinhaCruzada[];
   vendas_cruzado: VendaCruzada[];
+  leads: LeadDoPeriodo[];
   para_responder: LeadParaResponder[];
   campos_faltando: VendaComCampoFaltando[];
 }
@@ -98,19 +106,37 @@ const somar = (linhas: LinhaCruzada[]): Soma => {
 /** O "estado" de quem não tem estado, para o filtro da tela. */
 export const SEM_ESTADO = 'sem';
 
-export interface LinhaDoSegmento extends Soma { chave: string; nome: string; vendas: number }
-/** Por segmento, só do estado escolhido (null = todos). O funil que não é de venda vai pelo nome; o maior primeiro. */
+/** A chave da linha do segmento: o segmento, ou o funil que não é de venda (ENAD) pelo nome. */
+export const chaveDoSegmento = (x: { segmento: Segmento | null; funil: string | null }) => x.segmento ?? `funil:${x.funil ?? ''}`;
+const doEstado = (uf: string | null) => (x: { uf: string | null }) => uf === null || (x.uf || SEM_ESTADO) === uf;
+
+export interface LinhaDoSegmento extends Soma { chave: string; nome: string; vendas: number; valor: number }
+/**
+ * Por segmento, só do estado escolhido (null = todos). O funil que não é de venda vai pelo nome; o maior primeiro.
+ * O segmento que vendeu sem conversa no período também ganha linha, para o Valor somar a Venda total.
+ */
 export function porSegmento(cruzado: LinhaCruzada[], vendas: VendaCruzada[], uf: string | null): LinhaDoSegmento[] {
-  const doEstado = (x: { uf: string | null }) => uf === null || (x.uf || SEM_ESTADO) === uf;
-  const grupos = new Map<string, LinhaCruzada[]>();
-  for (const l of cruzado.filter(doEstado)) {
-    const chave = l.segmento ?? `funil:${l.funil ?? ''}`;
-    grupos.set(chave, [...(grupos.get(chave) ?? []), l]);
+  const grupos = new Map<string, { segmento: Segmento | null; funil: string | null; ls: LinhaCruzada[] }>();
+  for (const l of cruzado.filter(doEstado(uf))) {
+    const g = grupos.get(chaveDoSegmento(l)) ?? { segmento: l.segmento, funil: l.funil, ls: [] };
+    grupos.set(chaveDoSegmento(l), { ...g, ls: [...g.ls, l] });
   }
-  return [...grupos].map(([chave, ls]) => ({
-    chave, nome: nomeDoFunil(ls[0].segmento, ls[0].funil), ...somar(ls),
-    vendas: ls[0].segmento ? vendas.filter((v) => doEstado(v) && v.segmento === ls[0].segmento).reduce((a, v) => a + v.ganhas, 0) : 0,
-  })).sort((a, b) => b.conversas - a.conversas || a.nome.localeCompare(b.nome));
+  const vendidas = vendas.filter(doEstado(uf));
+  for (const v of vendidas) if (!grupos.has(v.segmento)) grupos.set(v.segmento, { segmento: v.segmento, funil: null, ls: [] });
+  return [...grupos].map(([chave, g]) => {
+    const dele = g.segmento ? vendidas.filter((v) => v.segmento === g.segmento) : [];
+    return {
+      chave, nome: nomeDoFunil(g.segmento, g.funil), ...somar(g.ls),
+      vendas: dele.reduce((a, v) => a + v.ganhas, 0), valor: dele.reduce((a, v) => a + Number(v.valor ?? 0), 0),
+    };
+  }).sort((a, b) => b.conversas - a.conversas || b.valor - a.valor || a.nome.localeCompare(b.nome));
+}
+
+export type FiltroDosLeads = 'todos' | 'sem_resposta' | 'fora_do_prazo' | 'venda';
+/** Os leads do estado e do segmento escolhidos (null = todos), com o filtro da lista. */
+export function leadsDoRecorte(leads: LeadDoPeriodo[], uf: string | null, segmento: string | null, filtro: FiltroDosLeads): LeadDoPeriodo[] {
+  return leads.filter((l) => doEstado(uf)(l) && (segmento === null || chaveDoSegmento(l) === segmento)
+    && (filtro === 'todos' || (filtro === 'venda' ? l.venda === 'ganha' : l.situacao === filtro)));
 }
 
 export interface LinhaDoEstado extends Soma { uf: string; nome: string }

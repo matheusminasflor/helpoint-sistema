@@ -4,6 +4,8 @@
 // explicação de cada um aparece ao passar o mouse (`crm.*` em explicacoes-dos-indicadores.ts).
 // Cor com significado: vermelho é o que espera alguém, verde o que está na meta, lilás a Lyra. O dono, o admin e o gestor
 // comercial veem todas; a atendente, só o dela (o banco recorta).
+// 2026-11-10 (dono, https://claude.ai/artifact/Cb9s4F1Tt2CbJ9cxebSp6k): Venda total no alto, Valor por segmento e a lista
+// de quem são os leads, que segue o estado e o segmento clicados e abre cada lead no Kommo.
 import { useMemo, useState } from 'react';
 import { CheckCircle2, ExternalLink, X } from 'lucide-react';
 import { Card } from '@/components/ui/card';
@@ -16,7 +18,7 @@ import { PERIODOS_DA_REUNIAO, intervaloDoPeriodoRapido, rotuloDoIntervalo } from
 import { dataHora, diaCurto } from '@/lib/dates';
 import {
   CAMPO_OBRIGATORIO, FALTA, LYRA_NO_AR, SEM_ESTADO, contagemDosCampos, dentroDaMeta, minutos, nomeDoEstado, nomeDoFunil,
-  porEstado, porSegmento,
+  leadsDoRecorte, porEstado, porSegmento, type FiltroDosLeads, type SituacaoDoLead,
 } from '@/lib/crm-atendimento';
 import { formatBRL } from '@/lib/crm';
 import { cn } from '@/lib/utils';
@@ -27,6 +29,12 @@ const pct = (parte: number, todo: number) => (todo ? `${Math.round((parte / todo
 function Nome({ id, children }: { id: IdDaExplicacao; children: React.ReactNode }) {
   return <span className="inline-flex items-center gap-1">{children}<ExplicacaoDoIndicador id={id} /></span>;
 }
+
+const SITUACAO: Record<SituacaoDoLead, [string, string]> = {
+  no_prazo: ['No prazo', 'badge-success'], fora_do_prazo: ['Fora do prazo', 'badge-warning'],
+  sem_resposta: ['Sem resposta', 'badge-danger'], so_lyra: ['Só Lyra', 'badge-info'],
+};
+const FILTROS: [FiltroDosLeads, string][] = [['todos', 'Todos'], ['sem_resposta', 'Sem resposta'], ['fora_do_prazo', 'Fora do prazo'], ['venda', 'Com venda']];
 
 function Tempo({ n, meta }: { n: number | null; meta: number }) {
   return (
@@ -43,6 +51,10 @@ export default function ComercialAtendimentoCrm() {
   const [uf, setUf] = useState<string | null>(null);
   const estados = useMemo(() => (data ? porEstado(data.cruzado) : []), [data]);
   const segmentos = useMemo(() => (data ? porSegmento(data.cruzado, data.vendas_cruzado, uf) : []), [data, uf]);
+  const [segmento, setSegmento] = useState<string | null>(null);
+  const [filtro, setFiltro] = useState<FiltroDosLeads>('todos');
+  const leads = useMemo(() => (data ? leadsDoRecorte(data.leads ?? [], uf, segmento, filtro) : []), [data, uf, segmento, filtro]);
+  const nomeDoSegmento = segmentos.find((s) => s.chave === segmento)?.nome;
   const contagem = data ? contagemDosCampos(data.campos_faltando) : [];
   const naFila = data ? data.conversas - data.so_lyra : 0;
   const maiorEstado = Math.max(1, ...estados.map((e) => e.conversas));
@@ -89,6 +101,26 @@ export default function ComercialAtendimentoCrm() {
             </ExplicacaoDoIndicador>
           </section>
 
+          <section aria-label="Vendas" className="grid gap-4 sm:grid-cols-3">
+            <ExplicacaoDoIndicador id="crm.venda_total">
+              <div className="rounded-xl border-2 border-primary p-4 bg-card">
+                <p className="text-3xl font-extrabold tabular-nums">{formatBRL(data.valor_ganho)}</p>
+                <p className="font-bold">Venda total</p>
+                <p className="text-xs text-muted-foreground">{data.ganhas} {data.ganhas === 1 ? 'venda' : 'vendas'} no período</p>
+              </div>
+            </ExplicacaoDoIndicador>
+            <div className="rounded-xl border p-4 bg-card">
+              <p className="text-3xl font-extrabold tabular-nums">{data.ganhas ? formatBRL(data.valor_ganho / data.ganhas) : '—'}</p>
+              <p className="font-bold">Ticket médio</p>
+              <p className="text-xs text-muted-foreground">venda total ÷ vendas</p>
+            </div>
+            <div className="rounded-xl border p-4 bg-card">
+              <p className="text-3xl font-extrabold tabular-nums">{data.perdidas}</p>
+              <p className="font-bold">Perdas</p>
+              <p className="text-xs text-muted-foreground">leads fechados como perdidos</p>
+            </div>
+          </section>
+
           <Card className="p-4 sm:p-6 space-y-3">
             <h2 className="text-base font-bold">Atendimento</h2>
             <dl className="grid gap-2 text-sm">
@@ -111,8 +143,6 @@ export default function ComercialAtendimentoCrm() {
             </dl>
             <p className="text-sm flex flex-wrap gap-x-4 gap-y-1">
               <span><Nome id="crm.tempo">Tempo</Nome>: <Tempo n={data.primeira_resposta} meta={data.meta} /> <span className="text-muted-foreground">(meta {data.meta} min · {pct(data.no_prazo, data.respondidas)} no prazo)</span></span>
-              <span>Vendas: <b className="tabular-nums">{data.ganhas}</b> · <b className="tabular-nums">{formatBRL(data.valor_ganho)}</b></span>
-              <span>Perdas: <b className="tabular-nums">{data.perdidas}</b></span>
             </p>
           </Card>
 
@@ -134,23 +164,32 @@ export default function ComercialAtendimentoCrm() {
                       <th className="py-2 px-2 font-semibold text-right">Conversas</th>
                       <th className="py-2 px-2 font-semibold text-right">Sem resposta</th>
                       <th className="py-2 px-2 font-semibold text-right">Tempo</th>
-                      <th className="py-2 pl-2 font-semibold text-right">Vendas</th>
+                      <th className="py-2 px-2 font-semibold text-right">Vendas</th>
+                      <th className="py-2 pl-2 font-semibold text-right">Valor</th>
                     </tr>
                   </thead>
                   <tbody>
                     {segmentos.map((s) => (
-                      <tr key={s.chave} className="border-b last:border-0">
-                        <td className="py-2 pr-3 font-semibold">{s.nome}</td>
+                      <tr key={s.chave} className={cn('border-b last:border-0 cursor-pointer hover:bg-muted', segmento === s.chave && 'bg-muted')}
+                        onClick={() => setSegmento(segmento === s.chave ? null : s.chave)}>
+                        <td className="py-2 pr-3 font-semibold">
+                          <button type="button" aria-pressed={segmento === s.chave} className="text-left text-primary hover:underline"
+                            onClick={(e) => { e.stopPropagation(); setSegmento(segmento === s.chave ? null : s.chave); }}>
+                            {s.nome}
+                          </button>
+                        </td>
                         <td className="py-2 px-2 text-right tabular-nums">{s.conversas}</td>
                         <td className={cn('py-2 px-2 text-right tabular-nums', s.sem_resposta && 'font-bold text-status-danger')}>{s.sem_resposta}</td>
                         <td className="py-2 px-2 text-right"><Tempo n={s.tempo} meta={data.meta} /></td>
-                        <td className="py-2 pl-2 text-right tabular-nums">{s.vendas || '—'}</td>
+                        <td className="py-2 px-2 text-right tabular-nums">{s.vendas || '—'}</td>
+                        <td className="py-2 pl-2 text-right tabular-nums">{s.valor ? formatBRL(s.valor) : '—'}</td>
                       </tr>
                     ))}
-                    {!segmentos.length && <tr><td colSpan={5} className="py-4 text-muted-foreground">Nenhuma conversa no período.</td></tr>}
+                    {!segmentos.length && <tr><td colSpan={6} className="py-4 text-muted-foreground">Nenhuma conversa no período.</td></tr>}
                   </tbody>
                 </table>
               </div>
+              <p className="mt-3 text-xs text-muted-foreground">Clique num segmento para ver os leads dele.</p>
             </Card>
 
             <Card className="p-4 sm:p-6 min-w-0">
@@ -177,9 +216,74 @@ export default function ComercialAtendimentoCrm() {
                 })}
                 {!estados.length && <li className="text-muted-foreground">Nenhuma conversa no período.</li>}
               </ul>
-              <p className="mt-3 text-xs text-muted-foreground">Clique num estado para ver os segmentos só dele.</p>
+              <p className="mt-3 text-xs text-muted-foreground">Clique num estado para ver os segmentos e os leads só dele.</p>
             </Card>
           </div>
+
+          <Card id="leads" className="p-4 sm:p-6 min-w-0 scroll-mt-4">
+            <h2 className="text-base font-bold mb-3 flex flex-wrap items-center gap-2">
+              <Nome id="crm.leads">Leads</Nome> <span className="tabular-nums text-muted-foreground">· {leads.length}</span>
+              {uf && (
+                <button type="button" onClick={() => setUf(null)} className="badge-info inline-flex items-center gap-1">
+                  {nomeDoEstado(uf === SEM_ESTADO ? null : uf)} <X className="h-3 w-3" aria-label="tirar o filtro" />
+                </button>
+              )}
+              {segmento && (
+                <button type="button" onClick={() => setSegmento(null)} className="badge-info inline-flex items-center gap-1">
+                  {nomeDoSegmento ?? 'Segmento'} <X className="h-3 w-3" aria-label="tirar o filtro" />
+                </button>
+              )}
+            </h2>
+            <div className="mb-3 flex flex-wrap gap-2" role="group" aria-label="Filtrar os leads">
+              {FILTROS.map(([f, rotulo]) => (
+                <button key={f} type="button" aria-pressed={filtro === f} onClick={() => setFiltro(f)}
+                  className={cn('rounded-full border px-3 py-1 text-[13px] font-semibold',
+                    filtro === f ? 'border-primary bg-primary text-primary-foreground' : 'border-input bg-card hover:bg-muted')}>
+                  {rotulo}
+                </button>
+              ))}
+            </div>
+            <div className="overflow-x-auto max-h-[28rem] overflow-y-auto">
+              <table className="w-full text-sm">
+                <thead className="text-left text-muted-foreground sticky top-0 bg-card">
+                  <tr className="border-b">
+                    <th className="py-2 pr-3 font-semibold">Lead</th>
+                    <th className="py-2 px-2 font-semibold">Segmento</th>
+                    <th className="py-2 px-2 font-semibold">Estado</th>
+                    <th className="py-2 px-2 font-semibold">Atendente</th>
+                    <th className="py-2 px-2 font-semibold">Situação</th>
+                    <th className="py-2 px-2 font-semibold text-right">Tempo</th>
+                    <th className="py-2 pl-2 font-semibold text-right">Venda</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {leads.map((l) => (
+                    <tr key={l.lead_id} className="border-b last:border-0">
+                      <td className="py-2 pr-3">
+                        {l.link ? (
+                          <a href={l.link} target="_blank" rel="noreferrer" className="font-semibold text-primary hover:underline inline-flex items-center gap-1">
+                            {l.nome ?? `Lead ${l.lead_id}`} <ExternalLink className="h-3 w-3" aria-label="abrir no Kommo" />
+                          </a>
+                        ) : <span className="font-semibold">{l.nome ?? `Lead ${l.lead_id}`}</span>}
+                      </td>
+                      <td className="py-2 px-2 whitespace-nowrap">{nomeDoFunil(l.segmento, l.funil)}</td>
+                      <td className="py-2 px-2">{l.uf ?? '—'}</td>
+                      <td className="py-2 px-2 whitespace-nowrap">{l.atendente ?? '—'}</td>
+                      <td className="py-2 px-2 whitespace-nowrap">
+                        {l.situacao ? <span className={SITUACAO[l.situacao][1]}>{SITUACAO[l.situacao][0]}</span> : <span className="text-muted-foreground">sem conversa</span>}
+                      </td>
+                      <td className="py-2 px-2 text-right"><Tempo n={l.minutos} meta={data.meta} /></td>
+                      <td className="py-2 pl-2 text-right tabular-nums whitespace-nowrap">
+                        {l.venda === 'ganha' ? (l.valor ? formatBRL(l.valor) : 'sem valor') : l.venda === 'perdida' ? <span className="text-status-danger">perdida</span> : '—'}
+                      </td>
+                    </tr>
+                  ))}
+                  {!leads.length && <tr><td colSpan={7} className="py-4 text-muted-foreground">Nenhum lead com esse filtro.</td></tr>}
+                </tbody>
+              </table>
+            </div>
+            <p className="mt-3 text-xs text-muted-foreground">Quem conversou no período e quem fechou venda ou perdeu nele. Cada nome abre o lead no Kommo.</p>
+          </Card>
 
           <Card className="p-4 sm:p-6">
             <h2 className="text-base font-bold mb-3">Por atendente</h2>

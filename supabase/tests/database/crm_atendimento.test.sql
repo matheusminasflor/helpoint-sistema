@@ -1,4 +1,4 @@
--- ATENDIMENTO DO CRM (migrations 20270212710000, 20270212720000 e 20270212720400; projeto do Kommo, parte 4b).
+-- ATENDIMENTO DO CRM (migrations 20270212710000, 20270212720000, 20270212720400 e 20270212720600; projeto do Kommo, parte 4b).
 -- Antes da Lyra (08/11 18h56) não havia robô: toda mensagem que saiu é da atendente, com nome no Kommo ou sem.
 --   1  a gravação guarda as mensagens novas
 --   2  ... e a mesma mensagem lida de novo não duplica
@@ -19,13 +19,15 @@
 --  17  ... o robô: a Lyra enquanto o lead está em "Com a Lyra" e a transmissão para 5 leads
 --  18  ... e a linha da Thayná: mensagens, sem nome, respondidos, ativos (procurou sem o cliente escrever), no prazo e
 --      tarefas (a do lead da equipe não conta)
---  19  cliente esperando há mais de 45 min de expediente avisa a responsável pelo lead e quem administra
+--  19  cliente esperando há mais de 45 min de expediente avisa só a responsável pelo lead (dono, 2026-11-10)
 --  20  ... uma vez só por espera
 --  21  ... e a espera que acabou de começar não avisa
+--  22  quem são os leads: quem conversou e quem fechou venda ou perdeu no período, com a venda de cada um
+--  23  o valor por segmento soma o 'valor_ganho', pela mesma conta
 begin;
 \ir _helpers.psql
 
-select plan(21);
+select plan(23);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-crm-atend', 'CRM atendimento', false) as a;
@@ -82,7 +84,9 @@ select is((select user_id from public.kommo_usuarios where tenant_id = (select a
 select public.mkt_kommo_gravar_vendas((select a from f), '2026-11-01', jsonb_build_array(
   jsonb_build_object('lead_id', 1, 'nome', 'Salão da Ana', 'funil', 'salao', 'situacao', 'ganha', 'valor', 0, 'fechou', '2026-11-04', 'link', 'k/1', 'telefone', '11999998888', 'responsavel', 10),
   jsonb_build_object('lead_id', 3, 'nome', 'Fechado', 'funil', 'consumidor', 'situacao', 'perdida', 'valor', 0, 'fechou', '2026-11-04', 'link', 'k/3', 'documento', '12345678901', 'responsavel', 10),
-  jsonb_build_object('lead_id', 2, 'nome', 'Distribuidora', 'funil', 'distribuidor', 'situacao', 'ganha', 'valor', 900, 'fechou', '2026-11-04', 'link', 'k/2', 'documento', '11222333000144', 'telefone', '3899990000', 'responsavel', 20)));
+  jsonb_build_object('lead_id', 2, 'nome', 'Distribuidora', 'funil', 'distribuidor', 'situacao', 'ganha', 'valor', 900, 'fechou', '2026-11-04', 'link', 'k/2', 'documento', '11222333000144', 'telefone', '3899990000', 'responsavel', 20),
+  -- Venda sem conversa no dia: entra na lista de leads mesmo assim.
+  jsonb_build_object('lead_id', 5, 'nome', 'Cliente da loja', 'funil', 'consumidor', 'situacao', 'ganha', 'valor', 168, 'fechou', '2026-11-04', 'link', 'k/5', 'documento', '12345678909', 'telefone', '31999990000', 'responsavel', 20)));
 
 select tests.authenticate_as('dona@crmatend.test');
 create temporary table d on commit drop as select public.crm_atendimento('2026-11-04', '2026-11-04') as v;
@@ -104,6 +108,13 @@ select is((select string_agg(x->>'lead_id', ',') from d, jsonb_array_elements(v-
 select is((select string_agg((x->>'lead_id') || ':' || array_to_string(array(select jsonb_array_elements_text(x->'faltam')), '+'), ',' order by x->>'lead_id')
              from d, jsonb_array_elements(v->'campos_faltando') x),
   '1:cnpj+valor,3:telefone+motivo', 'campos faltando');
+select is((select format('%s|%s', count(*) filter (where x->>'situacao' is not null),
+                         string_agg((x->>'lead_id') || ':' || (x->>'venda') || ':' || (x->>'valor')::numeric, ',' order by (x->>'lead_id')::int)
+                           filter (where x->>'venda' is not null))
+             from d, jsonb_array_elements(v->'leads') x),
+  '3|1:ganha:0,2:ganha:0,3:perdida:0,5:ganha:168', 'a lista: as 3 conversas e as 4 vendas e perdas, até a venda sem conversa');
+select is((select format('%s=%s', (select sum((x->>'valor')::numeric) from jsonb_array_elements(v->'vendas_cruzado') x), v->>'valor_ganho') from d),
+  '168=168', 'o valor por segmento soma o total');
 select tests.clear_authentication();
 
 select tests.authenticate_as('thay@crmatend.test');
@@ -186,9 +197,9 @@ select public.kommo_avisar_esperas((select a from f));
 select is((select string_agg(case n.user_id when (select dona from u) then 'dona' when (select thay from u) then 'thay' else 'outro' end, '+'
                              order by case n.user_id when (select dona from u) then 1 else 2 end)
              from public.notifications n where n.tenant_id = (select a from f) and n.type = 'lead_sem_resposta' and n.message like '%lead nº 16 %'),
-  'dona+thay', 'o cliente esperando há 45 min avisa a Thayná (responsável) e a dona');
+  'thay', 'o cliente esperando há 45 min avisa só a Thayná (responsável), não a dona');
 select public.kommo_avisar_esperas((select a from f));
-select is((select count(*)::int from public.notifications n where n.tenant_id = (select a from f) and n.message like '%lead nº 16 %'), 2,
+select is((select count(*)::int from public.notifications n where n.tenant_id = (select a from f) and n.message like '%lead nº 16 %'), 1,
   'conferir de novo não repete o aviso');
 select is((select count(*)::int from public.notifications n where n.tenant_id = (select a from f) and n.message like '%lead nº 17 %'), 0,
   'a espera que acabou de começar não avisa');

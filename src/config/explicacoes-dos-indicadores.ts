@@ -940,6 +940,18 @@ export const EXPLICACOES = {
     deOndeVem: "O estado do cliente no Kommo.",
     comoCalcula: "O campo \"Estado de atuação\" do lead ou \"Estado\" do contato; sem eles, o DDD do telefone. Até 8 estados com nome; o resto junto em \"Outros\".",
   },
+  'crm.venda_total': {
+    titulo: "Venda total",
+    oQueE: "Quanto foi vendido no período.",
+    deOndeVem: "Os leads ganhos no Kommo. No distribuidor, o faturado do Forteplus (só para quem gere as carteiras).",
+    comoCalcula: "A soma do valor dos leads fechados como ganhos no período. A coluna Valor do Por segmento soma este mesmo total.",
+  },
+  'crm.leads': {
+    titulo: "Leads",
+    oQueE: "Quem são os leads do período, um por um.",
+    deOndeVem: "As conversas e as vendas do Kommo. Equipe, fornecedores e artistas (etiquetas no Kommo) não entram.",
+    comoCalcula: "Quem conversou no período e quem fechou venda ou perdeu nele. Segue o estado e o segmento clicados acima.",
+  },
   'crm.lyra': {
     titulo: "Lyra",
     oQueE: "O que a Lyra mandou no período.",
