@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  contagemDosCampos, dentroDaMeta, leadsDoRecorte, minutos, nomeDoFunil, porEstado, porSegmento, SEM_ESTADO,
+  contagemDosCampos, contarPorSegmento, dentroDaMeta, leadsDaLinha, leadsDoRecorte, minutos, nomeDoFunil, porEstado, porSegmento, SEM_ESTADO,
   type LeadDoPeriodo, type LinhaCruzada, type VendaComCampoFaltando,
 } from './crm-atendimento';
 
@@ -64,6 +64,18 @@ describe('Atendimento do CRM', () => {
     expect(ids(leadsDoRecorte(leads, null, null, 'sem_resposta'))).toEqual([2, 4]);
     expect(ids(leadsDoRecorte(leads, SEM_ESTADO, 'funil:ENAD', 'todos'))).toEqual([4]);
     expect(ids(leadsDoRecorte(leads, null, null, 'venda'))).toEqual([1]);
+    expect(ids(leadsDoRecorte(leads, null, null, 'perdida'))).toEqual([5]);
+  });
+
+  it('as linhas da Lyra e a soma por segmento', () => {
+    const y = (lead_id: number, segmento: 'consumidor' | null, passou: boolean, resolveu: boolean) =>
+      ({ lead_id, nome: null, segmento, funil: segmento ? null : 'Atendimento', etapa: null, link: null, triado: !!segmento, passou, resolveu, parou: !passou && !resolveu });
+    const leads = [y(1, 'consumidor', true, false), y(2, null, true, false), y(3, 'consumidor', false, true), y(4, null, false, false)];
+    expect(leadsDaLinha(leads, 'atendidos').length).toBe(4);
+    expect(leadsDaLinha(leads, 'triados').map((l) => l.lead_id)).toEqual([1, 3]);
+    expect(leadsDaLinha(leads, 'parou').map((l) => l.lead_id)).toEqual([4]);
+    expect(contarPorSegmento(leads).map((s) => `${s.nome}:${s.n}`)).toEqual(['Atendimento:2', 'Consumidor final:2']);
+    expect(contarPorSegmento(leads, (l) => l.lead_id).map((s) => `${s.nome}:${s.total}`)).toEqual(['Atendimento:6', 'Consumidor final:4']);
   });
 
   it('por estado: até 8 com nome, o resto em Outros e o sem estado por último', () => {

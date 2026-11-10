@@ -1,4 +1,4 @@
--- ATENDIMENTO DO CRM (migrations 20270212710000, 20270212720000, 20270212720400 e 20270212720600; projeto do Kommo, parte 4b).
+-- ATENDIMENTO DO CRM (migrations 20270212710000, 20270212720000, 20270212720400, 20270212720600 e 20270212720800; projeto do Kommo, parte 4b).
 -- Antes da Lyra (08/11 18h56) não havia robô: toda mensagem que saiu é da atendente, com nome no Kommo ou sem.
 --   1  a gravação guarda as mensagens novas
 --   2  ... e a mesma mensagem lida de novo não duplica
@@ -24,10 +24,13 @@
 --  21  ... e a espera que acabou de começar não avisa
 --  22  quem são os leads: quem conversou e quem fechou venda ou perdeu no período, com a venda de cada um
 --  23  o valor por segmento soma o 'valor_ganho', pela mesma conta
+--  24  o valor por atendente, pela mesma conta
+--  25  antes da Lyra não há bloco da Lyra
+--  26  com a Lyra: atendidos, triados, passou para atendente, resolveu sozinha e parou no meio (a transmissão não conta)
 begin;
 \ir _helpers.psql
 
-select plan(23);
+select plan(26);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-crm-atend', 'CRM atendimento', false) as a;
@@ -86,7 +89,7 @@ select public.mkt_kommo_gravar_vendas((select a from f), '2026-11-01', jsonb_bui
   jsonb_build_object('lead_id', 3, 'nome', 'Fechado', 'funil', 'consumidor', 'situacao', 'perdida', 'valor', 0, 'fechou', '2026-11-04', 'link', 'k/3', 'documento', '12345678901', 'responsavel', 10),
   jsonb_build_object('lead_id', 2, 'nome', 'Distribuidora', 'funil', 'distribuidor', 'situacao', 'ganha', 'valor', 900, 'fechou', '2026-11-04', 'link', 'k/2', 'documento', '11222333000144', 'telefone', '3899990000', 'responsavel', 20),
   -- Venda sem conversa no dia: entra na lista de leads mesmo assim.
-  jsonb_build_object('lead_id', 5, 'nome', 'Cliente da loja', 'funil', 'consumidor', 'situacao', 'ganha', 'valor', 168, 'fechou', '2026-11-04', 'link', 'k/5', 'documento', '12345678909', 'telefone', '31999990000', 'responsavel', 20)));
+  jsonb_build_object('lead_id', 5, 'nome', 'Cliente da loja', 'funil', 'consumidor', 'situacao', 'ganha', 'valor', 168, 'fechou', '2026-11-04', 'link', 'k/5', 'documento', '12345678909', 'telefone', '31999990000', 'responsavel', 10)));
 
 select tests.authenticate_as('dona@crmatend.test');
 create temporary table d on commit drop as select public.crm_atendimento('2026-11-04', '2026-11-04') as v;
@@ -96,7 +99,7 @@ select is((select (v->>'conversas') || '/' || (v->>'sem_resposta') from d), '3/1
 select is((select (v->>'primeira_resposta')::int from d), 30, '1ª resposta: média de 0 e 60 minutos');
 select is((select format('%s/%s/%s/%s/%s/%s', x->>'leads', x->>'mensagens', x->>'primeira_resposta', x->>'tarefas', x->>'ganhas', x->>'perdidas')
              from d, jsonb_array_elements(v->'atendentes') x where (x->>'kommo_id')::int = 10),
-  '1/2/0/1/1/1', 'a linha da Thayná, com a resposta sem nome');
+  '1/2/0/1/2/1', 'a linha da Thayná, com a resposta sem nome');
 select is((select coalesce(v->>'robo', 'sem robô') from d), 'sem robô', 'antes da Lyra não há linha do robô');
 select is((select format('%s|%s',
                   (select sum((x->>'conversas')::int) from jsonb_array_elements(v->'cruzado') x where x->>'uf' = 'MG'),
@@ -115,13 +118,16 @@ select is((select format('%s|%s', count(*) filter (where x->>'situacao' is not n
   '3|1:ganha:0,2:ganha:0,3:perdida:0,5:ganha:168', 'a lista: as 3 conversas e as 4 vendas e perdas, até a venda sem conversa');
 select is((select format('%s=%s', (select sum((x->>'valor')::numeric)::int from jsonb_array_elements(v->'vendas_cruzado') x), (v->>'valor_ganho')::numeric::int) from d),
   '168=168', 'o valor por segmento soma o total');
+select is((select (x->>'valor')::numeric::int from d, jsonb_array_elements(v->'atendentes') x where (x->>'kommo_id')::int = 10), 168,
+  'o valor da Thayná: a venda de 168 (a de valor zero não soma)');
+select is((select coalesce(v->>'lyra', 'sem Lyra') from d), 'sem Lyra', 'antes da Lyra não há bloco da Lyra');
 select tests.clear_authentication();
 
 select tests.authenticate_as('thay@crmatend.test');
 create temporary table t on commit drop as select public.crm_atendimento('2026-11-04', '2026-11-04') as v;
 select is((select string_agg(x->>'kommo_id', ',') || '/' || coalesce(v->>'robo', 'sem robo') from t, jsonb_array_elements(v->'atendentes') x group by v),
   '10/sem robo', 'a atendente vê só a linha dela');
-select is((select (v->>'conversas') || '/' || (v->>'sem_resposta') || '/' || (v->>'ganhas') from t), '2/1/1', 'e só os leads dela');
+select is((select (v->>'conversas') || '/' || (v->>'sem_resposta') || '/' || (v->>'ganhas') from t), '2/1/2', 'e só os leads dela');
 select tests.clear_authentication();
 
 select tests.authenticate_as('bia@crmatend.test');
@@ -179,6 +185,11 @@ create temporary table q on commit drop as select public.crm_atendimento('2026-1
 select is((select format('%s/%s/%s/%s', v->>'conversas', v->>'so_lyra', v->>'sem_resposta', v->>'primeira_resposta') from q), '5/1/2/19',
   'a vez da atendente começa em "Com atendente"; o que a Lyra resolveu sozinha e a equipe não são sem resposta');
 select is((select (v->'robo'->>'leads') || '/' || (v->'robo'->>'mensagens') from q), '8/9', 'o robô: a Lyra nos leads 7 e 13, a transmissão e a resposta automática do Instagram');
+select is((select format('%s/%s/%s/%s/%s|%s', v->'lyra'->>'atendidos', v->'lyra'->>'triados', v->'lyra'->>'passou', v->'lyra'->>'resolveu',
+                         v->'lyra'->>'parou',
+                         (select string_agg((x->>'lead_id') || case when (x->>'passou')::boolean then 'p' when (x->>'resolveu')::boolean then 'r' else 'x' end,
+                                            ',' order by (x->>'lead_id')::int) from jsonb_array_elements(v->'lyra'->'leads') x)) from q),
+  '3/3/1/1/1|7p,13r,14x', 'a Lyra: o 7 passou, o 13 foi para o link, o 14 parou; a transmissão do 8 não conta');
 select is((select format('%s/%s/%s/%s/%s/%s', x->>'mensagens', x->>'sem_nome', x->>'respondidos', x->>'ativos', x->>'no_prazo', x->>'tarefas')
              from q, jsonb_array_elements(v->'atendentes') x where (x->>'kommo_id')::int = 10),
   '3/2/2/1/2/0', 'a Thayná: 3 mensagens, 2 sem nome, 2 respondidos (11 e 27 min, no prazo), 1 ativo e a tarefa do lead da equipe fora');

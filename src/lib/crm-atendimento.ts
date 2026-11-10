@@ -15,7 +15,22 @@ export interface LinhaDaAtendente {
   /** Clientes que ela procurou sem eles terem escrito no período (retorno, pós-venda, cobrança). */
   ativos: number;
   tarefas: number; ganhas: number; perdidas: number;
+  /** Pela mesma conta da Venda total. */
+  valor: number;
 }
+/** Um lead que a Lyra respondeu no período, e o que aconteceu depois. */
+export interface LeadDaLyra {
+  lead_id: number; nome: string | null; segmento: Segmento | null; funil: string | null; etapa: string | null; link: string | null;
+  triado: boolean; passou: boolean; resolveu: boolean; parou: boolean;
+}
+export interface TrabalhoDaLyra {
+  atendidos: number; mensagens: number; triados: number; passou: number; resolveu: number; parou: number; leads: LeadDaLyra[];
+}
+export type LinhaDaLyra = 'atendidos' | 'triados' | 'passou' | 'resolveu' | 'parou';
+/** Os leads de uma linha do bloco da Lyra. */
+const CAMPO_DA_LINHA = { triados: 'triado', passou: 'passou', resolveu: 'resolveu', parou: 'parou' } as const;
+export const leadsDaLinha = (leads: LeadDaLyra[], linha: LinhaDaLyra) =>
+  (linha === 'atendidos' ? leads : leads.filter((l) => l[CAMPO_DA_LINHA[linha]]));
 export interface LeadParaResponder {
   lead_id: number; desde: string; nome: string; segmento: Segmento | null; funil: string | null; etapa: string | null; link: string; uf: string | null;
 }
@@ -46,6 +61,8 @@ export interface AtendimentoDoCrm {
   valor_ganho: number;
   /** A Lyra (lead em "Com a Lyra") e a transmissão; null quando o período é todo antes de ela entrar no ar, ou para a atendente. */
   robo: { leads: number; mensagens: number } | null;
+  /** O que a Lyra fez; null antes de ela entrar no ar, ou para a atendente. */
+  lyra: TrabalhoDaLyra | null;
   atendentes: LinhaDaAtendente[];
   cruzado: LinhaCruzada[];
   vendas_cruzado: VendaCruzada[];
@@ -132,11 +149,22 @@ export function porSegmento(cruzado: LinhaCruzada[], vendas: VendaCruzada[], uf:
   }).sort((a, b) => b.conversas - a.conversas || b.valor - a.valor || a.nome.localeCompare(b.nome));
 }
 
-export type FiltroDosLeads = 'todos' | 'sem_resposta' | 'fora_do_prazo' | 'venda';
+export type FiltroDosLeads = 'todos' | 'sem_resposta' | 'fora_do_prazo' | 'venda' | 'perdida';
 /** Os leads do estado e do segmento escolhidos (null = todos), com o filtro da lista. */
 export function leadsDoRecorte(leads: LeadDoPeriodo[], uf: string | null, segmento: string | null, filtro: FiltroDosLeads): LeadDoPeriodo[] {
   return leads.filter((l) => doEstado(uf)(l) && (segmento === null || chaveDoSegmento(l) === segmento)
-    && (filtro === 'todos' || (filtro === 'venda' ? l.venda === 'ganha' : l.situacao === filtro)));
+    && (filtro === 'todos' || (filtro === 'venda' ? l.venda === 'ganha' : filtro === 'perdida' ? l.venda === 'perdida' : l.situacao === filtro)));
+}
+
+/** Contagem por segmento (o maior primeiro), pelo nome que a tela mostra. */
+export function contarPorSegmento<T extends { segmento: Segmento | null; funil: string | null }>(itens: T[], peso: (x: T) => number = () => 1) {
+  const m = new Map<string, { nome: string; n: number; total: number }>();
+  for (const x of itens) {
+    const nome = nomeDoFunil(x.segmento, x.funil);
+    const g = m.get(nome) ?? { nome, n: 0, total: 0 };
+    m.set(nome, { nome, n: g.n + 1, total: g.total + peso(x) });
+  }
+  return [...m.values()].sort((a, b) => b.total - a.total || b.n - a.n || a.nome.localeCompare(b.nome));
 }
 
 export interface LinhaDoEstado extends Soma { uf: string; nome: string }
