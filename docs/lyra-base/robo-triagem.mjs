@@ -288,14 +288,15 @@ if (noWhatsapp) {
   blocos[PAROU.distribuidor] = parou(FUNIL.distribuidor, ETAPA.distribuidorAtendente);
 
   // Pergunta do produto em dois botões (dono, 2026-11-10, opção A de https://claude.ai/artifact/6r7uCt3HAnsMdB8cN47MNG:
-  // "quanto mais opção pior"): quem não sabe recebe o catálogo e escreve o pedido; quem sabe escreve direto. Quem escreve
-  // em vez de tocar já mandou o pedido. A lista de 8 linhas e o campo "Linha de interesse" saíram.
+  // "quanto mais opção pior"): quem não sabe recebe o catálogo e escreve o pedido; quem sabe escreve direto. A lista de 8
+  // linhas e o campo "Linha de interesse" saíram. Regra do dono (2026-11-10), em toda pergunta de botão ou lista: quem
+  // escreve em vez de tocar recebe a pergunta de novo; texto livre só onde a pergunta pede texto.
   const perguntaDoProduto = (inicio, catalogo, pedeProdutos, pedidoEscrito, parouEm) => ({
     [inicio]: { question: [msg('Você já sabe quais produtos quer? 👇', botoes(['Ver o catálogo', 'Já sei o que quero']))],
       answer: [{ handler: 'buttons', params: [
         { value: 'Ver o catálogo', params: [goto(inicio + 1)] },
         { value: 'Já sei o que quero', params: [goto(pedeProdutos)] },
-        { type: 'else', params: [goto(pedidoEscrito)] }] }] },
+        { type: 'else', params: [goto(inicio)] }] }] },
     [inicio + 1]: { question: [msg(catalogo), goto(inicio + 2)] },
     [inicio + 2]: { question: [esperaOuParou(pedidoEscrito, parouEm)] },
   });
@@ -313,7 +314,10 @@ if (noWhatsapp) {
   blocos[28] = { question: [esperaOuParou(29, PAROU.salao)] };
   blocos[29] = { question: [msg('Anotado ✅ Para liberar o preço de salão, qual é o CNPJ? 🔒 Ele é usado apenas para isso. Se o salão não tiver CNPJ, toque no botão abaixo.', botoes(['Não tenho CNPJ'])), goto(340)] };
   blocos[340] = { question: [esperaOuParou(341, PAROU.salao)] };
-  blocos[341] = { question: [contem(['Não tenho', 'não tenho', 'Nao tenho', 'nao tenho', 'Não', 'não', 'autônoma', 'autonoma'], 343), campoLead(CAMPO.cpfCnpj, '{{message_text}}'), goto(342)] };
+  // Quem escreve em vez de tocar no botão (dono, 2026-11-10): "não tenho", "sem CNPJ", em qualquer caixa, vai para o
+  // atendimento sem CNPJ; o "contém" do Kommo diferencia maiúscula de minúscula, por isso as variações.
+  blocos[341] = { question: [contem(['Não', 'não', 'NÃO', 'Nao', 'nao', 'NAO', 'Sem', 'sem', 'SEM', 'autônoma', 'Autônoma', 'autonoma', 'Autonoma'], 343),
+    campoLead(CAMPO.cpfCnpj, '{{message_text}}'), goto(342)] };
   blocos[342] = { question: [etapa(FUNIL.salao, ETAPA.salaoAtendente), msg('Pedido anotado ✅ A nossa equipe vai entrar em contato por aqui para finalizar o seu pedido. 💙'), tarefa('Salão (CNPJ no lead) fez o pedido pela Lyra: montar o pedido com os produtos da conversa (até 45 minutos).'), esperaResposta(55)] };
   // Sem CNPJ: as condições profissionais não valem, e a equipe atende como uso em casa.
   blocos[343] = { question: [etapa(FUNIL.consumidor, ETAPA.consumidorAtendente), campoLead(CAMPO.segmento, 'Consumidor final'), etiqueta('consumidor-final'), etiqueta('profissional-sem-cnpj'),
