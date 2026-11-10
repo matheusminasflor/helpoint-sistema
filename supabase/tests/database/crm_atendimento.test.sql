@@ -30,7 +30,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(26);
+select plan(27);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-crm-atend', 'CRM atendimento', false) as a;
@@ -67,7 +67,7 @@ select public.kommo_gravar_atendimento((select a from f),
     jsonb_build_object('id', 'm8', 'lead_id', 1, 'quando', greatest(extract(epoch from timestamptz '2026-11-10 12:00-03'), extract(epoch from now() - interval '2 hours'))::bigint, 'entrou', true, 'autor', 0),
     jsonb_build_object('id', 'm9', 'lead_id', 3, 'quando', greatest(extract(epoch from timestamptz '2026-11-10 12:00-03'), extract(epoch from now() - interval '1 hour'))::bigint, 'entrou', true, 'autor', 0)),
   jsonb_build_array(
-    jsonb_build_object('lead_id', 1, 'nome', 'Salão da Ana', 'segmento', 'salao', 'funil', 'Salão de Beleza', 'etapa', 'Com atendente', 'responsavel', 10, 'link', 'k/1', 'uf', 'MG'),
+    jsonb_build_object('lead_id', 1, 'nome', 'Salão da Ana', 'segmento', 'salao', 'funil', 'Salão de Beleza', 'etapa', 'Com atendente', 'responsavel', 10, 'link', 'k/1', 'uf', 'MG', 'origem', 'Instagram'),
     jsonb_build_object('lead_id', 2, 'nome', 'Distribuidora', 'segmento', 'distribuidor', 'funil', 'Distribuidor', 'responsavel', 20, 'link', 'k/2', 'uf', 'SP'),
     jsonb_build_object('lead_id', 3, 'nome', 'Fechado', 'segmento', 'consumidor', 'funil', 'Consumidor Final', 'fechado', true, 'responsavel', 10, 'link', 'k/3'),
     -- Fechado para não cair em "para responder" (escreveu em 04/11 e ninguém respondeu).
@@ -116,6 +116,9 @@ select is((select format('%s|%s', count(*) filter (where x->>'situacao' is not n
                            filter (where x->>'venda' is not null))
              from d, jsonb_array_elements(v->'leads') x),
   '3|1:ganha:0,2:ganha:0,3:perdida:0,5:ganha:168', 'a lista: as 3 conversas e as 4 vendas e perdas, até a venda sem conversa');
+select is((select string_agg((x->>'lead_id') || ':' || coalesce(x->>'origem', 'sem'), ',' order by (x->>'lead_id')::int)
+             from d, jsonb_array_elements(v->'leads') x where (x->>'lead_id')::int in (1, 2)),
+  '1:Instagram,2:sem', 'a lista traz a origem do lead; sem origem fica vazia');
 select is((select format('%s=%s', (select sum((x->>'valor')::numeric)::int from jsonb_array_elements(v->'vendas_cruzado') x), (v->>'valor_ganho')::numeric::int) from d),
   '168=168', 'o valor por segmento soma o total');
 select is((select (x->>'valor')::numeric::int from d, jsonb_array_elements(v->'atendentes') x where (x->>'kommo_id')::int = 10), 168,

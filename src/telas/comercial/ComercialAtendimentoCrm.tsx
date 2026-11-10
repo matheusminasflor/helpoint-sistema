@@ -19,7 +19,7 @@ import { PERIODOS_DA_REUNIAO, intervaloDoPeriodoRapido, rotuloDoIntervalo } from
 import { dataHora, diaCurto } from '@/lib/dates';
 import {
   CAMPO_OBRIGATORIO, FALTA, LYRA_NO_AR, SEM_ESTADO, contagemDosCampos, dentroDaMeta, minutos, nomeDoEstado, nomeDoFunil,
-  contarPorSegmento, leadsDaLinha, leadsDoRecorte, porEstado, porSegmento, type FiltroDosLeads, type LinhaDaLyra, type SituacaoDoLead,
+  contarPorSegmento, leadsDaLinha, leadsDoRecorte, porEstado, porOrigem, porSegmento, type FiltroDosLeads, type LinhaDaLyra, type SituacaoDoLead,
 } from '@/lib/crm-atendimento';
 import { formatBRL } from '@/lib/crm';
 import { cn } from '@/lib/utils';
@@ -63,7 +63,10 @@ export default function ComercialAtendimentoCrm() {
   const segmentos = useMemo(() => (data ? porSegmento(data.cruzado, data.vendas_cruzado, uf) : []), [data, uf]);
   const [segmento, setSegmento] = useState<string | null>(null);
   const [filtro, setFiltro] = useState<FiltroDosLeads>('todos');
-  const leads = useMemo(() => (data ? leadsDoRecorte(data.leads ?? [], uf, segmento, filtro) : []), [data, uf, segmento, filtro]);
+  const [origem, setOrigem] = useState<string | null>(null);
+  const origens = useMemo(() => porOrigem(data?.leads ?? []), [data]);
+  const leads = useMemo(() => (data ? leadsDoRecorte(data.leads ?? [], uf, segmento, filtro, origem) : []), [data, uf, segmento, filtro, origem]);
+  const verOrigem = (o: string) => { setOrigem(origem === o ? null : o); if (origem !== o) document.getElementById('leads')?.scrollIntoView({ behavior: 'smooth' }); };
   const nomeDoSegmento = segmentos.find((s) => s.chave === segmento)?.nome;
   const [linhaDaLyra, setLinhaDaLyra] = useState<LinhaDaLyra>('atendidos');
   const leadsDaLyra = data?.lyra ? leadsDaLinha(data.lyra.leads, linhaDaLyra) : [];
@@ -304,6 +307,44 @@ export default function ComercialAtendimentoCrm() {
             </Card>
           </div>
 
+          {/* De onde veio cada lead (dono, 2026-11-10, https://claude.ai/artifact/LsvUjrtiW1gJUV1DUbgMuS). */}
+          <Card className="p-4 sm:p-6 min-w-0">
+            <h2 className="text-base font-bold mb-3"><Nome id="crm.origem">Por origem</Nome></h2>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="text-left text-muted-foreground">
+                  <tr className="border-b">
+                    <th className="py-2 pr-3 font-semibold">Origem</th>
+                    <th className="py-2 px-2 font-semibold text-right">Leads</th>
+                    <th className="py-2 px-2 font-semibold text-right">Vendas</th>
+                    <th className="py-2 px-2 font-semibold text-right">Valor</th>
+                    <th className="py-2 pl-2 font-semibold text-right">Conversão</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {origens.map((o) => (
+                    <tr key={o.origem} className={cn('border-b last:border-0 cursor-pointer hover:bg-muted', origem === o.origem && 'bg-muted')}
+                      onClick={() => verOrigem(o.origem)}>
+                      <td className="py-2 pr-3 font-semibold">
+                        <button type="button" aria-pressed={origem === o.origem}
+                          className={cn('text-left hover:underline', o.origem === 'Sem origem' ? 'text-muted-foreground' : 'text-primary')}
+                          onClick={(e) => { e.stopPropagation(); verOrigem(o.origem); }}>
+                          {o.origem}
+                        </button>
+                      </td>
+                      <td className="py-2 px-2 text-right tabular-nums">{o.leads}</td>
+                      <td className="py-2 px-2 text-right tabular-nums">{o.vendas || '—'}</td>
+                      <td className="py-2 px-2 text-right tabular-nums">{o.valor ? formatBRL(o.valor) : '—'}</td>
+                      <td className="py-2 pl-2 text-right tabular-nums">{o.leads ? `${Math.round((o.vendas / o.leads) * 100)}%` : '—'}</td>
+                    </tr>
+                  ))}
+                  {!origens.length && <tr><td colSpan={5} className="py-4 text-muted-foreground">Nenhum lead no período.</td></tr>}
+                </tbody>
+              </table>
+            </div>
+            <p className="mt-3 text-xs text-muted-foreground">Clique numa origem para ver os leads dela. A origem começou a ser gravada em 10/11; os leads de antes ficam como "Sem origem".</p>
+          </Card>
+
           <Card id="leads" className="p-4 sm:p-6 min-w-0 scroll-mt-4">
             <h2 className="text-base font-bold mb-3 flex flex-wrap items-center gap-2">
               <Nome id="crm.leads">Leads</Nome> <span className="tabular-nums text-muted-foreground">· {leads.length}</span>
@@ -315,6 +356,11 @@ export default function ComercialAtendimentoCrm() {
               {segmento && (
                 <button type="button" onClick={() => setSegmento(null)} className="badge-info inline-flex items-center gap-1">
                   {nomeDoSegmento ?? 'Segmento'} <X className="h-3 w-3" aria-label="tirar o filtro" />
+                </button>
+              )}
+              {origem && (
+                <button type="button" onClick={() => setOrigem(null)} className="badge-info inline-flex items-center gap-1">
+                  {origem} <X className="h-3 w-3" aria-label="tirar o filtro" />
                 </button>
               )}
             </h2>

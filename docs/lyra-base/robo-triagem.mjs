@@ -23,7 +23,7 @@ const FUNIL = { consumidor: 12904179, salao: 12927111, distribuidor: 12927087, a
 // nome de quem atende hoje, para não precisar mexer quando a pessoa mudar (dono, 2026-11-08).
 const ETAPA = { entradaContato: 107856359, consumidorLyra: 113891167, salaoLyra: 113891215, distribuidorLyra: 113891223, consumidorLink: 113891171, consumidorAtendente: 99501151, salaoAtendente: 99680859, distribuidorAtendente: 99680647, posVenda: 113891275, entradaAtendente: 113893475 };
 const CAMPO = { segmento: 4381514, cpfCnpj: 4381512, marca: 4381516, estadoAtuacao: 4381528, cidadeAtuacao: 4381530, whatsapp: 4381554,
-  investimento: 4381738 }; // criado em 2026-11-10 (lista)
+  investimento: 4381738, origem: 4381754 }; // criados em 2026-11-10 (listas)
 // Catálogo em PDF por segmento (dono, 2026-11-10): uso em casa recebe o da Minasflor; salão, Minasflor + MF.PRO.
 // Links do dono (2026-11-10), sem "https://" pelo mesmo motivo dos outros endereços (o Kommo encurtaria).
 const PDF = { minasflor: 'drive.google.com/file/d/1GF3BzmvStM1_DzX_VCKQjgnXTLtr9VXb/view', mfpro: 'drive.google.com/file/d/1spoT1pUT0wwMqRYaWDxDbXLI-7XQFk5T/view' };
@@ -358,7 +358,22 @@ if (!noWhatsapp) {
 }
 if (noWhatsapp) {
   blocos[200] = { question: blocos[0].question, answer: blocos[0].answer };
-  blocos[0] = { question: [paraEntrada, goto(200)] };
+  // De onde veio (dono, 2026-11-10, https://claude.ai/artifact/LsvUjrtiW1gJUV1DUbgMuS): o link da bio, do site e do Google
+  // chega com uma frase pronta, e a Lyra grava a Origem em silêncio e segue para a saudação (200). Sem a frase, a saudação
+  // já abre com a pergunta da origem (410) e depois pergunta o perfil (201). O anúncio da Meta, o formulário e o Direct o
+  // Helpoint reconhece sozinho (`origemDoLead`).
+  const FRASE = { Instagram: 'pelo Instagram', Site: 'pelo site', Google: 'pelo Google' };
+  const variacoes = (t) => [t, t.toLowerCase(), t.toUpperCase()];
+  blocos[0] = { question: [paraEntrada, ...Object.values(FRASE).map((t, i) => contem(variacoes(t), 400 + i)), goto(410)] };
+  Object.keys(FRASE).forEach((o, i) => { blocos[400 + i] = { question: [campoLead(CAMPO.origem, o), goto(200)] }; });
+  const ORIGENS = ['Instagram', 'Google', 'Site', 'Indicação', 'Outro'].map((t) => linha(t));
+  blocos[410] = { question: escolha('Olá! ✨ Sou a Lyra, da Minasflor. Para começar, como você conheceu a Minasflor? Para responder, {toque} 👇', ORIGENS),
+    answer: [{ handler: 'buttons', params: [...ORIGENS.flatMap((o, i) => opcao(o, [goto(411 + i)])), { type: 'else', params: [goto(416)] }] }] };
+  ORIGENS.forEach((o, i) => { blocos[411 + i] = { question: [campoLead(CAMPO.origem, o.title), goto(201)] }; });
+  // Escreveu em vez de tocar: "atendente" e assunto de cliente seguem como na saudação; o resto recebe a pergunta de novo.
+  blocos[416] = { question: [blocos[53].question[0], blocos[53].question[1], goto(410)] };
+  blocos[201] = { question: escolha('Obrigada! Como posso te ajudar? Para responder, {toque}. Se preferir falar com a nossa equipe, é só escrever "atendente".', Object.values(OPCOES)),
+    answer: respostaDosBotoes() };
 } else {
   blocos[0].question = [paraEntrada, { ...blocos[0].question[0], params: { ...blocos[0].question[0].params, is_in_starting_block: true } }];
 }

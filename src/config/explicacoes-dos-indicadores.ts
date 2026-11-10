@@ -952,6 +952,12 @@ export const EXPLICACOES = {
     deOndeVem: "As conversas e as vendas do Kommo. Equipe, fornecedores e artistas (etiquetas no Kommo) não entram.",
     comoCalcula: "Quem conversou no período e quem fechou venda ou perdeu nele. Segue o estado e o segmento clicados acima.",
   },
+  'crm.origem': {
+    titulo: "Por origem",
+    oQueE: "De onde vieram os leads do período e quanto cada origem vendeu.",
+    deOndeVem: "O anúncio da Meta, a frase do link (bio do Instagram, site, Google), a resposta à pergunta da Lyra, o formulário ou o Direct do Instagram.",
+    comoCalcula: "Os mesmos leads e a mesma Venda total da lista abaixo, separados pela origem. \"Sem origem\": leads de antes de 10/11 e quem chegou sem a frase nem respondeu à pergunta.",
+  },
   'crm.lyra': {
     titulo: "Lyra",
     oQueE: "O que a Lyra mandou no período.",

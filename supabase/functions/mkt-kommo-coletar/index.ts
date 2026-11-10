@@ -13,7 +13,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient, type SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { servicoOuAdmin } from '../_shared/servico-ou-admin.ts';
 import { ufDoCliente } from '../_shared/kommo-uf.ts';
-import { documentoDoLead, ehLimpeza, whatsappDoLead, etapasDeTriagem, FUNIL_DE_VENDA, segmentoDoLead, type LeadParaSegmento } from '../_shared/kommo-segmento.ts';
+import { documentoDoLead, ehLimpeza, whatsappDoLead, etapasDeTriagem, FUNIL_DE_VENDA, origemDoLead, segmentoDoLead, type LeadParaSegmento } from '../_shared/kommo-segmento.ts';
 
 const json = (corpo: unknown, status = 200) =>
   new Response(JSON.stringify(corpo), { status, headers: { 'Content-Type': 'application/json' } });
@@ -58,7 +58,7 @@ interface Lead extends LeadParaSegmento {
 /** Todos os leads com `campo` (criado, fechado ou mexido) entre `de` e agora, em segundos; fechados e mexidos vêm com os contatos. */
 async function leads(campo: 'created_at' | 'closed_at' | 'updated_at', de: number): Promise<Lead[]> {
   const todos: Lead[] = [];
-  const com = campo !== 'created_at' ? '&with=contacts' : '';
+  const com = campo !== 'created_at' ? '&with=contacts,source' : '';
   for (let pagina = 1; ; pagina++) {
     const r = await kommo<{ _embedded: { leads: Lead[] }; _links?: { next?: unknown } }>(
       `leads?limit=250&page=${pagina}${com}&filter[${campo}][from]=${de}&filter[${campo}][to]=${Math.floor(Date.now() / 1000)}`);
@@ -265,7 +265,7 @@ async function atendimento(db: SupabaseClient, tenant: string) {
     .filter((id) => !porId.has(id));
   for (let i = 0; i < faltam.length; i += 200) {
     const filtro = faltam.slice(i, i + 200).map((id) => `filter[id][]=${id}`).join('&');
-    const r = await kommo<{ _embedded: { leads: Lead[] } }>(`leads?limit=250&with=contacts&${filtro}`);
+    const r = await kommo<{ _embedded: { leads: Lead[] } }>(`leads?limit=250&with=contacts,source&${filtro}`);
     for (const l of r?._embedded.leads ?? []) porId.set(l.id, l);
   }
   const funis = (await kommo<{ _embedded: { pipelines: { id: number; name: string; _embedded?: { statuses?: { id: number; name: string }[] } }[] } }>('leads/pipelines'))?._embedded.pipelines ?? [];
@@ -282,6 +282,7 @@ async function atendimento(db: SupabaseClient, tenant: string) {
       fechado: l.status_id === GANHA || l.status_id === PERDIDA, responsavel: l.responsible_user_id ?? null,
       link: `https://${sub}.kommo.com/leads/detail/${l.id}`,
       interno: foraDosIndicadores(l._embedded?.tags) || (contato !== null && fora.has(contato)),
+      origem: origemDoLead(l as Parameters<typeof origemDoLead>[0]),
       // O campo do lead (a Lyra pergunta ao distribuidor), o do contato e, sem eles, o DDD; '' = não deu para saber.
       uf: ufDoCliente([
         (l as LeadParaSegmento).custom_fields_values?.find((c) => c.field_name?.trim().toLowerCase() === 'estado de atuação')?.values?.[0]?.value,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  contagemDosCampos, contarPorSegmento, dentroDaMeta, leadsDaLinha, leadsDoRecorte, minutos, nomeDoFunil, porEstado, porSegmento, SEM_ESTADO,
+  contagemDosCampos, contarPorSegmento, porOrigem, dentroDaMeta, leadsDaLinha, leadsDoRecorte, minutos, nomeDoFunil, porEstado, porSegmento, SEM_ESTADO,
   type LeadDoPeriodo, type LinhaCruzada, type VendaComCampoFaltando,
 } from './crm-atendimento';
 
@@ -65,6 +65,19 @@ describe('Atendimento do CRM', () => {
     expect(ids(leadsDoRecorte(leads, SEM_ESTADO, 'funil:ENAD', 'todos'))).toEqual([4]);
     expect(ids(leadsDoRecorte(leads, null, null, 'venda'))).toEqual([1]);
     expect(ids(leadsDoRecorte(leads, null, null, 'perdida'))).toEqual([5]);
+  });
+
+  it('por origem: leads, vendas e valor, e o filtro da lista', () => {
+    const l = (lead_id: number, origem: string | null, venda: LeadDoPeriodo['venda'], valor: number | null): LeadDoPeriodo =>
+      ({ lead_id, nome: null, segmento: 'consumidor', funil: null, uf: null, link: null, atendente: null, situacao: 'no_prazo', minutos: null, venda, valor, origem });
+    const leads = [l(1, 'Instagram', 'ganha', 300), l(2, 'Instagram', null, null), l(3, null, 'ganha', 100), l(4, 'Google', 'perdida', 50)];
+    expect(porOrigem(leads)).toEqual([
+      { origem: 'Instagram', leads: 2, vendas: 1, valor: 300 },
+      { origem: 'Sem origem', leads: 1, vendas: 1, valor: 100 },
+      { origem: 'Google', leads: 1, vendas: 0, valor: 0 },
+    ]);
+    expect(porOrigem(leads).reduce((t, o) => t + o.valor, 0)).toBe(400);
+    expect(leadsDoRecorte(leads, null, null, 'todos', 'Sem origem').map((x) => x.lead_id)).toEqual([3]);
   });
 
   it('as linhas da Lyra e a soma por segmento', () => {

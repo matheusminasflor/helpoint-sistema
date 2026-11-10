@@ -73,3 +73,23 @@ export function documentoDoLead(lead: LeadParaSegmento): string | null {
   const d = String(campo?.values?.[0]?.value ?? '').replace(/\D/g, '');
   return d.length === 11 || d.length === 14 ? d : null;
 }
+
+// De onde o lead veio (dono, 2026-11-10, proposta https://claude.ai/artifact/LsvUjrtiW1gJUV1DUbgMuS). O anúncio da Meta
+// vale mais que tudo (o Kommo preenche os campos "Meta Ads" sozinho); depois o campo "Origem" que a Lyra grava pela
+// frase do link ou pela pergunta da saudação; depois a fonte do Kommo (formulário, Direct). Nada disso: null.
+export type Origem = 'Anúncio' | 'Instagram' | 'Google' | 'Site' | 'Indicação' | 'Outro' | 'Formulário' | 'Direct do Instagram';
+const ORIGENS_DO_CAMPO: Origem[] = ['Instagram', 'Google', 'Site', 'Indicação', 'Outro'];
+
+export function origemDoLead(lead: LeadParaSegmento & { _embedded?: { source?: { name?: string | null } | null } }): Origem | null {
+  const campos = lead.custom_fields_values ?? [];
+  if (campos.some((c) => normaliza(c.field_name ?? '').startsWith('meta ads') && c.values?.[0]?.value)) return 'Anúncio';
+  const doCampo = campos.find((c) => normaliza(c.field_name ?? '') === 'origem')?.values?.[0]?.value;
+  const achada = ORIGENS_DO_CAMPO.find((o) => typeof doCampo === 'string' && normaliza(o) === normaliza(doCampo));
+  if (achada) return achada;
+  const fonte = normaliza(lead._embedded?.source?.name ?? '');
+  if (!fonte) return null;
+  if (fonte.includes('formul')) return 'Formulário';
+  // ponytail: a fonte do WhatsApp é "Minasflor Comercial"; as outras fontes de venda são os Direct dos perfis.
+  if (fonte.includes('comercial') || fonte.includes('whatsapp') || fonte.includes('coment')) return null;
+  return 'Direct do Instagram';
+}

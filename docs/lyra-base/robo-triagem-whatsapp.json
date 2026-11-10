@@ -1,6 +1,6 @@
 {
   "0": {
-    "block_uuid": "1c06f9ad-61ab-405b-b10e-e2e0442f5801",
+    "block_uuid": "8fbd847b-3250-4b86-b7ee-cba09667cf69",
     "question": [
       {
         "handler": "action",
@@ -13,16 +13,112 @@
         }
       },
       {
+        "handler": "conditions",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "term1": "{{message_text}}",
+              "term2": "pelo Instagram",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "pelo instagram",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "PELO INSTAGRAM",
+              "operation": "contains"
+            }
+          ],
+          "result": [
+            {
+              "handler": "goto",
+              "params": {
+                "type": "question",
+                "step": 400
+              }
+            }
+          ]
+        }
+      },
+      {
+        "handler": "conditions",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "term1": "{{message_text}}",
+              "term2": "pelo site",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "pelo site",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "PELO SITE",
+              "operation": "contains"
+            }
+          ],
+          "result": [
+            {
+              "handler": "goto",
+              "params": {
+                "type": "question",
+                "step": 401
+              }
+            }
+          ]
+        }
+      },
+      {
+        "handler": "conditions",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "term1": "{{message_text}}",
+              "term2": "pelo Google",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "pelo google",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "PELO GOOGLE",
+              "operation": "contains"
+            }
+          ],
+          "result": [
+            {
+              "handler": "goto",
+              "params": {
+                "type": "question",
+                "step": 402
+              }
+            }
+          ]
+        }
+      },
+      {
         "handler": "goto",
         "params": {
           "type": "question",
-          "step": 200
+          "step": 410
         }
       }
     ]
   },
   "9": {
-    "block_uuid": "e28f479d-6081-45ef-aed1-25c147b845f9",
+    "block_uuid": "f75d5675-28ba-4bbc-8084-93ed5a49580b",
     "question": [
       {
         "handler": "conditions",
@@ -131,7 +227,7 @@
     ]
   },
   "10": {
-    "block_uuid": "8856e961-2a00-446a-acc3-da9816bfb713",
+    "block_uuid": "96e1b6c2-341f-4245-af16-2fb76721dedf",
     "question": [
       {
         "handler": "action",
@@ -185,7 +281,7 @@
     ]
   },
   "18": {
-    "block_uuid": "f0462887-1178-443d-a9a5-a2a99d8e6f19",
+    "block_uuid": "49f38502-a927-4bba-baae-4d8482acf225",
     "question": [
       {
         "handler": "send_message",
@@ -212,7 +308,7 @@
     ]
   },
   "19": {
-    "block_uuid": "468ad9b2-0488-4a85-99c6-ec630d45656d",
+    "block_uuid": "8f975a78-e35a-4437-922a-74b990bb13fa",
     "question": [
       {
         "handler": "waits",
@@ -246,7 +342,7 @@
     ]
   },
   "20": {
-    "block_uuid": "60e3d153-88a4-4f02-a840-6f257bac30a0",
+    "block_uuid": "285b5b43-7f28-43c9-a83b-7ca16a7eab02",
     "question": [
       {
         "handler": "action",
@@ -290,7 +386,7 @@
     ]
   },
   "27": {
-    "block_uuid": "9cf7a5e9-f9d2-49ef-af26-3b6c4d49a433",
+    "block_uuid": "13798dc2-aa5d-49f3-90d0-4350deae5a99",
     "question": [
       {
         "handler": "send_message",
@@ -317,7 +413,7 @@
     ]
   },
   "28": {
-    "block_uuid": "005588ad-cb68-4600-a09c-e1a79596dc03",
+    "block_uuid": "8bd83f00-5939-417b-8ce5-e5d5c47fee3e",
     "question": [
       {
         "handler": "waits",
@@ -351,7 +447,7 @@
     ]
   },
   "29": {
-    "block_uuid": "4b9fb1ac-74dc-4fd1-aa4c-b3c59891b20a",
+    "block_uuid": "c9a406e5-3a5b-4fcb-81aa-7fc518e7c0d2",
     "question": [
       {
         "handler": "send_message",
@@ -384,7 +480,7 @@
     ]
   },
   "30": {
-    "block_uuid": "31e54ef0-0b2f-4e26-8887-d1a4ac3899be",
+    "block_uuid": "b9b70672-95ec-4355-94b8-2da8c70864dc",
     "question": [
       {
         "handler": "action",
@@ -428,7 +524,7 @@
     ]
   },
   "31": {
-    "block_uuid": "eb64a625-f1d3-47eb-97d2-dc8db7dacf35",
+    "block_uuid": "c3f9c8d0-70ff-492a-ab6d-ae31985ec5c0",
     "question": [
       {
         "handler": "send_message",
@@ -455,7 +551,7 @@
     ]
   },
   "32": {
-    "block_uuid": "e397f95a-4311-4b43-a95f-7cd764a1c0c4",
+    "block_uuid": "cff5efd9-7025-4c59-a312-fcb72bbaaf3f",
     "question": [
       {
         "handler": "waits",
@@ -489,7 +585,7 @@
     ]
   },
   "33": {
-    "block_uuid": "4a580f6e-a4bd-4c98-a74c-5ad37c23a132",
+    "block_uuid": "c8dc7eb3-82da-40fd-bd7f-c3b6e8d8b8a0",
     "question": [
       {
         "handler": "action",
@@ -511,7 +607,7 @@
     ]
   },
   "34": {
-    "block_uuid": "e80a6894-9b1f-4d0e-9190-87a58e7174be",
+    "block_uuid": "8b557668-6c1c-4613-9404-8e1449edd6d3",
     "question": [
       {
         "handler": "send_message",
@@ -538,7 +634,7 @@
     ]
   },
   "35": {
-    "block_uuid": "94dcf1dc-671d-46e1-93a3-aa26ff43f77e",
+    "block_uuid": "1a296505-5fc5-4b2a-baba-2586533e0a7e",
     "question": [
       {
         "handler": "waits",
@@ -572,7 +668,7 @@
     ]
   },
   "36": {
-    "block_uuid": "82fd34a0-8bb5-4183-b00f-98180788ee06",
+    "block_uuid": "1643e602-2c79-4a1f-8c5f-cff2415936f5",
     "question": [
       {
         "handler": "conditions",
@@ -651,7 +747,7 @@
     ]
   },
   "37": {
-    "block_uuid": "88077941-89ca-4381-b877-2042fb5f0291",
+    "block_uuid": "fd136503-cf32-47db-bfef-85e5a8164e07",
     "question": [
       {
         "handler": "list_message",
@@ -2139,7 +2235,7 @@
     ]
   },
   "39": {
-    "block_uuid": "60f2ec90-b060-4c37-9941-f0cc2fa83323",
+    "block_uuid": "63eab929-34ef-49b1-a27b-bb52a4546ca9",
     "question": [
       {
         "handler": "action",
@@ -2216,7 +2312,7 @@
     ]
   },
   "40": {
-    "block_uuid": "5f9bc998-931f-44ba-8c30-5fdd4bd7e88c",
+    "block_uuid": "ad9c64d7-72f0-4de0-b7b2-d1421f1f36cb",
     "question": [
       {
         "handler": "action",
@@ -2305,7 +2401,7 @@
     ]
   },
   "50": {
-    "block_uuid": "58129cc8-9e95-4847-b19c-b691698dc9d4",
+    "block_uuid": "294341d1-d1f2-42e1-a1c1-e39daf277418",
     "question": [
       {
         "handler": "list_message",
@@ -2468,7 +2564,7 @@
     ]
   },
   "51": {
-    "block_uuid": "879b591f-9e6a-450b-afdd-f7ee6a5a7e1f",
+    "block_uuid": "4572e566-91f3-4cb4-9aad-bf5a9d7747d1",
     "question": [
       {
         "handler": "action",
@@ -2557,7 +2653,7 @@
     ]
   },
   "53": {
-    "block_uuid": "0987ab70-18a8-4b37-b761-ba60eaedf4f1",
+    "block_uuid": "ed4f5eab-014a-4c6c-9b7f-c1f8a7deeb23",
     "question": [
       {
         "handler": "conditions",
@@ -2693,7 +2789,7 @@
     ]
   },
   "55": {
-    "block_uuid": "8472236f-527e-425e-aa13-6f9f78297cae",
+    "block_uuid": "a96e1eaa-3624-448e-a5fa-a9713a680844",
     "question": [
       {
         "handler": "send_message",
@@ -2720,7 +2816,7 @@
     ]
   },
   "70": {
-    "block_uuid": "2b6d07f9-4beb-441e-b77d-3f630cd67d82",
+    "block_uuid": "cde2bbdc-8c8e-4060-ab1b-ba1c4c47ae63",
     "question": [
       {
         "handler": "list_message",
@@ -2883,7 +2979,7 @@
     ]
   },
   "71": {
-    "block_uuid": "ebfa7160-f3ba-4d2a-aafe-d83a4dcbac99",
+    "block_uuid": "b92699b3-a38c-4ef7-8e9c-3e8702f2a391",
     "question": [
       {
         "handler": "list_message",
@@ -3017,7 +3113,7 @@
     ]
   },
   "72": {
-    "block_uuid": "e0de8b4d-dfb1-4b6a-8b71-8578b3dafa8e",
+    "block_uuid": "93d214e7-2faf-4fde-8a3e-b4d41dca4e45",
     "question": [
       {
         "handler": "list_message",
@@ -3180,7 +3276,7 @@
     ]
   },
   "73": {
-    "block_uuid": "5046500d-fde1-4b6c-95cc-ac1510622b6c",
+    "block_uuid": "faaf5a41-ae53-4b7a-9f8c-8701354f3913",
     "question": [
       {
         "handler": "list_message",
@@ -3488,7 +3584,7 @@
     ]
   },
   "74": {
-    "block_uuid": "d2f20b06-73cd-4cee-beb5-2510752b6eba",
+    "block_uuid": "3635efef-e43e-447e-8fd5-a394463fa07d",
     "question": [
       {
         "handler": "list_message",
@@ -3738,7 +3834,7 @@
     ]
   },
   "100": {
-    "block_uuid": "4d0fba52-b004-44c6-a08e-0c3d87673ad8",
+    "block_uuid": "2fadc358-230f-4b4e-aad1-5cb26cad021f",
     "question": [
       {
         "handler": "action",
@@ -3760,7 +3856,7 @@
     ]
   },
   "101": {
-    "block_uuid": "5f1bed36-2d08-4c79-becb-af72220cd51f",
+    "block_uuid": "12e3f905-3175-455b-8264-379daa54a477",
     "question": [
       {
         "handler": "action",
@@ -3782,7 +3878,7 @@
     ]
   },
   "102": {
-    "block_uuid": "c5c395c6-03e7-4ab2-8cc7-55f5a4deec8a",
+    "block_uuid": "369da228-bf0c-4ef1-9bfb-aeb52f7e9211",
     "question": [
       {
         "handler": "action",
@@ -3804,7 +3900,7 @@
     ]
   },
   "103": {
-    "block_uuid": "366fb1b4-f584-491d-93bd-32e74136a9e2",
+    "block_uuid": "d64cf0ec-a4a8-41c7-9a81-a0160d8edc37",
     "question": [
       {
         "handler": "action",
@@ -3826,7 +3922,7 @@
     ]
   },
   "104": {
-    "block_uuid": "05b48231-e167-4ee4-a00c-5b755222fed8",
+    "block_uuid": "e7d77acf-5bb7-4e9f-bfa0-cdc03a275312",
     "question": [
       {
         "handler": "action",
@@ -3848,7 +3944,7 @@
     ]
   },
   "105": {
-    "block_uuid": "848b7e01-d20d-4acc-b35f-fb94872d3659",
+    "block_uuid": "6e1f9cdf-bcc7-45cd-bacd-956deac336ef",
     "question": [
       {
         "handler": "action",
@@ -3870,7 +3966,7 @@
     ]
   },
   "106": {
-    "block_uuid": "afe09e70-1be5-4a95-81eb-ef15a5477515",
+    "block_uuid": "27d7c753-ab6d-4269-8528-e9c4f256e7df",
     "question": [
       {
         "handler": "action",
@@ -3892,7 +3988,7 @@
     ]
   },
   "107": {
-    "block_uuid": "4a9a46ff-557e-4758-8f53-6b440cf614c7",
+    "block_uuid": "e7f7839c-4a68-4d34-98d1-c88c711b0f12",
     "question": [
       {
         "handler": "action",
@@ -3914,7 +4010,7 @@
     ]
   },
   "108": {
-    "block_uuid": "e5144799-06e0-490e-9c2e-9ccaa660d662",
+    "block_uuid": "65813236-dd4f-4187-8688-016cb6e06aea",
     "question": [
       {
         "handler": "action",
@@ -3936,7 +4032,7 @@
     ]
   },
   "109": {
-    "block_uuid": "565ccdc2-e632-4545-aaba-7fed416f1a2a",
+    "block_uuid": "fdec060a-2df4-4212-a262-a75bbec675a5",
     "question": [
       {
         "handler": "action",
@@ -3958,7 +4054,7 @@
     ]
   },
   "110": {
-    "block_uuid": "793aa9a0-b490-4024-bd8e-06b2e62ea4a4",
+    "block_uuid": "7f62058b-f99f-4f83-b749-4ef287614c89",
     "question": [
       {
         "handler": "action",
@@ -3980,7 +4076,7 @@
     ]
   },
   "111": {
-    "block_uuid": "6d630960-f6fc-4d37-87db-e25bee4d9168",
+    "block_uuid": "7777b3d0-5618-4f92-86a9-23c40f319edc",
     "question": [
       {
         "handler": "action",
@@ -4002,7 +4098,7 @@
     ]
   },
   "112": {
-    "block_uuid": "6901a440-7998-47f2-8b70-89d4212afd85",
+    "block_uuid": "b7d345ab-c159-4c27-aff3-e31f3872a5b2",
     "question": [
       {
         "handler": "action",
@@ -4024,7 +4120,7 @@
     ]
   },
   "113": {
-    "block_uuid": "7079334b-dc50-4289-8a4b-de4511c53852",
+    "block_uuid": "7d32df50-4183-4c26-a5a0-56c6bf5ff8c6",
     "question": [
       {
         "handler": "action",
@@ -4046,7 +4142,7 @@
     ]
   },
   "114": {
-    "block_uuid": "d14c0d8b-c19a-43bd-bbe5-1b88408c3626",
+    "block_uuid": "319c2980-6fad-4ad2-b52c-207d2374d6ca",
     "question": [
       {
         "handler": "action",
@@ -4068,7 +4164,7 @@
     ]
   },
   "115": {
-    "block_uuid": "67d38d88-77ef-426c-949f-7c7069e940d5",
+    "block_uuid": "5189d468-64ae-419c-94d0-347f8d104bf1",
     "question": [
       {
         "handler": "action",
@@ -4090,7 +4186,7 @@
     ]
   },
   "116": {
-    "block_uuid": "0d63613d-8a35-4a72-ab11-537713f0bde7",
+    "block_uuid": "d099b97e-74ca-4802-8e03-021352d65652",
     "question": [
       {
         "handler": "action",
@@ -4112,7 +4208,7 @@
     ]
   },
   "117": {
-    "block_uuid": "8e3a6068-90d6-4c34-bd10-63204745d567",
+    "block_uuid": "a1f31d9e-389a-42b6-b897-2fc02c4a649e",
     "question": [
       {
         "handler": "action",
@@ -4134,7 +4230,7 @@
     ]
   },
   "118": {
-    "block_uuid": "f0e27711-002f-4e4c-98dd-327d717c219c",
+    "block_uuid": "69ee6cbb-6f70-4f47-9827-90ca5dc45863",
     "question": [
       {
         "handler": "action",
@@ -4156,7 +4252,7 @@
     ]
   },
   "119": {
-    "block_uuid": "ddaecc79-ba77-4b2c-889f-5197fd70b519",
+    "block_uuid": "3e413a5c-306d-4408-bf65-681f33a2d279",
     "question": [
       {
         "handler": "action",
@@ -4178,7 +4274,7 @@
     ]
   },
   "120": {
-    "block_uuid": "ddb4f7ff-6b13-4831-b2a4-24e17bafdc9a",
+    "block_uuid": "90467ed5-246e-4a02-a9c3-434310d3a630",
     "question": [
       {
         "handler": "action",
@@ -4200,7 +4296,7 @@
     ]
   },
   "121": {
-    "block_uuid": "1bdfe9d0-9884-4c56-99e3-f6697aae4f95",
+    "block_uuid": "3df427d6-0e95-4f34-b434-269b25f020cb",
     "question": [
       {
         "handler": "action",
@@ -4222,7 +4318,7 @@
     ]
   },
   "122": {
-    "block_uuid": "7665c525-bf1a-4d4c-a317-cf39f1ff7252",
+    "block_uuid": "ffb683f6-c184-44f2-87d2-5f89190da021",
     "question": [
       {
         "handler": "action",
@@ -4244,7 +4340,7 @@
     ]
   },
   "123": {
-    "block_uuid": "8b67ed0c-b1e5-4c6a-a0e8-95e685b91def",
+    "block_uuid": "63e3b9ed-b772-429a-9c63-88be853a0803",
     "question": [
       {
         "handler": "action",
@@ -4266,7 +4362,7 @@
     ]
   },
   "124": {
-    "block_uuid": "fb66c9fc-b0fe-4d44-b776-b58b68de9357",
+    "block_uuid": "eef8dec5-d723-48a7-bc32-b705054cd130",
     "question": [
       {
         "handler": "action",
@@ -4288,7 +4384,7 @@
     ]
   },
   "125": {
-    "block_uuid": "11f50693-6cdc-4ce3-8541-9565c304742c",
+    "block_uuid": "29bfc60d-bb7a-4b93-89d2-301324244c08",
     "question": [
       {
         "handler": "action",
@@ -4310,7 +4406,7 @@
     ]
   },
   "126": {
-    "block_uuid": "000b3315-4eee-41a3-9971-288ca48c05aa",
+    "block_uuid": "b948965b-47e6-47c7-8122-d48b03652964",
     "question": [
       {
         "handler": "action",
@@ -4332,7 +4428,7 @@
     ]
   },
   "200": {
-    "block_uuid": "4bc62cf6-d995-404f-a252-1267f660c8e9",
+    "block_uuid": "9dae12b7-e688-47f5-aea2-304ddd37d2dd",
     "question": [
       {
         "handler": "list_message",
@@ -4494,8 +4590,171 @@
       }
     ]
   },
+  "201": {
+    "block_uuid": "a26464db-17eb-4d6d-97b6-8fe8007db0e4",
+    "question": [
+      {
+        "handler": "list_message",
+        "params": {
+          "list_message": {
+            "header": "",
+            "body": "Obrigada! Como posso te ajudar? Para responder, toque em \"Ver opções\". Se preferir falar com a nossa equipe, é só escrever \"atendente\".",
+            "footer": "",
+            "button": "Ver opções",
+            "sections": [
+              {
+                "title": "Opções",
+                "rows": [
+                  {
+                    "callback_data": "9ba77c004ec8c1fb7f6ed147a5470af8",
+                    "title": "Uso em casa",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "f195b8564033e26e04bfc3a68506f1d1",
+                    "title": "Para o salão",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "577cf925604025aff173cfa65535762e",
+                    "title": "Revender",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "47dd0285d4afbb7e7477ded343fcc4b6",
+                    "title": "Já sou cliente",
+                    "description": ""
+                  }
+                ]
+              }
+            ]
+          },
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "disabled": false
+        }
+      }
+    ],
+    "answer": [
+      {
+        "handler": "buttons",
+        "params": [
+          {
+            "value": "9ba77c004ec8c1fb7f6ed147a5470af8",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 10
+                }
+              }
+            ]
+          },
+          {
+            "value": "Uso em casa",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 10
+                }
+              }
+            ]
+          },
+          {
+            "value": "f195b8564033e26e04bfc3a68506f1d1",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 20
+                }
+              }
+            ]
+          },
+          {
+            "value": "Para o salão",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 20
+                }
+              }
+            ]
+          },
+          {
+            "value": "577cf925604025aff173cfa65535762e",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 30
+                }
+              }
+            ]
+          },
+          {
+            "value": "Revender",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 30
+                }
+              }
+            ]
+          },
+          {
+            "value": "47dd0285d4afbb7e7477ded343fcc4b6",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 40
+                }
+              }
+            ]
+          },
+          {
+            "value": "Já sou cliente",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 40
+                }
+              }
+            ]
+          },
+          {
+            "type": "else",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 53
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
   "300": {
-    "block_uuid": "07edc51d-a845-4c4b-8474-8af127827bcc",
+    "block_uuid": "89a2a81d-01a7-43a8-9a1b-e88946ee8e79",
     "question": [
       {
         "handler": "send_message",
@@ -4568,7 +4827,7 @@
     ]
   },
   "301": {
-    "block_uuid": "73ae069e-f436-42fe-9ade-1ff1fb76bea2",
+    "block_uuid": "252e46fe-9d1b-4910-bbd2-90d7265bda11",
     "question": [
       {
         "handler": "send_message",
@@ -4595,7 +4854,7 @@
     ]
   },
   "302": {
-    "block_uuid": "4cf493b9-fa9b-48b6-818f-f4392b0dd096",
+    "block_uuid": "334b2e89-6345-4877-bded-8cba50c8a530",
     "question": [
       {
         "handler": "waits",
@@ -4629,7 +4888,7 @@
     ]
   },
   "320": {
-    "block_uuid": "9ac037d9-d9dc-442a-9d75-18c58ca97b72",
+    "block_uuid": "62b48242-ccf6-4feb-81d4-eeaeb1124a50",
     "question": [
       {
         "handler": "send_message",
@@ -4702,7 +4961,7 @@
     ]
   },
   "321": {
-    "block_uuid": "26d18910-93a3-4e66-bf0e-949452dd9aa4",
+    "block_uuid": "62c52e78-e844-4e82-868d-619b065c18e0",
     "question": [
       {
         "handler": "send_message",
@@ -4729,7 +4988,7 @@
     ]
   },
   "322": {
-    "block_uuid": "74cd4cee-8b1e-4b35-878e-de8b00f2fca3",
+    "block_uuid": "70aa84be-721e-4bc3-9f2e-2f95192ef113",
     "question": [
       {
         "handler": "waits",
@@ -4763,7 +5022,7 @@
     ]
   },
   "340": {
-    "block_uuid": "f6ee9ca2-472c-4b25-9bee-6169a5519ddb",
+    "block_uuid": "a3ae8da4-7357-4e7a-a772-fe55ca3605e1",
     "question": [
       {
         "handler": "waits",
@@ -4797,7 +5056,7 @@
     ]
   },
   "341": {
-    "block_uuid": "62bce8a7-6e04-4e9e-b4ce-2677ad026412",
+    "block_uuid": "5c33afc7-2774-41b9-aeac-2c00d467265a",
     "question": [
       {
         "handler": "conditions",
@@ -4958,7 +5217,7 @@
     ]
   },
   "342": {
-    "block_uuid": "0676f973-4a0d-4473-8382-3b8ba8622254",
+    "block_uuid": "598d182f-364c-4244-a9cd-71d61a431184",
     "question": [
       {
         "handler": "action",
@@ -5035,7 +5294,7 @@
     ]
   },
   "343": {
-    "block_uuid": "02df1e1c-9f44-46ca-98b8-2547f5f692f9",
+    "block_uuid": "67bdb4bd-de95-4884-84d8-04580851168a",
     "question": [
       {
         "handler": "action",
@@ -5146,7 +5405,7 @@
     ]
   },
   "344": {
-    "block_uuid": "5236e8bc-bd0e-4f82-8a87-a1745cb59a56",
+    "block_uuid": "1ee7c05e-21b1-4a02-b531-1b5157cef97e",
     "question": [
       {
         "handler": "send_message",
@@ -5179,7 +5438,7 @@
     ]
   },
   "345": {
-    "block_uuid": "0e98cf9c-b20d-4f36-ac19-f31b7fed86ba",
+    "block_uuid": "2843a2d8-1d38-47e9-8ffa-8a9cf08f6e11",
     "question": [
       {
         "handler": "action",
@@ -5201,7 +5460,7 @@
     ]
   },
   "346": {
-    "block_uuid": "4c3d8f70-b47d-4c1a-a55e-d33520a5d1b9",
+    "block_uuid": "da026dc9-33ed-4c4c-bdc6-6db8f13cde45",
     "question": [
       {
         "handler": "send_message",
@@ -5228,7 +5487,7 @@
     ]
   },
   "347": {
-    "block_uuid": "fb9b1c90-2dfa-4cca-b343-3e027c6ede0f",
+    "block_uuid": "aacb463e-3391-4d86-bdfa-1007b6ba37dc",
     "question": [
       {
         "handler": "action",
@@ -5250,7 +5509,7 @@
     ]
   },
   "350": {
-    "block_uuid": "2cbcd6f1-76d8-40a0-af6c-cba4319f8ffb",
+    "block_uuid": "98add38e-4762-4d27-84fe-a4100a3809da",
     "question": [
       {
         "handler": "list_message",
@@ -5413,7 +5672,7 @@
     ]
   },
   "351": {
-    "block_uuid": "e202a955-919a-4d26-a5a5-8a8846d9f4d0",
+    "block_uuid": "6434c47d-f118-4e36-8731-07910899c6af",
     "question": [
       {
         "handler": "action",
@@ -5435,7 +5694,7 @@
     ]
   },
   "352": {
-    "block_uuid": "023163a5-ad2b-489d-b813-5989996fca0a",
+    "block_uuid": "7b504142-a9c7-4740-b424-80cb2fe61120",
     "question": [
       {
         "handler": "action",
@@ -5457,7 +5716,7 @@
     ]
   },
   "353": {
-    "block_uuid": "fe575e2e-56f7-4ad3-8724-1b12ebb63d6b",
+    "block_uuid": "ea3eaa9f-95d3-4047-be80-6d674c05a347",
     "question": [
       {
         "handler": "action",
@@ -5479,7 +5738,7 @@
     ]
   },
   "354": {
-    "block_uuid": "7323e39c-4a39-411b-aee1-ce6b011b5e45",
+    "block_uuid": "bb247da1-5707-4d3a-ac09-b5d30fc76032",
     "question": [
       {
         "handler": "action",
@@ -5501,7 +5760,7 @@
     ]
   },
   "360": {
-    "block_uuid": "63de097b-9f0d-4e33-8e9c-aa57e03fa7cd",
+    "block_uuid": "24788156-82c1-46ea-82a5-2d28884defb6",
     "question": [
       {
         "handler": "action",
@@ -5552,7 +5811,7 @@
     ]
   },
   "361": {
-    "block_uuid": "4d5a5734-4b7b-4a94-8b6d-bd670d132566",
+    "block_uuid": "884ba162-62df-49b7-8121-9e2ce147b5a6",
     "question": [
       {
         "handler": "action",
@@ -5603,7 +5862,7 @@
     ]
   },
   "362": {
-    "block_uuid": "75ee3a89-3d3f-44af-8ed4-518a4579d273",
+    "block_uuid": "df967e47-e3da-4008-bcd3-7adfae327d0a",
     "question": [
       {
         "handler": "action",
@@ -5649,6 +5908,510 @@
         "params": {
           "type": "finish",
           "step": 999
+        }
+      }
+    ]
+  },
+  "400": {
+    "block_uuid": "2839344d-3326-4f69-aa9f-285ed5e34b42",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "Instagram",
+            "custom_field": "{{lead.cf.4381754}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 200
+        }
+      }
+    ]
+  },
+  "401": {
+    "block_uuid": "c23dac6c-fdac-4f99-a736-c4121e89b79d",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "Site",
+            "custom_field": "{{lead.cf.4381754}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 200
+        }
+      }
+    ]
+  },
+  "402": {
+    "block_uuid": "2cc6ee6e-a070-4a0c-b941-6cbe8c655567",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "Google",
+            "custom_field": "{{lead.cf.4381754}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 200
+        }
+      }
+    ]
+  },
+  "410": {
+    "block_uuid": "f910daa5-abb3-455a-9804-ad65987f14fc",
+    "question": [
+      {
+        "handler": "list_message",
+        "params": {
+          "list_message": {
+            "header": "",
+            "body": "Olá! ✨ Sou a Lyra, da Minasflor. Para começar, como você conheceu a Minasflor? Para responder, toque em \"Ver opções\" 👇",
+            "footer": "",
+            "button": "Ver opções",
+            "sections": [
+              {
+                "title": "Opções",
+                "rows": [
+                  {
+                    "callback_data": "5721bbef40b22bbdb2e6a062b096d9b4",
+                    "title": "Instagram",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "2b681c0a24baff8899d7163cc7f805c7",
+                    "title": "Google",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "5b6825d3c67a35898b7b65fd986a7fe6",
+                    "title": "Site",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "c10f34b44030f7587787f92735a8fcb1",
+                    "title": "Indicação",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "7c10b1802deae488ae3ab265a7540ec6",
+                    "title": "Outro",
+                    "description": ""
+                  }
+                ]
+              }
+            ]
+          },
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "disabled": false
+        }
+      }
+    ],
+    "answer": [
+      {
+        "handler": "buttons",
+        "params": [
+          {
+            "value": "5721bbef40b22bbdb2e6a062b096d9b4",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 411
+                }
+              }
+            ]
+          },
+          {
+            "value": "Instagram",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 411
+                }
+              }
+            ]
+          },
+          {
+            "value": "2b681c0a24baff8899d7163cc7f805c7",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 412
+                }
+              }
+            ]
+          },
+          {
+            "value": "Google",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 412
+                }
+              }
+            ]
+          },
+          {
+            "value": "5b6825d3c67a35898b7b65fd986a7fe6",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 413
+                }
+              }
+            ]
+          },
+          {
+            "value": "Site",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 413
+                }
+              }
+            ]
+          },
+          {
+            "value": "c10f34b44030f7587787f92735a8fcb1",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 414
+                }
+              }
+            ]
+          },
+          {
+            "value": "Indicação",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 414
+                }
+              }
+            ]
+          },
+          {
+            "value": "7c10b1802deae488ae3ab265a7540ec6",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 415
+                }
+              }
+            ]
+          },
+          {
+            "value": "Outro",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 415
+                }
+              }
+            ]
+          },
+          {
+            "type": "else",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 416
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "411": {
+    "block_uuid": "47460074-b237-4b26-b8d7-3d6581c15bf2",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "Instagram",
+            "custom_field": "{{lead.cf.4381754}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 201
+        }
+      }
+    ]
+  },
+  "412": {
+    "block_uuid": "04f401f7-323b-4352-b8f0-9a4ed6322f6b",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "Google",
+            "custom_field": "{{lead.cf.4381754}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 201
+        }
+      }
+    ]
+  },
+  "413": {
+    "block_uuid": "2e725a73-1c4c-4948-9859-46f9fd0f1047",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "Site",
+            "custom_field": "{{lead.cf.4381754}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 201
+        }
+      }
+    ]
+  },
+  "414": {
+    "block_uuid": "9dda79a5-a2b4-4774-9487-64b5af7f8426",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "Indicação",
+            "custom_field": "{{lead.cf.4381754}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 201
+        }
+      }
+    ]
+  },
+  "415": {
+    "block_uuid": "1062e743-068a-4441-af23-5725c7ec7dd1",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "Outro",
+            "custom_field": "{{lead.cf.4381754}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 201
+        }
+      }
+    ]
+  },
+  "416": {
+    "block_uuid": "a66667fa-4e7e-472c-9c64-a38c9446449c",
+    "question": [
+      {
+        "handler": "conditions",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "term1": "{{message_text}}",
+              "term2": "atendente",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "Atendente",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "ATENDENTE",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "falar com alguém",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "Falar com alguém",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "humano",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "pessoa",
+              "operation": "contains"
+            }
+          ],
+          "result": [
+            {
+              "handler": "goto",
+              "params": {
+                "type": "question",
+                "step": 51
+              }
+            }
+          ]
+        }
+      },
+      {
+        "handler": "conditions",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "term1": "{{message_text}}",
+              "term2": "cliente",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "Cliente",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "CLIENTE",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "pedido",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "Pedido",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "troca",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "Troca",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "entrega",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "Entrega",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "rastreio",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "Rastreio",
+              "operation": "contains"
+            }
+          ],
+          "result": [
+            {
+              "handler": "goto",
+              "params": {
+                "type": "question",
+                "step": 40
+              }
+            }
+          ]
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 410
         }
       }
     ]

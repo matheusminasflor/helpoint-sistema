@@ -50,6 +50,8 @@ export type SituacaoDoLead = 'so_lyra' | 'sem_resposta' | 'no_prazo' | 'fora_do_
 export interface LeadDoPeriodo {
   lead_id: number; nome: string | null; segmento: Segmento | null; funil: string | null; uf: string | null; link: string | null;
   atendente: string | null; situacao: SituacaoDoLead | null; minutos: number | null; venda: 'ganha' | 'perdida' | null; valor: number | null;
+  /** De onde veio (`origemDoLead` no coletor); null = sem origem (lead antigo ou WhatsApp sem a frase do link). */
+  origem?: string | null;
 }
 export interface AtendimentoDoCrm {
   todos: boolean;
@@ -151,9 +153,25 @@ export function porSegmento(cruzado: LinhaCruzada[], vendas: VendaCruzada[], uf:
 
 export type FiltroDosLeads = 'todos' | 'sem_resposta' | 'fora_do_prazo' | 'venda' | 'perdida';
 /** Os leads do estado e do segmento escolhidos (null = todos), com o filtro da lista. */
-export function leadsDoRecorte(leads: LeadDoPeriodo[], uf: string | null, segmento: string | null, filtro: FiltroDosLeads): LeadDoPeriodo[] {
+export function leadsDoRecorte(leads: LeadDoPeriodo[], uf: string | null, segmento: string | null, filtro: FiltroDosLeads, origem: string | null = null): LeadDoPeriodo[] {
   return leads.filter((l) => doEstado(uf)(l) && (segmento === null || chaveDoSegmento(l) === segmento)
+    && (origem === null || nomeDaOrigem(l.origem) === origem)
     && (filtro === 'todos' || (filtro === 'venda' ? l.venda === 'ganha' : filtro === 'perdida' ? l.venda === 'perdida' : l.situacao === filtro)));
+}
+
+export const nomeDaOrigem = (origem: string | null | undefined) => origem || 'Sem origem';
+
+export interface LinhaDaOrigem { origem: string; leads: number; vendas: number; valor: number }
+/** Leads, vendas e valor por origem (dono, 2026-11-10), da mesma lista de leads do período: o valor soma a Venda total. */
+export function porOrigem(leads: LeadDoPeriodo[]): LinhaDaOrigem[] {
+  const m = new Map<string, LinhaDaOrigem>();
+  for (const l of leads) {
+    const origem = nomeDaOrigem(l.origem);
+    const g = m.get(origem) ?? { origem, leads: 0, vendas: 0, valor: 0 };
+    const ganhou = l.venda === 'ganha';
+    m.set(origem, { origem, leads: g.leads + 1, vendas: g.vendas + (ganhou ? 1 : 0), valor: g.valor + (ganhou ? l.valor ?? 0 : 0) });
+  }
+  return [...m.values()].sort((a, b) => b.leads - a.leads || b.valor - a.valor || a.origem.localeCompare(b.origem));
 }
 
 /** Contagem por segmento (o maior primeiro), pelo nome que a tela mostra. */

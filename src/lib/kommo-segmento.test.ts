@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { documentoDoLead, ehLimpeza, whatsappDoLead, etapasDeTriagem, segmentoDoCampo, segmentoDoLead } from '../../supabase/functions/_shared/kommo-segmento';
+import { documentoDoLead, ehLimpeza, whatsappDoLead, etapasDeTriagem, origemDoLead, segmentoDoCampo, segmentoDoLead } from '../../supabase/functions/_shared/kommo-segmento';
 
 const ENTRADA = 13975223, CONSUMIDOR = 12904179, SALAO = 12927111, DISTRIBUIDOR = 12927087, EDUCACIONAL = 12927031;
 const COM_A_LYRA = 900001, EM_ATENDIMENTO = 900002, GANHA = 142;
@@ -83,5 +83,22 @@ describe('whatsappDoLead', () => {
   it('número curto ou texto não vale', () => {
     expect(whatsappDoLead(lead('pular'))).toBeNull();
     expect(whatsappDoLead(lead('98311'))).toBeNull();
+  });
+});
+
+describe('origemDoLead', () => {
+  const campo = (field_name: string, value: string) => ({ field_name, values: [{ value }] });
+  const base = { pipeline_id: 12904179, status_id: 1 };
+  it('anúncio da Meta vale mais que o campo Origem', () => {
+    expect(origemDoLead({ ...base, custom_fields_values: [campo('Origem', 'Instagram'), campo('Meta Ads ID do anúncio', '123')] })).toBe('Anúncio');
+  });
+  it('o campo Origem gravado pela Lyra', () => {
+    expect(origemDoLead({ ...base, custom_fields_values: [campo('Origem', 'Indicação')] })).toBe('Indicação');
+  });
+  it('sem campo: formulário e Direct pela fonte; WhatsApp sem frase fica sem origem', () => {
+    expect(origemDoLead({ ...base, _embedded: { source: { name: 'FORMULÁRIO SITE' } } })).toBe('Formulário');
+    expect(origemDoLead({ ...base, _embedded: { source: { name: 'mf.professional' } } })).toBe('Direct do Instagram');
+    expect(origemDoLead({ ...base, _embedded: { source: { name: 'Minasflor Comercial' } } })).toBeNull();
+    expect(origemDoLead(base)).toBeNull();
   });
 });
