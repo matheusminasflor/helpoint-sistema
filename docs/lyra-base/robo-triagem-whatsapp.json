@@ -1,6 +1,6 @@
 {
   "0": {
-    "block_uuid": "041b3d99-e4af-484e-956a-da87ee1b9c5f",
+    "block_uuid": "4813d896-dfe5-43fa-9881-1cd904d5b547",
     "question": [
       {
         "handler": "action",
@@ -22,7 +22,7 @@
     ]
   },
   "9": {
-    "block_uuid": "257d6230-df35-4e60-a4f0-2e240f1e5d37",
+    "block_uuid": "02380c46-97c0-4487-914d-1d53e8053a63",
     "question": [
       {
         "handler": "conditions",
@@ -131,7 +131,7 @@
     ]
   },
   "10": {
-    "block_uuid": "bb7ad8ba-2dc3-43c2-af47-9783488e9a4a",
+    "block_uuid": "0514bd98-f989-4a45-a9b6-8bae0557cc0d",
     "question": [
       {
         "handler": "action",
@@ -185,7 +185,7 @@
     ]
   },
   "18": {
-    "block_uuid": "900d2488-9b6a-440b-855c-e7d17297f9ac",
+    "block_uuid": "e2c181c5-b114-4802-8bab-5f56796b3563",
     "question": [
       {
         "handler": "send_message",
@@ -212,7 +212,7 @@
     ]
   },
   "19": {
-    "block_uuid": "6a036b2a-8ec1-49ef-bffa-06cdcbb58491",
+    "block_uuid": "e46d7c6c-a241-4334-8dda-056e6594932a",
     "question": [
       {
         "handler": "waits",
@@ -246,7 +246,7 @@
     ]
   },
   "20": {
-    "block_uuid": "974380b3-b10b-4c88-9460-100e7f68d123",
+    "block_uuid": "52908dce-023e-4561-974b-923a9847d3d9",
     "question": [
       {
         "handler": "action",
@@ -290,7 +290,7 @@
     ]
   },
   "27": {
-    "block_uuid": "9b1ff6e7-948b-48ef-ba8a-0e83c43795d3",
+    "block_uuid": "68660310-f6f0-44f5-ac03-5c6737a6925f",
     "question": [
       {
         "handler": "send_message",
@@ -317,7 +317,7 @@
     ]
   },
   "28": {
-    "block_uuid": "54440676-82f4-4a23-9980-781fcd6009e6",
+    "block_uuid": "079f3523-cacc-4f9a-afce-81debec7bd4a",
     "question": [
       {
         "handler": "waits",
@@ -351,7 +351,7 @@
     ]
   },
   "29": {
-    "block_uuid": "ff70878f-9768-4e79-b0ad-3f4b7640d15b",
+    "block_uuid": "77c72d79-6a71-4901-906f-ebaea68bc357",
     "question": [
       {
         "handler": "send_message",
@@ -384,7 +384,7 @@
     ]
   },
   "30": {
-    "block_uuid": "20a556c7-da5c-43bc-ac12-80e46335a2c1",
+    "block_uuid": "0876cd93-e703-482b-91bf-c9d95985c589",
     "question": [
       {
         "handler": "action",
@@ -428,7 +428,7 @@
     ]
   },
   "31": {
-    "block_uuid": "256fc43e-25ba-4ba1-807d-cbcbc0ebe917",
+    "block_uuid": "8baa3247-4bbd-4d58-b04a-be07b50f7d6e",
     "question": [
       {
         "handler": "send_message",
@@ -455,7 +455,7 @@
     ]
   },
   "32": {
-    "block_uuid": "8daee24c-e6ff-46aa-a991-4bd7e57d8006",
+    "block_uuid": "408041f3-d086-411d-97e4-a5e4e93c2a3e",
     "question": [
       {
         "handler": "waits",
@@ -489,7 +489,7 @@
     ]
   },
   "33": {
-    "block_uuid": "d640f203-0abc-4ebf-8919-85758ace2d01",
+    "block_uuid": "560ff4bb-1b60-45f5-b1f8-3c749f931937",
     "question": [
       {
         "handler": "action",
@@ -511,7 +511,7 @@
     ]
   },
   "34": {
-    "block_uuid": "faa09110-5b76-4955-a9e0-5f36bbe905a6",
+    "block_uuid": "afdbab27-ee0e-45b8-bdf8-af41804f0835",
     "question": [
       {
         "handler": "send_message",
@@ -538,7 +538,7 @@
     ]
   },
   "35": {
-    "block_uuid": "f0a735de-9e7d-476e-a5ea-88e0b60298ad",
+    "block_uuid": "e756e298-9ee3-4623-a7ae-fc13f2b30d5e",
     "question": [
       {
         "handler": "waits",
@@ -572,7 +572,7 @@
     ]
   },
   "36": {
-    "block_uuid": "2561eb8e-4d72-48d3-8213-e8ba18ef80bb",
+    "block_uuid": "e9a41400-5777-47c0-a9cb-ec610ef5a4b3",
     "question": [
       {
         "handler": "action",
@@ -594,7 +594,7 @@
     ]
   },
   "37": {
-    "block_uuid": "9228ce80-92e2-46f2-b81f-bf09c2df9242",
+    "block_uuid": "8cb27415-19fd-440d-b300-1fcc26f444dc",
     "question": [
       {
         "handler": "list_message",
@@ -609,27 +609,27 @@
                 "title": "Opções",
                 "rows": [
                   {
-                    "callback_data": "e60c490e-83cf-4039-a7d9-0e00ee59b06e",
+                    "callback_data": "55b4110f-5cd3-4689-bd49-338e7b51688e",
                     "title": "Sudeste",
                     "description": ""
                   },
                   {
-                    "callback_data": "03ebebb5-232d-4ca8-ae52-b2f3ef33b155",
+                    "callback_data": "868dcdfc-5c63-4683-80f9-1edc60d4f15a",
                     "title": "Sul",
                     "description": ""
                   },
                   {
-                    "callback_data": "df229a0b-86d0-4d12-af85-af903ed0cd2f",
+                    "callback_data": "816107fa-f680-4e45-9be5-82a3f885728a",
                     "title": "Centro-Oeste",
                     "description": ""
                   },
                   {
-                    "callback_data": "e23ac23b-7243-415f-b2b1-12be12742c69",
+                    "callback_data": "de3dd984-590d-4ccd-b20c-02be0621a1bf",
                     "title": "Nordeste",
                     "description": ""
                   },
                   {
-                    "callback_data": "330ec0b4-5339-4bcf-988e-6d52117a9b4a",
+                    "callback_data": "f5685685-592e-46bc-b10e-a818c242b744",
                     "title": "Norte",
                     "description": ""
                   }
@@ -650,7 +650,7 @@
         "handler": "buttons",
         "params": [
           {
-            "value": "e60c490e-83cf-4039-a7d9-0e00ee59b06e",
+            "value": "55b4110f-5cd3-4689-bd49-338e7b51688e",
             "params": [
               {
                 "handler": "goto",
@@ -674,7 +674,7 @@
             ]
           },
           {
-            "value": "03ebebb5-232d-4ca8-ae52-b2f3ef33b155",
+            "value": "868dcdfc-5c63-4683-80f9-1edc60d4f15a",
             "params": [
               {
                 "handler": "goto",
@@ -698,7 +698,7 @@
             ]
           },
           {
-            "value": "df229a0b-86d0-4d12-af85-af903ed0cd2f",
+            "value": "816107fa-f680-4e45-9be5-82a3f885728a",
             "params": [
               {
                 "handler": "goto",
@@ -722,7 +722,7 @@
             ]
           },
           {
-            "value": "e23ac23b-7243-415f-b2b1-12be12742c69",
+            "value": "de3dd984-590d-4ccd-b20c-02be0621a1bf",
             "params": [
               {
                 "handler": "goto",
@@ -746,7 +746,7 @@
             ]
           },
           {
-            "value": "330ec0b4-5339-4bcf-988e-6d52117a9b4a",
+            "value": "f5685685-592e-46bc-b10e-a818c242b744",
             "params": [
               {
                 "handler": "goto",
@@ -2082,7 +2082,7 @@
     ]
   },
   "39": {
-    "block_uuid": "c542409b-1ed0-4354-bc42-e7c755bbf746",
+    "block_uuid": "404506a7-d56b-45f2-958c-378aef057b64",
     "question": [
       {
         "handler": "action",
@@ -2159,7 +2159,7 @@
     ]
   },
   "40": {
-    "block_uuid": "c42feebb-4dba-4a4a-831b-7440922dd4c2",
+    "block_uuid": "8ee37ab6-30b1-4ee2-8cdf-53287050a722",
     "question": [
       {
         "handler": "action",
@@ -2248,7 +2248,7 @@
     ]
   },
   "50": {
-    "block_uuid": "0d63421e-1928-4498-8100-17a68a42bd3c",
+    "block_uuid": "52d265f7-a447-449d-b460-9e8f44e714ae",
     "question": [
       {
         "handler": "list_message",
@@ -2263,22 +2263,22 @@
                 "title": "Opções",
                 "rows": [
                   {
-                    "callback_data": "3865a788-72ae-441e-a042-e737fae97d00",
+                    "callback_data": "889df086-0c5c-42aa-a015-2ad4d043af4f",
                     "title": "Uso em casa",
                     "description": ""
                   },
                   {
-                    "callback_data": "66830f74-fec3-4bc4-ae39-1fe99ecffe32",
+                    "callback_data": "56b229c3-601e-4249-80c3-b6dbb115b4b5",
                     "title": "Para o salão",
                     "description": ""
                   },
                   {
-                    "callback_data": "da4b54c1-a20c-462f-be0e-2ecd1e51057d",
+                    "callback_data": "fc751ed9-fc65-44d5-9305-5d7f06187114",
                     "title": "Revender",
                     "description": ""
                   },
                   {
-                    "callback_data": "fc5a619d-429d-4187-8e48-ceb66540797c",
+                    "callback_data": "f2d90f3b-074f-4af7-ba37-a25a1b78d29d",
                     "title": "Já sou cliente",
                     "description": ""
                   }
@@ -2299,7 +2299,7 @@
         "handler": "buttons",
         "params": [
           {
-            "value": "3865a788-72ae-441e-a042-e737fae97d00",
+            "value": "889df086-0c5c-42aa-a015-2ad4d043af4f",
             "params": [
               {
                 "handler": "goto",
@@ -2323,7 +2323,7 @@
             ]
           },
           {
-            "value": "66830f74-fec3-4bc4-ae39-1fe99ecffe32",
+            "value": "56b229c3-601e-4249-80c3-b6dbb115b4b5",
             "params": [
               {
                 "handler": "goto",
@@ -2347,7 +2347,7 @@
             ]
           },
           {
-            "value": "da4b54c1-a20c-462f-be0e-2ecd1e51057d",
+            "value": "fc751ed9-fc65-44d5-9305-5d7f06187114",
             "params": [
               {
                 "handler": "goto",
@@ -2371,7 +2371,7 @@
             ]
           },
           {
-            "value": "fc5a619d-429d-4187-8e48-ceb66540797c",
+            "value": "f2d90f3b-074f-4af7-ba37-a25a1b78d29d",
             "params": [
               {
                 "handler": "goto",
@@ -2411,7 +2411,7 @@
     ]
   },
   "51": {
-    "block_uuid": "f033392d-97d8-48bc-abb3-36cacc29133b",
+    "block_uuid": "873eec1b-10b2-4c41-8235-c31182f25179",
     "question": [
       {
         "handler": "action",
@@ -2500,7 +2500,7 @@
     ]
   },
   "53": {
-    "block_uuid": "d2b3e814-648d-4f84-a229-e88ec41ca209",
+    "block_uuid": "c94b7120-4299-42ef-bdc1-5391222991e2",
     "question": [
       {
         "handler": "conditions",
@@ -2636,7 +2636,7 @@
     ]
   },
   "55": {
-    "block_uuid": "35828dcb-9506-4ac1-b731-54f543c3aafa",
+    "block_uuid": "52fd6f36-633c-4d24-8bf4-23f031f2b128",
     "question": [
       {
         "handler": "send_message",
@@ -2663,7 +2663,7 @@
     ]
   },
   "70": {
-    "block_uuid": "64c44397-6279-4f8b-bb99-33770911286b",
+    "block_uuid": "b6f83e39-feaf-4233-aaea-d5166ce100cb",
     "question": [
       {
         "handler": "list_message",
@@ -2678,22 +2678,22 @@
                 "title": "Opções",
                 "rows": [
                   {
-                    "callback_data": "4e747089-7fd0-42b1-a309-6c88f5ce2a31",
+                    "callback_data": "e4abf801-b807-45ad-a889-a58d7eb7b2a6",
                     "title": "MG · Minas Gerais",
                     "description": ""
                   },
                   {
-                    "callback_data": "ed21b007-366a-4694-9f71-53f9a72c3a4d",
+                    "callback_data": "57e9dbd4-0712-4888-8719-65d750fc663c",
                     "title": "SP · São Paulo",
                     "description": ""
                   },
                   {
-                    "callback_data": "1369961a-bcbf-4d64-bd98-0e614386c360",
+                    "callback_data": "350e7d91-56d9-4462-bd82-e7870c50dfbc",
                     "title": "RJ · Rio de Janeiro",
                     "description": ""
                   },
                   {
-                    "callback_data": "64374c30-c527-48dd-8d0a-c59c00082590",
+                    "callback_data": "83581bc7-9b5d-4e4a-9e6b-842eed35dd23",
                     "title": "ES · Espírito Santo",
                     "description": ""
                   }
@@ -2714,7 +2714,7 @@
         "handler": "buttons",
         "params": [
           {
-            "value": "4e747089-7fd0-42b1-a309-6c88f5ce2a31",
+            "value": "e4abf801-b807-45ad-a889-a58d7eb7b2a6",
             "params": [
               {
                 "handler": "goto",
@@ -2738,7 +2738,7 @@
             ]
           },
           {
-            "value": "ed21b007-366a-4694-9f71-53f9a72c3a4d",
+            "value": "57e9dbd4-0712-4888-8719-65d750fc663c",
             "params": [
               {
                 "handler": "goto",
@@ -2762,7 +2762,7 @@
             ]
           },
           {
-            "value": "1369961a-bcbf-4d64-bd98-0e614386c360",
+            "value": "350e7d91-56d9-4462-bd82-e7870c50dfbc",
             "params": [
               {
                 "handler": "goto",
@@ -2786,7 +2786,7 @@
             ]
           },
           {
-            "value": "64374c30-c527-48dd-8d0a-c59c00082590",
+            "value": "83581bc7-9b5d-4e4a-9e6b-842eed35dd23",
             "params": [
               {
                 "handler": "goto",
@@ -2826,7 +2826,7 @@
     ]
   },
   "71": {
-    "block_uuid": "506eb03c-dc25-44e0-9a11-d0bc007c72e1",
+    "block_uuid": "2daf1fa6-19bf-41ec-8935-c5c44045f8a8",
     "question": [
       {
         "handler": "list_message",
@@ -2841,17 +2841,17 @@
                 "title": "Opções",
                 "rows": [
                   {
-                    "callback_data": "2a576c44-c722-4c03-a69f-10cbae36f81e",
+                    "callback_data": "afd37528-b483-4a92-9556-6e09b186dc44",
                     "title": "PR · Paraná",
                     "description": ""
                   },
                   {
-                    "callback_data": "3750d1e4-599d-4298-b272-dd680427612f",
+                    "callback_data": "93da1660-d769-469d-87dc-d7241747b737",
                     "title": "SC · Santa Catarina",
                     "description": ""
                   },
                   {
-                    "callback_data": "5d16ac44-106a-4ac6-bb2a-6df5afde4d53",
+                    "callback_data": "c0e6b285-c060-485d-9abe-74c50d21f1f3",
                     "title": "RS · Rio Grande do Sul",
                     "description": ""
                   }
@@ -2872,7 +2872,7 @@
         "handler": "buttons",
         "params": [
           {
-            "value": "2a576c44-c722-4c03-a69f-10cbae36f81e",
+            "value": "afd37528-b483-4a92-9556-6e09b186dc44",
             "params": [
               {
                 "handler": "goto",
@@ -2896,7 +2896,7 @@
             ]
           },
           {
-            "value": "3750d1e4-599d-4298-b272-dd680427612f",
+            "value": "93da1660-d769-469d-87dc-d7241747b737",
             "params": [
               {
                 "handler": "goto",
@@ -2920,7 +2920,7 @@
             ]
           },
           {
-            "value": "5d16ac44-106a-4ac6-bb2a-6df5afde4d53",
+            "value": "c0e6b285-c060-485d-9abe-74c50d21f1f3",
             "params": [
               {
                 "handler": "goto",
@@ -2960,7 +2960,7 @@
     ]
   },
   "72": {
-    "block_uuid": "01ae95c5-b885-4ee3-b535-e92e8c40d9cb",
+    "block_uuid": "ea857cae-6290-4b41-8673-1a7484dff637",
     "question": [
       {
         "handler": "list_message",
@@ -2975,22 +2975,22 @@
                 "title": "Opções",
                 "rows": [
                   {
-                    "callback_data": "7eca49b3-bfad-41e1-96c8-528a08d99784",
+                    "callback_data": "f6e4e425-821d-48e3-a5c9-db184db1b3bd",
                     "title": "GO · Goiás",
                     "description": ""
                   },
                   {
-                    "callback_data": "24cd59b2-d702-4830-a60a-4e1e0bde9316",
+                    "callback_data": "768ca902-c573-4175-92e0-60bd746f8fd5",
                     "title": "MT · Mato Grosso",
                     "description": ""
                   },
                   {
-                    "callback_data": "849fb80f-5220-41ab-8892-83945adbdd67",
+                    "callback_data": "d4704b01-286b-4b59-bc95-b3bf056964de",
                     "title": "MS · Mato Grosso do Sul",
                     "description": ""
                   },
                   {
-                    "callback_data": "072bd43d-24e6-40af-a8d8-ed4d7de5426e",
+                    "callback_data": "a047ba0c-8a2d-4dd9-89c8-37635819575b",
                     "title": "DF · Distrito Federal",
                     "description": ""
                   }
@@ -3011,7 +3011,7 @@
         "handler": "buttons",
         "params": [
           {
-            "value": "7eca49b3-bfad-41e1-96c8-528a08d99784",
+            "value": "f6e4e425-821d-48e3-a5c9-db184db1b3bd",
             "params": [
               {
                 "handler": "goto",
@@ -3035,7 +3035,7 @@
             ]
           },
           {
-            "value": "24cd59b2-d702-4830-a60a-4e1e0bde9316",
+            "value": "768ca902-c573-4175-92e0-60bd746f8fd5",
             "params": [
               {
                 "handler": "goto",
@@ -3059,7 +3059,7 @@
             ]
           },
           {
-            "value": "849fb80f-5220-41ab-8892-83945adbdd67",
+            "value": "d4704b01-286b-4b59-bc95-b3bf056964de",
             "params": [
               {
                 "handler": "goto",
@@ -3083,7 +3083,7 @@
             ]
           },
           {
-            "value": "072bd43d-24e6-40af-a8d8-ed4d7de5426e",
+            "value": "a047ba0c-8a2d-4dd9-89c8-37635819575b",
             "params": [
               {
                 "handler": "goto",
@@ -3123,7 +3123,7 @@
     ]
   },
   "73": {
-    "block_uuid": "a99446a2-c48d-4ba3-8b15-614b471dd103",
+    "block_uuid": "4eb68e68-b722-4bab-9a6e-e4da38f17c67",
     "question": [
       {
         "handler": "list_message",
@@ -3138,47 +3138,47 @@
                 "title": "Opções",
                 "rows": [
                   {
-                    "callback_data": "3cb63ec4-dbbe-48dd-95f6-be62b99af50b",
+                    "callback_data": "9a4acb1f-9fd9-4696-bb1d-0e7c0f00bac8",
                     "title": "BA · Bahia",
                     "description": ""
                   },
                   {
-                    "callback_data": "70af760c-2fa9-4b7a-bdaa-b1c8ee7c0d90",
+                    "callback_data": "57a16459-5d8d-455f-bd5a-a49844a2ce2f",
                     "title": "PE · Pernambuco",
                     "description": ""
                   },
                   {
-                    "callback_data": "8f13a9cd-f7c3-46a1-b604-282d09484bea",
+                    "callback_data": "87072d47-1984-4034-9ba7-8e673efd4869",
                     "title": "CE · Ceará",
                     "description": ""
                   },
                   {
-                    "callback_data": "89cc71b0-5e54-45cf-bb90-e793f8e78e1f",
+                    "callback_data": "f11a0069-cc4b-4e0e-9fb2-bf11b3555197",
                     "title": "MA · Maranhão",
                     "description": ""
                   },
                   {
-                    "callback_data": "8038a719-5fd9-4755-ba37-145accc70390",
+                    "callback_data": "0ed82795-938c-4a14-aa00-33a8adb09b4b",
                     "title": "PB · Paraíba",
                     "description": ""
                   },
                   {
-                    "callback_data": "4164e1ae-4e7a-46c3-9d86-23c7baf163f6",
+                    "callback_data": "dcac585a-36b3-4411-8a65-eec915cab956",
                     "title": "RN · Rio Grande do Norte",
                     "description": ""
                   },
                   {
-                    "callback_data": "efa3c0d1-d762-476e-b2bf-2a97ab89d751",
+                    "callback_data": "7c3bec29-afe9-4b39-8329-48bca937e24c",
                     "title": "AL · Alagoas",
                     "description": ""
                   },
                   {
-                    "callback_data": "12f81d9b-da96-440d-baf7-deeac9955ec0",
+                    "callback_data": "862427d3-f08e-4098-a428-7b0d5639b292",
                     "title": "PI · Piauí",
                     "description": ""
                   },
                   {
-                    "callback_data": "b5e2b6b7-c77f-41f9-ba96-1630396d7bd3",
+                    "callback_data": "b78e4cb1-7890-459e-8fb8-337c940c60d8",
                     "title": "SE · Sergipe",
                     "description": ""
                   }
@@ -3199,7 +3199,7 @@
         "handler": "buttons",
         "params": [
           {
-            "value": "3cb63ec4-dbbe-48dd-95f6-be62b99af50b",
+            "value": "9a4acb1f-9fd9-4696-bb1d-0e7c0f00bac8",
             "params": [
               {
                 "handler": "goto",
@@ -3223,7 +3223,7 @@
             ]
           },
           {
-            "value": "70af760c-2fa9-4b7a-bdaa-b1c8ee7c0d90",
+            "value": "57a16459-5d8d-455f-bd5a-a49844a2ce2f",
             "params": [
               {
                 "handler": "goto",
@@ -3247,7 +3247,7 @@
             ]
           },
           {
-            "value": "8f13a9cd-f7c3-46a1-b604-282d09484bea",
+            "value": "87072d47-1984-4034-9ba7-8e673efd4869",
             "params": [
               {
                 "handler": "goto",
@@ -3271,7 +3271,7 @@
             ]
           },
           {
-            "value": "89cc71b0-5e54-45cf-bb90-e793f8e78e1f",
+            "value": "f11a0069-cc4b-4e0e-9fb2-bf11b3555197",
             "params": [
               {
                 "handler": "goto",
@@ -3295,7 +3295,7 @@
             ]
           },
           {
-            "value": "8038a719-5fd9-4755-ba37-145accc70390",
+            "value": "0ed82795-938c-4a14-aa00-33a8adb09b4b",
             "params": [
               {
                 "handler": "goto",
@@ -3319,7 +3319,7 @@
             ]
           },
           {
-            "value": "4164e1ae-4e7a-46c3-9d86-23c7baf163f6",
+            "value": "dcac585a-36b3-4411-8a65-eec915cab956",
             "params": [
               {
                 "handler": "goto",
@@ -3343,7 +3343,7 @@
             ]
           },
           {
-            "value": "efa3c0d1-d762-476e-b2bf-2a97ab89d751",
+            "value": "7c3bec29-afe9-4b39-8329-48bca937e24c",
             "params": [
               {
                 "handler": "goto",
@@ -3367,7 +3367,7 @@
             ]
           },
           {
-            "value": "12f81d9b-da96-440d-baf7-deeac9955ec0",
+            "value": "862427d3-f08e-4098-a428-7b0d5639b292",
             "params": [
               {
                 "handler": "goto",
@@ -3391,7 +3391,7 @@
             ]
           },
           {
-            "value": "b5e2b6b7-c77f-41f9-ba96-1630396d7bd3",
+            "value": "b78e4cb1-7890-459e-8fb8-337c940c60d8",
             "params": [
               {
                 "handler": "goto",
@@ -3431,7 +3431,7 @@
     ]
   },
   "74": {
-    "block_uuid": "b9b3adec-b076-4af9-81cb-2c7e79ff2da0",
+    "block_uuid": "0c058970-addb-4c91-babb-757bad32485b",
     "question": [
       {
         "handler": "list_message",
@@ -3446,37 +3446,37 @@
                 "title": "Opções",
                 "rows": [
                   {
-                    "callback_data": "810c80ea-572d-4cff-bdef-1321e2ca3d33",
+                    "callback_data": "7c0a8232-4c2e-4258-b7b6-125a0a21fe28",
                     "title": "PA · Pará",
                     "description": ""
                   },
                   {
-                    "callback_data": "0fbe33fb-3f38-452f-90a0-4540e87eb819",
+                    "callback_data": "1bae0ba8-1051-4744-80f7-9830a1473e78",
                     "title": "AM · Amazonas",
                     "description": ""
                   },
                   {
-                    "callback_data": "234c523b-0187-492d-972a-79a3498e3893",
+                    "callback_data": "32a210fc-82c4-4cc7-b082-9b0697691165",
                     "title": "RO · Rondônia",
                     "description": ""
                   },
                   {
-                    "callback_data": "6dd93b07-acab-4de3-a85e-9f9781dd4277",
+                    "callback_data": "73355b67-c6c5-4a6b-a9ae-c21ac991a20e",
                     "title": "TO · Tocantins",
                     "description": ""
                   },
                   {
-                    "callback_data": "a4712bc6-0041-4659-a89e-57d91f49e75c",
+                    "callback_data": "c29f43b9-0d97-420f-a2d1-1d98b96a826d",
                     "title": "AC · Acre",
                     "description": ""
                   },
                   {
-                    "callback_data": "711e0ac8-6393-4db7-80a7-328b9fb062b9",
+                    "callback_data": "d516bfd9-88ab-4de8-919b-5fa8b1f8ea68",
                     "title": "AP · Amapá",
                     "description": ""
                   },
                   {
-                    "callback_data": "d36befce-7d4a-4af9-8189-d6fe644c4faa",
+                    "callback_data": "2ec5da98-f38d-4496-b519-e852dcaf989a",
                     "title": "RR · Roraima",
                     "description": ""
                   }
@@ -3497,7 +3497,7 @@
         "handler": "buttons",
         "params": [
           {
-            "value": "810c80ea-572d-4cff-bdef-1321e2ca3d33",
+            "value": "7c0a8232-4c2e-4258-b7b6-125a0a21fe28",
             "params": [
               {
                 "handler": "goto",
@@ -3521,7 +3521,7 @@
             ]
           },
           {
-            "value": "0fbe33fb-3f38-452f-90a0-4540e87eb819",
+            "value": "1bae0ba8-1051-4744-80f7-9830a1473e78",
             "params": [
               {
                 "handler": "goto",
@@ -3545,7 +3545,7 @@
             ]
           },
           {
-            "value": "234c523b-0187-492d-972a-79a3498e3893",
+            "value": "32a210fc-82c4-4cc7-b082-9b0697691165",
             "params": [
               {
                 "handler": "goto",
@@ -3569,7 +3569,7 @@
             ]
           },
           {
-            "value": "6dd93b07-acab-4de3-a85e-9f9781dd4277",
+            "value": "73355b67-c6c5-4a6b-a9ae-c21ac991a20e",
             "params": [
               {
                 "handler": "goto",
@@ -3593,7 +3593,7 @@
             ]
           },
           {
-            "value": "a4712bc6-0041-4659-a89e-57d91f49e75c",
+            "value": "c29f43b9-0d97-420f-a2d1-1d98b96a826d",
             "params": [
               {
                 "handler": "goto",
@@ -3617,7 +3617,7 @@
             ]
           },
           {
-            "value": "711e0ac8-6393-4db7-80a7-328b9fb062b9",
+            "value": "d516bfd9-88ab-4de8-919b-5fa8b1f8ea68",
             "params": [
               {
                 "handler": "goto",
@@ -3641,7 +3641,7 @@
             ]
           },
           {
-            "value": "d36befce-7d4a-4af9-8189-d6fe644c4faa",
+            "value": "2ec5da98-f38d-4496-b519-e852dcaf989a",
             "params": [
               {
                 "handler": "goto",
@@ -3681,7 +3681,7 @@
     ]
   },
   "100": {
-    "block_uuid": "0b5a1881-d1c7-4b32-a816-c92495c42a3d",
+    "block_uuid": "36569b2c-069d-4a11-a6c3-4d6d6aa660cf",
     "question": [
       {
         "handler": "action",
@@ -3703,7 +3703,7 @@
     ]
   },
   "101": {
-    "block_uuid": "edcab00f-5333-4238-9ba2-e74f0de7e4d0",
+    "block_uuid": "834d19b0-2e6d-4e69-8b7d-efdee33efc33",
     "question": [
       {
         "handler": "action",
@@ -3725,7 +3725,7 @@
     ]
   },
   "102": {
-    "block_uuid": "0a277984-3420-48cd-ae26-cad31def5ce0",
+    "block_uuid": "29afd0c5-b10f-414a-8fc8-7286b117db81",
     "question": [
       {
         "handler": "action",
@@ -3747,7 +3747,7 @@
     ]
   },
   "103": {
-    "block_uuid": "703509ad-555a-447c-b129-692147f29683",
+    "block_uuid": "94b05cf8-8795-4f9c-84e2-fcac8ead3904",
     "question": [
       {
         "handler": "action",
@@ -3769,7 +3769,7 @@
     ]
   },
   "104": {
-    "block_uuid": "569819c2-b485-465b-97da-f23be36c94ce",
+    "block_uuid": "ea8986e3-354a-461b-82ac-d8c9468b0b07",
     "question": [
       {
         "handler": "action",
@@ -3791,7 +3791,7 @@
     ]
   },
   "105": {
-    "block_uuid": "6fab042b-3d99-4036-9fbe-c5086fdaa337",
+    "block_uuid": "737c3de2-50c8-43b6-8cc5-cc374aa06096",
     "question": [
       {
         "handler": "action",
@@ -3813,7 +3813,7 @@
     ]
   },
   "106": {
-    "block_uuid": "0d3a5f3c-94ba-4124-8c36-7e94bffc10a5",
+    "block_uuid": "98dd74bf-9771-406f-993b-dddf0b9d9a82",
     "question": [
       {
         "handler": "action",
@@ -3835,7 +3835,7 @@
     ]
   },
   "107": {
-    "block_uuid": "76686154-4f13-48e8-b5dd-f3d1614de6d7",
+    "block_uuid": "06b6cbc7-5390-4ff7-9efe-dbb7f0b416b6",
     "question": [
       {
         "handler": "action",
@@ -3857,7 +3857,7 @@
     ]
   },
   "108": {
-    "block_uuid": "04fb00a5-905a-40bb-8637-ec7881028c0d",
+    "block_uuid": "6a1ddb61-010e-497f-884c-8cb7379bab78",
     "question": [
       {
         "handler": "action",
@@ -3879,7 +3879,7 @@
     ]
   },
   "109": {
-    "block_uuid": "73fb0ca6-f507-4cdf-8ea8-61cce8c09323",
+    "block_uuid": "fc61f49c-210b-4d46-8d9d-66f56ccc7779",
     "question": [
       {
         "handler": "action",
@@ -3901,7 +3901,7 @@
     ]
   },
   "110": {
-    "block_uuid": "8cb14629-7729-40bb-a105-950bfe6431e1",
+    "block_uuid": "5d11678b-2416-4bed-adc8-8e42e9451446",
     "question": [
       {
         "handler": "action",
@@ -3923,7 +3923,7 @@
     ]
   },
   "111": {
-    "block_uuid": "da7fa043-402c-4b6e-84a8-ae0e2eef2b1e",
+    "block_uuid": "c083ecee-d77a-4d69-8b26-25afb63e7ae9",
     "question": [
       {
         "handler": "action",
@@ -3945,7 +3945,7 @@
     ]
   },
   "112": {
-    "block_uuid": "10d31f4a-52cf-4abc-b404-38fffc2c32df",
+    "block_uuid": "de2c0d0c-0ec9-4a57-b33e-4c1326bc028a",
     "question": [
       {
         "handler": "action",
@@ -3967,7 +3967,7 @@
     ]
   },
   "113": {
-    "block_uuid": "42a7ed6b-6409-4b6e-9c2d-ebb48f3623b3",
+    "block_uuid": "74263c2f-73e3-45c5-a536-ab5ebab949ba",
     "question": [
       {
         "handler": "action",
@@ -3989,7 +3989,7 @@
     ]
   },
   "114": {
-    "block_uuid": "ea1bb57d-a116-404d-84f0-cf868c4c9eb7",
+    "block_uuid": "4d6d08ba-2c01-4375-82d9-0aec880796c2",
     "question": [
       {
         "handler": "action",
@@ -4011,7 +4011,7 @@
     ]
   },
   "115": {
-    "block_uuid": "9891a20b-d60e-49fd-9f12-d0d9b74d2e1f",
+    "block_uuid": "9493534e-9288-4e49-98cb-e8916f3cdfd6",
     "question": [
       {
         "handler": "action",
@@ -4033,7 +4033,7 @@
     ]
   },
   "116": {
-    "block_uuid": "d19c0449-4605-49a3-aaff-0e2c51621af1",
+    "block_uuid": "3e4a0910-b47d-4718-ae0e-177ceccfe88c",
     "question": [
       {
         "handler": "action",
@@ -4055,7 +4055,7 @@
     ]
   },
   "117": {
-    "block_uuid": "8b0730e6-5ef3-42a9-ac69-7fc412a75d70",
+    "block_uuid": "e60fb9fe-dd6a-4be4-a521-4ed5a17dccb8",
     "question": [
       {
         "handler": "action",
@@ -4077,7 +4077,7 @@
     ]
   },
   "118": {
-    "block_uuid": "b72d769e-d395-4138-805f-aed80b26dc52",
+    "block_uuid": "686d16dd-b7e9-43c7-956e-461450ccedd9",
     "question": [
       {
         "handler": "action",
@@ -4099,7 +4099,7 @@
     ]
   },
   "119": {
-    "block_uuid": "4e481c96-38f5-4660-bcfc-3e9a08afd467",
+    "block_uuid": "6f44dc79-f2d5-406e-803f-f46b9904e8b8",
     "question": [
       {
         "handler": "action",
@@ -4121,7 +4121,7 @@
     ]
   },
   "120": {
-    "block_uuid": "942c8bd0-56fb-4d15-b1df-f21d3ffe6e22",
+    "block_uuid": "7d60b717-7f7f-41a2-ab1a-b4b31e26caf2",
     "question": [
       {
         "handler": "action",
@@ -4143,7 +4143,7 @@
     ]
   },
   "121": {
-    "block_uuid": "257c3c4d-5dce-4674-b885-a793f344d5b8",
+    "block_uuid": "e0d48d03-6427-4888-acd0-84fe6ad98a6f",
     "question": [
       {
         "handler": "action",
@@ -4165,7 +4165,7 @@
     ]
   },
   "122": {
-    "block_uuid": "a27923f9-bd84-4d2d-8af6-d78a0e3c0b83",
+    "block_uuid": "8c6664f3-f5de-4c92-b79e-6b9e43b59697",
     "question": [
       {
         "handler": "action",
@@ -4187,7 +4187,7 @@
     ]
   },
   "123": {
-    "block_uuid": "3711a238-1a2b-4a61-a34d-c1f841d156d4",
+    "block_uuid": "56b6a7c4-6fc7-4e05-9a3f-c1a309f1f213",
     "question": [
       {
         "handler": "action",
@@ -4209,7 +4209,7 @@
     ]
   },
   "124": {
-    "block_uuid": "6d7f22e8-22dc-4984-b0f6-33822a98b060",
+    "block_uuid": "173389db-46cd-4bfe-a099-cedbbda698c1",
     "question": [
       {
         "handler": "action",
@@ -4231,7 +4231,7 @@
     ]
   },
   "125": {
-    "block_uuid": "81f55d44-932a-4678-b1bc-84ea64ed1376",
+    "block_uuid": "42f1e63e-e47c-4aed-ae32-40c0b7380498",
     "question": [
       {
         "handler": "action",
@@ -4253,7 +4253,7 @@
     ]
   },
   "126": {
-    "block_uuid": "b49b838f-9afe-4ae0-a5ad-3541a4fa5614",
+    "block_uuid": "dd6fc830-492c-4d24-8da9-809d97cf2611",
     "question": [
       {
         "handler": "action",
@@ -4275,7 +4275,7 @@
     ]
   },
   "200": {
-    "block_uuid": "0dfb33f4-cc10-4f5c-9c08-ab9e075d5363",
+    "block_uuid": "9f2fcc83-ab30-4d47-aaca-36a839684fc9",
     "question": [
       {
         "handler": "list_message",
@@ -4290,22 +4290,22 @@
                 "title": "Opções",
                 "rows": [
                   {
-                    "callback_data": "3865a788-72ae-441e-a042-e737fae97d00",
+                    "callback_data": "889df086-0c5c-42aa-a015-2ad4d043af4f",
                     "title": "Uso em casa",
                     "description": ""
                   },
                   {
-                    "callback_data": "66830f74-fec3-4bc4-ae39-1fe99ecffe32",
+                    "callback_data": "56b229c3-601e-4249-80c3-b6dbb115b4b5",
                     "title": "Para o salão",
                     "description": ""
                   },
                   {
-                    "callback_data": "da4b54c1-a20c-462f-be0e-2ecd1e51057d",
+                    "callback_data": "fc751ed9-fc65-44d5-9305-5d7f06187114",
                     "title": "Revender",
                     "description": ""
                   },
                   {
-                    "callback_data": "fc5a619d-429d-4187-8e48-ceb66540797c",
+                    "callback_data": "f2d90f3b-074f-4af7-ba37-a25a1b78d29d",
                     "title": "Já sou cliente",
                     "description": ""
                   }
@@ -4326,7 +4326,7 @@
         "handler": "buttons",
         "params": [
           {
-            "value": "3865a788-72ae-441e-a042-e737fae97d00",
+            "value": "889df086-0c5c-42aa-a015-2ad4d043af4f",
             "params": [
               {
                 "handler": "goto",
@@ -4350,7 +4350,7 @@
             ]
           },
           {
-            "value": "66830f74-fec3-4bc4-ae39-1fe99ecffe32",
+            "value": "56b229c3-601e-4249-80c3-b6dbb115b4b5",
             "params": [
               {
                 "handler": "goto",
@@ -4374,7 +4374,7 @@
             ]
           },
           {
-            "value": "da4b54c1-a20c-462f-be0e-2ecd1e51057d",
+            "value": "fc751ed9-fc65-44d5-9305-5d7f06187114",
             "params": [
               {
                 "handler": "goto",
@@ -4398,7 +4398,7 @@
             ]
           },
           {
-            "value": "fc5a619d-429d-4187-8e48-ceb66540797c",
+            "value": "f2d90f3b-074f-4af7-ba37-a25a1b78d29d",
             "params": [
               {
                 "handler": "goto",
@@ -4438,69 +4438,31 @@
     ]
   },
   "300": {
-    "block_uuid": "247a6de6-3722-476f-868a-9d0fc1c705aa",
+    "block_uuid": "5385211e-6795-44f1-a085-a5ca78a1432a",
     "question": [
       {
-        "handler": "list_message",
+        "handler": "send_message",
         "params": {
-          "list_message": {
-            "header": "",
-            "body": "Qual linha te interessa? Se preferir, veja o catálogo primeiro. Para responder, toque em \"Ver opções\" 👇",
-            "footer": "",
-            "button": "Ver opções",
-            "sections": [
-              {
-                "title": "Opções",
-                "rows": [
-                  {
-                    "callback_data": "3628852d-882e-4a1d-8738-b257f0bcb9d5",
-                    "title": "Ver o catálogo",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "350482fe-aeb9-40af-9824-b1d9c904c192",
-                    "title": "Tratamento",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "daacc603-e199-41c5-ae8e-b98bb04d48c9",
-                    "title": "Reconstrução",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "1a643e68-932e-41eb-89c2-d9499faa6f2b",
-                    "title": "Liso e redução de volume",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "4577e443-f45b-407f-b2f7-182ea07e3410",
-                    "title": "Loiros",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "dea28201-86ec-48cd-a334-e316bda372fa",
-                    "title": "Coloração",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "f66c618f-fbef-4fe2-8e7c-0d0c6fea65fc",
-                    "title": "Finalizadores",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "1d04b7f4-3aa5-4bcf-8317-e7dae9fff130",
-                    "title": "Ainda não sei",
-                    "description": ""
-                  }
-                ]
-              }
-            ]
-          },
+          "tag": "",
+          "text": "Você já sabe quais produtos quer? 👇",
+          "type": "external",
           "recipient": {
             "type": "all_contacts",
             "way_of_communication": "over_all"
           },
-          "disabled": false
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null,
+          "buttons": [
+            {
+              "type": "inline",
+              "text": "Ver o catálogo"
+            },
+            {
+              "type": "inline",
+              "text": "Já sei o que quero"
+            }
+          ]
         }
       }
     ],
@@ -4508,18 +4470,6 @@
       {
         "handler": "buttons",
         "params": [
-          {
-            "value": "3628852d-882e-4a1d-8738-b257f0bcb9d5",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 301
-                }
-              }
-            ]
-          },
           {
             "value": "Ver o catálogo",
             "params": [
@@ -4533,169 +4483,13 @@
             ]
           },
           {
-            "value": "350482fe-aeb9-40af-9824-b1d9c904c192",
+            "value": "Já sei o que quero",
             "params": [
               {
                 "handler": "goto",
                 "params": {
                   "type": "question",
-                  "step": 310
-                }
-              }
-            ]
-          },
-          {
-            "value": "Tratamento",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 310
-                }
-              }
-            ]
-          },
-          {
-            "value": "daacc603-e199-41c5-ae8e-b98bb04d48c9",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 311
-                }
-              }
-            ]
-          },
-          {
-            "value": "Reconstrução",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 311
-                }
-              }
-            ]
-          },
-          {
-            "value": "1a643e68-932e-41eb-89c2-d9499faa6f2b",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 312
-                }
-              }
-            ]
-          },
-          {
-            "value": "Liso e redução de volume",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 312
-                }
-              }
-            ]
-          },
-          {
-            "value": "4577e443-f45b-407f-b2f7-182ea07e3410",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 313
-                }
-              }
-            ]
-          },
-          {
-            "value": "Loiros",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 313
-                }
-              }
-            ]
-          },
-          {
-            "value": "dea28201-86ec-48cd-a334-e316bda372fa",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 314
-                }
-              }
-            ]
-          },
-          {
-            "value": "Coloração",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 314
-                }
-              }
-            ]
-          },
-          {
-            "value": "f66c618f-fbef-4fe2-8e7c-0d0c6fea65fc",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 315
-                }
-              }
-            ]
-          },
-          {
-            "value": "Finalizadores",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 315
-                }
-              }
-            ]
-          },
-          {
-            "value": "1d04b7f4-3aa5-4bcf-8317-e7dae9fff130",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 316
-                }
-              }
-            ]
-          },
-          {
-            "value": "Ainda não sei",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 316
+                  "step": 18
                 }
               }
             ]
@@ -4717,13 +4511,13 @@
     ]
   },
   "301": {
-    "block_uuid": "7710eab9-6104-4b1f-9513-450e585a547e",
+    "block_uuid": "347bb32a-909f-41df-9cd2-a1a9a39a0698",
     "question": [
       {
         "handler": "send_message",
         "params": {
           "tag": "",
-          "text": "Aqui está o nosso catálogo 📖\n\nMinasflor: drive.google.com/file/d/1GF3BzmvStM1_DzX_VCKQjgnXTLtr9VXb/view",
+          "text": "Aqui está o nosso catálogo 📖\n\nMinasflor: drive.google.com/file/d/1GF3BzmvStM1_DzX_VCKQjgnXTLtr9VXb/view\n\nQuando escolher, escreva os produtos e as quantidades, que a nossa equipe monta o seu pedido 📝",
           "type": "external",
           "recipient": {
             "type": "all_contacts",
@@ -4744,473 +4538,65 @@
     ]
   },
   "302": {
-    "block_uuid": "9861e323-6e3f-4fb2-b5f6-cfaa69770b2d",
+    "block_uuid": "b8a1a563-8f51-4f3f-a8df-dd3c1fce4153",
     "question": [
       {
-        "handler": "list_message",
+        "handler": "waits",
         "params": {
-          "list_message": {
-            "header": "",
-            "body": "Quando escolher, me diga qual linha te interessa. Para responder, toque em \"Ver opções\" 👇",
-            "footer": "",
-            "button": "Ver opções",
-            "sections": [
-              {
-                "title": "Opções",
-                "rows": [
-                  {
-                    "callback_data": "350482fe-aeb9-40af-9824-b1d9c904c192",
-                    "title": "Tratamento",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "daacc603-e199-41c5-ae8e-b98bb04d48c9",
-                    "title": "Reconstrução",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "1a643e68-932e-41eb-89c2-d9499faa6f2b",
-                    "title": "Liso e redução de volume",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "4577e443-f45b-407f-b2f7-182ea07e3410",
-                    "title": "Loiros",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "dea28201-86ec-48cd-a334-e316bda372fa",
-                    "title": "Coloração",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "f66c618f-fbef-4fe2-8e7c-0d0c6fea65fc",
-                    "title": "Finalizadores",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "1d04b7f4-3aa5-4bcf-8317-e7dae9fff130",
-                    "title": "Ainda não sei",
-                    "description": ""
-                  }
-                ]
+          "logic": "or",
+          "conditions": [
+            {
+              "event": {
+                "action": "received",
+                "source": "message"
+              },
+              "action": {
+                "type": "question",
+                "step": 9
               }
-            ]
-          },
-          "recipient": {
-            "type": "all_contacts",
-            "way_of_communication": "over_all"
-          },
-          "disabled": false
-        }
-      }
-    ],
-    "answer": [
-      {
-        "handler": "buttons",
-        "params": [
-          {
-            "value": "350482fe-aeb9-40af-9824-b1d9c904c192",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 310
-                }
+            },
+            {
+              "event": {
+                "action": "ended",
+                "source": "timer",
+                "delay": 2700
+              },
+              "action": {
+                "type": "question",
+                "step": 360
               }
-            ]
-          },
-          {
-            "value": "Tratamento",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 310
-                }
-              }
-            ]
-          },
-          {
-            "value": "daacc603-e199-41c5-ae8e-b98bb04d48c9",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 311
-                }
-              }
-            ]
-          },
-          {
-            "value": "Reconstrução",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 311
-                }
-              }
-            ]
-          },
-          {
-            "value": "1a643e68-932e-41eb-89c2-d9499faa6f2b",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 312
-                }
-              }
-            ]
-          },
-          {
-            "value": "Liso e redução de volume",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 312
-                }
-              }
-            ]
-          },
-          {
-            "value": "4577e443-f45b-407f-b2f7-182ea07e3410",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 313
-                }
-              }
-            ]
-          },
-          {
-            "value": "Loiros",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 313
-                }
-              }
-            ]
-          },
-          {
-            "value": "dea28201-86ec-48cd-a334-e316bda372fa",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 314
-                }
-              }
-            ]
-          },
-          {
-            "value": "Coloração",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 314
-                }
-              }
-            ]
-          },
-          {
-            "value": "f66c618f-fbef-4fe2-8e7c-0d0c6fea65fc",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 315
-                }
-              }
-            ]
-          },
-          {
-            "value": "Finalizadores",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 315
-                }
-              }
-            ]
-          },
-          {
-            "value": "1d04b7f4-3aa5-4bcf-8317-e7dae9fff130",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 316
-                }
-              }
-            ]
-          },
-          {
-            "value": "Ainda não sei",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 316
-                }
-              }
-            ]
-          },
-          {
-            "type": "else",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 9
-                }
-              }
-            ]
-          }
-        ]
-      }
-    ]
-  },
-  "310": {
-    "block_uuid": "c0800c71-12b3-4dc2-a84a-bbaae0e096b4",
-    "question": [
-      {
-        "handler": "action",
-        "params": {
-          "name": "set_custom_fields",
-          "params": {
-            "value": "Tratamento",
-            "custom_field": "{{lead.cf.4381736}}"
-          }
-        }
-      },
-      {
-        "handler": "goto",
-        "params": {
-          "type": "question",
-          "step": 18
-        }
-      }
-    ]
-  },
-  "311": {
-    "block_uuid": "91f7c657-996d-4650-9420-4428c4ab23c8",
-    "question": [
-      {
-        "handler": "action",
-        "params": {
-          "name": "set_custom_fields",
-          "params": {
-            "value": "Reconstrução",
-            "custom_field": "{{lead.cf.4381736}}"
-          }
-        }
-      },
-      {
-        "handler": "goto",
-        "params": {
-          "type": "question",
-          "step": 18
-        }
-      }
-    ]
-  },
-  "312": {
-    "block_uuid": "f0a9b35b-ea85-4899-8d55-3acf16ef9d68",
-    "question": [
-      {
-        "handler": "action",
-        "params": {
-          "name": "set_custom_fields",
-          "params": {
-            "value": "Liso e redução de volume",
-            "custom_field": "{{lead.cf.4381736}}"
-          }
-        }
-      },
-      {
-        "handler": "goto",
-        "params": {
-          "type": "question",
-          "step": 18
-        }
-      }
-    ]
-  },
-  "313": {
-    "block_uuid": "7c6ee95d-0e6a-43b7-83d7-d3e298585d08",
-    "question": [
-      {
-        "handler": "action",
-        "params": {
-          "name": "set_custom_fields",
-          "params": {
-            "value": "Loiros",
-            "custom_field": "{{lead.cf.4381736}}"
-          }
-        }
-      },
-      {
-        "handler": "goto",
-        "params": {
-          "type": "question",
-          "step": 18
-        }
-      }
-    ]
-  },
-  "314": {
-    "block_uuid": "ce717cdc-961d-4c71-9197-7d1852231ac8",
-    "question": [
-      {
-        "handler": "action",
-        "params": {
-          "name": "set_custom_fields",
-          "params": {
-            "value": "Coloração",
-            "custom_field": "{{lead.cf.4381736}}"
-          }
-        }
-      },
-      {
-        "handler": "goto",
-        "params": {
-          "type": "question",
-          "step": 18
-        }
-      }
-    ]
-  },
-  "315": {
-    "block_uuid": "0e573a46-dd4a-49e3-a3e0-7a2e948aa038",
-    "question": [
-      {
-        "handler": "action",
-        "params": {
-          "name": "set_custom_fields",
-          "params": {
-            "value": "Finalizadores",
-            "custom_field": "{{lead.cf.4381736}}"
-          }
-        }
-      },
-      {
-        "handler": "goto",
-        "params": {
-          "type": "question",
-          "step": 18
-        }
-      }
-    ]
-  },
-  "316": {
-    "block_uuid": "45445742-69de-46d6-91d6-2557c9af18d7",
-    "question": [
-      {
-        "handler": "action",
-        "params": {
-          "name": "set_custom_fields",
-          "params": {
-            "value": "Ainda não sei",
-            "custom_field": "{{lead.cf.4381736}}"
-          }
-        }
-      },
-      {
-        "handler": "goto",
-        "params": {
-          "type": "question",
-          "step": 18
+            }
+          ]
         }
       }
     ]
   },
   "320": {
-    "block_uuid": "7cb7b126-729a-415a-9c2a-1d39ad03df93",
+    "block_uuid": "ed02a435-c29e-415c-9c2a-0f6fd390a4ca",
     "question": [
       {
-        "handler": "list_message",
+        "handler": "send_message",
         "params": {
-          "list_message": {
-            "header": "",
-            "body": "Qual linha te interessa? Se preferir, veja o catálogo primeiro. Para responder, toque em \"Ver opções\" 👇",
-            "footer": "",
-            "button": "Ver opções",
-            "sections": [
-              {
-                "title": "Opções",
-                "rows": [
-                  {
-                    "callback_data": "3628852d-882e-4a1d-8738-b257f0bcb9d5",
-                    "title": "Ver o catálogo",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "350482fe-aeb9-40af-9824-b1d9c904c192",
-                    "title": "Tratamento",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "daacc603-e199-41c5-ae8e-b98bb04d48c9",
-                    "title": "Reconstrução",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "1a643e68-932e-41eb-89c2-d9499faa6f2b",
-                    "title": "Liso e redução de volume",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "4577e443-f45b-407f-b2f7-182ea07e3410",
-                    "title": "Loiros",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "dea28201-86ec-48cd-a334-e316bda372fa",
-                    "title": "Coloração",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "f66c618f-fbef-4fe2-8e7c-0d0c6fea65fc",
-                    "title": "Finalizadores",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "1d04b7f4-3aa5-4bcf-8317-e7dae9fff130",
-                    "title": "Ainda não sei",
-                    "description": ""
-                  }
-                ]
-              }
-            ]
-          },
+          "tag": "",
+          "text": "Você já sabe quais produtos quer? 👇",
+          "type": "external",
           "recipient": {
             "type": "all_contacts",
             "way_of_communication": "over_all"
           },
-          "disabled": false
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null,
+          "buttons": [
+            {
+              "type": "inline",
+              "text": "Ver o catálogo"
+            },
+            {
+              "type": "inline",
+              "text": "Já sei o que quero"
+            }
+          ]
         }
       }
     ],
@@ -5218,18 +4604,6 @@
       {
         "handler": "buttons",
         "params": [
-          {
-            "value": "3628852d-882e-4a1d-8738-b257f0bcb9d5",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 321
-                }
-              }
-            ]
-          },
           {
             "value": "Ver o catálogo",
             "params": [
@@ -5243,169 +4617,13 @@
             ]
           },
           {
-            "value": "350482fe-aeb9-40af-9824-b1d9c904c192",
+            "value": "Já sei o que quero",
             "params": [
               {
                 "handler": "goto",
                 "params": {
                   "type": "question",
-                  "step": 330
-                }
-              }
-            ]
-          },
-          {
-            "value": "Tratamento",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 330
-                }
-              }
-            ]
-          },
-          {
-            "value": "daacc603-e199-41c5-ae8e-b98bb04d48c9",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 331
-                }
-              }
-            ]
-          },
-          {
-            "value": "Reconstrução",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 331
-                }
-              }
-            ]
-          },
-          {
-            "value": "1a643e68-932e-41eb-89c2-d9499faa6f2b",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 332
-                }
-              }
-            ]
-          },
-          {
-            "value": "Liso e redução de volume",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 332
-                }
-              }
-            ]
-          },
-          {
-            "value": "4577e443-f45b-407f-b2f7-182ea07e3410",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 333
-                }
-              }
-            ]
-          },
-          {
-            "value": "Loiros",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 333
-                }
-              }
-            ]
-          },
-          {
-            "value": "dea28201-86ec-48cd-a334-e316bda372fa",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 334
-                }
-              }
-            ]
-          },
-          {
-            "value": "Coloração",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 334
-                }
-              }
-            ]
-          },
-          {
-            "value": "f66c618f-fbef-4fe2-8e7c-0d0c6fea65fc",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 335
-                }
-              }
-            ]
-          },
-          {
-            "value": "Finalizadores",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 335
-                }
-              }
-            ]
-          },
-          {
-            "value": "1d04b7f4-3aa5-4bcf-8317-e7dae9fff130",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 336
-                }
-              }
-            ]
-          },
-          {
-            "value": "Ainda não sei",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 336
+                  "step": 27
                 }
               }
             ]
@@ -5427,13 +4645,13 @@
     ]
   },
   "321": {
-    "block_uuid": "0bf719bd-fcf4-4ac0-941f-3b874a20c7c6",
+    "block_uuid": "8f124095-5aed-4fd9-8540-3a1f6ff003ba",
     "question": [
       {
         "handler": "send_message",
         "params": {
           "tag": "",
-          "text": "Aqui estão os nossos catálogos 📖\n\nMinasflor: drive.google.com/file/d/1GF3BzmvStM1_DzX_VCKQjgnXTLtr9VXb/view\n\nMF.PRO: drive.google.com/file/d/1spoT1pUT0wwMqRYaWDxDbXLI-7XQFk5T/view",
+          "text": "Aqui estão os nossos catálogos 📖\n\nMinasflor: drive.google.com/file/d/1GF3BzmvStM1_DzX_VCKQjgnXTLtr9VXb/view\n\nMF.PRO: drive.google.com/file/d/1spoT1pUT0wwMqRYaWDxDbXLI-7XQFk5T/view\n\nQuando escolher, escreva os produtos e as quantidades 📝",
           "type": "external",
           "recipient": {
             "type": "all_contacts",
@@ -5454,411 +4672,41 @@
     ]
   },
   "322": {
-    "block_uuid": "6beab5a6-56f4-4aa3-ab8e-40eb7b42582d",
+    "block_uuid": "c10fb2b7-272c-4ba7-9374-d765459c03c1",
     "question": [
       {
-        "handler": "list_message",
+        "handler": "waits",
         "params": {
-          "list_message": {
-            "header": "",
-            "body": "Quando escolher, me diga qual linha te interessa. Para responder, toque em \"Ver opções\" 👇",
-            "footer": "",
-            "button": "Ver opções",
-            "sections": [
-              {
-                "title": "Opções",
-                "rows": [
-                  {
-                    "callback_data": "350482fe-aeb9-40af-9824-b1d9c904c192",
-                    "title": "Tratamento",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "daacc603-e199-41c5-ae8e-b98bb04d48c9",
-                    "title": "Reconstrução",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "1a643e68-932e-41eb-89c2-d9499faa6f2b",
-                    "title": "Liso e redução de volume",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "4577e443-f45b-407f-b2f7-182ea07e3410",
-                    "title": "Loiros",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "dea28201-86ec-48cd-a334-e316bda372fa",
-                    "title": "Coloração",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "f66c618f-fbef-4fe2-8e7c-0d0c6fea65fc",
-                    "title": "Finalizadores",
-                    "description": ""
-                  },
-                  {
-                    "callback_data": "1d04b7f4-3aa5-4bcf-8317-e7dae9fff130",
-                    "title": "Ainda não sei",
-                    "description": ""
-                  }
-                ]
+          "logic": "or",
+          "conditions": [
+            {
+              "event": {
+                "action": "received",
+                "source": "message"
+              },
+              "action": {
+                "type": "question",
+                "step": 29
               }
-            ]
-          },
-          "recipient": {
-            "type": "all_contacts",
-            "way_of_communication": "over_all"
-          },
-          "disabled": false
-        }
-      }
-    ],
-    "answer": [
-      {
-        "handler": "buttons",
-        "params": [
-          {
-            "value": "350482fe-aeb9-40af-9824-b1d9c904c192",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 330
-                }
+            },
+            {
+              "event": {
+                "action": "ended",
+                "source": "timer",
+                "delay": 2700
+              },
+              "action": {
+                "type": "question",
+                "step": 361
               }
-            ]
-          },
-          {
-            "value": "Tratamento",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 330
-                }
-              }
-            ]
-          },
-          {
-            "value": "daacc603-e199-41c5-ae8e-b98bb04d48c9",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 331
-                }
-              }
-            ]
-          },
-          {
-            "value": "Reconstrução",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 331
-                }
-              }
-            ]
-          },
-          {
-            "value": "1a643e68-932e-41eb-89c2-d9499faa6f2b",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 332
-                }
-              }
-            ]
-          },
-          {
-            "value": "Liso e redução de volume",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 332
-                }
-              }
-            ]
-          },
-          {
-            "value": "4577e443-f45b-407f-b2f7-182ea07e3410",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 333
-                }
-              }
-            ]
-          },
-          {
-            "value": "Loiros",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 333
-                }
-              }
-            ]
-          },
-          {
-            "value": "dea28201-86ec-48cd-a334-e316bda372fa",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 334
-                }
-              }
-            ]
-          },
-          {
-            "value": "Coloração",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 334
-                }
-              }
-            ]
-          },
-          {
-            "value": "f66c618f-fbef-4fe2-8e7c-0d0c6fea65fc",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 335
-                }
-              }
-            ]
-          },
-          {
-            "value": "Finalizadores",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 335
-                }
-              }
-            ]
-          },
-          {
-            "value": "1d04b7f4-3aa5-4bcf-8317-e7dae9fff130",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 336
-                }
-              }
-            ]
-          },
-          {
-            "value": "Ainda não sei",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 336
-                }
-              }
-            ]
-          },
-          {
-            "type": "else",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 29
-                }
-              }
-            ]
-          }
-        ]
-      }
-    ]
-  },
-  "330": {
-    "block_uuid": "5c5a792d-497e-4cc3-8923-b71d9da4f638",
-    "question": [
-      {
-        "handler": "action",
-        "params": {
-          "name": "set_custom_fields",
-          "params": {
-            "value": "Tratamento",
-            "custom_field": "{{lead.cf.4381736}}"
-          }
-        }
-      },
-      {
-        "handler": "goto",
-        "params": {
-          "type": "question",
-          "step": 27
-        }
-      }
-    ]
-  },
-  "331": {
-    "block_uuid": "f9d78e6b-741d-4c39-9dd5-28fe47eab251",
-    "question": [
-      {
-        "handler": "action",
-        "params": {
-          "name": "set_custom_fields",
-          "params": {
-            "value": "Reconstrução",
-            "custom_field": "{{lead.cf.4381736}}"
-          }
-        }
-      },
-      {
-        "handler": "goto",
-        "params": {
-          "type": "question",
-          "step": 27
-        }
-      }
-    ]
-  },
-  "332": {
-    "block_uuid": "e4cc0e23-7fe8-4775-9255-217579f7b08f",
-    "question": [
-      {
-        "handler": "action",
-        "params": {
-          "name": "set_custom_fields",
-          "params": {
-            "value": "Liso e redução de volume",
-            "custom_field": "{{lead.cf.4381736}}"
-          }
-        }
-      },
-      {
-        "handler": "goto",
-        "params": {
-          "type": "question",
-          "step": 27
-        }
-      }
-    ]
-  },
-  "333": {
-    "block_uuid": "57b77cb1-d2c4-4652-896d-1a671fca9797",
-    "question": [
-      {
-        "handler": "action",
-        "params": {
-          "name": "set_custom_fields",
-          "params": {
-            "value": "Loiros",
-            "custom_field": "{{lead.cf.4381736}}"
-          }
-        }
-      },
-      {
-        "handler": "goto",
-        "params": {
-          "type": "question",
-          "step": 27
-        }
-      }
-    ]
-  },
-  "334": {
-    "block_uuid": "93cbeb45-4153-4e2b-ae59-eac445750831",
-    "question": [
-      {
-        "handler": "action",
-        "params": {
-          "name": "set_custom_fields",
-          "params": {
-            "value": "Coloração",
-            "custom_field": "{{lead.cf.4381736}}"
-          }
-        }
-      },
-      {
-        "handler": "goto",
-        "params": {
-          "type": "question",
-          "step": 27
-        }
-      }
-    ]
-  },
-  "335": {
-    "block_uuid": "da43f67a-3d44-46d7-86ba-9ad28c9c1f29",
-    "question": [
-      {
-        "handler": "action",
-        "params": {
-          "name": "set_custom_fields",
-          "params": {
-            "value": "Finalizadores",
-            "custom_field": "{{lead.cf.4381736}}"
-          }
-        }
-      },
-      {
-        "handler": "goto",
-        "params": {
-          "type": "question",
-          "step": 27
-        }
-      }
-    ]
-  },
-  "336": {
-    "block_uuid": "99df96dc-ec0e-4812-8e0f-d857af34b65c",
-    "question": [
-      {
-        "handler": "action",
-        "params": {
-          "name": "set_custom_fields",
-          "params": {
-            "value": "Ainda não sei",
-            "custom_field": "{{lead.cf.4381736}}"
-          }
-        }
-      },
-      {
-        "handler": "goto",
-        "params": {
-          "type": "question",
-          "step": 27
+            }
+          ]
         }
       }
     ]
   },
   "340": {
-    "block_uuid": "57855f53-af1e-4446-b418-5f35169bbbdb",
+    "block_uuid": "848ccb98-072c-4d5f-9121-8cee873abf40",
     "question": [
       {
         "handler": "waits",
@@ -5892,7 +4740,7 @@
     ]
   },
   "341": {
-    "block_uuid": "20995fea-fa78-4b39-99b2-8d32f9c7d066",
+    "block_uuid": "dbd6a3cd-3bad-4c4f-833a-ee6f8b518fef",
     "question": [
       {
         "handler": "conditions",
@@ -5971,7 +4819,7 @@
     ]
   },
   "342": {
-    "block_uuid": "6bd03a5a-f831-4278-9114-b8f5c86c2ab3",
+    "block_uuid": "41fa5208-67ff-44a0-8f7a-379e77b14c94",
     "question": [
       {
         "handler": "action",
@@ -6048,7 +4896,7 @@
     ]
   },
   "343": {
-    "block_uuid": "2124c1a5-39f0-4e71-8201-248d53dbff61",
+    "block_uuid": "5a788d44-b3db-4fee-9aee-221ec59dcfd1",
     "question": [
       {
         "handler": "action",
@@ -6159,7 +5007,7 @@
     ]
   },
   "350": {
-    "block_uuid": "fb964b03-23e5-4dc5-9654-11dd498507a4",
+    "block_uuid": "da6ec86e-b3b8-4b22-8bc1-8f68a8815655",
     "question": [
       {
         "handler": "list_message",
@@ -6174,22 +5022,22 @@
                 "title": "Opções",
                 "rows": [
                   {
-                    "callback_data": "517b8f96-e7ac-4dd7-a1ee-7f5224556a59",
+                    "callback_data": "6af54821-df3f-4653-8211-6357cf7fa685",
                     "title": "Até R$ 5 mil",
                     "description": ""
                   },
                   {
-                    "callback_data": "fd3aea60-dfad-45ba-8841-1da014e986e9",
+                    "callback_data": "a8c5af83-8a6e-4e66-ad75-3327f8cb509b",
                     "title": "R$ 5 a 15 mil",
                     "description": ""
                   },
                   {
-                    "callback_data": "4763018e-dfcc-4c56-9711-685da25a767a",
+                    "callback_data": "6c281a96-abc6-4053-b963-cc9700bc8958",
                     "title": "R$ 15 a 50 mil",
                     "description": ""
                   },
                   {
-                    "callback_data": "fe9006f7-4f07-4469-9765-03d80a9338b7",
+                    "callback_data": "c97a1e5b-70f8-4a74-a356-77a107fa0e0f",
                     "title": "Acima de R$ 50 mil",
                     "description": ""
                   }
@@ -6210,7 +5058,7 @@
         "handler": "buttons",
         "params": [
           {
-            "value": "517b8f96-e7ac-4dd7-a1ee-7f5224556a59",
+            "value": "6af54821-df3f-4653-8211-6357cf7fa685",
             "params": [
               {
                 "handler": "goto",
@@ -6234,7 +5082,7 @@
             ]
           },
           {
-            "value": "fd3aea60-dfad-45ba-8841-1da014e986e9",
+            "value": "a8c5af83-8a6e-4e66-ad75-3327f8cb509b",
             "params": [
               {
                 "handler": "goto",
@@ -6258,7 +5106,7 @@
             ]
           },
           {
-            "value": "4763018e-dfcc-4c56-9711-685da25a767a",
+            "value": "6c281a96-abc6-4053-b963-cc9700bc8958",
             "params": [
               {
                 "handler": "goto",
@@ -6282,7 +5130,7 @@
             ]
           },
           {
-            "value": "fe9006f7-4f07-4469-9765-03d80a9338b7",
+            "value": "c97a1e5b-70f8-4a74-a356-77a107fa0e0f",
             "params": [
               {
                 "handler": "goto",
@@ -6322,7 +5170,7 @@
     ]
   },
   "351": {
-    "block_uuid": "8c295cea-b991-4469-bfe8-b0a28514f86d",
+    "block_uuid": "e6b792ca-045f-4928-8eaf-6b54eb2a68f1",
     "question": [
       {
         "handler": "action",
@@ -6344,7 +5192,7 @@
     ]
   },
   "352": {
-    "block_uuid": "442283a0-8fca-4bff-ab78-4b85d37a0fe3",
+    "block_uuid": "3870c5b7-6abd-4531-8c2b-d6989fd6d59e",
     "question": [
       {
         "handler": "action",
@@ -6366,7 +5214,7 @@
     ]
   },
   "353": {
-    "block_uuid": "0d14651f-9595-4d66-9b0b-f860fc3e08cd",
+    "block_uuid": "19a0b8d1-21fe-4a1e-a7dd-b2399602d294",
     "question": [
       {
         "handler": "action",
@@ -6388,7 +5236,7 @@
     ]
   },
   "354": {
-    "block_uuid": "95b0b757-b9d5-4cd4-9f36-93ef1c5c2035",
+    "block_uuid": "58c644ef-b24e-4da1-8125-441a56f5e792",
     "question": [
       {
         "handler": "action",
@@ -6410,7 +5258,7 @@
     ]
   },
   "360": {
-    "block_uuid": "9acdbe6a-a37c-49f9-b0e1-72464299cbf9",
+    "block_uuid": "4be1f404-cc80-4936-a94e-3b751a15684a",
     "question": [
       {
         "handler": "action",
@@ -6461,7 +5309,7 @@
     ]
   },
   "361": {
-    "block_uuid": "5ebf2581-211b-4225-9b29-ade008e2cd1a",
+    "block_uuid": "40e10f65-f87f-401d-b34e-176ce330e0f3",
     "question": [
       {
         "handler": "action",
@@ -6512,7 +5360,7 @@
     ]
   },
   "362": {
-    "block_uuid": "9f98952b-bb4e-4e6e-bfef-aba746751ddc",
+    "block_uuid": "bfa40610-d7bd-40ce-9a32-a5bd7e7eca5b",
     "question": [
       {
         "handler": "action",

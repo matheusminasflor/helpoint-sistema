@@ -23,13 +23,13 @@ const FUNIL = { consumidor: 12904179, salao: 12927111, distribuidor: 12927087, a
 // nome de quem atende hoje, para não precisar mexer quando a pessoa mudar (dono, 2026-11-08).
 const ETAPA = { entradaContato: 107856359, consumidorLyra: 113891167, salaoLyra: 113891215, distribuidorLyra: 113891223, consumidorLink: 113891171, consumidorAtendente: 99501151, salaoAtendente: 99680859, distribuidorAtendente: 99680647, posVenda: 113891275, entradaAtendente: 113893475 };
 const CAMPO = { segmento: 4381514, cpfCnpj: 4381512, marca: 4381516, estadoAtuacao: 4381528, cidadeAtuacao: 4381530, whatsapp: 4381554,
-  linhaInteresse: 4381736, investimento: 4381738 }; // os dois últimos criados em 2026-11-10 (listas)
+  investimento: 4381738 }; // criado em 2026-11-10 (lista)
 // Catálogo em PDF por segmento (dono, 2026-11-10): uso em casa recebe o da Minasflor; salão, Minasflor + MF.PRO.
 // Links do dono (2026-11-10), sem "https://" pelo mesmo motivo dos outros endereços (o Kommo encurtaria).
 const PDF = { minasflor: 'drive.google.com/file/d/1GF3BzmvStM1_DzX_VCKQjgnXTLtr9VXb/view', mfpro: 'drive.google.com/file/d/1spoT1pUT0wwMqRYaWDxDbXLI-7XQFk5T/view' };
 const CATALOGO = {
-  consumidor: `Aqui está o nosso catálogo 📖\n\nMinasflor: ${PDF.minasflor}`,
-  salao: `Aqui estão os nossos catálogos 📖\n\nMinasflor: ${PDF.minasflor}\n\nMF.PRO: ${PDF.mfpro}`,
+  consumidor: `Aqui está o nosso catálogo 📖\n\nMinasflor: ${PDF.minasflor}\n\nQuando escolher, escreva os produtos e as quantidades, que a nossa equipe monta o seu pedido 📝`,
+  salao: `Aqui estão os nossos catálogos 📖\n\nMinasflor: ${PDF.minasflor}\n\nMF.PRO: ${PDF.mfpro}\n\nQuando escolher, escreva os produtos e as quantidades 📝`,
 };
 
 const goto = (step, type = 'question') => ({ handler: 'goto', params: { type, step } });
@@ -287,33 +287,28 @@ if (noWhatsapp) {
   blocos[PAROU.salao] = parou(FUNIL.salao, ETAPA.salaoAtendente);
   blocos[PAROU.distribuidor] = parou(FUNIL.distribuidor, ETAPA.distribuidorAtendente);
 
-  // Linhas agrupadas por necessidade (dono, 2026-11-10): a Minasflor tem 17 linhas e a lista mostra até 10.
-  const LINHAS = ['Tratamento', 'Reconstrução', 'Liso e redução de volume', 'Loiros', 'Coloração', 'Finalizadores', 'Ainda não sei'].map((t) => linha(t));
-  const VER_CATALOGO = linha('Ver o catálogo');
-  // Uma pergunta de linha por segmento: `inicio` com o catálogo, `inicio + 2` sem ele (depois de mandar o catálogo),
-  // `inicio + 10 + i` grava a linha. Quem escreve em vez de tocar já sabe o que quer: vale como o pedido.
-  const perguntaDaLinha = (inicio, catalogo, depois, pedidoEscrito) => {
-    const respostas = (comCatalogo) => [{ handler: 'buttons', params: [
-      ...(comCatalogo ? opcao(VER_CATALOGO, [goto(inicio + 1)]) : []),
-      ...LINHAS.flatMap((l, i) => opcao(l, [goto(inicio + 10 + i)])),
-      { type: 'else', params: [goto(pedidoEscrito)] }] }];
-    return {
-      [inicio]: { question: escolha('Qual linha te interessa? Se preferir, veja o catálogo primeiro. Para responder, {toque} 👇', [VER_CATALOGO, ...LINHAS]), answer: respostas(true) },
-      [inicio + 1]: { question: [msg(catalogo), goto(inicio + 2)] },
-      [inicio + 2]: { question: escolha('Quando escolher, me diga qual linha te interessa. Para responder, {toque} 👇', LINHAS), answer: respostas(false) },
-      ...Object.fromEntries(LINHAS.map((l, i) => [inicio + 10 + i, { question: [campoLead(CAMPO.linhaInteresse, l.title), goto(depois)] }])),
-    };
-  };
+  // Pergunta do produto em dois botões (dono, 2026-11-10, opção A de https://claude.ai/artifact/6r7uCt3HAnsMdB8cN47MNG:
+  // "quanto mais opção pior"): quem não sabe recebe o catálogo e escreve o pedido; quem sabe escreve direto. Quem escreve
+  // em vez de tocar já mandou o pedido. A lista de 8 linhas e o campo "Linha de interesse" saíram.
+  const perguntaDoProduto = (inicio, catalogo, pedeProdutos, pedidoEscrito, parouEm) => ({
+    [inicio]: { question: [msg('Você já sabe quais produtos quer? 👇', botoes(['Ver o catálogo', 'Já sei o que quero']))],
+      answer: [{ handler: 'buttons', params: [
+        { value: 'Ver o catálogo', params: [goto(inicio + 1)] },
+        { value: 'Já sei o que quero', params: [goto(pedeProdutos)] },
+        { type: 'else', params: [goto(pedidoEscrito)] }] }] },
+    [inicio + 1]: { question: [msg(catalogo), goto(inicio + 2)] },
+    [inicio + 2]: { question: [esperaOuParou(pedidoEscrito, parouEm)] },
+  });
 
-  // Uso em casa: perfil → linha (ou catálogo) → produtos.
+  // Uso em casa: perfil → catálogo ou não → produtos.
   blocos[10] = { question: [etapa(FUNIL.consumidor, ETAPA.consumidorLyra), campoLead(CAMPO.segmento, 'Consumidor final'), campoLead(CAMPO.marca, 'Minasflor'), etiqueta('consumidor-final'), goto(300)] };
-  Object.assign(blocos, perguntaDaLinha(300, CATALOGO.consumidor, 18, 9));
+  Object.assign(blocos, perguntaDoProduto(300, CATALOGO.consumidor, 18, 9, PAROU.consumidor));
   blocos[18] = { question: [msg('Escreva os produtos e as quantidades, que a nossa equipe monta o seu pedido 📝'), goto(19)] };
   blocos[19] = { question: [esperaOuParou(9, PAROU.consumidor)] };
 
-  // Salão: perfil → linha (ou catálogo) → produtos → CNPJ. O CNPJ é da Lyra porque a atendente esquecia (dono, 2026-11-10).
+  // Salão: perfil → catálogo ou não → produtos → CNPJ. O CNPJ é da Lyra porque a atendente esquecia (dono, 2026-11-10).
   blocos[20] = { question: [etapa(FUNIL.salao, ETAPA.salaoLyra), campoLead(CAMPO.segmento, 'Salão'), etiqueta('salão'), goto(320)] };
-  Object.assign(blocos, perguntaDaLinha(320, CATALOGO.salao, 27, 29));
+  Object.assign(blocos, perguntaDoProduto(320, CATALOGO.salao, 27, 29, PAROU.salao));
   blocos[27] = { question: [msg('Escreva os produtos e as quantidades 📝'), goto(28)] };
   blocos[28] = { question: [esperaOuParou(29, PAROU.salao)] };
   blocos[29] = { question: [msg('Anotado ✅ Para liberar o preço de salão, qual é o CNPJ? 🔒 Ele é usado apenas para isso. Se o salão não tiver CNPJ, toque no botão abaixo.', botoes(['Não tenho CNPJ'])), goto(340)] };
