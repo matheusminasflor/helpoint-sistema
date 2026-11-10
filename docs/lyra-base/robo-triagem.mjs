@@ -25,8 +25,12 @@ const ETAPA = { entradaContato: 107856359, consumidorLyra: 113891167, salaoLyra:
 const CAMPO = { segmento: 4381514, cpfCnpj: 4381512, marca: 4381516, estadoAtuacao: 4381528, cidadeAtuacao: 4381530, whatsapp: 4381554,
   linhaInteresse: 4381736, investimento: 4381738 }; // os dois últimos criados em 2026-11-10 (listas)
 // Catálogo em PDF por segmento (dono, 2026-11-10): uso em casa recebe o da Minasflor; salão, Minasflor + MF.PRO.
-// ponytail: links provisórios até o dono mandar as pastas do Drive.
-const CATALOGO = { consumidor: 'minasflor.com.br', salao: 'minasflor.com.br' };
+// Links do dono (2026-11-10), sem "https://" pelo mesmo motivo dos outros endereços (o Kommo encurtaria).
+const PDF = { minasflor: 'drive.google.com/file/d/1GF3BzmvStM1_DzX_VCKQjgnXTLtr9VXb/view', mfpro: 'drive.google.com/file/d/1spoT1pUT0wwMqRYaWDxDbXLI-7XQFk5T/view' };
+const CATALOGO = {
+  consumidor: `Aqui está o nosso catálogo 📖\n\nMinasflor: ${PDF.minasflor}`,
+  salao: `Aqui estão os nossos catálogos 📖\n\nMinasflor: ${PDF.minasflor}\n\nMF.PRO: ${PDF.mfpro}`,
+};
 
 const goto = (step, type = 'question') => ({ handler: 'goto', params: { type, step } });
 const fim = { handler: 'goto', params: { type: 'finish', step: 999 } };
@@ -295,7 +299,7 @@ if (noWhatsapp) {
       { type: 'else', params: [goto(pedidoEscrito)] }] }];
     return {
       [inicio]: { question: escolha('Qual linha te interessa? Se preferir, veja o catálogo primeiro. Para responder, {toque} 👇', [VER_CATALOGO, ...LINHAS]), answer: respostas(true) },
-      [inicio + 1]: { question: [msg(`Aqui está o nosso catálogo 📖 ${catalogo}`), goto(inicio + 2)] },
+      [inicio + 1]: { question: [msg(catalogo), goto(inicio + 2)] },
       [inicio + 2]: { question: escolha('Quando escolher, me diga qual linha te interessa. Para responder, {toque} 👇', LINHAS), answer: respostas(false) },
       ...Object.fromEntries(LINHAS.map((l, i) => [inicio + 10 + i, { question: [campoLead(CAMPO.linhaInteresse, l.title), goto(depois)] }])),
     };
