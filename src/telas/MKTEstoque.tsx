@@ -213,7 +213,7 @@ function FormularioProduto({ produto, onFechar }: { produto: ProdutoMkt | null; 
   const [unidade, setUnidade] = useState(produto?.unidade ?? 'un');
   const [categoria, setCategoria] = useState(produto?.categoria ?? '');
   const [local, setLocal] = useState(produto?.local ?? '');
-  const [minimo, setMinimo] = useState(produto ? String(produto.estoque_minimo) : '0');
+  const [minimo, setMinimo] = useState(produto ? String(produto.estoque_minimo) : '');
   const [catalogoId, setCatalogoId] = useState(produto?.compras_produto_id ?? '');
   const [ativo, setAtivo] = useState(produto?.ativo ?? true);
   const numero = Number(minimo.replace(',', '.'));
@@ -235,9 +235,12 @@ function FormularioProduto({ produto, onFechar }: { produto: ProdutoMkt | null; 
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="pm-minimo">Estoque mínimo</Label>
-              <Input id="pm-minimo" inputMode="decimal" className="font-mono" value={minimo} onChange={(e) => setMinimo(e.target.value)} />
+              <Input id="pm-minimo" inputMode="decimal" className="font-mono" placeholder="0" aria-describedby="pm-minimo-ajuda" value={minimo} onChange={(e) => setMinimo(e.target.value)} />
             </div>
           </div>
+          <p id="pm-minimo-ajuda" className="text-xs text-muted-foreground -mt-1">
+            O estoque mínimo define quando o Marketing é avisado. A quantidade em estoque é registrada em "Registrar entrada".
+          </p>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="pm-categoria">Categoria</Label>
