@@ -111,6 +111,7 @@ const respostaDosBotoes = () => [{
     { type: 'else', params: [goto(53)] },
   ],
 }];
+const DIGITOS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 const contem = (palavras, step) => ({ handler: 'conditions', params: { logic: 'or',
   conditions: palavras.map((term2) => ({ term1: '{{message_text}}', term2, operation: 'contains' })), result: [goto(step)] } });
 const TRANSFERE = 'Vou transferir o seu atendimento para a nossa equipe, que dará continuidade por aqui. 💙';
@@ -318,8 +319,13 @@ if (noWhatsapp) {
   blocos[340] = { question: [esperaOuParou(341, PAROU.salao)] };
   // Quem escreve em vez de tocar no botão (dono, 2026-11-10): "não tenho", "sem CNPJ", em qualquer caixa, vai para o
   // atendimento sem CNPJ; o "contém" do Kommo diferencia maiúscula de minúscula, por isso as variações.
+  // CNPJ só com número (dono, 2026-11-10): "não tenho" vai para o atendimento sem CNPJ; com algum número, grava e segue;
+  // texto sem número ("n uso cnpj", "vou ver") recebe a pergunta de novo, com o botão. O dígito verificador fica para o
+  // fechamento do Kommo (passo 2).
   blocos[341] = { question: [contem(['Não', 'não', 'NÃO', 'Nao', 'nao', 'NAO', 'Sem', 'sem', 'SEM', 'autônoma', 'Autônoma', 'autonoma', 'Autonoma'], 343),
-    campoLead(CAMPO.cpfCnpj, '{{message_text}}'), goto(342)] };
+    contem(DIGITOS, 345), goto(344)] };
+  blocos[344] = { question: [msg('Para liberar o preço de salão, informe o CNPJ do salão, só os números 🔒 Se o salão não tiver CNPJ, toque no botão abaixo.', botoes(['Não tenho CNPJ'])), goto(340)] };
+  blocos[345] = { question: [campoLead(CAMPO.cpfCnpj, '{{message_text}}'), goto(342)] };
   blocos[342] = { question: [etapa(FUNIL.salao, ETAPA.salaoAtendente), msg('Pedido anotado ✅ A nossa equipe vai entrar em contato por aqui para finalizar o seu pedido. 💙'), tarefa('Salão (CNPJ no lead) fez o pedido pela Lyra: montar o pedido com os produtos da conversa (até 45 minutos).'), esperaResposta(55)] };
   // Sem CNPJ: as condições profissionais não valem, e a equipe atende como uso em casa.
   blocos[343] = { question: [etapa(FUNIL.consumidor, ETAPA.consumidorAtendente), campoLead(CAMPO.segmento, 'Consumidor final'), etiqueta('consumidor-final'), etiqueta('profissional-sem-cnpj'),
@@ -333,7 +339,9 @@ if (noWhatsapp) {
   for (const [uf] of Object.values(REGIOES).flat()) blocos[UF_BLOCO[uf]] = { question: [campoLead(CAMPO.estadoAtuacao, uf), goto(34)] };
   blocos[34] = { question: [msg('Obrigada! Qual é o CNPJ da empresa? 🔒 Ele é usado apenas para o cadastro de distribuidor.'), goto(35)] };
   blocos[35] = { question: [esperaOuParou(36, PAROU.distribuidor)] };
-  blocos[36] = { question: [campoLead(CAMPO.cpfCnpj, '{{message_text}}'), goto(350)] };
+  blocos[36] = { question: [contem(DIGITOS, 347), goto(346)] };
+  blocos[346] = { question: [msg('Para seguir, informe o CNPJ da empresa, só os números 🔒'), goto(35)] };
+  blocos[347] = { question: [campoLead(CAMPO.cpfCnpj, '{{message_text}}'), goto(350)] };
   const FAIXAS = ['Até R$ 5 mil', 'R$ 5 a 15 mil', 'R$ 15 a 50 mil', 'Acima de R$ 50 mil'].map((t) => linha(t));
   blocos[350] = { question: escolha('Qual investimento inicial você tem em mente? 💼 Para responder, {toque}.', FAIXAS),
     answer: [{ handler: 'buttons', params: [...FAIXAS.flatMap((f, i) => opcao(f, [goto(351 + i)])), { type: 'else', params: [goto(350)] }] }] };
