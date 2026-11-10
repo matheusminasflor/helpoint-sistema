@@ -44,7 +44,7 @@ import { usePodeGerirCarteiras, usePodeNoLancamento } from '@/hooks/useAccessPro
 import { PedidoDeReajuste } from '@/components/comercial/PedidoDeReajuste';
 import { PerguntaDoRaioX } from '@/components/comercial/PerguntaDoRaioX';
 import { useRegistrarContato } from '@/hooks/useRaioX';
-import { alertaDoCliente, faltaNaResposta, respostaVazia, type RespostaDoLancamento } from '@/lib/raio-x';
+import { alertaDoCliente, faltaNaResposta, pedeRaioX, respostaVazia, type RespostaDoLancamento } from '@/lib/raio-x';
 
 interface Props {
   open: boolean;
@@ -248,9 +248,11 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
   const carteiraDoAlerta = open && !editando && (!form.foraDaCarteira || podeGerirCarteiras) ? form.cliente?.carteira ?? null : null;
   const { data: daCarteiraDoCliente = [], isLoading: lendoAlerta } = useAcompanhamentoDaCarteira(carteiraDoAlerta, `${todayISO().slice(0, 7)}-01`);
   const linhaDoCliente = daCarteiraDoCliente.find((l) => form.cliente && l.codigos.includes(form.cliente.codigo));
-  const alerta = !editando && !temPedido && !valorNumero && linhaDoCliente ? alertaDoCliente(linhaDoCliente) : null;
-  // Enquanto a conta não volta, ainda não se sabe se a pergunta aparece.
-  const faltaRaioX = lendoAlerta || (!!alerta && faltaNaResposta(resposta));
+  const alerta = linhaDoCliente ? alertaDoCliente(linhaDoCliente) : null;
+  // Só no "Contato para venda" sem venda (dono, 2026-11-10); a situação do cliente só muda o aviso.
+  const comRaioX = pedeRaioX({ editando: !!editando, temPedido, valor: valorNumero,
+    indicadoresMarcados: indicadores.filter((i) => form.marcas.has(i.id)).map((i) => i.nome) });
+  const faltaRaioX = comRaioX && (lendoAlerta || faltaNaResposta(resposta));
 
   const ligarPedido = (ligado: boolean) => {
     setTemPedido(ligado);
@@ -284,7 +286,7 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
       marcas: [...form.marcas],
     });
     setIdGravado(id);
-    if (alerta) await registrarContato.mutateAsync({ interacaoId: id, r: resposta });
+    if (comRaioX) await registrarContato.mutateAsync({ interacaoId: id, r: resposta });
     if (enviaChecklist) {
       await salvarChecklist.mutateAsync({
         interacaoId: id,
@@ -665,7 +667,7 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
             {valorInvalido && (
               <p className="sm:col-span-2 text-[13px] badge-danger rounded-md px-2 py-1">Valor inválido.</p>
             )}
-            {alerta && <div className="sm:col-span-2"><PerguntaDoRaioX alerta={alerta} resposta={resposta} onChange={setResposta} /></div>}
+            {comRaioX && !lendoAlerta && <div className="sm:col-span-2"><PerguntaDoRaioX alerta={alerta} resposta={resposta} onChange={setResposta} /></div>}
             <div className="space-y-1.5 sm:col-span-2">
               <Label htmlFor="lanc-obs">Observações</Label>
               <Textarea id="lanc-obs" rows={3} readOnly={concluidoTravado} placeholder="Contexto, próximo passo, informação útil — evite só “falado”."

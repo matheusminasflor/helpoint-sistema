@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  alertaDoCliente, camposPreenchidos, faltaNaResposta, respostaVazia, situacaoAnterior, somarMotivos, somarPropostas,
+  alertaDoCliente, camposPreenchidos, faltaNaResposta, pedeRaioX, respostaVazia, situacaoAnterior, somarMotivos, somarPropostas,
   rotuloDoMotivo, type LinhaDoRelatorio, type PerfilDoCliente,
 } from './raio-x';
 
@@ -80,5 +80,17 @@ describe('somarPropostas', () => {
   it('sem resposta, a taxa fica em branco', () => {
     const propostas = [{ tipo: 'campanha', proposta: 'a', resultado: 'aguardando' }] as LinhaDoRelatorio['propostas'];
     expect(somarPropostas([linha({ propostas })])[0].taxa).toBeNull();
+  });
+});
+
+describe('pedeRaioX', () => {
+  const base = { editando: false, temPedido: false, valor: null, indicadoresMarcados: ['Contato para venda'] };
+  it('pede no contato para venda sem venda', () => expect(pedeRaioX(base)).toBe(true));
+  it('não pede sem o indicador, mesmo em contato de treinamento ou relacionamento', () =>
+    expect(pedeRaioX({ ...base, indicadoresMarcados: ['Reunião técnica realizada'] })).toBe(false));
+  it('não pede quando houve venda, pedido ou na edição', () => {
+    expect(pedeRaioX({ ...base, valor: 500 })).toBe(false);
+    expect(pedeRaioX({ ...base, temPedido: true })).toBe(false);
+    expect(pedeRaioX({ ...base, editando: true })).toBe(false);
   });
 });

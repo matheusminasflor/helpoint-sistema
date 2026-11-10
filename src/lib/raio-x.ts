@@ -116,6 +116,13 @@ export interface RespostaDoLancamento {
 export const respostaVazia = (): RespostaDoLancamento => ({
   resultado: null, motivo: null, motivoOutros: '', descricao: '', propostaTipo: 'campanha', proposta: '',
 });
+/** A pergunta do Raio-X só aparece, e só é obrigatória, no contato para venda que não virou venda (dono, 2026-11-10:
+ *  ligação de treinamento ou de relacionamento não tem motivo de "não vendeu"). Lançamento salvo não pergunta de novo. */
+export const INDICADOR_QUE_PEDE_RAIO_X = 'Contato para venda';
+export function pedeRaioX(l: { editando: boolean; temPedido: boolean; valor: number | null; indicadoresMarcados: string[] }): boolean {
+  return !l.editando && !l.temPedido && !l.valor && l.indicadoresMarcados.includes(INDICADOR_QUE_PEDE_RAIO_X);
+}
+
 /** O que ainda falta para salvar. Quem não falou com o cliente só informa o resultado. */
 export function faltaNaResposta(r: RespostaDoLancamento): boolean {
   if (!r.resultado) return true;

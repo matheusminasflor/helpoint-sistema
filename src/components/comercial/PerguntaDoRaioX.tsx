@@ -1,5 +1,6 @@
-// A pergunta do Raio-X no lançamento (dono, 2026-11-05): dois cliques e duas frases, na hora da ligação. Aparece para
-// cliente parado ou em queda, em contato sem venda. Vai para a ficha do cliente; o lançamento segue como sempre foi.
+// A pergunta do Raio-X no lançamento (dono, 2026-11-05): dois cliques e duas frases, na hora da ligação. Desde 2026-11-10
+// aparece, e é obrigatória, só no "Contato para venda" sem venda; o cliente parado ou em queda só muda o aviso. Vai para a
+// ficha do cliente; o lançamento segue como sempre foi.
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -22,14 +23,18 @@ export function Opcao({ ativa, cor = 'info', onClick, children }: {
 }
 
 export function PerguntaDoRaioX({ alerta, resposta, onChange }: {
-  alerta: 'parado' | 'queda'; resposta: RespostaDoLancamento; onChange: (r: RespostaDoLancamento) => void;
+  alerta: 'parado' | 'queda' | null; resposta: RespostaDoLancamento; onChange: (r: RespostaDoLancamento) => void;
 }) {
   const muda = (campos: Partial<RespostaDoLancamento>) => onChange({ ...resposta, ...campos });
   return (
     <section className="rounded-lg border border-border p-3 space-y-3" aria-label="Raio-X do cliente">
-      <p className="text-[13px] rounded-md badge-danger px-2 py-1.5">
-        {alerta === 'parado' ? 'Este cliente está parado há mais de 120 dias.' : 'Este cliente está comprando menos do que o normal.'} O que você descobrir vai para a ficha dele.
-      </p>
+      <div className="text-[13px] rounded-md badge-info px-2 py-1.5 space-y-0.5">
+        <p className="font-semibold">Registro obrigatório em contato para venda sem pedido</p>
+        <p>
+          {alerta === 'parado' ? 'Cliente sem compras há mais de 120 dias. ' : alerta === 'queda' ? 'Cliente comprando abaixo da média. ' : ''}
+          O motivo e a proposta compõem o Raio-X do cliente e orientam as próximas ações comerciais. Esta informação não altera os seus indicadores.
+        </p>
+      </div>
       <div className="space-y-1.5">
         <p className="text-[14px] font-medium">Como foi o contato?</p>
         <div className="flex flex-wrap gap-2">
@@ -41,7 +46,7 @@ export function PerguntaDoRaioX({ alerta, resposta, onChange }: {
       {resposta.resultado === 'falou' && (
         <>
           <div className="space-y-1.5">
-            <p className="text-[14px] font-medium">Por que não está comprando?</p>
+            <p className="text-[14px] font-medium">Por que a venda não foi fechada?</p>
             <div className="flex flex-wrap gap-2">
               {MOTIVOS.map((o) => (
                 <Opcao key={o.valor} cor="danger" ativa={resposta.motivo === o.valor} onClick={() => muda({ motivo: o.valor as Motivo })}>{o.rotulo}</Opcao>
