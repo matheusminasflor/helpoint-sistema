@@ -58,6 +58,10 @@ const TELA_DO_REGISTRO: Record<string, (id: string) => string> = {
   ped_reajuste_resposta: () => '/comercial/pedidos',
   // Cancelamento (20270212100000): a vendedora vê o motivo nos Pedidos enviados.
   ped_cancelado: () => '/comercial/pedidos?aba=cancelados',
+  // A nota pelo XML e a saída (20270212721100): a vendedora acompanha nos Pedidos enviados; o Financeiro corrige na conferência.
+  ped_nota: () => '/comercial/pedidos',
+  ped_saida: () => '/comercial/pedidos',
+  ped_nota_divergente: () => '/financeiro/conferencia-de-pedidos',
   // Rotina aberta perto do fim do expediente (20270212140000): marca-se no próprio Início.
   rotina: () => '/inicio',
 };

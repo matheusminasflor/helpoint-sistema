@@ -117,6 +117,7 @@ export const TELAS_DO_PERFIL: TelaDoPerfil[] = [
   // Setores só de atendimento
   { prefixo: '/educacional/treinamentos', setor: 'educacional', secoes: ['treinamentos'] },
   { prefixo: '/educacional/indicadores', setor: 'educacional', secoes: ['reports'] },
+  { prefixo: '/expedicao/saidas', setor: 'expedicao', secoes: ['saidas'] },
   { prefixo: '/expedicao/indicadores', setor: 'expedicao', secoes: ['reports'] },
   { prefixo: '/producao/indicadores', setor: 'producao', secoes: ['reports'] },
   // Diretoria (decisão 5 do dono, 2026-10-24): uma rota, a aba em `?visao=`.

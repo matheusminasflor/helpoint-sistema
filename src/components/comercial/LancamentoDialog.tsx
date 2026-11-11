@@ -515,12 +515,11 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
                       É definitivo, e o lançamento sai dos indicadores. Pedido novo é um lançamento novo.
                     </p>
                   )}
-                  {(situacao === 'Aprovado' || situacao === 'Finalizado') && <p className="pt-1">Checklist aprovado não se altera — só a nota de cada pedido, abaixo. Para corrigir, peça reajuste ao Financeiro.</p>}
+                  {(situacao === 'Aprovado' || situacao === 'Finalizado') && <p className="pt-1">Checklist aprovado não se altera. A nota de cada pedido vem do Financeiro, abaixo. Para corrigir, peça reajuste ao Financeiro.</p>}
                 </div>
               )}
               {gravado && (situacao === 'Aprovado' || situacao === 'Finalizado') && (
-                <NotasDosPedidos checklistId={gravado.resumo.id} pedidos={gravado.pedidos}
-                  podeEditar={situacao === 'Aprovado' && !deOutraPessoa} />
+                <NotasDosPedidos checklistId={gravado.resumo.id} pedidos={gravado.pedidos} podeEditar={false} />
               )}
               {gravado && <PedidoDeReajuste resumo={gravado.resumo} podePedir={!deOutraPessoa || podeGerirCarteiras} />}
               {temPedido && (

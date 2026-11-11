@@ -145,6 +145,7 @@ const ComercialImportar = lazy(() => import('@/telas/crm/ComercialImportar'));
 const AutomacaoEditor = lazy(() => import('@/telas/AutomacaoEditor'));
 const AutomacaoExecucoes = lazy(() => import('@/telas/AutomacaoExecucoes'));
 const ExpedicaoRelatorios = lazy(() => import('@/telas/expedicao/ExpedicaoRelatorios'));
+const ExpedicaoSaidas = lazy(() => import('@/telas/expedicao/ExpedicaoSaidas'));
 const ExpedicaoConfiguracoes = lazy(() => import('@/telas/expedicao/ExpedicaoConfiguracoes'));
 const ProducaoRelatorios = lazy(() => import('@/telas/producao/ProducaoRelatorios'));
 const ProducaoConfiguracoes = lazy(() => import('@/telas/producao/ProducaoConfiguracoes'));
@@ -331,6 +332,7 @@ export function StaffAppRoutes() {
       <Route path="expedicao/fila" element={<Navigate to="/expedicao/chamados" replace />} />
       <Route path="expedicao/chamados" element={S(<TechnicianView module="expedicao" />)} />
       <Route path="expedicao/chamados/:id" element={S(<TicketDetail />)} />
+      <Route path="expedicao/saidas" element={S(<ExpedicaoSaidas />)} />
       <Route path="expedicao/indicadores" element={S(<ExpedicaoRelatorios />)} />
       <Route path="expedicao/configuracoes" element={S(<RequireConfigDoSetor><ExpedicaoConfiguracoes /></RequireConfigDoSetor>)} />
       <Route path="producao" element={<Navigate to="chamados" replace />} />

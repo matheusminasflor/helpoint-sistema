@@ -426,6 +426,8 @@ export const DEPARTMENT_SCHEMAS: Record<Department, DepartmentSchema> = {
     label: 'Expedição',
     modules: [
       { key: 'tickets', label: 'Chamados da Expedição', actions: TICKET_ACTIONS },
+      // Saídas (2026-11-11): ver e marcar aguardando coleta / entregue à transportadora (`ped_pode_expedir`).
+      { key: 'saidas', label: 'Saídas de pedidos', actions: [{ key: 'view', label: 'Ver' }, { key: 'edit', label: 'Marcar a saída' }] },
       { key: 'reports', label: 'Indicadores', actions: REPORT_ACTIONS },
     ],
   },

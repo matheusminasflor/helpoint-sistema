@@ -5,7 +5,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(38);
+select plan(39);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-ped-checklist', 'Checklist Pedidos', false) as a;
@@ -172,17 +172,20 @@ insert into public.com_vendas_itens (tenant_id, importacao_id, filial, emissao, 
 select (select a from f), imp.id, 'MF', current_date, v.doc, v.serie, '5101', 'venda', '1203', 'P1', 'Produto', 1, 100
   from imp, (values ('9001', '75'), ('9003', '1')) v(doc, serie);
 
+-- Desde 20270212721100 a vendedora não digita a nota: o Financeiro sobe o XML (série 1) ou confere (séries 75 e 76).
 select tests.authenticate_as('vendedora@pedck.test');
-select public.ped_informar_nota((select pedido1 from ck), '009001', 100, (now() at time zone 'America/Sao_Paulo')::date);
-select public.ped_informar_nota((select p.id from public.ped_pedidos p where p.checklist_id = (select checklist from ck) and p.ordem = 2), '9002', 100, (now() at time zone 'America/Sao_Paulo')::date);
-select is((select string_agg(situacao, '|' order by ordem) from public.ped_situacao_das_notas((select checklist from ck))),
-  'divergente|aguardando_importacao', 'a nota 9001 saiu na serie 75 (diverge) e a 9002 ainda nao chegou');
+select throws_ok($ select public.ped_informar_nota((select pedido1 from ck), '9001', 100, (now() at time zone 'America/Sao_Paulo')::date) $,
+  '42501', null, 'a vendedora nao informa mais a nota');
 select tests.clear_authentication();
 
 select tests.authenticate_as('financeiro@pedck.test');
+select public.ped_informar_nota((select pedido1 from ck), '009001', 100, (now() at time zone 'America/Sao_Paulo')::date);
+select public.ped_informar_nota((select p.id from public.ped_pedidos p where p.checklist_id = (select checklist from ck) and p.ordem = 2), '9002', 100, (now() at time zone 'America/Sao_Paulo')::date);
+select is((select string_agg(situacao, '|' order by ordem) from public.ped_situacao_das_notas((select checklist from ck))),
+  'divergente|conferida', 'a nota 9001 saiu na serie 75 (diverge) e o documento 9002 da bonificacao foi conferido pelo Financeiro');
 select throws_ok($$ insert into public.ped_finalizacoes (checklist_id) values ((select checklist from ck)) $$,
   'P0001', null, 'nota na serie errada nao deixa finalizar');
--- Corrigido no Forteplus (nota 9003, série 1): finaliza; a 9002 ainda não importada não trava.
+-- Corrigido no Forteplus (nota 9003, série 1): finaliza; a 9002 conferida e ainda não importada não trava.
 select public.ped_informar_nota((select pedido1 from ck), '9003', 100, (now() at time zone 'America/Sao_Paulo')::date);
 select is((select situacao from public.ped_situacao_das_notas((select checklist from ck)) where ordem = 1), 'ok',
   'o Financeiro informa a nota certa e ela confere');
@@ -220,8 +223,10 @@ select throws_ok($$ insert into public.ped_decisoes (checklist_id, status, motiv
   'P0001', null, 'o devolvido nao se devolve de novo');
 select tests.clear_authentication();
 
+select tests.authenticate_as('financeiro@pedck.test');
+select lives_ok($ select public.ped_informar_nota((select pedido1 from ck), '9003', 100, (now() at time zone 'America/Sao_Paulo')::date) $, 'devolvido, a nota volta a poder ser trocada');
+select tests.clear_authentication();
 select tests.authenticate_as('vendedora@pedck.test');
-select lives_ok($$ select public.ped_informar_nota((select pedido1 from ck), '9003', 100, (now() at time zone 'America/Sao_Paulo')::date) $$, 'devolvido, a nota volta a poder ser trocada');
 select public.ped_salvar_checklist((select interacao from ck), tests.ped_dados((select a from f)));
 select is((select versao || '|' || situacao || '|' || coalesce(pagamento_status, '-') from public.ped_checklists_situacao
             where id = (select checklist from ck)),

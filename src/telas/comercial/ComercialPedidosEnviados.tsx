@@ -206,7 +206,7 @@ function DetalheDoPedido({ c: linha, onClose, podePedirReajuste }: { c: Checklis
           )}
           <PedidoDeReajuste resumo={c} podePedir={podePedirReajuste} />
           {data && (c.situacao === 'Aprovado' || c.situacao === 'Finalizado') && (
-            <NotasDosPedidos checklistId={c.id} pedidos={data.pedidos} podeEditar={c.situacao === 'Aprovado' && c.vendedor_id === user?.id} />
+            <NotasDosPedidos checklistId={c.id} pedidos={data.pedidos} podeEditar={false} />
           )}
           {data ? (
             <>

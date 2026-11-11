@@ -101,8 +101,8 @@ select throws_ok($$ select public.ped_salvar_checklist((select interacao from ck
   'P0001', null, 'a vendedora nao edita o checklist cancelado');
 select throws_ok($$ select public.ped_pedir_reajuste((select checklist from ck), 'quero reabrir') $$,
   'P0001', null, 'nem pede reajuste dele');
-select throws_ok($$ select public.ped_informar_nota((select p.id from public.ped_pedidos p where p.checklist_id = (select checklist from ck)), '123', 100, (now() at time zone 'America/Sao_Paulo')::date) $$,
-  'P0001', null, 'nem troca a nota');
+select throws_ok($$ select public.ped_informar_nota((select p.id from public.ped_pedidos p where p.checklist_id = (select checklist from ck)), '123', 100, (now() at time zone 'America/Sao_Paulo')::date) $,
+  '42501', null, 'nem troca a nota');
 select is((select pedido_cancelado from public.com_interacoes where id = (select interacao from ck)), true,
   'o lancamento fica registrado, marcado "pedido cancelado"');
 select is((select count(*)::int from public.com_interacoes_que_contam where id = (select interacao from ck)), 0,

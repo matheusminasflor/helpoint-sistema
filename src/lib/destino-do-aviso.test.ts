@@ -15,6 +15,9 @@ describe('destinoDoAviso — para onde cada aviso leva (era o sino; desde 2026-1
     [{ reference_type: 'ped_reajuste', reference_id: 'abc' }, '/financeiro/conferencia-de-pedidos?fila=reajustes'],
     [{ reference_type: 'ped_reajuste_resposta', reference_id: 'abc' }, '/comercial/pedidos'],
     [{ reference_type: 'ped_cancelado', reference_id: 'abc' }, '/comercial/pedidos?aba=cancelados'],
+    [{ reference_type: 'ped_nota', reference_id: 'abc' }, '/comercial/pedidos'],
+    [{ reference_type: 'ped_saida', reference_id: 'abc' }, '/comercial/pedidos'],
+    [{ reference_type: 'ped_nota_divergente', reference_id: 'abc' }, '/financeiro/conferencia-de-pedidos'],
     [{ reference_type: 'inventado', reference_id: 'abc' }, null],
   ])('%o → %s', (aviso, destino) => {
     expect(destinoDoAviso(aviso, true)).toBe(destino);

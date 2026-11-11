@@ -1,36 +1,32 @@
-// Falta informar a nota (tópicos 2 e 3, dono, 2026-11-05): o pedido aprovado fica aqui até o comercial informar número,
-// valor faturado e data de emissão, e volta se a nota digitada não bater com a importação do Forteplus de sexta.
-import { useState } from 'react';
+// Aguardando a nota (tópicos 2 e 3, dono, 2026-11-05): o pedido aprovado fica aqui até a nota chegar. Desde 2026-11-11
+// (migration 20270212721100) quem sobe a nota é o Financeiro, pelo XML: a vendedora acompanha, o Financeiro abre a
+// conferência. Volta para a lista a nota digitada antes que não bateu com a importação do Forteplus.
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { SeloCondicao } from '@/components/comercial/SeloCondicao';
-import { useAuth } from '@/contexts/AuthContext';
 import { useClientesEmCondicao } from '@/hooks/useComercialCliente';
-import { useInformarNota, useNotasDoComercial, usePodeInformarNotaDeOutro, type NotaParaResolver } from '@/hooks/usePedidosChecklist';
+import { useNotasDoComercial, usePodeInformarNotaDeOutro } from '@/hooks/usePedidosChecklist';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { TITULOS, diasDesde, esperaDaNota } from '@/lib/notas-para-resolver';
-import { lerValor } from '@/lib/checklist-de-pedidos';
 import { todayISO } from '@/lib/dates';
-import { formatBRL, formatDateBR } from '@/types/financeiro';
+import { formatBRL } from '@/types/financeiro';
+
+const CONFERENCIA = '/financeiro/conferencia-de-pedidos';
 
 export function NotasParaResolver() {
   const { data: notas = [], isError } = useNotasDoComercial();
   const { data: emCondicao } = useClientesEmCondicao();
-  const [aberta, setAberta] = useState<NotaParaResolver | null>(null);
-  const { user } = useAuth();
   const { data: doFinanceiro = false } = usePodeInformarNotaDeOutro();
+  const tenantPath = useTenantPath();
   if (isError) return <p className="text-[13px] text-status-danger">Não consegui carregar as notas pendentes.</p>;
   if (notas.length === 0) return null;
   const pendentes = notas.filter((n) => n.situacao !== 'valor_diferente').length;
   return (
     <Card className="p-3 space-y-2">
-      <h2 className="text-[14px] font-semibold">{pendentes ? `Falta informar a nota (${pendentes})` : 'Notas corrigidas pelo Forteplus'}</h2>
-      <p className="text-[13px] text-muted-foreground">O pedido só conta na venda depois de informar a nota.</p>
+      <h2 className="text-[14px] font-semibold">{pendentes ? `Aguardando a nota (${pendentes})` : 'Notas corrigidas pelo Forteplus'}</h2>
+      <p className="text-[13px] text-muted-foreground">O pedido conta na venda quando o Financeiro sobe a nota. Você é avisada quando ela chega.</p>
       <ul className="divide-y divide-border">
         {notas.map((n) => {
           const t = TITULOS[n.situacao];
@@ -47,60 +43,28 @@ export function NotasParaResolver() {
                 </Badge>
                 {n.situacao === 'valor_diferente'
                   ? <span className="text-muted-foreground">Digitado {formatBRL(n.nota_valor ?? 0)}, Forteplus {formatBRL(n.forteplus_valor ?? 0)}</span>
-                  : n.vendedor_id === user?.id || doFinanceiro
-                    ? <Button size="sm" onClick={() => setAberta(n)}>{n.situacao === 'corrigir' ? 'Corrigir nota' : 'Informar nota'}</Button>
-                    : <span className="text-muted-foreground">Quem informa: {n.vendedor ?? 'a vendedora'} ou o Financeiro</span>}
+                  : doFinanceiro
+                    ? <Button size="sm" asChild><Link to={tenantPath(CONFERENCIA)}>Subir a nota</Link></Button>
+                    : <span className="text-muted-foreground">Com o Financeiro</span>}
               </span>
             </li>
           );
         })}
       </ul>
-      {aberta && <DialogoDaNota nota={aberta} condicao={!!emCondicao?.has(aberta.cliente_codigo)} onClose={() => setAberta(null)} />}
     </Card>
   );
 }
 
-function DialogoDaNota({ nota, condicao, onClose }: { nota: NotaParaResolver; condicao: boolean; onClose: () => void }) {
-  const informar = useInformarNota();
-  const [numero, setNumero] = useState(nota.nota_fiscal ?? '');
-  const [valor, setValor] = useState(nota.nota_valor ? String(nota.nota_valor).replace('.', ',') : '');
-  const [emissao, setEmissao] = useState(nota.nota_em ?? '');
-  const valorNumero = lerValor(valor);
-  const incompleto = !numero.trim() || !valorNumero || !emissao || emissao > todayISO();
-  return (
-    <Dialog open onOpenChange={(v) => { if (!v) onClose(); }}>
-      <DialogContent className="max-w-sm">
-        <DialogHeader><DialogTitle>Informar nota · pedido {nota.numero} · {nota.filial}</DialogTitle></DialogHeader>
-        <div className="space-y-3">
-          <div className="space-y-1.5"><Label htmlFor="nota-numero">Número da nota</Label>
-            <Input id="nota-numero" inputMode="numeric" className="font-mono" value={numero} onChange={(e) => setNumero(e.target.value)} /></div>
-          <div className="space-y-1.5"><Label htmlFor="nota-valor">Valor faturado na nota (R$)</Label>
-            <Input id="nota-valor" inputMode="decimal" className="font-mono" value={valor} onChange={(e) => setValor(e.target.value)} /></div>
-          <div className="space-y-1.5"><Label htmlFor="nota-emissao">Data de emissão</Label>
-            <Input id="nota-emissao" type="date" max={todayISO()} value={emissao} onChange={(e) => setEmissao(e.target.value)} /></div>
-          {condicao && <p className="text-[13px] rounded-md badge-purple px-2 py-1.5">Cliente condição: digite só o valor da nota. O sistema soma a parte da condição na Venda total.</p>}
-          {nota.nota_em && <p className="text-[13px] text-muted-foreground">Digitada em {formatDateBR(nota.nota_em)}: a importação não encontrou essa nota.</p>}
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancelar</Button>
-          <Button disabled={incompleto || informar.isPending}
-            onClick={() => informar.mutate({ pedidoId: nota.pedido_id, nota: numero, valor: valorNumero!, emissao }, { onSuccess: onClose })}>Salvar nota</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-/** No Início: quem tem nota para informar vê o aviso e vai direto para a lista. */
+/** No Início: o Financeiro vê quantos pedidos aprovados esperam a nota e vai direto para a conferência. */
 export function AvisoDeNotasNoInicio() {
-  const { user } = useAuth();
   const tenantPath = useTenantPath();
+  const { data: doFinanceiro = false } = usePodeInformarNotaDeOutro();
   const { data: notas = [] } = useNotasDoComercial();
-  const minhas = notas.filter((n) => n.vendedor_id === user?.id && n.situacao !== 'valor_diferente').length;
-  if (minhas === 0) return null;
+  const pendentes = doFinanceiro ? notas.filter((n) => n.situacao !== 'valor_diferente').length : 0;
+  if (pendentes === 0) return null;
   return (
-    <Link to={tenantPath('/comercial/pedidos')} className="block rounded-lg border border-status-warning bg-status-warning/5 px-3 py-2 text-[14px] font-medium">
-      Você tem {minhas} {minhas === 1 ? 'pedido com nota para informar' : 'pedidos com nota para informar'}. Abrir pedidos
+    <Link to={tenantPath(CONFERENCIA)} className="block rounded-lg border border-status-warning bg-status-warning/5 px-3 py-2 text-[14px] font-medium">
+      {pendentes} {pendentes === 1 ? 'pedido aprovado espera a nota' : 'pedidos aprovados esperam a nota'}. Abrir a conferência
     </Link>
   );
 }

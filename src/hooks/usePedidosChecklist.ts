@@ -98,10 +98,15 @@ export interface PedidoGravado {
   serie: Serie | null;
   filial: Filial;
   numero: string;
-  /** O Nº da nota que o pedido gerou, informado depois do faturamento (`ped_informar_nota`). */
+  /** O Nº da nota: pelo XML na série 1, pela conferência do Financeiro nas séries 75 e 76 (20270212721100). */
   nota_fiscal: string | null;
   nota_valor: number | null;
   nota_em: string | null;
+  nota_origem: 'digitada' | 'importacao' | 'xml' | 'conferida' | null;
+  nota_cfops: string[] | null;
+  nota_transportadora: string | null;
+  nota_xml_path: string | null;
+  nota_pdf_path: string | null;
   valor: number;
   desconto: number;
   espelho_total: number | null;
@@ -260,7 +265,7 @@ export function useChecklistDoLancamento(interacaoId: string | null) {
         .eq('interacao_id', interacaoId!).maybeSingle()) as unknown as ChecklistResumo | null;
       if (!resumo) return null;
       const pedidos = unwrap(await supabase.from('ped_pedidos')
-        .select('id, ordem, tipo, serie, filial, numero, nota_fiscal, nota_valor, nota_em, valor, desconto, espelho_total, espelho_st, qtd_coloracao, qtd_tonalizante, importado_em, ped_respostas(item_id, resposta, justificativa, ped_itens(ordem))')
+        .select('id, ordem, tipo, serie, filial, numero, nota_fiscal, nota_valor, nota_em, nota_origem, nota_cfops, nota_transportadora, nota_xml_path, nota_pdf_path, valor, desconto, espelho_total, espelho_st, qtd_coloracao, qtd_tonalizante, importado_em, ped_respostas(item_id, resposta, justificativa, ped_itens(ordem))')
         .eq('checklist_id', resumo.id).order('ordem')) as unknown as PedidoGravado[];
       // As respostas na ordem dos itens, como a vendedora respondeu — a conferência e o PDF leem
       // daqui (visto na navegação de 2026-09-30: sem isto saíam na ordem em que o banco devolvia).
@@ -473,8 +478,8 @@ export function useResponderReajuste() {
 
 // ─── A nota de cada pedido e a conferência dela (2026-10-16; migration 20270127070000) ───────────
 
-export type SituacaoDaNota = 'sem_nota' | 'aguardando_importacao' | 'divergente' | 'ok';
-export interface NotaDoPedido { pedido_id: string; ordem: number; situacao: SituacaoDaNota; mensagem: string }
+export type SituacaoDaNota = 'sem_nota' | 'conferida' | 'divergente' | 'ok';
+export interface NotaDoPedido { pedido_id: string; ordem: number; situacao: SituacaoDaNota; mensagem: string; aviso: string | null }
 
 /** A conferência da nota de cada pedido (os de antes da série não aparecem). */
 export function useSituacaoDasNotas(checklistId: string | null) {
@@ -532,6 +537,107 @@ export function useInformarNota() {
     onSuccess: () => {
       invalidar(qc);
       toast.success('Nota do pedido salva.');
+    },
+    onError: (e: unknown) => toast.error(mensagemDeErro(e)),
+  });
+}
+
+// ─── A nota pelo XML, a conferência guiada e as Saídas (dono, 2026-11-11; migration 20270212721100) ─────
+
+const BALDE_DAS_NOTAS = 'notas-fiscais';
+
+export interface ResultadoDoXml { pedido_id: string; ordem: number; nota: string; situacao: SituacaoDaNota; mensagem: string; aviso: string | null }
+
+/**
+ * O Financeiro sobe o XML e o PDF juntos. Os dois arquivos vão para o bucket antes, e o banco lê o XML, acha o pedido
+ * pelo "Pedido:" que o Forteplus escreve e confere tipo, série e cliente.
+ */
+export function useRegistrarNotaXml() {
+  const qc = useQueryClient();
+  const { tenantId } = useAuth();
+  return useMutation({
+    mutationFn: async (input: { checklistId: string; xml: File; pdf: File }) => {
+      const pasta = `${tenantId}/${input.checklistId}/${crypto.randomUUID()}`;
+      const caminhos = { xml: `${pasta}.xml`, pdf: `${pasta}.pdf` };
+      for (const [tipo, arquivo] of [['xml', input.xml], ['pdf', input.pdf]] as const) {
+        const { error } = await supabase.storage.from(BALDE_DAS_NOTAS).upload(caminhos[tipo], arquivo, {
+          contentType: tipo === 'xml' ? 'application/xml' : 'application/pdf', upsert: false,
+        });
+        if (error) throw error;
+      }
+      return unwrap(await supabase.rpc('ped_registrar_xml' as never, {
+        p_checklist: input.checklistId, p_xml: await input.xml.text(), p_xml_path: caminhos.xml, p_pdf_path: caminhos.pdf,
+      } as never)) as unknown as ResultadoDoXml;
+    },
+    onSuccess: (r) => {
+      invalidar(qc);
+      if (r.situacao === 'divergente') toast.error(`Nota ${r.nota} com problema`, { description: r.mensagem, duration: 15000 });
+      else toast.success(`Nota ${r.nota} conferida no pedido ${r.ordem}.`, { description: r.aviso ?? undefined });
+    },
+    onError: (e: unknown) => toast.error(mensagemDeErro(e)),
+  });
+}
+
+/** Abre o PDF ou o XML da nota numa aba (link assinado de 10 minutos). */
+export async function abrirArquivoDaNota(caminho: string) {
+  const { data, error } = await supabase.storage.from(BALDE_DAS_NOTAS).createSignedUrl(caminho, 600);
+  if (error) {
+    toast.error(mensagemDeErro(error));
+    return;
+  }
+  window.open(data.signedUrl, '_blank', 'noopener');
+}
+
+export type SituacaoDaSaida = 'aguardando_coleta' | 'com_transportadora';
+export const ROTULO_DA_SAIDA: Record<SituacaoDaSaida, string> = {
+  aguardando_coleta: 'Aguardando coleta',
+  com_transportadora: 'Entregue à transportadora',
+};
+
+export interface SaidaDoChecklist {
+  expedicao_situacao: SituacaoDaSaida | null; expedicao_transportadora: string | null;
+  expedicao_rastreio: string | null; expedicao_em: string | null;
+}
+
+/** A saída que a Expedição marcou, para o Comercial acompanhar no checklist. */
+export function useSaidaDoChecklist(checklistId: string | null) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: [CHAVE, 'saida', tenantId, checklistId],
+    enabled: !!tenantId && !!checklistId,
+    queryFn: async () => unwrap(await supabase.from('ped_checklists')
+      .select('expedicao_situacao, expedicao_transportadora, expedicao_rastreio, expedicao_em' as never)
+      .eq('id', checklistId!).single()) as unknown as SaidaDoChecklist,
+  });
+}
+
+export interface SaidaDaExpedicao {
+  checklist_id: string; protocolo: string; cliente: string; vendedor: string | null;
+  notas: { numero: string; filial: string; tipo: string; transportadora: string | null; pdf: string | null }[];
+  situacao: SituacaoDaSaida | null; transportadora: string | null; rastreio: string | null;
+  marcado_em: string | null; marcado_por: string | null;
+}
+
+export function useSaidas() {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: [CHAVE, 'saidas', tenantId],
+    enabled: !!tenantId,
+    queryFn: async () => ((unwrap(await supabase.rpc('ped_saidas' as never)) ?? []) as unknown as SaidaDaExpedicao[]),
+  });
+}
+
+export function useMarcarSaida() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { checklistId: string; situacao: SituacaoDaSaida; transportadora?: string; rastreio?: string }) =>
+      unwrap(await supabase.rpc('ped_marcar_saida' as never, {
+        p_checklist: input.checklistId, p_situacao: input.situacao,
+        p_transportadora: input.transportadora ?? null, p_rastreio: input.rastreio ?? null,
+      } as never)),
+    onSuccess: (_r, input) => {
+      invalidar(qc);
+      toast.success(`${ROTULO_DA_SAIDA[input.situacao]}: a vendedora foi avisada.`);
     },
     onError: (e: unknown) => toast.error(mensagemDeErro(e)),
   });

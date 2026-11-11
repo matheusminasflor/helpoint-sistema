@@ -207,6 +207,8 @@ const comercialMenuItems: MenuItem[] = [
 // chamados, indicadores e configurações. O estoque e a separação da Expedição saíram.
 const expedicaoMenuItems: MenuItem[] = [
   { to: '/expedicao/chamados', icon: Ticket, label: 'Fila de chamados', title: 'Fila de chamados da Expedição', secao: DIA },
+  // Saídas (2026-11-11): o pedido com nota emitida, até a transportadora.
+  { to: '/expedicao/saidas', icon: Truck, label: 'Saídas', title: 'Saídas de pedidos', secao: DIA },
   { to: '/expedicao/indicadores', icon: BarChart3, label: 'Indicadores', title: 'Indicadores da Expedição', secao: RELATORIOS },
   { to: '/expedicao/diretrizes', icon: BookMarked, label: 'Diretrizes da Expedição', secao: DO_SETOR },
   { to: '/expedicao/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações da Expedição', secao: DO_SETOR },
