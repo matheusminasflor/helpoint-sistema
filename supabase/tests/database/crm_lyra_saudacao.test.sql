@@ -7,10 +7,12 @@
 --   3  o lead 2 continua da atendente: respondido em 10 minutos
 --   4  cadastro: venda sem segmento cobra o segmento e o valor; consumidor sem telefone, o telefone; perda, só o motivo
 --   5  a lista de leads traz a etapa
+--   6  "Aguardando resposta" (20270212721300): em "Contato inicial", o cliente que não respondeu a Lyra não espera a
+--      atendente; o que escreveu e ficou sem resposta da Lyra espera (leads 6 e 7, há 1 hora)
 begin;
 \ir _helpers.psql
 
-select plan(5);
+select plan(6);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-crm-saudacao', 'CRM saudação', false) as a;
@@ -58,6 +60,26 @@ select is((select string_agg((x->>'lead_id') || ':' || array_to_string(array(sel
 select is((select x->>'etapa' from d, jsonb_array_elements(v->'leads') x where (x->>'lead_id')::int = 1), 'Contato inicial',
   'a lista traz a etapa');
 select tests.clear_authentication();
+
+-- Há 1 hora: o lead 6 escreveu, a Lyra saudou 4 s depois e o cliente parou; o lead 7 escreveu, a Lyra saudou, o
+-- cliente escreveu de novo e a Lyra não respondeu mais.
+create temporary table agora on commit drop as select extract(epoch from now() - interval '1 hour')::bigint as t;
+select public.kommo_gravar_etapas((select a from f), jsonb_build_array(
+  jsonb_build_object('id', 'e6', 'lead_id', 6, 'quando', (select t from agora) + 3, 'etapa', 'Contato inicial'),
+  jsonb_build_object('id', 'e7', 'lead_id', 7, 'quando', (select t from agora) + 3, 'etapa', 'Contato inicial')));
+select public.kommo_gravar_atendimento((select a from f),
+  jsonb_build_array(
+    jsonb_build_object('id', 'n1', 'lead_id', 6, 'quando', (select t from agora), 'entrou', true, 'canal', 'waba'),
+    jsonb_build_object('id', 'n2', 'lead_id', 6, 'quando', (select t from agora) + 4, 'entrou', false, 'autor', 0, 'canal', 'waba'),
+    jsonb_build_object('id', 'n3', 'lead_id', 7, 'quando', (select t from agora), 'entrou', true, 'canal', 'waba'),
+    jsonb_build_object('id', 'n4', 'lead_id', 7, 'quando', (select t from agora) + 4, 'entrou', false, 'autor', 0, 'canal', 'waba'),
+    jsonb_build_object('id', 'n5', 'lead_id', 7, 'quando', (select t from agora) + 600, 'entrou', true, 'canal', 'waba')),
+  jsonb_build_array(
+    jsonb_build_object('lead_id', 6, 'nome', 'Parou na Lyra', 'segmento', 'sem_triagem', 'funil', 'Entrada', 'etapa', 'Contato inicial', 'link', 'k/6'),
+    jsonb_build_object('lead_id', 7, 'nome', 'Lyra calou', 'segmento', 'sem_triagem', 'funil', 'Entrada', 'etapa', 'Contato inicial', 'link', 'k/7')),
+  null, null);
+select is((select string_agg(lead_id::text, ',' order by lead_id) from public.kommo_esperando((select a from f)) where lead_id in (6, 7)), '7',
+  'em "Contato inicial", só espera quem escreveu por último');
 
 select * from finish();
 rollback;
