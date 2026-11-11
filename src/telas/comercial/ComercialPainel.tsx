@@ -240,7 +240,11 @@ export function ComercialPainel() {
           <>
           {/* 2. O ano mês a mês, com o período destacado (§11 seção 2). */}
           <div className="rounded-lg border border-border overflow-x-auto">
-            <div className="px-4 py-2 border-b border-border text-[14px] font-semibold">O ano mês a mês</div>
+            {/* Revisão de 2026-11-12: o destaque (bg-primary/5) não se via, e parecia que o filtro de período não
+                valia aqui. Agora a faixa é visível, com a borda azul, e o título diz o que ela é. */}
+            <div className="px-4 py-2 border-b border-border text-[14px] font-semibold">
+              O ano mês a mês <span className="font-normal text-muted-foreground">· o período escolhido está destacado em azul</span>
+            </div>
             <table className="w-full text-[13px]">
               <thead>
                 <tr className="bg-secondary/60 text-left text-muted-foreground">
@@ -260,7 +264,7 @@ export function ComercialPainel() {
               </thead>
               <tbody>
                 {(meses ?? []).map((m, idx) => (
-                  <tr key={idx} className={`border-t border-border ${dentroDoPeriodo(m.competencia) ? 'bg-primary/5' : ''}`}>
+                  <tr key={idx} className={`border-t border-border ${dentroDoPeriodo(m.competencia) ? 'bg-primary/15 shadow-[inset_4px_0_0_hsl(var(--primary))] font-semibold' : 'text-muted-foreground'}`}>
                     <td className="px-3 py-1.5">{competenceLabel(m.competencia)}</td>
                     <td className="px-3 py-1.5">{m.filial}</td>
                     {/* Achado 9 da auditoria: o rótulo mentia para série

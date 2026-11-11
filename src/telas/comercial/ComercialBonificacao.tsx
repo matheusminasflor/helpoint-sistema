@@ -53,9 +53,11 @@ export default function ComercialBonificacao() {
 
 
   const linhasBonificacao = bonificacao?.linhas ?? [];
-  const linhasCondicao = condicao?.linhas ?? [];
-  const valorCondicao = (p: (typeof linhasCondicao)[number]) =>
+  const valorCondicao = (p: NonNullable<typeof condicao>['linhas'][number]) =>
     filtroCondicao === 'venda' ? p.venda : filtroCondicao === 'bonificacao' ? p.bonificacao : p.total;
+  // O filtro filtra as linhas (revisão de 2026-11-12): antes só trocava a coluna, e "Bonificação" listava os mesmos
+  // pedidos de "Venda", com zero. "Os dois" mostra todos.
+  const linhasCondicao = (condicao?.linhas ?? []).filter((p) => filtroCondicao === 'ambos' || Number(valorCondicao(p)) > 0);
 
   return (
     <div className="p-4 sm:p-6 space-y-6">

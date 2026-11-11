@@ -33,8 +33,9 @@ const MOSTRA = 20;
 export default function MotivosEDores() {
   const tenantPath = useTenantPath();
   const [carteira, setCarteira] = useState(TODAS);
-  const [de, setDe] = useState('');
-  const [ate, setAte] = useState('');
+  // As datas ficam no endereço (revisão de 2026-11-12): recarregar ou mandar o link não perde o recorte.
+  const [de, setDe] = useQueryState<string>('de', '');
+  const [ate, setAte] = useQueryState<string>('ate', '');
   const podeTudo = usePodeGerirCarteiras();
   const { data: conhecidas = [] } = useCarteiras();
   const { data: minhas = [] } = useMinhasCarteiras();
@@ -160,7 +161,8 @@ export default function MotivosEDores() {
             )}
           </section>
           <section className="rounded-lg border border-border p-3 space-y-2">
-            <h2 className="text-sm font-semibold">Quem ligar primeiro <span className="font-normal text-muted-foreground">· maiores compradores</span></h2>
+            {/* É a situação de HOJE (parado ou comprando menos agora), não o período escolhido: o título diz. */}
+            <h2 className="text-sm font-semibold">Quem ligar primeiro <span className="font-normal text-muted-foreground">· situação de hoje, maiores compradores primeiro</span></h2>
             {recuperar.length === 0 ? <p className="text-[13px] text-muted-foreground">Nenhum cliente parado ou comprando menos.</p> : (
               <ul className="divide-y divide-border">
                 {recuperar.slice(0, MOSTRA).map((l) => (

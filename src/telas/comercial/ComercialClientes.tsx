@@ -63,13 +63,16 @@ export default function ComercialClientes() {
         periodo={periodo} onPeriodoChange={setPeriodo} mes={mes} onMesChange={setMes}
         intervalo={{ de, ate }} onIntervaloChange={setIntervalo}
       />
-      <Select value={criterio} onValueChange={(v) => setCriterio(v as CriterioCurva)}>
-        <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
-        <SelectContent>
-          <SelectItem value="valor">Por valor</SelectItem>
-          <SelectItem value="quantidade">Por quantidade</SelectItem>
-        </SelectContent>
-      </Select>
+      {/* Só vale na ficha (o mix por faixa); na lista não mudava nada e parecia quebrado (revisão de 2026-11-12). */}
+      {clienteSelecionado && (
+        <Select value={criterio} onValueChange={(v) => setCriterio(v as CriterioCurva)}>
+          <SelectTrigger className="w-40" aria-label="Mix por faixa: por valor ou por quantidade"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="valor">Mix por valor</SelectItem>
+            <SelectItem value="quantidade">Mix por quantidade</SelectItem>
+          </SelectContent>
+        </Select>
+      )}
     </>
   );
 
