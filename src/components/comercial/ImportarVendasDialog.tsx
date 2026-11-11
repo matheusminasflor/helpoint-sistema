@@ -19,11 +19,12 @@ import {
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
-  aplicarDecisoes, combinarAeB, competenciaDe, filialNoNomeDoArquivo, lerRelatorioVendas, sugerirFilial,
-  type CasoParaDecidir, type DecisaoDaLinha, type LeituraVendas,
+  competenciaDe, filialNoNomeDoArquivo, lerRelatorioVendas, prepararImportacao, problemaDoPeriodo, sugerirFilial,
+  type LeituraVendas,
 } from '@/lib/comercial-import';
 import { chunk } from '@/lib/crm-import';
 import { useCompetenciasImportadas, usePeriodoImportado } from '@/hooks/useComercialPainel';
@@ -33,8 +34,7 @@ import {
   useImportarLoteVendas, useIniciarImportacaoVendas,
 } from '@/hooks/useComercialImport';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
-import { formatBRL, competenceLabel } from '@/types/financeiro';
-import { CasosParaDecidir } from '@/components/comercial/CasosParaDecidir';
+import { formatBRL, competenceLabel, formatDateBR } from '@/types/financeiro';
 import type { Filial } from '@/types/comercial';
 
 const DESCARTE_LABEL: Record<string, string> = {
@@ -42,7 +42,6 @@ const DESCARTE_LABEL: Record<string, string> = {
   em_branco: 'Linhas em branco',
   rodape: 'Rodapé (endereço, site, totais)',
   grupo_cliente: 'Cabeçalho de grupo de cliente',
-  remessa_do_completo: 'Remessa do arquivo completo (vem do arquivo 5910/6910)',
 };
 
 /** O que é cada linha, no resumo: a remessa (5910/6910) pela série — 1 publicidade, 75 bonificação, 76 cashback. */
@@ -75,37 +74,18 @@ interface Props {
 
 export function ImportarVendasDialog({ open, onOpenChange }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
-  // Uma série por arquivo (2026-10-15): a série 1 e a 75 da mesma filial chegam juntas, em dois arquivos.
+  // O completo, agrupado por cliente; o de bonificação é opcional e só confere (dono, 2026-11-11).
   const [arquivos, setArquivos] = useState<File[]>([]);
   const nomeDosArquivos = arquivos.map((a) => a.name).join(" + ");
   const [filial, setFilial] = useState<Filial | null>(null);
-  const [leituraLida, setLeitura] = useState<LeituraVendas | null>(null);
+  const [leitura, setLeitura] = useState<LeituraVendas | null>(null);
   const [erro, setErro] = useState<string | null>(null);
-  const [anomalias, setAnomalias] = useState<string[]>([]);
-  // A venda que o Forteplus juntou com a remessa sem linha própria: quem importa decide (dono, 2026-10-20).
-  const [casos, setCasos] = useState<CasoParaDecidir[]>([]);
-  // Linha a linha, tipo + série + CFOP, nada pré-marcado (dono, 2026-10-21: o total com "venda" sugerida induzia ao erro).
-  const [decisoes, setDecisoes] = useState<Record<string, Partial<DecisaoDaLinha>>>({});
-  // 1 arquivo só, sem 5910/6910: a tela pergunta antes (dono, 2026-10-20).
-  const [soUmArquivo, setSoUmArquivo] = useState(false);
-  const [umArquivoConfirmado, setUmArquivoConfirmado] = useState(false);
-  const completa = (d?: Partial<DecisaoDaLinha>): d is DecisaoDaLinha => !!d?.tipo && !!d.serie && !!d.cfop;
-  const leitura = useMemo(() => {
-    if (!leituraLida) return null;
-    const prontas = Object.fromEntries(Object.entries(decisoes).filter(([, d]) => completa(d))) as Record<string, DecisaoDaLinha>;
-    return aplicarDecisoes(leituraLida, casos, prontas);
-  }, [leituraLida, casos, decisoes]);
-  // As opções vêm do próprio arquivo: as séries que ele tem, e os CFOP de cada tipo.
-  const opcoes = useMemo(() => {
-    const itens = leituraLida?.itens ?? [];
-    const de = (f: (i: (typeof itens)[number]) => boolean, k: 'serie' | 'cfop') => [...new Set(itens.filter(f).map((i) => i[k]))].sort();
-    return {
-      series: de(() => true, 'serie'),
-      venda: de((i) => i.classe === 'venda', 'cfop'),
-      bonificacao: de((i) => i.classe === 'bonificacao', 'cfop'),
-    };
-  }, [leituraLida]);
-  const linhasSemDecisao = casos.flatMap((c) => c.linhas).filter((l) => !completa(decisoes[l.chave])).length;
+  // O período que a pessoa exportou do Forteplus — o arquivo não diz; vem sugerido da primeira à última nota.
+  const [notas, setNotas] = useState<{ primeira: string; ultima: string } | null>(null);
+  const [periodoDe, setPeriodoDe] = useState('');
+  const [periodoAte, setPeriodoAte] = useState('');
+  const [conferido, setConferido] = useState(false);
+  const problemaPeriodo = notas ? problemaDoPeriodo(periodoDe, periodoAte, notas.primeira, notas.ultima) : null;
   const [substituir, setSubstituir] = useState(false);
   const [lendo, setLendo] = useState(false);
 
@@ -148,9 +128,10 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
     () => [...new Set((leitura?.itens ?? []).map((i) => competenciaDe(i.emissao)))].sort(),
     [leitura],
   );
-  const competenciasEmConflito = useMemo(
-    () => competenciasDoArquivo.filter((c) => (competenciasImportadas ?? []).includes(c)),
-    [competenciasDoArquivo, competenciasImportadas],
+  // Os trechos já importados que caem dentro do período: só esses dias são substituídos.
+  const trechosEmConflito = useMemo(
+    () => (competenciasImportadas ?? []).filter((x) => !!periodoDe && !!periodoAte && x.de <= periodoAte && x.ate >= periodoDe),
+    [competenciasImportadas, periodoDe, periodoAte],
   );
 
   const valorPorClasse = useMemo(() => {
@@ -184,8 +165,8 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
   }, [leitura]);
 
   const reset = () => {
-    setArquivos([]); setFilial(null); setLeitura(null); setErro(null); setAnomalias([]); setSubstituir(false);
-    setCasos([]); setDecisoes({}); setSoUmArquivo(false); setUmArquivoConfirmado(false);
+    setArquivos([]); setFilial(null); setLeitura(null); setErro(null); setSubstituir(false);
+    setNotas(null); setPeriodoDe(''); setPeriodoAte(''); setConferido(false);
     setImportando(false); setImportacaoId(null); setProgresso({ feitos: 0, total: 0 });
     setErroInicio(null); setErroLote(null);
     if (inputRef.current) inputRef.current.value = '';
@@ -201,7 +182,6 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
   const processar = async (selecionados: File[]) => {
     setLendo(true);
     setErro(null);
-    setAnomalias([]);
     try {
       // Achado 11.3 da auditoria: `lerRelatorioVendas` não recebe mais
       // `filial` — a leitura nunca dependeu dela, e a gambiarra de passar
@@ -210,19 +190,17 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
       const leituras = await Promise.all(selecionados.map(async (a) => ({
         nome: a.name, leitura: lerRelatorioVendas(await lerMatrizXlsx(a)),
       })));
-      // Dois arquivos do mês (dono, 2026-10-16): tudo + só 5910/6910 — ver `combinarAeB`.
-      const combinado = combinarAeB(leituras);
-      setLeitura(combinado.leitura);
-      setAnomalias(combinado.anomalias);
-      setCasos(combinado.casos);
-      setDecisoes({});
-      setSoUmArquivo(combinado.soUmArquivo);
-      setUmArquivoConfirmado(false);
+      // O completo, agrupado por cliente; o de bonificação, se vier, confere — ver `prepararImportacao`.
+      const preparo = prepararImportacao(leituras);
+      setLeitura(preparo.leitura);
+      setNotas({ primeira: preparo.primeira, ultima: preparo.ultima });
+      setPeriodoDe(preparo.primeira);
+      setPeriodoAte(preparo.ultima);
+      setConferido(preparo.conferidoComBonificacao);
     } catch (e) {
       setErro(e instanceof Error ? e.message : String(e));
       setLeitura(null);
-      setCasos([]);
-      setSoUmArquivo(false);
+      setNotas(null);
     } finally {
       setLendo(false);
     }
@@ -241,7 +219,7 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
     // um refactor que mova o botão, um teste) não pode gravar anos de vendas
     // na empresa errada porque a porta de fora ficou para trás.
     if (arquivos.some((a) => filialNoNomeDoArquivo(a.name).filial !== filial)) return;
-    if (linhasSemDecisao > 0 || (soUmArquivo && !umArquivoConfirmado)) return;
+    if (problemaPeriodo) return;
     canceladoRef.current = false;
     setImportando(true);
     setErroInicio(null);
@@ -259,6 +237,8 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
         itensEsperados: leitura.itens.length,
         substituir,
         totalImpresso: leitura.totalImpresso,
+        de: periodoDe,
+        ate: periodoAte,
       });
     } catch (e) {
       // Achado 6.3: falhou ao COMEÇAR — nada foi enviado, não existe
@@ -375,8 +355,8 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
 
   const bloqueado = !leitura || !filial || lendo || importando
     || nomeNaoIdentifica || filialDivergeDoNome
-    || (competenciasEmConflito.length > 0 && !substituir)
-    || linhasSemDecisao > 0 || (soUmArquivo && !umArquivoConfirmado);
+    || !!problemaPeriodo
+    || (trechosEmConflito.length > 0 && !substituir);
 
   return (
     <>
@@ -393,7 +373,7 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="com-vendas-file">Os 2 arquivos (.xlsx) do mês — "Mercadorias Vendidas - Produtos": um com tudo e um só com 5910/6910, a mesma filial. Mês sem nenhuma 5910/6910: só o arquivo com tudo</Label>
+                <Label htmlFor="com-vendas-file">O relatório "Mercadorias Vendidas - Produtos" (.xlsx) exportado <strong>agrupando por cliente</strong>, de qualquer período: ano, mês ou semana. Para conferir, escolha junto o de bonificação (só 5910/6910) da mesma filial.</Label>
                 <input
                   id="com-vendas-file"
                   ref={inputRef}
@@ -476,40 +456,27 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
                   </div>
                 </div>
 
-                {anomalias.length > 0 && (
-                  <div className="rounded-lg border border-border badge-warning p-3 text-[14px] space-y-1">
-                    <div className="flex items-center gap-2 font-semibold">
-                      <AlertTriangle className="w-4 h-4" aria-hidden="true" />
-                      O Forteplus deixou {anomalias.length} {anomalias.length === 1 ? 'caso' : 'casos'} que a conta não resolve sozinha — confira antes de confirmar
-                    </div>
-                    <ul className="list-disc pl-5 space-y-0.5 max-h-48 overflow-y-auto">
-                      {anomalias.map((a) => <li key={a}>{a}</li>)}
-                    </ul>
+                <div className="rounded-lg border border-border p-3 space-y-2">
+                  <p className="text-[14px] font-semibold">Período que você exportou do Forteplus</p>
+                  <div className="flex flex-wrap items-center gap-2 text-[14px]">
+                    <Label htmlFor="com-vendas-de">de</Label>
+                    <Input id="com-vendas-de" type="date" className="h-9 w-44" value={periodoDe} disabled={importando}
+                      onChange={(e) => setPeriodoDe(e.target.value)} />
+                    <Label htmlFor="com-vendas-ate">até</Label>
+                    <Input id="com-vendas-ate" type="date" className="h-9 w-44" value={periodoAte} disabled={importando}
+                      onChange={(e) => setPeriodoAte(e.target.value)} />
                   </div>
-                )}
-
-                {soUmArquivo && (
-                  <div className="rounded-lg border border-border badge-warning p-3 text-[14px] space-y-2">
-                    <div className="flex items-center gap-2 font-semibold">
-                      <AlertTriangle className="w-4 h-4" aria-hidden="true" />
-                      Este arquivo não tem nenhuma nota 5910/6910. Importar só ele?
-                    </div>
-                    <p>Use quando no mês não houve bonificação, publicidade nem cashback nesta filial. Se houve, escolha os 2 arquivos.</p>
-                    {umArquivoConfirmado ? (
-                      <p className="font-semibold">Confirmado: o mês entra só com este arquivo.</p>
-                    ) : (
-                      <div className="flex flex-wrap gap-2">
-                        <Button size="sm" onClick={() => setUmArquivoConfirmado(true)} disabled={importando}>Sim, importar só este arquivo</Button>
-                        <Button size="sm" variant="outline" onClick={reset} disabled={importando}>Não, vou escolher os 2 arquivos</Button>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {casos.length > 0 && (
-                  <CasosParaDecidir casos={casos} decisoes={decisoes} opcoes={opcoes} disabled={importando} faltam={linhasSemDecisao}
-                    onDecidir={(chaves, d) => setDecisoes((atual) => ({ ...atual, ...Object.fromEntries(chaves.map((k) => [k, d])) }))} />
-                )}
+                  {notas && (
+                    <p className="text-[12px] text-muted-foreground">
+                      As notas do arquivo vão de {formatDateBR(notas.primeira)} a {formatDateBR(notas.ultima)}. Ajuste para o período que você
+                      escolheu no Forteplus: substituir troca só esses dias, e o resto do mês fica como está.
+                    </p>
+                  )}
+                  {problemaPeriodo && <p className="text-[12px] text-status-danger">{problemaPeriodo}</p>}
+                  {conferido && (
+                    <p className="text-[12px] text-status-success">Conferido com o arquivo de bonificação: publicidade, bonificação e cashback batem mês a mês.</p>
+                  )}
+                </div>
 
                 {leitura.cfopsDesconhecidos.length > 0 && (
                   <div className="rounded-lg border border-border badge-warning p-3 text-[14px]">
@@ -525,13 +492,13 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
                   </div>
                 )}
 
-                {competenciasEmConflito.length > 0 && (
+                {trechosEmConflito.length > 0 && (
                   <div className="rounded-lg border border-border badge-warning p-3 text-[14px] space-y-2">
                     <div className="flex items-center gap-2 font-semibold">
                       <AlertTriangle className="w-4 h-4" aria-hidden="true" />
-                      Competência já importada: {competenciasEmConflito.map(competenceLabel).join(', ')}
+                      Já importado nesse período: {trechosEmConflito.map((x) => `${formatDateBR(x.de)} a ${formatDateBR(x.ate)}`).join(', ')}
                     </div>
-                    <p>Substituir apaga <strong>tudo</strong> deste mês na {filial} e grava de novo com estes 2 arquivos.</p>
+                    <p>Substituir apaga o que a {filial} tem de <strong>{formatDateBR(periodoDe)} a {formatDateBR(periodoAte)}</strong> e grava de novo com este arquivo. Os outros dias ficam como estão.</p>
                     {/* Achado 5 da auditoria: o checkbox só aparece com
                         vendas.substituir — sem isso, quem só tem vendas.importar
                         marcava, confirmava e só descobria a falta de permissão
@@ -539,7 +506,7 @@ export function ImportarVendasDialog({ open, onOpenChange }: Props) {
                     {podeSubstituir ? (
                       <label className="flex items-center gap-2">
                         <Checkbox checked={substituir} onCheckedChange={(v) => setSubstituir(v === true)} disabled={importando} />
-                        <span>Substituir o que já está lá (apaga as linhas dessas competências e grava de novo)</span>
+                        <span>Substituir esses dias (apaga as linhas do período e grava de novo)</span>
                       </label>
                     ) : (
                       <p className="text-muted-foreground">

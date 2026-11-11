@@ -60,6 +60,9 @@ export interface IniciarImportacaoVendasInput {
   itensEsperados: number;
   substituir: boolean;
   totalImpresso: number | null;
+  /** O período exportado, confirmado na tela (2026-11-11): substituir troca só esses dias. */
+  de: string;
+  ate: string;
 }
 
 /** Abre a importação e reserva a(s) competência(s); devolve o id que os lotes e o fim usam. */
@@ -75,7 +78,9 @@ export function useIniciarImportacaoVendas() {
         p_itens_esperados: input.itensEsperados,
         p_substituir: input.substituir,
         p_total_impresso: input.totalImpresso,
-      })) as unknown as string,
+        p_de: input.de,
+        p_ate: input.ate,
+      } as never)) as unknown as string,
   });
 }
 

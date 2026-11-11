@@ -217,11 +217,10 @@ export function useCompetenciasImportadas(filial: Filial | null) {
   return useQuery({
     queryKey: ['comercial', 'competencias-importadas', tenantId, filial],
     enabled: !!tenantId && !!filial,
-    queryFn: async (): Promise<string[]> => {
-      const rows = unwrap(await supabase
-        .rpc('com_competencias_importadas', { p_filial: filial! })) as unknown as { competencia: string }[];
-      return rows.map((r) => r.competencia);
-    },
+    // Em trechos de dias desde 20270212721200: a semana importada reserva só os dias dela.
+    queryFn: async (): Promise<{ competencia: string; de: string; ate: string }[]> =>
+      unwrap(await supabase.rpc('com_competencias_importadas', { p_filial: filial! })) as unknown as
+        { competencia: string; de: string; ate: string }[],
   });
 }
 
@@ -514,22 +513,22 @@ export function useTabelasPreco() {
   });
 }
 
-/** Nome ou código, até 10 resultados — o suficiente para um campo de busca. Vazio não consulta o banco. */
+/**
+ * Razão social, nome fantasia ou código, até 10 resultados. Ignora acento e maiúscula, e aceita vírgula
+ * (`com_buscar_clientes`, 20270212721400). Menos de 2 letras não consulta o banco.
+ */
 export function useBuscarClientes(termo: string) {
   const { tenantId } = useAuth();
   const termoLimpo = termo.trim();
   return useQuery({
     queryKey: ['comercial', 'buscar-clientes', tenantId, termoLimpo],
     enabled: !!tenantId && termoLimpo.length >= 2,
-    queryFn: async (): Promise<ClienteBusca[]> => {
-      const padrao = valorParaFiltroOr(`%${termoLimpo}%`);
-      return unwrap(await supabase
-        .from('com_clientes')
+    queryFn: async (): Promise<ClienteBusca[]> =>
+      unwrap(await supabase
+        .rpc('com_buscar_clientes' as never, { p_termo: termoLimpo } as never)
         .select('codigo, razao_social')
-        .or(`razao_social.ilike.${padrao},codigo.ilike.${padrao}`)
         .order('razao_social')
-        .limit(10)) as unknown as ClienteBusca[];
-    },
+        .limit(10)) as unknown as ClienteBusca[],
   });
 }
 

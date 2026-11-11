@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  aplicarDecisoes, classificarCfop, combinarAeB, competenciaDe, filialNoNomeDoArquivo, lerCadastroClientes, lerRelatorioVendas, sugerirFilial,
+  classificarCfop, competenciaDe, filialNoNomeDoArquivo, lerCadastroClientes, lerRelatorioVendas, prepararImportacao, problemaDoPeriodo, sugerirFilial,
 } from './comercial-import';
 import { FORTEPLUS_VENDAS_FIXTURE } from './__fixtures__/forteplus-vendas';
 import { FORTEPLUS_CLIENTES_CP1252_BASE64 } from './__fixtures__/forteplus-clientes-cp1252';
@@ -209,114 +209,62 @@ describe('filialNoNomeDoArquivo', () => {
   });
 });
 
-describe('combinarAeB — os 2 arquivos do mês (2026-10-16)', () => {
-  // Linhas como o Forteplus exporta (casos reais de set/2026, INBRAS).
-  const it_ = (doc: string, data: string, serie: string, cfop: string, cli: string, prod: string, qtd: number, valor: number, pedido = '1') => ({
+describe('prepararImportacao — o arquivo agrupado por cliente (2026-11-11)', () => {
+  const it_ = (doc: string, data: string, serie: string, cfop: string, cli: string, prod: string, qtd: number, valor: number) => ({
     emissao: data, documento: doc, serie, tipo_documento: 'NF', cfop, classe: classificarCfop(cfop), cliente_codigo: cli,
     cliente_nome: cli, produto_codigo: prod, produto_nome: prod, quantidade: qtd, valor_nota: valor, desconto: 0,
-    vendedor_codigo: null, vendedor_nome: null, pedido,
+    vendedor_codigo: null, vendedor_nome: null, pedido: '1',
   });
   const leitura = (itens: ReturnType<typeof it_>[]) => ({
     itens, linhasLidas: itens.length + 3, cfopsDesconhecidos: [],
     totalImpresso: Math.round(itens.reduce((s, i) => s + i.valor_nota, 0) * 100) / 100,
     descartes: { cabecalho_repetido: 1, em_branco: 1, rodape: 1, grupo_cliente: 0, remessa_do_completo: 0 },
   });
-  // N D FIGUEIREDO (1647): o A juntou 12 un de venda (nota 23362) com 4 de bonificação (nota 1413) numa linha "série 75".
-  const A = leitura([
-    it_('23362', '2026-09-28', '1', '6101', '1647', '652', 12, 523.68),
-    it_('23362', '2026-09-28', '75', '6910', '1647', '1365', 16, 465.6),
-    it_('23363', '2026-09-28', '1', '6910', '1647', '1078', 5, 55),
-    // Cliente 1054: a bonificação de 04/09 (nota 1382) somada na venda de 28/09 (nota 23360).
-    it_('23360', '2026-09-28', '1', '6101', '1054', '469', 16, 539.04),
-    it_('23360', '2026-09-28', '75', '6910', '1054', '54', 26, 384.02),
+  // Marta (1186), out/2026: a bonificação 1445 (s75) e o cashback 1 (s76) do mesmo produto, cada um na sua linha.
+  const completo = leitura([
+    it_('23440', '2026-10-23', '1', '6101', '1186', '233', 36, 447.12),
+    it_('1445', '2026-10-23', '75', '6910', '1186', '233', 6, 74.52),
+    it_('1', '2026-10-23', '76', '6910', '1186', '233', 18, 223.56),
+    it_('23441', '2026-11-03', '1', '6910', '1186', '671', 20, 54),
   ]);
-  const B = leitura([
-    it_('1413', '2026-09-28', '75', '6910', '1647', '1365', 4, 116.4),
-    it_('23363', '2026-09-28', '1', '6910', '1647', '1078', 5, 55),
-    it_('1382', '2026-09-04', '75', '6910', '1054', '54', 6, 88.62),
-  ]);
-  const r = combinarAeB([{ nome: 'INBRAS-09-5910.xlsx', leitura: B }, { nome: 'INBRAS-09-TUDO.xlsx', leitura: A }]);
-  const linhas = (cli: string, prod: string) =>
-    r.leitura.itens.filter((i) => i.cliente_codigo === cli && i.produto_codigo === prod)
-      .map((i) => `${i.classe} ${i.documento} ${i.emissao} s${i.serie} ${i.cfop} ${i.quantidade} ${i.valor_nota}`).sort();
+  const bonificacao = leitura(completo.itens.filter((i) => i.cfop === '6910'));
 
-  it('a venda escondida volta para a nota de venda, e a bonificação vem do arquivo 5910/6910', () => {
-    expect(linhas('1647', '1365')).toEqual([
-      'bonificacao 1413 2026-09-28 s75 6910 4 116.4',
-      'venda 23362 2026-09-28 s1 6101 12 349.2',
-    ]);
+  it('o completo sozinho basta, e o período sugerido vai da primeira à última nota, em vários meses', () => {
+    const r = prepararImportacao([{ nome: 'INBRAS ALL 2026.xlsx', leitura: completo }]);
+    expect(r.leitura).toBe(completo);
+    expect([r.primeira, r.ultima, r.conferidoComBonificacao]).toEqual(['2026-10-23', '2026-11-03', false]);
   });
 
-  it('a junção de dias diferentes do mês também se desfaz', () => {
-    expect(linhas('1054', '54')).toEqual([
-      'bonificacao 1382 2026-09-04 s75 6910 6 88.62',
-      'venda 23360 2026-09-28 s1 6101 20 295.4',
-    ]);
+  it('o de bonificação que bate é só conferência, em qualquer ordem', () => {
+    const r = prepararImportacao([{ nome: 'BONI', leitura: bonificacao }, { nome: 'ALL', leitura: completo }]);
+    expect(r.leitura).toBe(completo);
+    expect(r.conferidoComBonificacao).toBe(true);
   });
 
-  it('o total é o do relatório completo e as linhas fecham com os descartes', () => {
-    const total = Math.round(r.leitura.itens.reduce((s, i) => s + i.valor_nota, 0) * 100) / 100;
-    expect(total).toBe(A.totalImpresso);
-    expect(r.leitura.totalImpresso).toBe(A.totalImpresso);
-    const descartes = Object.values(r.leitura.descartes).reduce((s, n) => s + n, 0);
-    expect(r.leitura.linhasLidas).toBe(r.leitura.itens.length + descartes);
-    expect(r.anomalias).toEqual([]);
+  it('o de bonificação que não bate trava, dizendo o mês e o tipo', () => {
+    const faltaCashback = leitura(bonificacao.itens.filter((i) => i.serie !== '76'));
+    expect(() => prepararImportacao([{ nome: 'ALL', leitura: completo }, { nome: 'BONI', leitura: faltaCashback }]))
+      .toThrow('10/2026 cashback: completo R$ 223.56 × bonificação R$ 0.00');
   });
 
-  it('recusa um arquivo só, dois arquivos de tudo, e mais de um mês', () => {
-    expect(() => combinarAeB([{ nome: 'a', leitura: A }])).toThrow(/2 arquivos/);
-    expect(() => combinarAeB([{ nome: 'a', leitura: A }, { nome: 'b', leitura: A }])).toThrow(/só os CFOP 5910\/6910/);
-    const outubro = leitura([it_('9', '2026-10-01', '75', '6910', '1647', '1365', 1, 1)]);
-    expect(() => combinarAeB([{ nome: 'a', leitura: A }, { nome: 'b', leitura: outubro }])).toThrow(/um mês por vez/);
+  it('recusa o formato antigo, que junta documentos diferentes na mesma linha (Amil 23485, out/2026)', () => {
+    const antigo = leitura([it_('23485', '2026-10-30', '1', '6107', '1615', '495', 6, 314.34), it_('23485', '2026-10-30', '76', '6910', '1615', '233', 60, 9700.58)]);
+    expect(() => prepararImportacao([{ nome: 'ALL', leitura: antigo }])).toThrow(/a nota 23485 aparece nas séries 1 e 76.*agrupando por cliente/);
   });
 
-  it('diferença sem linha de venda no mês vira caso linha a linha, como o "tudo" rotulou e sem palpite (junho/MF, 2026-10-21)', () => {
-    // ITALO MEDICE (1147): a venda da 18578 (23/06) veio inteira sob o rótulo da bonificação; a bonificação real é a 447.
-    const A6 = leitura([
-      it_('18578', '2026-06-23', '75', '5910', '1147', '740', 24, 397.2),
-      it_('18578', '2026-06-23', '75', '5910', '1147', '619', 48, 794.4),
-      it_('18581', '2026-06-23', '1', '5401', '1063', '1', 1, 10),
-      it_('18582', '2026-06-24', '1', '5401', '1517', '1', 1, 10),
-      it_('18583', '2026-06-24', '1', '5101', '1971', '1', 1, 10),
-    ]);
-    const B6 = leitura([
-      it_('447', '2026-06-09', '75', '5910', '1147', '740', 12, 198.6),
-      it_('447', '2026-06-09', '75', '5910', '1147', '619', 24, 397.2),
-    ]);
-    const r6 = combinarAeB([{ nome: 'MF-06-ALL.xlsx', leitura: A6 }, { nome: 'MF-06-BONIFI.xlsx', leitura: B6 }]);
-    expect(r6.anomalias).toEqual([]);
-    expect(r6.casos).toHaveLength(1);
-    const [c] = r6.casos;
-    expect([c.cliente_codigo, c.documentos, c.valor, c.linhas.length]).toEqual(['1147', ['18578'], 595.8, 2]);
-    // Cada linha mostra o que cada arquivo diz.
-    const l740 = c.linhas.find((l) => l.produto_codigo === '740')!;
-    expect(l740.noTudo.map((x) => `${x.documento} s${x.serie} ${x.cfop} ${x.quantidade}`)).toEqual(['18578 s75 5910 24']);
-    expect(l740.noSoRemessa.map((x) => `${x.documento} s${x.serie} ${x.cfop} ${x.quantidade}`)).toEqual(['447 s75 5910 12']);
-    expect([l740.quantidade, l740.valor]).toEqual([12, 198.6]);
-    // Sem decisão, fica como o "tudo" rotulou (bonificação 75/5910) — nenhum palpite de venda.
-    expect(c.linhas.map((l) => `${r6.leitura.itens[l.indice].classe} ${r6.leitura.itens[l.indice].serie} ${r6.leitura.itens[l.indice].cfop}`))
-      .toEqual(['bonificacao 75 5910', 'bonificacao 75 5910']);
-
-    // Linha a linha: uma vira venda, a outra fica bonificação.
-    const l619 = c.linhas.find((l) => l.produto_codigo === '619')!;
-    const decidido = aplicarDecisoes(r6.leitura, r6.casos, {
-      [l740.chave]: { tipo: 'venda', serie: '1', cfop: '5401' },
-      [l619.chave]: { tipo: 'bonificacao', serie: '75', cfop: '5910' },
-    });
-    expect(`${decidido.itens[l740.indice].classe} ${decidido.itens[l740.indice].serie} ${decidido.itens[l740.indice].cfop}`).toBe('venda 1 5401');
-    expect(`${decidido.itens[l619.indice].classe} ${decidido.itens[l619.indice].serie}`).toBe('bonificacao 75');
-    const comoVenda = aplicarDecisoes(r6.leitura, r6.casos, { [l740.chave]: { tipo: 'venda', serie: '1', cfop: '5401' } });
-    const comoBonificacao = r6.leitura;
-    // O valor do mês não muda com a decisão: só a classificação.
-    const total = (l: typeof r6.leitura) => Math.round(l.itens.reduce((s, i) => s + i.valor_nota, 0) * 100) / 100;
-    expect(total(comoBonificacao)).toBe(total(comoVenda));
+  it('exige um completo, e só um de cada', () => {
+    expect(() => prepararImportacao([{ nome: 'BONI', leitura: bonificacao }])).toThrow(/arquivo completo/);
+    expect(() => prepararImportacao([{ nome: 'A', leitura: completo }, { nome: 'B', leitura: completo }])).toThrow(/Um de cada/);
   });
+});
 
-  it('mês sem nenhuma remessa 5910/6910 aceita só o arquivo com tudo (abril e maio na MF, 2026-10-20)', () => {
-    const soVenda = leitura([it_('100', '2026-04-10', '1', '5102', '1647', '652', 2, 80)]);
-    expect(combinarAeB([{ nome: 'MF-04.xlsx', leitura: soVenda }]).leitura).toBe(soVenda);
-    expect(combinarAeB([{ nome: 'MF-04.xlsx', leitura: soVenda }]).soUmArquivo).toBe(true);
-    // O "só 5910/6910" do Forteplus sai vazio: vir junto não atrapalha.
-    expect(combinarAeB([{ nome: 'MF-04.xlsx', leitura: soVenda }, { nome: 'MF-04-5910.xlsx', leitura: leitura([]) }]).leitura).toBe(soVenda);
+describe('problemaDoPeriodo — o período que quem importa confirma', () => {
+  it('a semana de 02 a 08/11 cobre notas de 03 a 06/11', () => {
+    expect(problemaDoPeriodo('2026-11-02', '2026-11-08', '2026-11-03', '2026-11-06')).toBeNull();
+  });
+  it('recusa período que deixa nota de fora, invertido ou em branco', () => {
+    expect(problemaDoPeriodo('2026-11-04', '2026-11-08', '2026-11-03', '2026-11-06')).toContain('de 03/11/2026 a 06/11/2026');
+    expect(problemaDoPeriodo('2026-11-08', '2026-11-02', '2026-11-03', '2026-11-06')).toMatch(/depois da final/);
+    expect(problemaDoPeriodo('', '2026-11-08', '2026-11-03', '2026-11-06')).toMatch(/Informe o período/);
   });
 });

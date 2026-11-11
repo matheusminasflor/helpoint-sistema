@@ -1,9 +1,9 @@
-// Diagnóstico da importação de vendas: lê os 2 arquivos como a tela e imprime o resumo e as anomalias.
-// Uso: npx vite-node scripts/diagnostico-importacao.ts <arquivo-tudo.xlsx> <arquivo-5910.xlsx>
+// Diagnóstico da importação de vendas: lê o completo (e, se vier, o de bonificação) como a tela, e diz o período e a conferência.
+// Uso: npx vite-node scripts/diagnostico-importacao.ts <arquivo-completo.xlsx> [<arquivo-bonificacao.xlsx>]
 import { readFileSync } from 'node:fs';
 import { basename } from 'node:path';
 import * as XLSX from 'xlsx';
-import { combinarAeB, lerRelatorioVendas, CFOPS_DA_REMESSA } from '../src/lib/comercial-import';
+import { prepararImportacao, lerRelatorioVendas, CFOPS_DA_REMESSA } from '../src/lib/comercial-import';
 
 const leituras = process.argv.slice(2).map((p) => {
   const wb = XLSX.read(readFileSync(p), { type: 'buffer' });
@@ -37,12 +37,7 @@ if (vizinhas) {
   }
 }
 
-const r = combinarAeB(leituras);
-for (const c of r.casos) {
-  console.log(`\nCaso ${c.cliente_codigo} ${c.cliente_nome} — notas ${c.documentos.join(',')} — diferença ${c.valor}`);
-  const fmt = (ls: { documento: string; serie: string; cfop: string; quantidade: number }[]) =>
-    ls.map((x) => `${x.documento} s${x.serie} ${x.cfop} ${x.quantidade}un`).join(' + ') || 'não traz';
-  for (const l of c.linhas) console.log(`  ${l.produto_codigo}: tudo ${fmt(l.noTudo)} | só remessa ${fmt(l.noSoRemessa)} | dif ${l.quantidade}un ${l.valor}`);
-}
-console.log(`\nAnomalias: ${r.anomalias.length}`);
-for (const a of r.anomalias) console.log('-', a);
+// O completo, agrupado por cliente; o de bonificação, se vier, confere (2026-11-11). Recusa o formato antigo.
+const r = prepararImportacao(leituras);
+console.log(`
+Período das notas: ${r.primeira} a ${r.ultima} · ${r.leitura.itens.length} itens · conferido com bonificação: ${r.conferidoComBonificacao ? 'sim' : 'não'}`);

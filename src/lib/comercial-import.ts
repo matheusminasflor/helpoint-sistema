@@ -296,241 +296,82 @@ export function lerRelatorioVendas(matriz: unknown[][]): LeituraVendas {
 /** O CFOP da remessa gratuita que o arquivo B traz (o dono exporta "só 5910/6910"). */
 export const CFOPS_DA_REMESSA = new Set(['5910', '6910']);
 
-export interface CombinacaoAeB {
-  leitura: LeituraVendas;
-  /** O que o Forteplus deixou torto e a conta não resolve sozinha — a tela mostra, nunca esconde. */
-  anomalias: string[];
-  /** Venda juntada com a remessa sem nenhuma linha de venda separada: quem importa decide (dono, 2026-10-20). */
-  casos: CasoParaDecidir[];
-  /** Veio 1 arquivo só, sem 5910/6910: a tela pergunta antes de seguir (dono, 2026-10-20). */
-  soUmArquivo: boolean;
-}
-
-/** O que um dos dois arquivos diz de uma linha (cliente + produto no mês). */
-export interface LinhaNoArquivo {
-  documento: string;
-  emissao: string;
-  serie: string;
-  cfop: string;
-  quantidade: number;
-  valor: number;
-}
-
 /**
- * Um produto em que os dois arquivos não batem e a conta não sabe o que é a diferença: o "tudo" traz mais remessa que o
- * "só 5910/6910", e o cliente não tem nenhuma linha de venda no mês para onde devolver. Pode ser venda juntada pelo
- * Forteplus — ou bonificação que o arquivo "só 5910/6910" deixou de fora. Junho/MF, ITALO MEDICE: o "tudo" mostra a
- * nota 18578 (série 75, CFOP 5910) com 24 un do produto 740; o "só 5910/6910" não tem a 18578 e traz a 447 com 12 un.
- * No Forteplus a 18578 é bonificação — o palpite de "venda" estava errado (dono, 2026-10-21). Então a tela mostra o que
- * cada arquivo diz, linha a linha, sem nada marcado, e quem importa decide o tipo, a série e o CFOP.
+ * A IMPORTAÇÃO POR PERÍODO (dono, 2026-11-11). Exportado AGRUPANDO POR CLIENTE, o relatório do Forteplus traz cada
+ * documento na própria linha, com a série verdadeira — o completo sozinho já classifica venda, publicidade (série 1 +
+ * 5910/6910), bonificação (75) e cashback (76). Provado no ano de 2026 inteiro: o arquivo do ano não multiplica mais as
+ * quantidades, e o "só 5910/6910" deu o mesmo valor ao centavo em todos os meses. Antes (out/2026), agrupado por
+ * produto, o Forteplus juntava venda e remessa numa linha só — esse formato agora é recusado.
+ *   - o completo é obrigatório; o de bonificação é opcional e, se vier, confere publicidade, bonificação e cashback mês
+ *     a mês contra o completo, e trava se não baterem;
+ *   - o período sugerido vai da primeira à última nota; quem importa confirma o período que exportou.
  */
-export interface LinhaParaDecidir {
-  chave: string;
-  /** Posição do item da diferença em `leitura.itens`. */
-  indice: number;
-  produto_codigo: string;
-  produto_nome: string;
-  noTudo: LinhaNoArquivo[];
-  noSoRemessa: LinhaNoArquivo[];
-  /** A diferença entre os dois — é ela que precisa de decisão. */
-  quantidade: number;
-  valor: number;
+export interface PreparoDaImportacao {
+  leitura: LeituraVendas;
+  /** A primeira e a última nota do completo — a sugestão do período. */
+  primeira: string;
+  ultima: string;
+  /** O arquivo de bonificação veio e bateu com o completo. */
+  conferidoComBonificacao: boolean;
 }
 
-export interface CasoParaDecidir {
-  chave: string;
-  cliente_codigo: string;
-  cliente_nome: string;
-  /** As notas que aparecem no "tudo" para este cliente nas linhas em dúvida. */
-  documentos: string[];
-  valor: number;
-  linhas: LinhaParaDecidir[];
-}
-
-export interface DecisaoDaLinha {
-  tipo: 'venda' | 'bonificacao';
-  serie: string;
-  cfop: string;
-}
-
-/** Aplica as decisões da tela, linha a linha. Linha sem decisão fica como o "tudo" a rotulou. O valor nunca muda. */
-export function aplicarDecisoes(leitura: LeituraVendas, casos: CasoParaDecidir[], decisoes: Record<string, DecisaoDaLinha>): LeituraVendas {
-  if (casos.length === 0) return leitura;
-  const itens = [...leitura.itens];
-  for (const l of casos.flatMap((c) => c.linhas)) {
-    const d = decisoes[l.chave];
-    if (d) itens[l.indice] = { ...itens[l.indice], serie: d.serie, cfop: d.cfop, classe: d.tipo };
-  }
-  return { ...leitura, itens };
-}
-
-const naLinha = (i: ItemVenda): LinhaNoArquivo => ({
-  documento: i.documento, emissao: i.emissao, serie: i.serie, cfop: i.cfop, quantidade: i.quantidade, valor: i.valor_nota,
-});
-
+const TIPO_DA_SERIE: Record<string, string> = { '1': 'publicidade', '75': 'bonificação', '76': 'cashback' };
 const centavos = (n: number) => Math.round(n * 100) / 100;
 const dataBR = (iso: string) => iso.split('-').reverse().join('/');
 
-/**
- * A IMPORTAÇÃO EM DOIS ARQUIVOS (dono, 2026-10-16). O relatório "Mercadorias Vendidas" do Forteplus JUNTA a venda e a
- * remessa gratuita do MESMO CLIENTE E PRODUTO NO MÊS numa linha só, misturando as duas notas: o número de uma, a
- * data/pedido de outra, a série/CFOP da remessa. N D FIGUEIREDO: 12 un de venda (nota 23362) + 4 de bonificação (nota
- * 1413) viraram "23362 série 75 CFOP 6910, 16 un"; o cliente 1054 teve a bonificação de 04/09 somada na venda de 28/09.
- * Medido em set/2026, no Excel e no PDF: 15 notas assim na INBRAS, 9 na MF; e o arquivo do ano inteiro ainda multiplica
- * as quantidades. O arquivo só com 5910/6910 (B) vem limpo. Então, por mês e por filial:
- *   - a remessa vem inteira do B (a série diz publicidade, bonificação ou cashback);
- *   - do A sai a venda, por CLIENTE + PRODUTO no mês: o que o A rotulou de remessa ALÉM do que o B tem é venda
- *     escondida — volta para a NOTA DE VENDA dela (a nota da linha juntada, quando é de venda, com a data, série e
- *     CFOP dessa nota; senão a nota de venda do cliente naquele dia; senão a única do mês); o que o B tem ALÉM do
- *     rótulo de remessa do A foi somado numa linha de venda (sai dela). O total do A se mantém, ao centavo.
- * Conferido nos arquivos reais de set/2026 da INBRAS: o N D dá 3.643,36 de venda, como o relatório "só venda" dele.
- */
-export function combinarAeB(arquivosEscolhidos: { nome: string; leitura: LeituraVendas }[]): CombinacaoAeB {
-  // Mês sem nenhuma remessa 5910/6910 (dono, 2026-10-20: abril e maio na MF): não há o que juntar, então basta o
-  // arquivo com tudo — e o "só 5910/6910" do Forteplus, que sai vazio, pode vir junto ou não.
+/** Remessa por mês e por tipo (a série diz qual): o que o completo e o de bonificação têm de ter igual. */
+function remessaPorMes(itens: ItemVenda[]) {
+  const m = new Map<string, number>();
+  for (const i of itens) {
+    if (!CFOPS_DA_REMESSA.has(i.cfop)) continue;
+    const k = `${i.emissao.slice(0, 7)}|${TIPO_DA_SERIE[i.serie] ?? `série ${i.serie}`}`;
+    m.set(k, (m.get(k) ?? 0) + i.valor_nota);
+  }
+  return m;
+}
+
+export function prepararImportacao(arquivosEscolhidos: { nome: string; leitura: LeituraVendas }[]): PreparoDaImportacao {
   const arquivos = arquivosEscolhidos.filter((x) => x.leitura.itens.length > 0);
-  const temRemessa = arquivos.some((x) => x.leitura.itens.some((i) => CFOPS_DA_REMESSA.has(i.cfop)));
-  if (arquivos.length === 1 && !temRemessa) {
-    return { leitura: arquivos[0].leitura, anomalias: [], casos: [], soUmArquivo: true };
+  const soRemessa = (l: LeituraVendas) => l.itens.every((i) => CFOPS_DA_REMESSA.has(i.cfop));
+  const completos = arquivos.filter((x) => !soRemessa(x.leitura));
+  const bonificacao = arquivos.filter((x) => soRemessa(x.leitura));
+  if (completos.length !== 1 || bonificacao.length > 1) {
+    throw new Error('Escolha o arquivo completo da filial (e, se quiser conferir, o de bonificação junto). Um de cada.');
   }
-  if (arquivos.length !== 2) {
-    throw new Error(temRemessa
-      ? 'Este mês tem remessa 5910/6910: escolha os 2 arquivos do mesmo mês e da mesma filial, um com tudo e um só com os CFOP 5910/6910.'
-      : 'Escolha o arquivo do mês com tudo (venda e remessa), da mesma filial.');
-  }
-  const soRemessa = (l: LeituraVendas) => l.itens.length > 0 && l.itens.every((i) => CFOPS_DA_REMESSA.has(i.cfop));
-  const b = arquivos.find((x) => soRemessa(x.leitura));
-  const a = arquivos.find((x) => x !== b);
-  if (!b || !a || soRemessa(a.leitura)) {
-    throw new Error('Um dos arquivos tem de trazer só os CFOP 5910/6910 e o outro, tudo (venda e remessa). Exporte de novo.');
-  }
-  const meses = new Set([...a.leitura.itens, ...b.leitura.itens].map((i) => i.emissao.slice(0, 7)));
-  if (meses.size > 1) {
-    throw new Error(`Os arquivos têm notas de ${meses.size} meses (${[...meses].sort().join(', ')}). Exporte um mês por vez: no período maior o Forteplus multiplica as quantidades.`);
+  const { leitura } = completos[0];
+
+  // O formato antigo junta documentos diferentes numa linha só: o mesmo número de nota aparece em mais de uma série.
+  const series = new Map<string, Set<string>>();
+  for (const i of leitura.itens) series.set(i.documento, (series.get(i.documento) ?? new Set()).add(i.serie));
+  const misturados = [...series].filter(([, s]) => s.size > 1);
+  if (misturados.length > 0) {
+    const [doc, s] = misturados[0];
+    throw new Error(`Este arquivo junta documentos diferentes na mesma linha (a nota ${doc} aparece nas séries ${[...s].join(' e ')}${misturados.length > 1 ? ` e mais ${misturados.length - 1} notas assim` : ''}). Exporte de novo o relatório no Forteplus agrupando por cliente.`);
   }
 
-  const chave = (i: ItemVenda) => `${i.cliente_codigo}|${i.produto_codigo}`;
-  const grupos = new Map<string, { naoRemessa: ItemVenda[]; remessaA: ItemVenda[]; b: ItemVenda[] }>();
-  const grupo = (k: string) => {
-    let g = grupos.get(k);
-    if (!g) { g = { naoRemessa: [], remessaA: [], b: [] }; grupos.set(k, g); }
-    return g;
-  };
-  for (const i of a.leitura.itens) {
-    const g = grupo(chave(i));
-    (CFOPS_DA_REMESSA.has(i.cfop) ? g.remessaA : g.naoRemessa).push(i);
-  }
-  for (const i of b.leitura.itens) grupo(chave(i)).b.push(i);
-
-  // As notas de venda do A (uma linha de cada, com a data, a série e o CFOP verdadeiros da nota) — por nota, por cliente
-  // no dia e por cliente no mês — para devolver a venda escondida à nota dela.
-  const notaDeVenda = new Map<string, ItemVenda>();
-  const vendaDoDia = new Map<string, ItemVenda>();
-  const vendasDoMes = new Map<string, Map<string, ItemVenda>>();
-  for (const i of a.leitura.itens) {
-    if (i.classe !== 'venda' || CFOPS_DA_REMESSA.has(i.cfop)) continue;
-    if (!notaDeVenda.has(`${i.cliente_codigo}|${i.documento}`)) notaDeVenda.set(`${i.cliente_codigo}|${i.documento}`, i);
-    if (!vendaDoDia.has(`${i.cliente_codigo}|${i.emissao}`)) vendaDoDia.set(`${i.cliente_codigo}|${i.emissao}`, i);
-    const doMes = vendasDoMes.get(i.cliente_codigo) ?? new Map<string, ItemVenda>();
-    if (!doMes.has(i.documento)) doMes.set(i.documento, i);
-    vendasDoMes.set(i.cliente_codigo, doMes);
-  }
-  const docsDoB = new Set(b.leitura.itens.map((i) => `${i.cliente_codigo}|${i.documento}`));
-  const notaDaVendaEscondida = (r: ItemVenda): ItemVenda | undefined => {
-    const daLinha = notaDeVenda.get(`${r.cliente_codigo}|${r.documento}`);
-    if (daLinha) return daLinha;
-    const doDia = vendaDoDia.get(`${r.cliente_codigo}|${r.emissao}`);
-    if (doDia) return doDia;
-    const doMes = [...(vendasDoMes.get(r.cliente_codigo)?.values() ?? [])];
-    return doMes.length === 1 ? doMes[0] : undefined;
-  };
-
-  const casos = new Map<string, CasoParaDecidir>();
-  const itensDaLinha = new Map<string, ItemVenda>();
-
-  const soma = (xs: ItemVenda[]) => xs.reduce((s, x) => s + x.valor_nota, 0);
-  const qtd = (xs: ItemVenda[]) => xs.reduce((s, x) => s + x.quantidade, 0);
-  const itens: ItemVenda[] = [...b.leitura.itens];
-  const anomalias: string[] = [];
-  let soNoB = 0;
-  for (const g of grupos.values()) {
-    const sobra = centavos(soma(g.remessaA) - soma(g.b));
-    const sobraQtd = qtd(g.remessaA) - qtd(g.b);
-    const vendas = g.naoRemessa.map((x) => ({ ...x }));
-    // A linha juntada: a que leva o número de uma nota de venda; senão a que não é nota do B.
-    const ref = g.remessaA.find((r) => notaDeVenda.has(`${r.cliente_codigo}|${r.documento}`))
-      ?? g.remessaA.find((r) => !docsDoB.has(`${r.cliente_codigo}|${r.documento}`))
-      ?? g.remessaA[0] ?? g.b[0] ?? g.naoRemessa[0];
-    if (sobra > 0.005) {
-      // Venda escondida sob o rótulo de remessa: volta para a nota de venda dela, com a data, série e CFOP da nota.
-      const nota = notaDaVendaEscondida(ref);
-      // Sem nota de venda para onde devolver, o item fica como o "tudo" o rotulou até quem importa decidir — nunca um
-      // palpite de venda (o palpite errou em junho/MF).
-      const cfop = nota?.cfop ?? ref.cfop;
-      const item: ItemVenda = {
-        ...ref,
-        emissao: nota?.emissao ?? ref.emissao, documento: nota?.documento ?? ref.documento, serie: nota?.serie ?? ref.serie,
-        tipo_documento: nota?.tipo_documento ?? ref.tipo_documento, cfop, classe: classificarCfop(cfop),
-        vendedor_codigo: nota?.vendedor_codigo ?? ref.vendedor_codigo, vendedor_nome: nota?.vendedor_nome ?? ref.vendedor_nome,
-        quantidade: Math.max(0, sobraQtd), valor_nota: sobra, desconto: 0,
-      };
-      vendas.push(item);
-      if (!nota) {
-        const chave = ref.cliente_codigo;
-        const caso = casos.get(chave) ?? {
-          chave, cliente_codigo: ref.cliente_codigo, cliente_nome: ref.cliente_nome, documentos: [], valor: 0, linhas: [],
-        };
-        const linha: LinhaParaDecidir = {
-          chave: `${ref.cliente_codigo}|${ref.produto_codigo}`, indice: -1,
-          produto_codigo: ref.produto_codigo, produto_nome: ref.produto_nome,
-          noTudo: [...g.remessaA, ...g.naoRemessa].map(naLinha), noSoRemessa: g.b.map(naLinha),
-          quantidade: Math.max(0, sobraQtd), valor: sobra,
-        };
-        caso.linhas.push(linha);
-        caso.valor = centavos(caso.valor + sobra);
-        for (const r of g.remessaA) if (!caso.documentos.includes(r.documento)) caso.documentos.push(r.documento);
-        casos.set(chave, caso);
-        itensDaLinha.set(linha.chave, item);
-      }
-    } else if (sobra < -0.005) {
-      // A remessa do B foi somada numa linha de venda do A: sai da maior linha de venda.
-      const falta = -sobra;
-      const alvo = vendas.filter((x) => x.classe === 'venda').sort((x, y) => y.valor_nota - x.valor_nota)[0];
-      if (alvo && alvo.valor_nota >= falta - 0.005) {
-        alvo.valor_nota = centavos(alvo.valor_nota - falta);
-        alvo.quantidade = Math.max(0, alvo.quantidade + sobraQtd);
-      } else {
-        soNoB += falta;
-        anomalias.push(`Cliente ${ref.cliente_codigo}, produto ${ref.produto_codigo} (pedido ${ref.pedido ?? '—'}, nota ${ref.documento}, ${dataBR(ref.emissao)}): R$ ${falta.toFixed(2)} de remessa que o relatório completo não traz — a remessa fica; a venda não muda. Confira no Forteplus.`);
-      }
+  if (bonificacao.length === 1) {
+    const a = remessaPorMes(leitura.itens), b = remessaPorMes(bonificacao[0].leitura.itens);
+    const diferencas = [...new Set([...a.keys(), ...b.keys()])].sort()
+      .filter((k) => Math.abs(centavos((a.get(k) ?? 0) - (b.get(k) ?? 0))) > 0.005)
+      .map((k) => {
+        const [mes, tipo] = k.split('|');
+        return `${mes.split('-').reverse().join('/')} ${tipo}: completo R$ ${centavos(a.get(k) ?? 0).toFixed(2)} × bonificação R$ ${centavos(b.get(k) ?? 0).toFixed(2)}`;
+      });
+    if (diferencas.length > 0) {
+      throw new Error(`O arquivo completo e o de bonificação não batem — nada foi gravado. ${diferencas.slice(0, 3).join('; ')}${diferencas.length > 3 ? `; e mais ${diferencas.length - 3}` : ''}. Confira se os dois são do mesmo período e da mesma filial.`);
     }
-    itens.push(...vendas.filter((x) => Math.abs(x.valor_nota) > 0.005 || x.quantidade !== 0));
   }
 
-  const descartes = {
-    cabecalho_repetido: 0, em_branco: 0, rodape: 0, grupo_cliente: 0, remessa_do_completo: 0,
-  } as Record<MotivoDescarte, number>;
-  for (const { leitura } of [a, b]) {
-    for (const [m, n] of Object.entries(leitura.descartes)) descartes[m as MotivoDescarte] += n;
-  }
-  const linhasLidas = a.leitura.linhasLidas + b.leitura.linhasLidas;
-  // As linhas do A que a conta trocou (a remessa vem do B; a venda escondida vira item): contadas, nunca sumidas.
-  descartes.remessa_do_completo = linhasLidas - itens.length - Object.values(descartes).reduce((s, n) => s + n, 0);
-  return {
-    leitura: {
-      itens,
-      descartes,
-      linhasLidas,
-      cfopsDesconhecidos: a.leitura.cfopsDesconhecidos,
-      // O total do relatório completo, mais a remessa que só o B trouxe — a soma dos itens tem de dar exatamente isto.
-      totalImpresso: a.leitura.totalImpresso === null ? null : centavos(a.leitura.totalImpresso + soNoB),
-    },
-    anomalias,
-    casos: [...casos.values()].map((c) => ({
-      ...c, linhas: c.linhas.map((l) => ({ ...l, indice: itens.indexOf(itensDaLinha.get(l.chave)!) })),
-    })),
-    soUmArquivo: false,
-  };
+  const datas = leitura.itens.map((i) => i.emissao).sort();
+  return { leitura, primeira: datas[0], ultima: datas[datas.length - 1], conferidoComBonificacao: bonificacao.length === 1 };
+}
+
+/** O período confirmado por quem importa cobre todas as notas do arquivo? `null` quando cobre; senão, o porquê. */
+export function problemaDoPeriodo(de: string, ate: string, primeira: string, ultima: string): string | null {
+  if (!de || !ate) return 'Informe o período que você exportou do Forteplus.';
+  if (de > ate) return 'A data inicial é depois da final.';
+  if (primeira < de || ultima > ate) return `O arquivo tem notas de ${dataBR(primeira)} a ${dataBR(ultima)}: o período precisa cobrir todas.`;
+  return null;
 }
 
 // ---------------------------------------------------------------------------
