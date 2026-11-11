@@ -300,13 +300,16 @@ export default function MKTEstoque() {
           pessoas={profiles} produtoInicial={produtoDaLinha} onFechar={() => { setLancando(null); setProdutoDaLinha(''); }} />
       )}
       {editando && (
-        <FormularioProduto produto={editando === 'novo' ? null : editando} onFechar={() => setEditando(null)} />
+        <FormularioProduto produto={editando === 'novo' ? null : editando} podeLancar={podeLancar}
+          saldoAtual={editando === 'novo' ? 0 : saldos.get(editando.id) ?? 0} onFechar={() => setEditando(null)} />
       )}
     </div>
   );
 }
 
-function FormularioProduto({ produto, onFechar }: { produto: ProdutoMkt | null; onFechar: () => void }) {
+function FormularioProduto({ produto, podeLancar, saldoAtual, onFechar }: {
+  produto: ProdutoMkt | null; podeLancar: boolean; saldoAtual: number; onFechar: () => void;
+}) {
   const salvar = useSalvarProdutoMkt();
   const { data: catalogo = [] } = useCatalogoDeCompras();
   const [nome, setNome] = useState(produto?.nome ?? '');
@@ -317,7 +320,10 @@ function FormularioProduto({ produto, onFechar }: { produto: ProdutoMkt | null; 
   const [catalogoId, setCatalogoId] = useState(produto?.compras_produto_id ?? '');
   const [ativo, setAtivo] = useState(produto?.ativo ?? true);
   // A quantidade de hoje vira a primeira entrada (dono, 2026-11-11: em 10/11 ela foi escrita no campo "Unidade").
-  const [inicial, setInicial] = useState('');
+  // Na edição (chamado #421, 2026-11-11), o campo vem com o saldo atual: mudar o número lança a entrada ou a retirada
+  // da diferença, com a hora e quem editou. Quem não pode lançar não vê o campo.
+  const [inicial, setInicial] = useState(produto ? String(saldoAtual) : '');
+  const mostraQuantidade = !produto || podeLancar;
   const numero = Number(minimo.replace(',', '.'));
   const quantidadeInicial = inicial.trim() ? Number(inicial.replace(',', '.')) : 0;
   const valido = nome.trim() !== '' && unidade.trim() !== '' && Number.isFinite(numero) && numero >= 0
@@ -335,15 +341,15 @@ function FormularioProduto({ produto, onFechar }: { produto: ProdutoMkt | null; 
             <Input id="pm-nome" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Ex.: Caneca MF PRO" />
           </div>
           <div className="grid grid-cols-2 gap-3">
-            {!produto && (
+            {mostraQuantidade && (
               <div className="space-y-1.5">
-                <Label htmlFor="pm-inicial">Quantidade que tem hoje</Label>
+                <Label htmlFor="pm-inicial">{produto ? 'Quantidade em estoque' : 'Quantidade que tem hoje'}</Label>
                 <Input id="pm-inicial" inputMode="decimal" className="font-mono" placeholder="0" aria-describedby="pm-minimo-ajuda"
                   value={inicial} onChange={(e) => setInicial(e.target.value)} />
               </div>
             )}
             <div className="space-y-1.5">
-              <Label htmlFor="pm-unidade">Unidade *</Label>
+              <Label htmlFor="pm-unidade">Unidade de medida *</Label>
               <select id="pm-unidade" className={campo} value={unidade} onChange={(e) => setUnidade(e.target.value)}>
                 {unidades.map((u) => <option key={u.valor} value={u.valor}>{u.rotulo}</option>)}
               </select>
@@ -355,7 +361,9 @@ function FormularioProduto({ produto, onFechar }: { produto: ProdutoMkt | null; 
           </div>
           <p id="pm-minimo-ajuda" className="text-xs text-muted-foreground -mt-1">
             {produto
-              ? 'Abaixo desse número o Marketing é avisado. Para mudar a quantidade, use "Entrada" ou "Retirar" na linha do produto.'
+              ? (mostraQuantidade
+                ? 'Mudou a quantidade? O sistema registra a entrada ou a retirada da diferença, com a data e o seu nome. Abaixo do número de aviso, o Marketing é avisado.'
+                : 'Abaixo desse número o Marketing é avisado.')
               : 'A quantidade de hoje entra como a primeira entrada, com a data e o seu nome. Abaixo do número de aviso, o Marketing é avisado.'}
           </p>
           <div className="grid grid-cols-2 gap-3">
@@ -389,7 +397,8 @@ function FormularioProduto({ produto, onFechar }: { produto: ProdutoMkt | null; 
           <Button variant="outline" onClick={onFechar}>Cancelar</Button>
           <Button disabled={!valido || salvar.isPending} onClick={() => salvar.mutate(
             { id: produto?.id, nome, unidade, categoria, local, estoque_minimo: numero, compras_produto_id: catalogoId || null, ativo,
-              quantidade_inicial: produto ? 0 : quantidadeInicial },
+              // Produto novo: a quantidade inteira. Edição: só a diferença para o saldo (campo vazio não mexe).
+              diferenca: !produto ? quantidadeInicial : mostraQuantidade && inicial.trim() ? quantidadeInicial - saldoAtual : 0 },
             { onSuccess: onFechar },
           )}>Salvar</Button>
         </DialogFooter>

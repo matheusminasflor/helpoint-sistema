@@ -70,14 +70,17 @@ export function useCatalogoDeCompras() {
   });
 }
 
-/** `quantidade_inicial` só no produto novo: vira a primeira entrada, com a hora e quem cadastrou. */
-export type ProdutoMktParaSalvar = Omit<ProdutoMkt, 'id'> & { id?: string; quantidade_inicial?: number };
+/**
+ * `diferenca`: no produto novo, a quantidade de hoje (vira a primeira entrada); na edição, o quanto a quantidade mudou
+ * (chamado #421): positiva vira entrada, negativa vira retirada feita por quem editou. Sempre com a hora e quem lançou.
+ */
+export type ProdutoMktParaSalvar = Omit<ProdutoMkt, 'id'> & { id?: string; diferenca?: number };
 
 export function useSalvarProdutoMkt() {
   const { tenantId, user } = useAuth();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, quantidade_inicial, ...p }: ProdutoMktParaSalvar) => {
+    mutationFn: async ({ id, diferenca, ...p }: ProdutoMktParaSalvar) => {
       const dados = {
         nome: p.nome.trim(), unidade: p.unidade.trim() || 'un', categoria: p.categoria?.trim() || null,
         local: p.local?.trim() || null, estoque_minimo: p.estoque_minimo, compras_produto_id: p.compras_produto_id || null,
@@ -90,15 +93,17 @@ export function useSalvarProdutoMkt() {
           : await tabela.insert(dados as never).select('id'),
         'o produto do estoque',
       ) as unknown as { id: string }[];
-      if (!id && quantidade_inicial && quantidade_inicial > 0) {
+      if (diferenca && Number.isFinite(diferenca) && diferenca !== 0 && (id || diferenca > 0)) {
+        const saida = diferenca < 0;
         expectRows(
           await supabase.from('mkt_estoque_movimentos' as never)
             .insert({
-              produto_id: salvo[0].id, tipo: 'entrada', quantidade: quantidade_inicial, quando: new Date().toISOString(),
-              motivo: 'Quantidade no cadastro do produto', created_by: user?.id,
+              produto_id: salvo[0].id, tipo: saida ? 'saida' : 'entrada', quantidade: Math.abs(diferenca),
+              quando: new Date().toISOString(), created_by: user?.id, retirado_por: saida ? user?.id : null,
+              motivo: id ? 'Ajuste da quantidade no cadastro' : 'Quantidade no cadastro do produto',
             } as never)
             .select('id'),
-          'a quantidade de hoje (o produto foi salvo; lance a entrada em "Entrada")',
+          'a quantidade (o produto foi salvo; lance a diferença em "Entrada" ou "Retirar")',
         );
       }
     },
