@@ -55,7 +55,7 @@ with l as (
 alter table public.ped_decisoes disable trigger user;
 alter table public.ped_pagamentos disable trigger user;
 insert into public.ped_decisoes (tenant_id, checklist_id, versao, status) select c.tenant_id, c.id, c.versao, 'Aprovado' from public.ped_checklists c where c.id = (select id from ck);
-insert into public.ped_pagamentos (tenant_id, checklist_id, status, data_pagamento) select (select a from f), (select id from ck), 'Pago', '2026-10-30';
+insert into public.ped_pagamentos (tenant_id, checklist_id, versao, status, data_pagamento) select c.tenant_id, c.id, c.versao, 'Pago', '2026-10-30' from public.ped_checklists c where c.id = (select id from ck);
 alter table public.ped_decisoes enable trigger user;
 alter table public.ped_pagamentos enable trigger user;
 insert into public.ped_pedidos (tenant_id, checklist_id, ordem, tipo, serie, filial, numero, valor)
