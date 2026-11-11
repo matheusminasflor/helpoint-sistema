@@ -567,7 +567,8 @@ select throws_like(
       false
     )
   $sql$,
-  'A competência%já foi importada%',
+  -- Desde 20270212722000 a reserva é por trecho de dias: a mensagem nomeia os dias, não o mês.
+  '%já foi importada%marque "substituir"%',
   'reimportar a mesma competência+filial sem substituir é recusado'
 );
 select is(
