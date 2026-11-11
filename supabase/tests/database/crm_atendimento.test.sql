@@ -110,7 +110,7 @@ select is((select string_agg(x->>'lead_id', ',') from d, jsonb_array_elements(v-
   'para responder: o lead aberto que escreveu por último');
 select is((select string_agg((x->>'lead_id') || ':' || array_to_string(array(select jsonb_array_elements_text(x->'faltam')), '+'), ',' order by x->>'lead_id')
              from d, jsonb_array_elements(v->'campos_faltando') x),
-  '1:cnpj+valor,3:motivo', 'campos faltando: a venda de salão cobra CNPJ e valor; a perda, só o motivo (20270212721100)');
+  '1:cnpj+valor,3:motivo', 'campos faltando: a venda de salão cobra CNPJ e valor; a perda, só o motivo (20270212721200)');
 select is((select format('%s|%s', count(*) filter (where x->>'situacao' is not null),
                          string_agg((x->>'lead_id') || ':' || (x->>'venda') || ':' || ((x->>'valor')::numeric)::int, ',' order by (x->>'lead_id')::int)
                            filter (where x->>'venda' is not null))

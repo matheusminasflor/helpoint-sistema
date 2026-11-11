@@ -1,4 +1,4 @@
--- A SAUDAÇÃO DA LYRA E O CADASTRO POR SEGMENTO (20270212721100; dono, 2026-11-11).
+-- A SAUDAÇÃO DA LYRA E O CADASTRO POR SEGMENTO (20270212721200; dono, 2026-11-11).
 -- Quarta, 11/11, com a Lyra no ar. O lead 1 escreve às 10h, a Lyra põe em Entrada › Contato inicial e saúda 4 segundos
 -- depois, sem nome, e o cliente não responde mais. O lead 2 estava em "Contato inicial" desde outubro (antes da Lyra),
 -- escreve às 10h e a atendente responde sem nome às 10h10.

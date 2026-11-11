@@ -52,7 +52,7 @@ export interface LeadDoPeriodo {
   atendente: string | null; situacao: SituacaoDoLead | null; minutos: number | null; venda: 'ganha' | 'perdida' | null; valor: number | null;
   /** De onde veio (`origemDoLead` no coletor); null = sem origem (lead antigo ou WhatsApp sem a frase do link). */
   origem?: string | null;
-  /** A etapa no Kommo agora, e se o lead já fechou (20270212721100). */
+  /** A etapa no Kommo agora, e se o lead já fechou (20270212721200). */
   etapa?: string | null;
   fechado?: boolean;
 }
