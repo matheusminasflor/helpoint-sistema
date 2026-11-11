@@ -68,27 +68,43 @@ export function useCatalogoDeCompras() {
   });
 }
 
-export type ProdutoMktParaSalvar = Omit<ProdutoMkt, 'id'> & { id?: string };
+/** `quantidade_inicial` só no produto novo: vira a primeira entrada, com a hora e quem cadastrou. */
+export type ProdutoMktParaSalvar = Omit<ProdutoMkt, 'id'> & { id?: string; quantidade_inicial?: number };
 
 export function useSalvarProdutoMkt() {
-  const { tenantId } = useAuth();
+  const { tenantId, user } = useAuth();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...p }: ProdutoMktParaSalvar) => {
+    mutationFn: async ({ id, quantidade_inicial, ...p }: ProdutoMktParaSalvar) => {
       const dados = {
         nome: p.nome.trim(), unidade: p.unidade.trim() || 'un', categoria: p.categoria?.trim() || null,
         local: p.local?.trim() || null, estoque_minimo: p.estoque_minimo, compras_produto_id: p.compras_produto_id || null,
         ativo: p.ativo,
       };
       const tabela = supabase.from('mkt_estoque_produtos' as never);
-      expectRows(
+      const salvo = expectRows(
         id
           ? await tabela.update(dados as never).eq('id', id).select('id')
           : await tabela.insert(dados as never).select('id'),
         'o produto do estoque',
-      );
+      ) as unknown as { id: string }[];
+      if (!id && quantidade_inicial && quantidade_inicial > 0) {
+        expectRows(
+          await supabase.from('mkt_estoque_movimentos' as never)
+            .insert({
+              produto_id: salvo[0].id, tipo: 'entrada', quantidade: quantidade_inicial, quando: new Date().toISOString(),
+              motivo: 'Quantidade no cadastro do produto', created_by: user?.id,
+            } as never)
+            .select('id'),
+          'a quantidade de hoje (o produto foi salvo; lance a entrada em "Entrada")',
+        );
+      }
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['estoque-mkt', 'produtos', tenantId] }); toast.success('Produto salvo.'); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['estoque-mkt', 'produtos', tenantId] });
+      qc.invalidateQueries({ queryKey: ['estoque-mkt', 'movimentos', tenantId] });
+      toast.success('Produto salvo.');
+    },
     onError: (e: Error) => toast.error(e.message.includes('mkt_estoque_produto_nome_unico')
       ? 'Já existe um produto com este nome.'
       : e.message.includes('mkt_estoque_um_por_produto_de_compra')

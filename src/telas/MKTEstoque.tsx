@@ -25,6 +25,8 @@ import {
 import { dataHora, fromLocalDateTimeInput, toLocalDateTimeInput } from '@/lib/dates';
 import { cn } from '@/lib/utils';
 import { saldosDoEstoque } from '@/lib/indicadores-do-marketing';
+import { UNIDADES_DE_COMPRA } from '@/lib/unidades-de-compra';
+import { mensagemDeErro } from '@/lib/supabase-result';
 
 type Lancamento = 'entrada' | 'saida';
 
@@ -36,14 +38,17 @@ export default function MKTEstoque() {
   const podeLancar = can('estoque', 'create');
   const podeCadastrar = can('estoque', 'edit');
   const podeApagar = can('estoque', 'delete');
-  const { data: produtos = [], isLoading } = useProdutosMkt();
-  const { data: movimentos = [] } = useMovimentosMkt();
+  const { data: produtos = [], isLoading, error: erroProdutos } = useProdutosMkt();
+  const { data: movimentos = [], isLoading: lendoMovimentos, error: erroMovimentos } = useMovimentosMkt();
+  // Sem os lançamentos o saldo sairia zero em tudo: a falha aparece, nunca vira "Sem estoque".
+  const erro = (erroProdutos ?? erroMovimentos) as Error | null;
   const { profiles } = useProfiles();
   const apagar = useApagarDoEstoqueMkt();
   const [lancando, setLancando] = useState<Lancamento | null>(null);
   // "Retirar" direto na linha (etapa 4 · Marketing, 2026-10-25): o produto já vem escolhido.
   const [produtoDaLinha, setProdutoDaLinha] = useState('');
   const retirar = (id: string) => { setProdutoDaLinha(id); setLancando('saida'); };
+  const darEntrada = (id: string) => { setProdutoDaLinha(id); setLancando('entrada'); };
   const [apagando, setApagando] = useState<{ id: string; texto: string } | null>(null);
   const [editando, setEditando] = useState<ProdutoMkt | 'novo' | null>(null);
   const [verInativos, setVerInativos] = useState(false);
@@ -73,7 +78,11 @@ export default function MKTEstoque() {
         {/* Busca no estoque (etapa 4 · Compras, 2026-10-24): nenhum dos dois estoques buscava. */}
         <Input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar produto" aria-label="Buscar produto no estoque" className="max-w-xs" />
         <Card className="overflow-hidden">
-          {isLoading ? (
+          {erro ? (
+            <p role="alert" className="p-4 text-sm text-status-danger">
+              Não deu para ler o estoque: {mensagemDeErro(erro)}. Recarregue a página; se continuar, avise a TI.
+            </p>
+          ) : isLoading || lendoMovimentos ? (
             <div className="p-4 space-y-1">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
           ) : visiveis.length === 0 ? (
             <EmptyState icon={Boxes} title="Nenhum produto no estoque"
@@ -118,7 +127,10 @@ export default function MKTEstoque() {
                         {(podeCadastrar || podeLancar) && (
                           <td className="px-3 py-2 text-right whitespace-nowrap">
                             {podeLancar && p.ativo && (
-                              <Button size="sm" variant="outline" disabled={saldo <= 0} onClick={() => retirar(p.id)}>Retirar</Button>
+                              <>
+                                <Button size="sm" variant="outline" className="mr-1.5" onClick={() => darEntrada(p.id)}>Entrada</Button>
+                                <Button size="sm" variant="outline" disabled={saldo <= 0} onClick={() => retirar(p.id)}>Retirar</Button>
+                              </>
                             )}
                             {podeCadastrar && (
                               <Button variant="ghost" size="icon" title="Editar produto" onClick={() => setEditando(p)}>
@@ -144,7 +156,9 @@ export default function MKTEstoque() {
 
         <Card className="overflow-hidden">
           <h2 className="px-3 py-2 text-[15px] font-semibold border-b border-border">Entradas e retiradas</h2>
-          {movimentos.length === 0 ? (
+          {erroMovimentos ? (
+            <p role="alert" className="px-3 py-4 text-sm text-status-danger">Não deu para ler os lançamentos: {mensagemDeErro(erroMovimentos)}.</p>
+          ) : movimentos.length === 0 ? (
             <p className="px-3 py-4 text-sm text-muted-foreground">Nada lançado ainda.</p>
           ) : (
             <div className="overflow-x-auto">
@@ -216,8 +230,14 @@ function FormularioProduto({ produto, onFechar }: { produto: ProdutoMkt | null; 
   const [minimo, setMinimo] = useState(produto ? String(produto.estoque_minimo) : '');
   const [catalogoId, setCatalogoId] = useState(produto?.compras_produto_id ?? '');
   const [ativo, setAtivo] = useState(produto?.ativo ?? true);
+  // A quantidade de hoje vira a primeira entrada (dono, 2026-11-11: em 10/11 ela foi escrita no campo "Unidade").
+  const [inicial, setInicial] = useState('');
   const numero = Number(minimo.replace(',', '.'));
-  const valido = nome.trim() !== '' && unidade.trim() !== '' && Number.isFinite(numero) && numero >= 0;
+  const quantidadeInicial = inicial.trim() ? Number(inicial.replace(',', '.')) : 0;
+  const valido = nome.trim() !== '' && unidade.trim() !== '' && Number.isFinite(numero) && numero >= 0
+    && Number.isFinite(quantidadeInicial) && quantidadeInicial >= 0;
+  // Unidade antiga fora da lista (gravada antes de 2026-11-11) continua escolhível até alguém trocar.
+  const unidades = UNIDADES_DE_COMPRA.some((u) => u.valor === unidade) ? UNIDADES_DE_COMPRA : [...UNIDADES_DE_COMPRA, { valor: unidade, rotulo: unidade }];
 
   return (
     <Dialog open onOpenChange={(o) => !o && onFechar()}>
@@ -229,17 +249,28 @@ function FormularioProduto({ produto, onFechar }: { produto: ProdutoMkt | null; 
             <Input id="pm-nome" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Ex.: Caneca MF PRO" />
           </div>
           <div className="grid grid-cols-2 gap-3">
+            {!produto && (
+              <div className="space-y-1.5">
+                <Label htmlFor="pm-inicial">Quantidade que tem hoje</Label>
+                <Input id="pm-inicial" inputMode="decimal" className="font-mono" placeholder="0" aria-describedby="pm-minimo-ajuda"
+                  value={inicial} onChange={(e) => setInicial(e.target.value)} />
+              </div>
+            )}
             <div className="space-y-1.5">
               <Label htmlFor="pm-unidade">Unidade *</Label>
-              <Input id="pm-unidade" value={unidade} onChange={(e) => setUnidade(e.target.value)} placeholder="un, caixa, rolo" />
+              <select id="pm-unidade" className={campo} value={unidade} onChange={(e) => setUnidade(e.target.value)}>
+                {unidades.map((u) => <option key={u.valor} value={u.valor}>{u.rotulo}</option>)}
+              </select>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="pm-minimo">Estoque mínimo</Label>
+              <Label htmlFor="pm-minimo">Avisar quando ficar abaixo de</Label>
               <Input id="pm-minimo" inputMode="decimal" className="font-mono" placeholder="0" aria-describedby="pm-minimo-ajuda" value={minimo} onChange={(e) => setMinimo(e.target.value)} />
             </div>
           </div>
           <p id="pm-minimo-ajuda" className="text-xs text-muted-foreground -mt-1">
-            O estoque mínimo define quando o Marketing é avisado. A quantidade em estoque é registrada em "Registrar entrada".
+            {produto
+              ? 'Abaixo desse número o Marketing é avisado. Para mudar a quantidade, use "Entrada" ou "Retirar" na linha do produto.'
+              : 'A quantidade de hoje entra como a primeira entrada, com a data e o seu nome. Abaixo do número de aviso, o Marketing é avisado.'}
           </p>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
@@ -271,7 +302,8 @@ function FormularioProduto({ produto, onFechar }: { produto: ProdutoMkt | null; 
         <DialogFooter>
           <Button variant="outline" onClick={onFechar}>Cancelar</Button>
           <Button disabled={!valido || salvar.isPending} onClick={() => salvar.mutate(
-            { id: produto?.id, nome, unidade, categoria, local, estoque_minimo: numero, compras_produto_id: catalogoId || null, ativo },
+            { id: produto?.id, nome, unidade, categoria, local, estoque_minimo: numero, compras_produto_id: catalogoId || null, ativo,
+              quantidade_inicial: produto ? 0 : quantidadeInicial },
             { onSuccess: onFechar },
           )}>Salvar</Button>
         </DialogFooter>
