@@ -36,6 +36,7 @@ import { useTenantPath } from '@/hooks/useTenantPath';
 import { useChecklistDoLancamento, useChecklists, useItensDoChecklist, type ChecklistResumo } from '@/hooks/usePedidosChecklist';
 import { formatBRL, formatDateBR } from '@/types/financeiro';
 import { cn } from '@/lib/utils';
+import { casaBusca } from '@/lib/tabela';
 
 type Grupo = 'devolvidos' | 'analise' | 'reajustes' | 'negociacao' | 'pagos' | 'finalizados' | 'cancelados';
 
@@ -64,11 +65,10 @@ export default function ComercialPedidosEnviados() {
   const vendedoras = useMemo(() => [...new Map(checklists.map((c) => [c.vendedor_id, c.vendedor_nome ?? 'Sem nome'])).entries()]
     .sort((a, b) => a[1].localeCompare(b[1])), [checklists]);
   const daVendedora = useMemo(() => checklists.filter((c) => vendedora === TODAS || c.vendedor_id === vendedora), [checklists, vendedora]);
-  const buscados = useMemo(() => {
-    const t = busca.trim().toLowerCase();
-    return daVendedora.filter((c) => !t || c.protocolo.toLowerCase().includes(t) || c.cliente_nome.toLowerCase().includes(t)
-      || c.cliente_codigo.includes(t));
-  }, [daVendedora, busca]);
+  // Ignora acento e maiúscula ("salao" acha "SALÃO"), como as outras buscas do sistema.
+  const buscados = useMemo(
+    () => daVendedora.filter((c) => casaBusca([c.protocolo, c.cliente_nome, c.cliente_codigo], busca)),
+    [daVendedora, busca]);
   const contagem = (g: (typeof GRUPOS)[number]) => daVendedora.filter(g.cabe).length;
   const grupoAtual = GRUPOS.find((g) => g.valor === aba);
 

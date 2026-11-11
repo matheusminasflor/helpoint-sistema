@@ -616,7 +616,7 @@ function AQuemProcurar({ linhas, noRecorte, aoAbrir, temAConfirmar }: {
                     <span className="block text-[12px] text-muted-foreground">{m.porque(l)}</span>
                   </button>
                   {m.id === 'a_faturar' ? (
-                    <Button asChild size="sm"><Link to={tenantPath('/comercial/pedidos')}>Informar nota</Link></Button>
+                    <Button asChild size="sm"><Link to={tenantPath('/comercial/pedidos')}>Ver os pedidos</Link></Button>
                   ) : dor ? (
                     <span className="rounded px-2 py-0.5 text-[12px] badge-danger">Motivo: {dor}</span>
                   ) : (
@@ -677,7 +677,7 @@ function ComoLer({ corte }: { corte: string | null }) {
           <li>
             <strong className="text-foreground">De onde vem a venda:</strong> das notas do Forteplus
             {corte && <> até <strong className="text-foreground">{formatDateBR(corte)}</strong></>} e, depois disso, das notas
-            informadas pelo comercial. Pedido sem nota não conta. Cliente condição conta pela Venda total. Bonificação, publicidade e cashback não são venda.
+            que o Financeiro sobe na emissão. Pedido sem nota não conta. Cliente condição conta pela Venda total. Bonificação, publicidade e cashback não são venda.
           </li>
           <li>
             <strong className="text-foreground">Comprou:</strong> quanto o cliente comprou no mês (ou período) do filtro Período.
@@ -762,7 +762,7 @@ function ClienteMesAMes({ linha, onClose, carteira, competencia, intervalo, fili
                 {pedidos.map((p) => (
                   <li key={p.pedido_id} className="flex flex-wrap items-center justify-between gap-2 px-2 py-1.5">
                     <span>Pedido {p.numero} · {p.filial} · <span className="font-mono">{formatBRL(p.valor_pedido)}</span></span>
-                    <Link to={tenantPath('/comercial/pedidos')} className="text-primary underline">Informar nota</Link>
+                    <Link to={tenantPath('/comercial/pedidos')} className="text-primary underline">Ver o pedido</Link>
                   </li>
                 ))}
               </ul>

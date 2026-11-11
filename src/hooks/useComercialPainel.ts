@@ -1,7 +1,7 @@
 // Leitura do Painel Comercial (L6a). Um hook por função SQL — a conta mora
 // no banco (§4.7): nenhuma tela lê `com_vendas_itens` direto, o PostgREST
 // corta em 1000 linhas em silêncio, e aqui são dezenas de milhares por ano.
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { unwrap } from '@/lib/supabase-result';
@@ -133,16 +133,32 @@ export function useAnosComVenda() {
  * regra de ano não errar numa cópia esquecida. Ver `useAnosComVenda` acima
  * (a RPC) e `<FiltrosComerciais>` (os `<Select>` de ano/filial).
  */
+/**
+ * Estado guardado na aba do navegador (sessionStorage): o período escolhido num relatório continua lá ao sair e
+ * voltar pelo menu, e vale para os outros relatórios (revisão do Comercial, 2026-11-12: "o período se perde").
+ * Fechou a aba, volta ao padrão. Sem sessionStorage (modo privado restrito), só não guarda.
+ */
+function useNaSessao<T>(chave: string, inicial: T): [T, (v: T) => void] {
+  const [valor, setValor] = useState<T>(() => {
+    try { const s = sessionStorage.getItem(chave); return s ? (JSON.parse(s) as T) : inicial; } catch { return inicial; }
+  });
+  const guardar = useCallback((novo: T) => {
+    setValor(novo);
+    try { sessionStorage.setItem(chave, JSON.stringify(novo)); } catch { /* sem sessão: só não guarda */ }
+  }, [chave]);
+  return [valor, guardar];
+}
+
 export function useAnoComVenda() {
   const anoAtual = new Date().getFullYear();
-  const [ano, setAno] = useState(anoAtual);
+  const [ano, setAno] = useNaSessao('comercial-relatorios:ano', anoAtual);
   const { data: anosComVenda } = useAnosComVenda();
   const anos = anosComVenda && anosComVenda.length > 0 ? anosComVenda : [anoAtual];
   useEffect(() => {
     if (anosComVenda && anosComVenda.length > 0 && !anosComVenda.includes(ano)) {
       setAno(anosComVenda[0]);
     }
-  }, [anosComVenda, ano]);
+  }, [anosComVenda, ano, setAno]);
   return { ano, setAno, anos };
 }
 
@@ -163,9 +179,9 @@ export function useAnoComVenda() {
  * `setIntervalo` para `<FiltrosComerciais>`, que só devolve intervalo válido.
  */
 export function usePeriodoComercial(ano: number) {
-  const [periodo, setPeriodoBruto] = useState<PeriodoComercial>('ano');
-  const [mes, setMes] = useState(new Date().getMonth() + 1);
-  const [intervalo, setIntervalo] = useState<IntervaloDeDias | null>(null);
+  const [periodo, setPeriodoBruto] = useNaSessao<PeriodoComercial>('comercial-relatorios:periodo', 'ano');
+  const [mes, setMes] = useNaSessao('comercial-relatorios:mes', new Date().getMonth() + 1);
+  const [intervalo, setIntervalo] = useNaSessao<IntervaloDeDias | null>('comercial-relatorios:intervalo', null);
   const { de, ate } = calcularPeriodoComercial(periodo, ano, mes, todayISO(), intervalo);
   const setPeriodo = (novo: PeriodoComercial) => {
     if (novo === PERSONALIZADO && periodo !== PERSONALIZADO) setIntervalo({ de, ate });
@@ -478,18 +494,6 @@ export function useTabelasBase() {
       return rows.map((r) => r.tabela_base);
     },
   });
-}
-
-/**
- * Escapa um valor para dentro da sintaxe do `.or()` do PostgREST — vírgula e
- * parênteses são delimitadores dela; sem escape, um termo com "LTDA, ME"
- * quebra o filtro e devolve 400 sem mensagem na tela (achado 6.2 da
- * auditoria da L6c). Aspas duplas escapam o valor inteiro; a aspa dupla e a
- * barra invertida do próprio termo também precisam de escape, senão fecham
- * a citação antes da hora.
- */
-function valorParaFiltroOr(valor: string): string {
-  return `"${valor.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
 }
 
 /**

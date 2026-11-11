@@ -247,15 +247,13 @@ export function useBuscarClienteParaLancar(termo: string) {
   return useQuery({
     queryKey: ['comercial', 'buscar-cliente-lancar', tenantId, t],
     enabled: !!tenantId && t.length >= 2,
-    queryFn: async (): Promise<ClienteParaLancar[]> => {
-      const padrao = `%${t.replace(/[%_\\]/g, (c) => `\\${c}`)}%`;
-      return unwrap(await supabase
-        .from('com_clientes')
+    // Ignora acento e aceita vírgula no nome ("SALÃO X, LTDA" quebrava o filtro): `com_buscar_clientes`.
+    queryFn: async (): Promise<ClienteParaLancar[]> =>
+      unwrap(await supabase
+        .rpc('com_buscar_clientes' as never, { p_termo: t } as never)
         .select(COLUNAS_CLIENTE)
-        .or(`razao_social.ilike.${padrao},fantasia.ilike.${padrao},codigo.ilike.${padrao}`)
         .order('razao_social')
-        .limit(20)) as ClienteParaLancar[];
-    },
+        .limit(20)) as unknown as ClienteParaLancar[],
   });
 }
 

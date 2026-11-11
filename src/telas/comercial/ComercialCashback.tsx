@@ -196,7 +196,7 @@ export default function ComercialCashback() {
       <p className="text-[13px] text-muted-foreground">
         {faixasPorTabela.size === 0 ? 'Nenhuma grade de cashback cadastrada. ' : `${faixasPorTabela.size} grade(s) de cashback em uso. `}
         As grades ficam em{' '}
-        <Link to="/comercial/configuracoes" className="text-primary underline underline-offset-2">Comercial → Configurações → Cashback</Link>.
+        <Link to="/comercial/configuracoes?aba=cashback" className="text-primary underline underline-offset-2">Comercial → Configurações → Cashback</Link>.
       </p>
 
       {/* Com direito — cliente, tabela, compra, meses com direito, última faixa, cashback, meta e o que falta. */}

@@ -10,7 +10,7 @@ const CHAVE = 'lancamento-fluxo-entendido';
 const PASSOS = [
   { titulo: 'Lance o pedido', texto: 'Preencha o lançamento e o checklist.', cor: 'border-t-border' },
   { titulo: 'Financeiro aprova', texto: 'Confere e aprova o pedido.', cor: 'border-t-border' },
-  { titulo: 'Faturou? Informe a nota', texto: 'Número, valor faturado e data de emissão.', cor: 'border-t-status-danger' },
+  { titulo: 'Financeiro sobe a nota', texto: 'Ao emitir, o Financeiro anexa o XML e o PDF: você é avisada.', cor: 'border-t-status-danger' },
   { titulo: 'Conta na hora', texto: 'Entra na Carteira e nos Indicadores, a confirmar.', cor: 'border-t-status-info' },
   { titulo: 'Sexta: Forteplus confere', texto: 'A importação confirma e o valor dela prevalece.', cor: 'border-t-status-success' },
 ];

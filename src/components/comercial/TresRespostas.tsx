@@ -7,6 +7,7 @@ import { useAcompanhamentoDasCarteiras } from '@/hooks/useRaioX';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { tresRespostas } from '@/lib/tres-respostas';
 import { formatBRL } from '@/types/financeiro';
+import { todayISO } from '@/lib/dates';
 
 interface Recorte { carteiras: string[]; competencia: string; intervalo: { de: string; ate: string } | null | undefined; de: string; ate: string }
 
@@ -30,10 +31,15 @@ export function TresRespostas({ carteiras, competencia, intervalo, de, ate, vend
     vendido, meta, faturado: composicao?.faturado ?? vendido, condicao: composicao?.condicao ?? 0, aFaturar: aFaturar.valor,
   });
   const aConfirmar = composicao?.a_confirmar ?? 0;
+  // Revisão do Comercial (2026-11-12): mês já fechado não é "até agora"; e a venda conta entre os indicadores com
+  // meta (antes, com só a meta de venda, o cartão dizia "Sem meta definida" ao lado da venda "Abaixo" em vermelho).
+  const fechado = ate < todayISO();
+  const comMeta = indicadores + (r.temMeta ? 1 : 0);
+  const abaixo = abaixoDaMeta + (r.temMeta && (r.percentual ?? 0) < 100 ? 1 : 0);
   return (
     <section className="space-y-3" aria-label="Quanto vendi, quanto falta e o que pode entrar">
       <div>
-        <p className="text-[13px] text-muted-foreground">Venda total até agora</p>
+        <p className="text-[13px] text-muted-foreground">{fechado ? 'Venda total do período' : 'Venda total até agora'}</p>
         <p className="text-[26px] font-bold font-mono leading-tight">
           {formatBRL(vendido)}
           {r.percentual !== null && (
@@ -60,10 +66,11 @@ export function TresRespostas({ carteiras, competencia, intervalo, de, ate, vend
       <div className="grid gap-2 sm:grid-cols-3">
         <Resposta rotulo="Falta para a meta" valor={r.falta === null ? 'Sem meta' : formatBRL(r.falta)} />
         <Link to={tenantPath('/comercial/pedidos')} className="block rounded-md hover:bg-muted/50">
-          <Resposta rotulo={aFaturar.pedidos ? `A faturar · ${rotuloDosPedidos(aFaturar.pedidos)}` : 'A faturar'} valor={formatBRL(aFaturar.valor)}
-            nota="Não conta na meta · ver pedidos" />
+          {/* É o que está pendente HOJE (pedido aprovado sem nota), não o do mês escolhido: o rótulo diz isso. */}
+          <Resposta rotulo={aFaturar.pedidos ? `A faturar hoje · ${rotuloDosPedidos(aFaturar.pedidos)}` : 'A faturar hoje'} valor={formatBRL(aFaturar.valor)}
+            nota="Pedidos aprovados sem nota · não conta na meta" />
         </Link>
-        <Resposta rotulo="Indicadores abaixo da meta" valor={indicadores ? `${abaixoDaMeta} de ${indicadores}` : 'Sem meta definida'} alerta={abaixoDaMeta > 0} />
+        <Resposta rotulo="Indicadores abaixo da meta" valor={comMeta ? `${abaixo} de ${comMeta}` : 'Sem meta definida'} alerta={abaixo > 0} />
       </div>
     </section>
   );
@@ -85,7 +92,7 @@ export function PartesDaVenda({ carteiras, de, ate }: Pick<Recorte, 'carteiras' 
 /** O que ainda pode entrar, logo depois da Venda total. Não tem meta nem farol: não conta. */
 export function LinhaDoAFaturar({ carteiras, competencia, intervalo }: Pick<Recorte, 'carteiras' | 'competencia' | 'intervalo'>) {
   const aFaturar = useAFaturar(carteiras, competencia, intervalo);
-  return <LinhaDaParte rotulo={`A faturar · ${rotuloDosPedidos(aFaturar.pedidos)}`} valor={aFaturar.valor} nota="não conta" />;
+  return <LinhaDaParte rotulo={`A faturar hoje · ${rotuloDosPedidos(aFaturar.pedidos)}`} valor={aFaturar.valor} nota="não conta" />;
 }
 
 function LinhaDaParte({ rotulo, valor, classe = '', nota = '—' }: { rotulo: string; valor: number; classe?: string; nota?: string }) {

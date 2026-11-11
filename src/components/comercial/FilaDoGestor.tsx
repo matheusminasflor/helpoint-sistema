@@ -46,7 +46,7 @@ export function FilaDoGestor() {
           </ul>
         </div>
         <div>
-          <p className="text-[13px] mb-1 text-muted-foreground">Falta informar a nota ({semNota.length})</p>
+          <p className="text-[13px] mb-1 text-muted-foreground">Aguardando a nota do Financeiro ({semNota.length})</p>
           <ul className="space-y-1 text-[13px]">
             {semNota.slice(0, 6).map((p, i) => {
               const espera = p.aprovado_em ? esperaDaNota(diasDesde(p.aprovado_em, todayISO())) : null;
