@@ -233,7 +233,7 @@ export function useCompetenciasImportadas(filial: Filial | null) {
   return useQuery({
     queryKey: ['comercial', 'competencias-importadas', tenantId, filial],
     enabled: !!tenantId && !!filial,
-    // Em trechos de dias desde 20270212721200: a semana importada reserva só os dias dela.
+    // Em trechos de dias desde 20270212722000: a semana importada reserva só os dias dela.
     queryFn: async (): Promise<{ competencia: string; de: string; ate: string }[]> =>
       unwrap(await supabase.rpc('com_competencias_importadas', { p_filial: filial! })) as unknown as
         { competencia: string; de: string; ate: string }[],
