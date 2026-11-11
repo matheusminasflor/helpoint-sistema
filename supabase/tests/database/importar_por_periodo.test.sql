@@ -1,4 +1,4 @@
--- IMPORTAR POR PERÍODO (migration 20270212721200; dono, 2026-11-11): ano, mês ou semana.
+-- IMPORTAR POR PERÍODO (migration 20270212722000; dono, 2026-11-11): ano, mês ou semana.
 --   1    a semana sobre um mês já importado, sem "substituir", é recusada
 --   2-3  com "substituir", troca só os dias da semana: o resto do mês fica
 --   4    a reserva do mês vira dois trechos, com a semana no meio
