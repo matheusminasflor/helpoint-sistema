@@ -1,7 +1,7 @@
 // O desenho do fluxo em Lançamentos (dono, 2026-11-05): aparece até a pessoa marcar "não mostrar mais", e a interrogação
 // abre de novo. ponytail: a escolha fica neste navegador, como "Como ler" da Carteira. Se precisar seguir a pessoa entre
 // aparelhos, vai para o perfil.
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { CircleHelp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -21,14 +21,12 @@ const jaEntendeu = () => {
 
 // `comecaFechado`: quem chega para lançar um cliente ou corrigir um lançamento não ganha duas janelas uma sobre a outra.
 export function FluxoDoLancamento({ comecaFechado }: { comecaFechado: boolean }) {
+  // Abre sozinho UMA vez (dono, 2026-11-12); depois, só pela interrogação.
   const [aberto, setAberto] = useState(() => !comecaFechado && !jaEntendeu());
-  const [naoMostrar, setNaoMostrar] = useState(false);
-  const fechar = () => {
-    if (naoMostrar) {
-      try { localStorage.setItem(CHAVE, '1'); } catch { /* sem armazenamento: vale só nesta visita */ }
-    }
-    setAberto(false);
-  };
+  useEffect(() => {
+    if (aberto) { try { localStorage.setItem(CHAVE, '1'); } catch { /* sem armazenamento: vale só nesta visita */ } }
+  }, [aberto]);
+  const fechar = () => setAberto(false);
   return (
     <>
       <Button type="button" variant="outline" size="icon" aria-label="Ver como funciona" title="Ver como funciona" onClick={() => setAberto(true)}>
@@ -46,12 +44,8 @@ export function FluxoDoLancamento({ comecaFechado }: { comecaFechado: boolean })
               </li>
             ))}
           </ol>
-          <DialogFooter className="sm:justify-between items-center gap-2">
-            <label className="flex items-center gap-2 text-[14px] min-h-9">
-              <input type="checkbox" checked={naoMostrar} onChange={(e) => setNaoMostrar(e.target.checked)} />
-              Entendi, não mostrar mais
-            </label>
-            <Button onClick={fechar}>Fechar</Button>
+          <DialogFooter>
+            <Button onClick={fechar}>Entendi</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

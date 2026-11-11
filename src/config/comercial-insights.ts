@@ -42,9 +42,11 @@ export interface VisaoInsight {
 
 /** A ordem aqui é a ordem do menu. */
 export const VISOES: VisaoInsight[] = [
-  { valor: 'vendas', rotulo: 'Vendas', descricao: 'Faturamento, curva ABC e produtos por faixa, do relatório do Forteplus',
+  // Nomes de 2026-11-12 (revisão aprovada pelo dono, https://claude.ai/artifact/DogLjeM9MuJUzFt2H7ALFV seção 8). Os relatórios
+  // saíram do menu lateral: viraram as abas de "Relatórios" (AbasDosRelatorios). Ficam aqui pelo título de cada tela.
+  { valor: 'vendas', rotulo: 'Faturamento e Curva ABC', descricao: 'Faturamento do período, a Curva ABC e os produtos por faixa, do relatório do Forteplus',
     rota: '/comercial/vendas', secao: 'vendas', grupo: 'Relatórios' },
-  { valor: 'clientes', rotulo: 'Clientes e ficha', descricao: 'A ficha de cada cliente (vendas e relacionamento) e quem comprava e parou de comprar',
+  { valor: 'clientes', rotulo: 'Clientes', descricao: 'A ficha de cada cliente (vendas e relacionamento) e quem comprava e parou de comprar',
     rota: '/comercial/clientes-parados', secao: 'clientes', grupo: 'Relatórios' },
   { valor: 'bonificacao', rotulo: 'Bonificação', descricao: 'Bonificação por cliente e os pedidos em condição',
     rota: '/comercial/bonificacao', secao: 'bonificacao', grupo: 'Relatórios' },
@@ -53,13 +55,13 @@ export const VISOES: VisaoInsight[] = [
   // 2026-10-04 (decisão do dono): quem atingiu uma diretriz comercial no mês e o que já foi concedido.
   { valor: 'diretrizes', rotulo: 'Benefícios a conceder', descricao: 'Quem atingiu uma diretriz comercial no mês: a conceder, perto de atingir e concedidos',
     rota: '/comercial/beneficios', secao: 'diretrizes_beneficio', grupo: 'Gestão' },
-  { valor: 'atendimento', rotulo: 'Atendimento (chamados)', descricao: 'Indicadores dos chamados do Comercial',
+  { valor: 'atendimento', rotulo: 'Atendimento de chamados', descricao: 'Indicadores dos chamados do Comercial: prazo, tempo e volume',
     rota: '/comercial/atendimento', secao: 'atendimento', grupo: 'Relatórios' },
   // Relatórios novos (etapa 5).
-  { valor: 'venda-por-familia', rotulo: 'Venda por família e região', descricao: 'Que linha cresce, que cidade compra, onde há espaço',
+  { valor: 'venda-por-familia', rotulo: 'Vendas por linha e região', descricao: 'Que linha cresce, que cidade compra, onde há espaço',
     rota: '/comercial/relatorios/venda-por-familia', secao: 'vendas', grupo: 'Relatórios' },
   // Raio-X do Cliente (dono, 2026-11-05).
-  { valor: 'motivos-e-dores', rotulo: 'Motivos e dores', descricao: 'Por que os clientes não estão comprando, o que foi proposto e o que funcionou',
+  { valor: 'motivos-e-dores', rotulo: 'Retenção de clientes', descricao: 'Motivos de não compra: por que os clientes pararam, o que foi proposto e o que funcionou',
     rota: '/comercial/relatorios/motivos-e-dores', secao: 'clientes', grupo: 'Relatórios' },
   { valor: 'retornos', rotulo: 'Agenda de retornos', descricao: 'Quem ligar hoje e que retorno atrasou, da equipe',
     rota: '/comercial/agenda-de-retornos', secao: 'lancamentos', grupo: 'Gestão' },

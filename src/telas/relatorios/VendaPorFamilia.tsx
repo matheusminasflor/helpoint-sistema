@@ -10,6 +10,7 @@ import { agrupar } from '@/lib/relatorios-novos';
 import { soma } from '@/lib/relatorio-contas';
 import { formatBRL } from '@/types/financeiro';
 import { AbasSegmentadas } from '@/components/ui/abas-segmentadas';
+import { AbasDosRelatorios } from '@/components/comercial/AbasDosRelatorios';
 
 type Por = 'familia' | 'estado' | 'cidade';
 const ROTULO: Record<Por, string> = { familia: 'Família', estado: 'Estado', cidade: 'Cidade' };
@@ -44,7 +45,7 @@ export default function VendaPorFamilia() {
     { chave: 'devolucao', rotulo: 'Devolução', valor: (l) => l.devolucao, mostrar: (l) => formatBRL(l.devolucao), direita: true },
   ];
   return (
-    <ModeloDeRelatorio titulo="Venda por família e por região" icone={MapPinned} arquivo={`venda-por-${por}`}
+    <ModeloDeRelatorio titulo="Vendas por linha e região" icone={MapPinned} arquivo={`venda-por-${por}`} abas={<AbasDosRelatorios />}
       descricao="Que linha cresce, que cidade compra, onde há espaço. Do faturado (Forteplus), venda menos devolução."
       periodo={periodo} linhas={agrupadas} colunas={colunas} chave={(l) => l.grupo} carregando={carregando} erro={erro}
       vazio="Nenhuma venda importada no período."

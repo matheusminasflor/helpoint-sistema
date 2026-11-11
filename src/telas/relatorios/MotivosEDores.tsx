@@ -18,6 +18,7 @@ import { useQueryState } from '@/hooks/useQueryState';
 import { useDepartmentPermissions } from '@/hooks/useAccessProfiles';
 import { casaBusca } from '@/lib/tabela';
 import { linkRaioX } from '@/config/comercial-insights';
+import { AbasDosRelatorios } from '@/components/comercial/AbasDosRelatorios';
 import { competenciaAtual } from '@/lib/competencia-comercial';
 import { todayISO } from '@/lib/dates';
 import { gerarRelatorioPdf } from '@/lib/relatorio-pdf';
@@ -99,8 +100,8 @@ export default function MotivosEDores() {
   };
 
   return (
-    <ModeloDeRelatorio titulo="Motivos e dores" icone={SearchCheck} arquivo="motivos-e-dores"
-      descricao="Por que os clientes não estão comprando, o que foi proposto e o que funcionou." exportavel={podeExportar}
+    <ModeloDeRelatorio titulo="Retenção de clientes" icone={SearchCheck} arquivo="retencao-de-clientes" abas={<AbasDosRelatorios />}
+      descricao="Motivos de não compra: por que os clientes pararam ou diminuíram, o que foi proposto e o que funcionou." exportavel={podeExportar}
       linhas={data} colunas={colunas} chave={(l) => l.dor_id} carregando={isLoading} erro={error}
       vazio="Nenhuma dor registrada neste recorte."
       controles={(

@@ -38,9 +38,11 @@ export interface ColunaDoRelatorio<T> {
 }
 
 export function ModeloDeRelatorio<T>({
-  titulo, descricao, icone, periodo, controles, acima, resumo, colunas, linhas, chave, carregando, erro, vazio, arquivo, exportavel = true,
+  titulo, descricao, icone, periodo, controles, acima, resumo, colunas, linhas, chave, carregando, erro, vazio, arquivo, exportavel = true, abas,
 }: {
   titulo: string; descricao: string; icone: LucideIcon;
+  /** As abas do grupo de relatórios do setor, logo abaixo do título (ex.: AbasDosRelatorios do Comercial). */
+  abas?: ReactNode;
   periodo?: PeriodoDoRelatorio | null;
   /** Filtros e alternâncias próprios do relatório, ao lado do período. */
   controles?: ReactNode;
@@ -71,6 +73,7 @@ export function ModeloDeRelatorio<T>({
         actions={exportavel ? <Button variant="outline" size="sm" className="max-[860px]:hidden" disabled={ordenadas.length === 0} onClick={exportar}>
           <FileDown className="w-4 h-4 mr-1.5" aria-hidden="true" />Exportar
         </Button> : undefined} />
+      {abas}
       <div className="px-4 lg:px-8 pb-6 space-y-4">
         {(periodo || controles) && (
           <div className="flex flex-wrap items-center gap-3">

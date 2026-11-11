@@ -21,11 +21,13 @@ function useAFaturar(carteiras: string[], competencia: string, intervalo: Recort
 
 const rotuloDosPedidos = (n: number) => `${n} ${n === 1 ? 'pedido' : 'pedidos'}`;
 
-export function TresRespostas({ carteiras, competencia, intervalo, de, ate, vendido, meta, abaixoDaMeta, indicadores }: Recorte & {
-  vendido: number; meta: number | null; abaixoDaMeta: number; indicadores: number;
+export function TresRespostas({ carteiras, competencia, intervalo, de, ate, vendido: vendidoDoPainel, meta, abaixoDaMeta, indicadores }: Recorte & {
+  /** A venda do painel (todas as carteiras da vendedora). Sem ela (uma carteira escolhida), vale a da composição. */
+  vendido?: number; meta: number | null; abaixoDaMeta: number; indicadores: number;
 }) {
   const tenantPath = useTenantPath();
   const { data: composicao } = useComposicaoDaVenda({ de, ate, carteira: carteiras.join(', ') });
+  const vendido = vendidoDoPainel ?? composicao?.venda_total ?? 0;
   const aFaturar = useAFaturar(carteiras, competencia, intervalo);
   const r = tresRespostas({
     vendido, meta, faturado: composicao?.faturado ?? vendido, condicao: composicao?.condicao ?? 0, aFaturar: aFaturar.valor,

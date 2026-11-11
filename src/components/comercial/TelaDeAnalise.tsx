@@ -6,6 +6,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { FonteDoNumero, type Fonte } from '@/components/comercial/FonteDoNumero';
 import { VISOES, type Visao } from '@/config/comercial-insights';
 import { ExportarATela } from '@/components/comercial/ExportarATela';
+import { AbasDosRelatorios } from '@/components/comercial/AbasDosRelatorios';
 
 const FONTE: Partial<Record<Visao, Fonte>> = {
   vendas: 'faturado', clientes: 'faturado', bonificacao: 'faturado', cashback: 'faturado', diretrizes: 'faturado',
@@ -18,6 +19,7 @@ export function TelaDeAnalise({ visao, children }: { visao: Visao; children: Rea
     <div className="flex flex-col min-h-full">
       <PageHeader title={v.rotulo} description={v.descricao} icon={BarChart3} status={fonte && <FonteDoNumero fonte={fonte} />}
         actions={<ExportarATela arquivo={`comercial-${visao}`} />} />
+      <AbasDosRelatorios />
       {children}
     </div>
   );

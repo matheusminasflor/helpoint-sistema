@@ -133,6 +133,8 @@ const ComercialPedidosEnviados = lazy(() => import('@/telas/comercial/ComercialP
 const ComercialIndicadores = lazy(() => import('@/telas/comercial/ComercialIndicadores'));
 const ComercialCarteiras = lazy(() => import('@/telas/comercial/ComercialCarteiras'));
 const ComercialAtendimentoCrm = lazy(() => import('@/telas/comercial/ComercialAtendimentoCrm'));
+const ComercialPainelDoDia = lazy(() => import('@/telas/comercial/ComercialPainelDoDia'));
+const ComercialRelatoriosDoMenu = lazy(() => import('@/telas/comercial/ComercialRelatoriosDoMenu'));
 const RelMotivosEDores = lazy(() => import('@/telas/relatorios/MotivosEDores'));
 const ComercialFunil = lazy(() => import('@/telas/crm/ComercialFunil'));
 const ComercialNegocio = lazy(() => import('@/telas/crm/ComercialNegocio'));
@@ -366,6 +368,9 @@ export function StaffAppRoutes() {
           aqui. Nenhum código navegava para ele. Em 2026-09-28 (LEVA O) o endereço que se
           esperaria para "indicadores do comercial" passou a ser os indicadores do comercial. */}
       <Route path="comercial/indicadores" element={S(<RequireComercial><ComercialIndicadores /></RequireComercial>)} />
+      {/* Revisão de 2026-11-12: o Painel do Comercial (o primeiro item do menu) e "Relatórios" (leva às abas). */}
+      <Route path="comercial/inicio" element={S(<RequireComercial><ComercialPainelDoDia /></RequireComercial>)} />
+      <Route path="comercial/relatorios" element={S(<RequireComercial><ComercialRelatoriosDoMenu /></RequireComercial>)} />
       <Route path="comercial/lancamentos" element={S(<RequireComercial><ComercialLancamentos /></RequireComercial>)} />
       <Route path="comercial/pedidos" element={S(<RequireComercial><ComercialPedidosEnviados /></RequireComercial>)} />
       <Route path="comercial/carteiras" element={S(<RequireComercial><ComercialCarteiras /></RequireComercial>)} />

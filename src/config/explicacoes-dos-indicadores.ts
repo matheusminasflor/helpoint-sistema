@@ -922,6 +922,12 @@ export const EXPLICACOES = {
     deOndeVem: "Os leads fechados do Kommo no período, lidos de hora em hora.",
     comoCalcula: "Venda de Salão e de Distribuidor: CNPJ e valor. Venda de Consumidor final: telefone e valor. Venda que ficou na Entrada: o segmento e o valor. Perda: só o motivo. No distribuidor, o valor vem do faturado do Forteplus; sem valor digitado no Kommo, o aviso continua como \"digitar no Kommo\".",
   },
+  'com.comissao': {
+    titulo: "Comissão",
+    oQueE: "Quanto você tem a receber de comissão no período. A comissão é paga só sobre o que foi FATURADO, com nota fiscal emitida.",
+    deOndeVem: "Garantida: as vendas com nota (Forteplus ou a nota que o Financeiro sobe). A confirmar: o que foi lançado ou vendido e ainda está sem nota. O valor se atualiza sozinho quando a nota chega.",
+    comoCalcula: "Carteiras ESPECIAL e DEMAIS ESTADOS: 0,5% de toda a venda do mês, só se a carteira bater 100% da meta. Atendimento do CRM: consumidor final e salão 10%; novo distribuidor 5% do 1º pedido faturado. \"A confirmar\" é previsão: pedido alterado, devolvido ou cancelado muda o valor. O mês fecha no último dia.",
+  },
   'crm.sem_segmento': {
     titulo: "Sem segmento",
     oQueE: "Clientes que conversaram no período e continuam na Entrada do Kommo, sem Consumidor, Salão ou Distribuidor.",

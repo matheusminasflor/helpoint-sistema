@@ -9,7 +9,8 @@ import {
   CheckCircle2, Receipt, HeartPulse, FolderLock, Palette,
   Gift, FileSignature, Banknote, CalendarOff, PanelLeftClose, PanelLeftOpen, X, Wallet, TrendingUp, PiggyBank, FileBarChart,
   ShoppingCart, Package, Boxes, Handshake, GraduationCap, KanbanSquare, PackageCheck, Factory, Building2, Upload,
-  IdCard, ClipboardList, Gauge, Briefcase, Clock, BookMarked, Newspaper, Store, ListChecks, Star, PlugZap, Building, Headset } from 'lucide-react';
+  IdCard, ClipboardList, Gauge, Briefcase, Clock, BookMarked, Newspaper, Store, ListChecks, Star, PlugZap, Building, Headset,
+  LayoutDashboard, PhoneCall } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useVisibleModules } from '@/hooks/useVisibleModules';
@@ -29,7 +30,6 @@ import type { Department } from '@/config/access-profile-schemas';
 import { abreATela, telaDoPerfil } from '@/config/telas-do-perfil';
 import { useSetoresQueConfiguro } from '@/hooks/useSetoresQueConfiguro';
 import { ROTA_DOS_SETORES } from '@/config/setores-de-configuracao';
-import { VISOES } from '@/config/comercial-insights';
 import { VISOES_DIRETORIA, rotaDaVisaoDiretoria, resolverVisaoDiretoria } from '@/config/diretoria-insights';
 import { resolverAcessoImportacoes } from '@/lib/importacoes-acesso';
 import { estaPausada } from '@/config/telas-pausadas';
@@ -182,24 +182,24 @@ const crmMenuItems: MenuItem[] = [
 // (`@/config/comercial-insights`). O que mostra o lançado (o que a vendedora registra) fica no "Meu dia"; o que vem
 // da nota do Forteplus, em "Relatórios" (dono, 2026-10-15: o nome de todo setor); o que a gestão concede, em "Gestão".
 const MEU_DIA = 'Meu dia';
-const visoesDoGrupo = (grupo: string): MenuItem[] => VISOES.filter((v) => v.grupo === grupo).map((v) => ({
-  to: v.rota, icon: v.valor === 'atendimento' ? Ticket : BarChart3, label: v.rotulo, title: v.descricao, secao: grupo,
-}));
 
+// Revisão de 2026-11-12 (aprovada pelo dono, https://claude.ai/artifact/DogLjeM9MuJUzFt2H7ALFV): 18 itens viram 11, com
+// nomes de mercado. Os 8 relatórios viram UM item, "Relatórios", com as abas no alto de cada um (AbasDosRelatorios).
+// Distribuidores sai do menu até o primeiro distribuidor entrar no portal (a TI continua em TI › Distribuidores; o
+// endereço segue valendo). Lei de Hick: menos portas; posição em série: o que se usa todo dia, em cima.
+const DESEMPENHO = 'Desempenho';
+const ANALISES = 'Análises';
 const comercialMenuItems: MenuItem[] = [
-  // A planilha de Gestão Comercial dentro do sistema (LEVA O, 2026-09-28): a aba de cada
-  // vendedora vira Lançamentos, e o Painel do Gestor vira Indicadores.
-  { to: '/comercial/lancamentos', icon: ClipboardList, label: 'Lançamentos', title: 'Registrar contatos, vendas e ações do dia', secao: MEU_DIA },
-  { to: '/comercial/pedidos', icon: PackageCheck, label: 'Pedidos enviados', title: 'Os checklists enviados ao Financeiro e em que pé cada um está', secao: MEU_DIA },
-  { to: '/comercial/carteiras', icon: Briefcase, label: 'Carteira', title: 'Cada cliente da carteira, e a carteira contra a meta da Diretoria', secao: MEU_DIA },
-  { to: '/comercial/indicadores', icon: Gauge, label: 'Indicadores', title: 'Meta e realizado de cada indicador (os seus, ou da equipe para o gestor)', secao: MEU_DIA },
-  // Projeto do Kommo, parte 4b (dono, 2026-11-09): ao lado de Carteira e Indicadores.
-  { to: '/comercial/crm', icon: Headset, label: 'Atendimento do CRM', title: 'Quem escreveu no Kommo, quem respondeu e em quanto tempo', secao: MEU_DIA },
-  { to: '/comercial/chamados', icon: Ticket, label: 'Fila de chamados', title: 'Fila de chamados do Comercial', secao: MEU_DIA },
-  { to: '/comercial/distribuidores', icon: Store, label: 'Distribuidores', title: 'Os distribuidores no portal: salões, estoque, pedidos e carrinhos abertos', secao: MEU_DIA },
-  ...visoesDoGrupo(RELATORIOS),
-  ...visoesDoGrupo('Gestão'),
-  { to: '/comercial/diretrizes', icon: BookMarked, label: 'Diretrizes do Comercial', secao: DO_SETOR },
+  { to: '/comercial/inicio', icon: LayoutDashboard, label: 'Painel do Comercial', title: 'Minha venda do mês, minha comissão e o que fazer hoje', secao: MEU_DIA },
+  { to: '/comercial/lancamentos', icon: ClipboardList, label: 'Registro de atividades', title: 'Registrar contatos, vendas e ações do dia', secao: MEU_DIA },
+  { to: '/comercial/agenda-de-retornos', icon: PhoneCall, label: 'Agenda de retornos', title: 'Quem ligar hoje e que retorno atrasou', secao: MEU_DIA },
+  { to: '/comercial/carteiras', icon: Briefcase, label: 'Carteira de clientes', title: 'Cada cliente da carteira, e a carteira contra a meta da Diretoria', secao: MEU_DIA },
+  { to: '/comercial/pedidos', icon: PackageCheck, label: 'Pedidos', title: 'Os pedidos enviados ao Financeiro e em que pé cada um está', secao: MEU_DIA },
+  { to: '/comercial/indicadores', icon: Gauge, label: 'Metas e desempenho', title: 'Meta, realizado e comissão de cada vendedora', secao: DESEMPENHO },
+  { to: '/comercial/crm', icon: Headset, label: 'Atendimento digital', title: 'WhatsApp e Instagram no Kommo: quem escreveu, quem respondeu e em quanto tempo', secao: DESEMPENHO },
+  { to: '/comercial/chamados', icon: Ticket, label: 'Chamados do Comercial', title: 'Fila de chamados do Comercial', secao: DESEMPENHO },
+  { to: '/comercial/relatorios', icon: BarChart3, label: 'Relatórios', title: 'Faturamento e Curva ABC, Clientes, Retenção, Bonificação, Cashback e mais', secao: ANALISES },
+  { to: '/comercial/diretrizes', icon: BookMarked, label: 'Políticas comerciais', secao: DO_SETOR },
   { to: '/comercial/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações do Comercial', secao: DO_SETOR },
 ];
 
@@ -552,9 +552,9 @@ export function AppSidebar({ isDrawer = false, drawerOpen = false, onCloseDrawer
     { id: 'expedicao', label: 'Expedição',     icon: PackageCheck,   items: withoutConfig(expedicaoMenuItems, 'expedicao'), show: modules.showExpedicao, home: '/expedicao/chamados' },
     { id: 'producao',  label: 'Produção',      icon: Factory,        items: withoutConfig(producaoMenuItems, 'producao'),  show: modules.showProducao,  home: '/producao/chamados' },
     { id: 'comercial', label: 'Comercial',     icon: Handshake,      items: withoutConfig(comercialMenuItems, 'comercial'), show: modules.showComercial,
-      // Quem entra no Comercial cai no trabalho dela, não na fila de chamados (etapa 4 · Comercial, 2026-10-24): a
-      // vendedora em Lançamentos, o gestor (vê a equipe) na Carteira.
-      home: canComercial('reports', 'view_team_metrics') ? '/comercial/carteiras' : '/comercial/lancamentos' },
+      // Quem entra no Comercial cai no Painel do Comercial (revisão de 2026-11-12): a venda, a comissão e o que fazer
+      // hoje — para a vendedora a dela, para o gestor a da equipe. Sem a caixinha dos Lançamentos, a Carteira.
+      home: canComercial('lancamentos', 'view') ? '/comercial/inicio' : '/comercial/carteiras' },
     { id: 'educacional', label: 'Educacional', icon: GraduationCap, items: withoutConfig(educacionalMenuItems, 'educacional'), show: modules.showEducacional, home: '/educacional/chamados' },
     { id: 'diretoria', label: 'Diretoria',   icon: Building2,     items: withoutConfig(diretoriaMenuItems), show: modules.showDiretoria, home: '/diretoria' },
     { id: 'config',    label: 'Configurações',icon: Settings,    items: configItems,        show: configItems.length > 0,  home: modules.showSettings ? '/configuracoes/sistema' : (configItems[0]?.to ?? '/inicio') },

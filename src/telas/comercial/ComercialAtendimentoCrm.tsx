@@ -14,6 +14,7 @@ import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { ExplicacaoDoIndicador } from '@/components/ajuda/ExplicacaoDoIndicador';
 import type { IdDaExplicacao } from '@/config/explicacoes-dos-indicadores';
 import { useCrmAtendimento, useCrmAtualizadoEm } from '@/hooks/useCrmAtendimento';
+import { useComissao } from '@/hooks/useComissao';
 import { usePeriodoNaUrl } from '@/hooks/usePeriodoNaUrl';
 import { PERIODOS_DA_REUNIAO, intervaloDoPeriodoRapido, rotuloDoIntervalo } from '@/lib/period';
 import { dataHora, diaCurto } from '@/lib/dates';
@@ -123,6 +124,7 @@ export default function ComercialAtendimentoCrm() {
   const { periodo, intervalo, escolher, definirIntervalo } = usePeriodoNaUrl<string>('esta_semana');
   const recorte = intervalo ?? intervaloDoPeriodoRapido('esta_semana');
   const { data, isLoading, error } = useCrmAtendimento(recorte.de, recorte.ate);
+  const { data: comissao = [] } = useComissao(recorte.de, recorte.ate);
   const [uf, setUf] = useState<string | null>(null);
   const estados = useMemo(() => (data ? porEstado(data.cruzado) : []), [data]);
   const segmentos = useMemo(() => (data ? porSegmento(data.cruzado, data.vendas_cruzado, uf) : []), [data, uf]);
@@ -475,7 +477,8 @@ export default function ComercialAtendimentoCrm() {
                         <th className="py-2 px-2 font-semibold text-right">Vendas</th>
                         <th className="py-2 px-2 font-semibold text-right">Valor</th>
                         <th className="py-2 px-2 font-semibold text-right">Ticket médio</th>
-                        <th className="py-2 pl-2 font-semibold text-right">Perdas</th>
+                        <th className="py-2 px-2 font-semibold text-right">Perdas</th>
+                        <th className="py-2 pl-2 font-semibold text-right"><Nome id="com.comissao">Comissão</Nome></th>
                       </tr>
                     </thead>
                     <tbody>
@@ -496,7 +499,21 @@ export default function ComercialAtendimentoCrm() {
                           <td className="py-2 px-2 text-right tabular-nums">{a.ganhas}</td>
                           <td className="py-2 px-2 text-right tabular-nums whitespace-nowrap">{a.valor ? formatBRL(a.valor) : '—'}</td>
                           <td className="py-2 px-2 text-right tabular-nums whitespace-nowrap">{a.ganhas && a.valor ? formatBRL(a.valor / a.ganhas) : '—'}</td>
-                          <td className="py-2 pl-2 text-right tabular-nums">{a.perdidas}</td>
+                          <td className="py-2 px-2 text-right tabular-nums">{a.perdidas}</td>
+                          <td className="py-2 pl-2 text-right tabular-nums whitespace-nowrap">
+                            {(() => {
+                              // A comissão do CRM é por atendente do Kommo (`com_comissao`, tipo 'crm'), pelo nome dela lá.
+                              const dela = comissao.filter((c) => c.tipo === 'crm' && c.pessoa_nome === a.nome);
+                              const g = dela.reduce((s, c) => s + c.garantida, 0);
+                              const p = dela.reduce((s, c) => s + c.a_confirmar, 0);
+                              return dela.length ? (
+                                <span title={dela.map((c) => `${c.origem}: ${formatBRL(c.garantida)} garantida, ${formatBRL(c.a_confirmar)} a confirmar`).join('\n')}>
+                                  <b className="text-primary">{formatBRL(g + p)}</b>
+                                  <span className="block text-[11px] text-muted-foreground">{formatBRL(g)} garantida</span>
+                                </span>
+                              ) : '—';
+                            })()}
+                          </td>
                         </tr>
                       ))}
                       {data.todos && (
@@ -504,11 +521,11 @@ export default function ComercialAtendimentoCrm() {
                           <td className="py-2 pr-3 font-semibold"><Nome id="crm.lyra">Lyra</Nome></td>
                           <td className="py-2 px-2 text-right tabular-nums">{data.lyra?.atendidos || '—'}</td>
                           <td className="py-2 px-2 text-right">{data.robo?.mensagens ? 'na hora' : '—'}</td>
-                          <td className="py-2 px-2 text-right" colSpan={7}>—</td>
+                          <td className="py-2 px-2 text-right" colSpan={8}>—</td>
                         </tr>
                       )}
                       {!data.atendentes.length && !data.todos && (
-                        <tr><td colSpan={10} className="py-4 text-muted-foreground">Seu usuário do Kommo ainda não está ligado ao seu login. Peça ao administrador.</td></tr>
+                        <tr><td colSpan={11} className="py-4 text-muted-foreground">Seu usuário do Kommo ainda não está ligado ao seu login. Peça ao administrador.</td></tr>
                       )}
                     </tbody>
                   </table>

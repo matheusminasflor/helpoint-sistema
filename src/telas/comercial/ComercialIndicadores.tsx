@@ -49,6 +49,8 @@ import { ultimoDiaDoMes } from '@/lib/semanas-dos-artistas';
 import { LancamentosDaVendedora } from '@/components/comercial/LancamentosDaVendedora';
 import { NotasQueNaoBateram } from '@/components/comercial/NotasQueNaoBateram';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { CartaoDaComissao } from '@/components/comercial/CartaoDaComissao';
+import { useMetasDoAno } from '@/hooks/useComercialCarteirasMetas';
 
 const eValor = (metrica: string) => metrica === 'valor_vendas';
 /** O item "Equipe toda" do seletor — o Select não aceita valor vazio. */
@@ -93,6 +95,17 @@ export default function ComercialIndicadores() {
   const { canComoOBanco } = useDepartmentPermissions('comercial');
   const podeDefinirMeta = canComoOBanco('metas', 'definir');
   const geraCarteiras = usePodeGerirCarteiras();
+  // Seletor de carteira (dono, 2026-11-12): quem tem mais de uma escolhe "Todas" ou uma. Vale para a venda, a meta e a
+  // composição do resumo; os indicadores de contato continuam da vendedora (são lançados por pessoa, não por carteira).
+  const [carteiraPorVendedora, setCarteiraPorVendedora] = useState<Record<string, string>>({});
+  const { data: metasDoAno = [] } = useMetasDoAno(Number(competencia.slice(0, 4)));
+  const de = intervalo?.de ?? competencia;
+  const ate = intervalo?.ate ?? ultimoDiaDoMes(competencia);
+  const metaDaCarteira = (carteira: string) => {
+    const valores = metasDoAno.filter((m) => m.carteira === carteira
+      && `${m.ano}-${String(m.mes).padStart(2, '0')}-01` >= de.slice(0, 7) + '-01' && `${m.ano}-${String(m.mes).padStart(2, '0')}-01` <= ate);
+    return valores.length ? valores.reduce((s, m) => s + Number(m.valor), 0) : null;
+  };
 
   const porVendedora = useMemo(() => {
     const mapa = new Map<string, { nome: string; carteira: string | null; linhas: LinhaPainel[] }>();
@@ -201,18 +214,37 @@ export default function ComercialIndicadores() {
             <div className="grid gap-4 xl:grid-cols-2">
               {mostradas.map(([id, v]) => (
                 <Card key={id} className="p-4 space-y-3">
-                  <div className="flex items-baseline justify-between gap-2">
-                    <h2 className="text-sm font-semibold">{v.nome}</h2>
-                    <span className="text-[13px] text-muted-foreground">{v.carteira ? `Carteira ${v.carteira}` : 'Sem carteira'}</span>
-                  </div>
-                  {v.carteira && !analitico && (
-                    <TresRespostas carteiras={v.carteira.split(', ')} competencia={competencia} intervalo={intervalo}
-                      de={intervalo?.de ?? competencia} ate={intervalo?.ate ?? ultimoDiaDoMes(competencia)}
-                      vendido={v.linhas.find((l) => eValor(l.metrica))?.realizado ?? 0}
-                      meta={v.linhas.find((l) => eValor(l.metrica))?.meta ?? null}
-                      indicadores={v.linhas.filter((l) => !eValor(l.metrica) && l.metrica !== 'pct_meta' && l.cor !== 'sem_meta').length}
-                      abaixoDaMeta={v.linhas.filter((l) => !eValor(l.metrica) && l.metrica !== 'pct_meta' && (l.cor === 'vermelho' || l.cor === 'amarelo')).length} />
-                  )}
+                  {(() => {
+                    const carteirasDela = v.carteira ? v.carteira.split(', ') : [];
+                    const escolhida = carteiraPorVendedora[id] ?? '';
+                    return (
+                      <>
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <h2 className="text-sm font-semibold">{v.nome}</h2>
+                          {carteirasDela.length > 1 ? (
+                            <Select value={escolhida || EQUIPE} onValueChange={(c) => setCarteiraPorVendedora((p) => ({ ...p, [id]: c === EQUIPE ? '' : c }))}>
+                              <SelectTrigger className="w-56 h-8 text-[13px]" aria-label={`Carteira de ${v.nome}`}><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value={EQUIPE}>Todas as carteiras ({carteirasDela.length})</SelectItem>
+                                {carteirasDela.map((c) => <SelectItem key={c} value={c}>Carteira {c}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <span className="text-[13px] text-muted-foreground">{v.carteira ? `Carteira ${v.carteira}` : 'Sem carteira'}</span>
+                          )}
+                        </div>
+                        {v.carteira && !analitico && (
+                          <TresRespostas carteiras={escolhida ? [escolhida] : carteirasDela} competencia={competencia} intervalo={intervalo}
+                            de={de} ate={ate}
+                            vendido={escolhida ? undefined : v.linhas.find((l) => eValor(l.metrica))?.realizado ?? 0}
+                            meta={escolhida ? metaDaCarteira(escolhida) : v.linhas.find((l) => eValor(l.metrica))?.meta ?? null}
+                            indicadores={v.linhas.filter((l) => !eValor(l.metrica) && l.metrica !== 'pct_meta' && l.cor !== 'sem_meta').length}
+                            abaixoDaMeta={v.linhas.filter((l) => !eValor(l.metrica) && l.metrica !== 'pct_meta' && (l.cor === 'vermelho' || l.cor === 'amarelo')).length} />
+                        )}
+                        <CartaoDaComissao pessoaId={id} de={de} ate={ate} />
+                      </>
+                    );
+                  })()}
                   {/* No celular a tabela vira lista (proposta de 2026-11-05): o resumo do celular a tirava do cartão. */}
                   <ul className="min-[861px]:hidden print:hidden divide-y divide-border text-[14px]">
                     {linhasDoCartao(id, v.linhas).map((l) => (

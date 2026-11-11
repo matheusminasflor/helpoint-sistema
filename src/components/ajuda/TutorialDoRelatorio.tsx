@@ -26,8 +26,9 @@ export function TutorialDoRelatorio({ id }: { id: IdDoTutorial }) {
   const t = TUTORIAIS[id];
   const [aberto, setAberto] = useState(false);
 
-  // Abre sozinho a cada visita até a pessoa dizer "não mostrar mais".
-  useEffect(() => { if (!jaDispensou(id)) setAberto(true); }, [id]);
+  // Abre sozinho UMA vez por pessoa e navegador (dono, 2026-11-12: "uma vez só"); depois, só pelo "Como ler". Antes abria a
+  // cada visita até a pessoa achar o "não mostrar mais".
+  useEffect(() => { if (!jaDispensou(id)) { setAberto(true); dispensar(id); } }, [id]);
 
   return (
     <>
@@ -57,10 +58,7 @@ export function TutorialDoRelatorio({ id }: { id: IdDoTutorial }) {
             </section>
           </div>
           <DialogFooter className="gap-2 sm:gap-2">
-            <Button variant="outline" onClick={() => { dispensar(id); setAberto(false); }}>
-              Entendi, não mostrar mais
-            </Button>
-            <Button onClick={() => setAberto(false)}>Fechar</Button>
+            <Button onClick={() => setAberto(false)}>Entendi</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
