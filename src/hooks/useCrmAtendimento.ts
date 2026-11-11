@@ -17,3 +17,15 @@ export function useCrmAtendimento(de: string, ate: string) {
       unwrap(await supabase.rpc('crm_atendimento' as never, { p_de: de, p_ate: ate } as never)) as unknown as AtendimentoDoCrm,
   });
 }
+
+/** A hora da última leitura do Kommo: conversas (de 10 em 10 minutos) e vendas (de hora em hora). */
+export function useCrmAtualizadoEm() {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['crm_atualizado_em', tenantId],
+    enabled: !!tenantId,
+    refetchInterval: 5 * 60_000,
+    queryFn: async () =>
+      unwrap(await supabase.rpc('crm_atualizado_em' as never)) as unknown as { conversas?: string | null; vendas?: string | null },
+  });
+}

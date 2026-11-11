@@ -137,7 +137,7 @@ export default function ConfiguracoesIntegracoes() {
         <CartaoDeRobo tabela="reuniao_robo" funcao="google-reunioes" sistema="Google" nome="Google Workspace (Agenda, Meet e Drive)"
           descricao="As reuniões da conta ti@minasflor.com entram sozinhas em Meu trabalho › Reuniões, a cada 30 minutos." />
         <CartaoDeRobo tabela="mkt_kommo_robo" funcao="mkt-kommo-coletar" sistema="Kommo" nome="Kommo (leads por funil)"
-          descricao="Os leads de Consumidor final, Salão, Distribuidor e Sem triagem entram sozinhos nos Indicadores do Marketing, a cada 3 horas." />
+          descricao="Os leads de Consumidor final, Salão, Distribuidor e Sem triagem entram sozinhos nos Indicadores do Marketing, de hora em hora." />
         <CartaoDaIA />
         {FALTA_LIGAR.map((i) => <Cartao key={i.nome} nome={i.nome} situacao={i.situacao} tom="neutro" descricao={i.texto} />)}
       </div>

@@ -323,7 +323,45 @@ async function atendimento(db: SupabaseClient, tenant: string) {
   }
   const { data: novasEtapas, error: e4 } = await db.rpc('kommo_gravar_etapas', { p_tenant: tenant, p_etapas: etapas });
   if (e4) throw e4;
-  return { ...data, etapas: novasEtapas, do_contato: doContato.length };
+  const conversas = await conversasEApagados(db, tenant, new Set(porId.keys()));
+  return { ...data, etapas: novasEtapas, do_contato: doContato.length, ...conversas };
+}
+
+/**
+ * Conversa encerrada e lead apagado saem de "Aguardando resposta" (20270212721000). A situação de cada lead é a da
+ * conversa mais recente dele (`talks` vem da mais nova para a mais antiga). Lead aberto com mensagem nos últimos 7 dias
+ * que o Kommo não devolve pelo número foi apagado ou unido a um duplicado.
+ * ponytail: até 40 páginas de conversas (10 mil); a conta tem umas 4 mil. Passando disso, as mais antigas ficam como estão.
+ */
+async function conversasEApagados(db: SupabaseClient, tenant: string, lidos: Set<number>) {
+  const situacao = new Map<number, string>();
+  for (let pagina = 1; pagina <= 40; pagina++) {
+    const r = await kommo<{ _embedded?: { talks?: { talk_id: number; entity_id: number | null; entity_type: string | null; status: string }[] }; _links?: { next?: unknown } }>(
+      `talks?limit=250&page=${pagina}`);
+    const talks = r?._embedded?.talks ?? [];
+    for (const t of [...talks].sort((a, b) => b.talk_id - a.talk_id)) {
+      if (t.entity_type === 'lead' && t.entity_id && !situacao.has(t.entity_id)) situacao.set(t.entity_id, t.status);
+    }
+    if (talks.length < 250 && !r?._links?.next) break;
+  }
+  const fechadas = [...situacao].filter(([, s]) => s === 'closed').map(([id]) => id);
+  const abertas = [...situacao].filter(([, s]) => s !== 'closed').map(([id]) => id);
+
+  const { data: abertos, error: e1 } = await db.rpc('kommo_leads_para_conferir', { p_tenant: tenant });
+  if (e1) throw e1;
+  const conferir = ((abertos ?? []) as number[]).map(Number).filter((id) => !lidos.has(id));
+  const apagados: number[] = [];
+  for (let i = 0; i < conferir.length; i += 200) {
+    const lote = conferir.slice(i, i + 200);
+    const r = await kommo<{ _embedded: { leads: { id: number }[] } }>(`leads?limit=250&${lote.map((id) => `filter[id][]=${id}`).join('&')}`);
+    const existem = new Set((r?._embedded.leads ?? []).map((l) => l.id));
+    apagados.push(...lote.filter((id) => !existem.has(id)));
+  }
+  const { data: mudaram, error: e2 } = await db.rpc('kommo_gravar_conversas', {
+    p_tenant: tenant, p_fechadas: fechadas, p_abertas: abertas, p_apagados: apagados,
+  });
+  if (e2) throw e2;
+  return { conversas: situacao.size, conversas_mudaram: mudaram, apagados: apagados.length };
 }
 
 serve(async (req) => {

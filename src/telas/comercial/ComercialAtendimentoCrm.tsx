@@ -13,7 +13,7 @@ import { Card } from '@/components/ui/card';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { ExplicacaoDoIndicador } from '@/components/ajuda/ExplicacaoDoIndicador';
 import type { IdDaExplicacao } from '@/config/explicacoes-dos-indicadores';
-import { useCrmAtendimento } from '@/hooks/useCrmAtendimento';
+import { useCrmAtendimento, useCrmAtualizadoEm } from '@/hooks/useCrmAtendimento';
 import { usePeriodoNaUrl } from '@/hooks/usePeriodoNaUrl';
 import { PERIODOS_DA_REUNIAO, intervaloDoPeriodoRapido, rotuloDoIntervalo } from '@/lib/period';
 import { dataHora, diaCurto } from '@/lib/dates';
@@ -45,6 +45,20 @@ const LINHAS_DA_LYRA: [LinhaDaLyra, string, string][] = [
 ];
 const oQueALyraFez = (l: { triado: boolean; passou: boolean; resolveu: boolean }) =>
   l.resolveu ? 'Resolveu sozinha' : l.passou ? (l.triado ? 'Triou e passou' : 'Passou sem triagem') : l.triado ? 'Triou e parou' : 'Parou no meio';
+
+/** "Atualizado às": verde enquanto as leituras estão em dia, âmbar quando uma delas atrasou (conversas 30 min, vendas 2 h). */
+function Atualizado() {
+  const { data } = useCrmAtualizadoEm();
+  if (!data?.conversas && !data?.vendas) return null;
+  const atrasou = (iso: string | null | undefined, min: number) => !iso || Date.now() - Date.parse(iso) > min * 60_000;
+  const emDia = !atrasou(data.conversas, 30) && !atrasou(data.vendas, 120);
+  return (
+    <p role="status" className={cn('text-[13px] font-semibold', emDia ? 'text-status-success' : 'text-status-warning')}>
+      ● Conversas atualizadas em {data.conversas ? dataHora(data.conversas) : '—'} · vendas e cadastros em {data.vendas ? dataHora(data.vendas) : '—'}
+      {!emDia && ' · o Kommo está atrasado, os números podem estar velhos'}
+    </p>
+  );
+}
 
 function Tempo({ n, meta }: { n: number | null; meta: number }) {
   return (
@@ -88,6 +102,7 @@ export default function ComercialAtendimentoCrm() {
         onIntervaloChange={definirIntervalo}
         periodOptions={PERIODOS_DA_REUNIAO}
       />
+      <Atualizado />
 
       {error && (
         <Card className="p-4 text-sm text-status-danger" role="alert">Não deu para ler o Atendimento do CRM: {(error as Error).message}</Card>
@@ -568,7 +583,7 @@ export default function ComercialAtendimentoCrm() {
 
           <p className="text-xs text-muted-foreground">
             {data.todos ? 'Cada atendente vê só a linha dela; dono, admin e gestor comercial veem todas. ' : 'Você vê só os seus leads e a sua linha. '}
-            Equipe, fornecedores e artistas (etiquetas no Kommo) não entram. As conversas são lidas a cada 10 minutos.
+            Equipe, fornecedores e artistas (etiquetas no Kommo) não entram. As conversas são lidas a cada 10 minutos; as vendas e os cadastros, de hora em hora. Conversa encerrada no Kommo e lead apagado não ficam esperando resposta.
           </p>
         </>
       )}
