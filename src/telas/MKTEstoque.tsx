@@ -58,7 +58,18 @@ export default function MKTEstoque() {
   const nomeDaPessoa = useMemo(() => new Map(profiles.map((p) => [p.id, p.full_name || p.email])), [profiles]);
   const inativos = produtos.filter((p) => !p.ativo).length;
   const [busca, setBusca] = useQueryState<string>('q', '');
-  const visiveis = produtos.filter((p) => (verInativos || p.ativo || (saldos.get(p.id) ?? 0) > 0) && casaBusca([p.nome], busca));
+  // Os três números do topo (dono, 2026-11-11, Von Restorff): clicar filtra a lista; clicar de novo tira o filtro.
+  const situacaoDe = (p: ProdutoMkt) => {
+    const saldo = saldos.get(p.id) ?? 0;
+    return saldo <= 0 ? 'sem' : p.estoque_minimo > 0 && saldo < p.estoque_minimo ? 'repor' : 'ok';
+  };
+  const ativos = produtos.filter((p) => p.ativo);
+  const contagem = { repor: ativos.filter((p) => situacaoDe(p) === 'repor').length, sem: ativos.filter((p) => situacaoDe(p) === 'sem').length };
+  const [filtro, setFiltro] = useState<'repor' | 'sem' | null>(null);
+  const visiveis = produtos.filter((p) => (verInativos || p.ativo || (saldos.get(p.id) ?? 0) > 0) && casaBusca([p.nome], busca)
+    && (!filtro || (p.ativo && situacaoDe(p) === filtro)));
+  const [produtoDoHistorico, setProdutoDoHistorico] = useState('');
+  const historico = produtoDoHistorico ? movimentos.filter((m) => m.produto_id === produtoDoHistorico) : movimentos;
 
   return (
     <div className="flex flex-col min-h-full">
@@ -76,6 +87,29 @@ export default function MKTEstoque() {
       />
       <div className="p-4 lg:p-6 space-y-4">
         {/* Busca no estoque (etapa 4 · Compras, 2026-10-24): nenhum dos dois estoques buscava. */}
+        {!erro && !isLoading && !lendoMovimentos && produtos.length > 0 && (
+          <div className="grid gap-3 grid-cols-3 max-w-2xl" role="group" aria-label="Situação do estoque">
+            <button type="button" aria-pressed={filtro === null} onClick={() => setFiltro(null)}
+              className={cn('rounded-xl border bg-card p-3 text-left hover:bg-muted', filtro === null && 'ring-2 ring-primary')}>
+              <p className="text-2xl font-extrabold tabular-nums">{ativos.length}</p>
+              <p className="text-sm font-semibold">Produtos</p>
+            </button>
+            <button type="button" aria-pressed={filtro === 'repor'} onClick={() => setFiltro(filtro === 'repor' ? null : 'repor')}
+              className={cn('rounded-xl border bg-card p-3 text-left hover:bg-muted', contagem.repor && 'border-2 border-status-warning',
+                filtro === 'repor' && 'ring-2 ring-status-warning')}>
+              <p className={cn('text-2xl font-extrabold tabular-nums', contagem.repor ? 'text-status-warning' : 'text-status-success')}>{contagem.repor}</p>
+              <p className="text-sm font-semibold">Para repor</p>
+              <p className="text-xs text-muted-foreground">abaixo do aviso</p>
+            </button>
+            <button type="button" aria-pressed={filtro === 'sem'} onClick={() => setFiltro(filtro === 'sem' ? null : 'sem')}
+              className={cn('rounded-xl border bg-card p-3 text-left hover:bg-muted', contagem.sem && 'border-2 border-status-danger',
+                filtro === 'sem' && 'ring-2 ring-status-danger')}>
+              <p className={cn('text-2xl font-extrabold tabular-nums', contagem.sem ? 'text-status-danger' : 'text-status-success')}>{contagem.sem}</p>
+              <p className="text-sm font-semibold">Sem estoque</p>
+              <p className="text-xs text-muted-foreground">{contagem.sem ? 'clique para ver quais' : 'nenhum zerado'}</p>
+            </button>
+          </div>
+        )}
         <Input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar produto" aria-label="Buscar produto no estoque" className="max-w-xs" />
         <Card className="overflow-hidden">
           {erro ? (
@@ -85,10 +119,49 @@ export default function MKTEstoque() {
           ) : isLoading || lendoMovimentos ? (
             <div className="p-4 space-y-1">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
           ) : visiveis.length === 0 ? (
-            <EmptyState icon={Boxes} title="Nenhum produto no estoque"
-              description={podeCadastrar ? 'Cadastre em "Novo produto" o que o Marketing guarda.' : 'Ninguém cadastrou produtos ainda.'} />
+            filtro || busca ? (
+              <p className="p-4 text-sm text-muted-foreground">Nenhum produto com esse filtro.</p>
+            ) : (
+              <EmptyState icon={Boxes} title="Nenhum produto no estoque"
+                description={podeCadastrar ? 'Cadastre em "Novo produto" o que o Marketing guarda.' : 'Ninguém cadastrou produtos ainda.'} />
+            )
           ) : (
-            <div className="overflow-x-auto">
+            <>
+            {/* Celular: um cartão por produto, com os dois botões grandes (a tabela de 7 colunas não cabe). */}
+            <ul className="md:hidden divide-y divide-border">
+              {visiveis.map((p) => {
+                const saldo = saldos.get(p.id) ?? 0;
+                const s = situacaoDe(p);
+                return (
+                  <li key={p.id} className={cn('p-3 space-y-2', !p.ativo && 'text-muted-foreground')}>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="font-semibold">{p.nome}{!p.ativo && <Badge variant="outline" className="ml-1.5 text-[12px]">inativo</Badge>}</p>
+                        <p className="text-xs text-muted-foreground">{[p.categoria, p.local].filter(Boolean).join(' · ') || '—'}</p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className={cn('font-mono font-bold', s !== 'ok' && 'text-status-danger')}>{qtd(saldo)} {p.unidade}</p>
+                        <Badge className={s === 'sem' ? 'badge-danger' : s === 'repor' ? 'badge-warning' : 'badge-success'}>
+                          {s === 'sem' ? 'Sem estoque' : s === 'repor' ? 'Repor' : 'Ok'}
+                        </Badge>
+                      </div>
+                    </div>
+                    {(podeLancar || podeCadastrar) && (
+                      <div className="flex gap-2">
+                        {podeLancar && p.ativo && <Button size="sm" variant="outline" className="flex-1" onClick={() => darEntrada(p.id)}>+ Entrada</Button>}
+                        {podeLancar && p.ativo && <Button size="sm" variant="outline" className="flex-1" disabled={saldo <= 0} onClick={() => retirar(p.id)}>− Retirar</Button>}
+                        {podeCadastrar && (
+                          <Button variant="ghost" size="icon" title="Editar produto" onClick={() => setEditando(p)}>
+                            <Pencil className="w-4 h-4" aria-hidden="true" /><span className="sr-only">Editar {p.nome}</span>
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-[14px]">
                 <thead>
                   <tr className="border-b border-border bg-secondary/60 text-left text-muted-foreground">
@@ -96,7 +169,7 @@ export default function MKTEstoque() {
                     <th className="px-3 py-2 font-semibold">Categoria</th>
                     <th className="px-3 py-2 font-semibold">Local</th>
                     <th className="px-3 py-2 font-semibold text-right">Em estoque</th>
-                    <th className="px-3 py-2 font-semibold text-right">Mínimo</th>
+                    <th className="px-3 py-2 font-semibold text-right">Avisar abaixo de</th>
                     <th className="px-3 py-2 font-semibold">Situação</th>
                     {(podeCadastrar || podeLancar) && <th className="px-3 py-2" aria-label="Ações" />}
                   </tr>
@@ -145,6 +218,7 @@ export default function MKTEstoque() {
                 </tbody>
               </table>
             </div>
+            </>
           )}
           {inativos > 0 && (
             <button type="button" onClick={() => setVerInativos((v) => !v)}
@@ -155,11 +229,18 @@ export default function MKTEstoque() {
         </Card>
 
         <Card className="overflow-hidden">
-          <h2 className="px-3 py-2 text-[15px] font-semibold border-b border-border">Entradas e retiradas</h2>
+          <div className="px-3 py-2 border-b border-border flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-[15px] font-semibold">Entradas e retiradas</h2>
+            <select aria-label="Ver só um produto" className="rounded-lg border border-border bg-card px-2 py-1 text-sm"
+              value={produtoDoHistorico} onChange={(e) => setProdutoDoHistorico(e.target.value)}>
+              <option value="">Todos os produtos</option>
+              {produtos.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
+            </select>
+          </div>
           {erroMovimentos ? (
             <p role="alert" className="px-3 py-4 text-sm text-status-danger">Não deu para ler os lançamentos: {mensagemDeErro(erroMovimentos)}.</p>
-          ) : movimentos.length === 0 ? (
-            <p className="px-3 py-4 text-sm text-muted-foreground">Nada lançado ainda.</p>
+          ) : historico.length === 0 ? (
+            <p className="px-3 py-4 text-sm text-muted-foreground">{produtoDoHistorico ? 'Nada lançado neste produto.' : 'Nada lançado ainda.'}</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-[14px]">
@@ -168,13 +249,13 @@ export default function MKTEstoque() {
                     <th className="px-3 py-2 font-semibold">Quando</th>
                     <th className="px-3 py-2 font-semibold">Produto</th>
                     <th className="px-3 py-2 font-semibold text-right">Quantidade</th>
-                    <th className="px-3 py-2 font-semibold">Quem retirou</th>
+                    <th className="px-3 py-2 font-semibold">Quem</th>
                     <th className="px-3 py-2 font-semibold">Motivo</th>
                     {podeApagar && <th className="px-3 py-2" aria-label="Ações" />}
                   </tr>
                 </thead>
                 <tbody>
-                  {movimentos.map((m) => {
+                  {historico.map((m) => {
                     const p = produtoPorId.get(m.produto_id);
                     return (
                       <tr key={m.id} className="border-b border-border">
@@ -183,7 +264,12 @@ export default function MKTEstoque() {
                         <td className={cn('px-3 py-2 font-mono text-right', m.tipo === 'entrada' ? 'text-status-success' : 'text-status-danger')}>
                           {m.tipo === 'entrada' ? '+' : '−'} {qtd(m.quantidade)} {p?.unidade}
                         </td>
-                        <td className="px-3 py-2">{m.retirado_por ? nomeDaPessoa.get(m.retirado_por) ?? '—' : '—'}</td>
+                        <td className="px-3 py-2">
+                          {m.tipo === 'saida' && m.retirado_por
+                            ? <>retirou: {nomeDaPessoa.get(m.retirado_por) ?? '—'}</>
+                            : m.purchase_request_id ? 'compra registrada'
+                              : m.created_by ? <>lançou: {nomeDaPessoa.get(m.created_by) ?? '—'}</> : '—'}
+                        </td>
                         <td className="px-3 py-2 text-muted-foreground">{m.motivo || '—'}</td>
                         {podeApagar && (
                           <td className="px-3 py-2 text-right">

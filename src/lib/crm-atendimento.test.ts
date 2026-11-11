@@ -31,7 +31,7 @@ describe('Atendimento do CRM', () => {
     const v = (faltam: VendaComCampoFaltando['faltam']): VendaComCampoFaltando =>
       ({ lead_id: 1, nome: 'x', funil: 'salao', situacao: 'ganha', fechou: '2026-11-04', link: 'k', faltam });
     expect(contagemDosCampos([v(['cnpj', 'valor']), v(['cnpj']), v(['motivo']), v(['valor_kommo'])])).toEqual([
-      { campo: 'cnpj', quantos: 2 }, { campo: 'telefone', quantos: 0 }, { campo: 'valor', quantos: 1 },
+      { campo: 'segmento', quantos: 0 }, { campo: 'cnpj', quantos: 2 }, { campo: 'telefone', quantos: 0 }, { campo: 'valor', quantos: 1 },
       { campo: 'valor_kommo', quantos: 1 }, { campo: 'motivo', quantos: 1 },
     ]);
   });

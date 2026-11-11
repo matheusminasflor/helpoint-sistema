@@ -9,7 +9,7 @@ export const SEGMENTOS: { k: Segmento; nome: string }[] = [
   { k: 'salao', nome: 'Salão de beleza' },
   { k: 'distribuidor', nome: 'Distribuidor' },
   { k: 'consumidor', nome: 'Consumidor final' },
-  { k: 'sem_triagem', nome: 'Sem triagem (Entrada)' },
+  { k: 'sem_triagem', nome: 'Sem segmento (Entrada)' },
 ];
 
 export interface LinhaKommo { dia: string; funil: Segmento; chegaram: number; ganhas: number; perdidas: number; valor_ganho: number }

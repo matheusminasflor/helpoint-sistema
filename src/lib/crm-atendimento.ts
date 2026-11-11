@@ -34,7 +34,7 @@ export const leadsDaLinha = (leads: LeadDaLyra[], linha: LinhaDaLyra) =>
 export interface LeadParaResponder {
   lead_id: number; desde: string; nome: string; segmento: Segmento | null; funil: string | null; etapa: string | null; link: string; uf: string | null;
 }
-export type CampoObrigatorio = 'cnpj' | 'telefone' | 'valor' | 'valor_kommo' | 'motivo';
+export type CampoObrigatorio = 'segmento' | 'cnpj' | 'telefone' | 'valor' | 'valor_kommo' | 'motivo';
 export interface VendaComCampoFaltando {
   lead_id: number; nome: string; funil: Segmento; situacao: 'ganha' | 'perdida'; fechou: string; link: string; faltam: CampoObrigatorio[];
 }
@@ -52,7 +52,17 @@ export interface LeadDoPeriodo {
   atendente: string | null; situacao: SituacaoDoLead | null; minutos: number | null; venda: 'ganha' | 'perdida' | null; valor: number | null;
   /** De onde veio (`origemDoLead` no coletor); null = sem origem (lead antigo ou WhatsApp sem a frase do link). */
   origem?: string | null;
+  /** A etapa no Kommo agora, e se o lead já fechou (20270212721100). */
+  etapa?: string | null;
+  fechado?: boolean;
 }
+
+/** Quem conversou no período e continua na Entrada, sem segmento (dono, 2026-11-11): a atendente move no Kommo. */
+export const leadsSemSegmento = (leads: LeadDoPeriodo[]) =>
+  leads.filter((l) => l.segmento === 'sem_triagem' && !l.fechado && !l.venda);
+
+/** Lead de funil que não é de venda (pós-venda, outros assuntos): espera resposta, mas com o selo "Fora de venda". */
+export const foraDeVenda = (l: { segmento: Segmento | null }) => !l.segmento;
 export interface AtendimentoDoCrm {
   todos: boolean;
   /** A meta da 1ª resposta, em minutos de expediente (`kommo_meta_resposta`). */
@@ -74,12 +84,12 @@ export interface AtendimentoDoCrm {
 }
 
 export const CAMPO_OBRIGATORIO: Record<CampoObrigatorio, string> = {
-  cnpj: 'CNPJ', telefone: 'Telefone', valor: 'Valor', valor_kommo: 'Valor no Kommo', motivo: 'Motivo da perda',
+  segmento: 'Segmento', cnpj: 'CNPJ', telefone: 'Telefone', valor: 'Valor', valor_kommo: 'Valor no Kommo', motivo: 'Motivo da perda',
 };
 /** O que aparece na etiqueta de cada campo que falta. */
 export const FALTA: Record<CampoObrigatorio, string> = {
-  cnpj: 'falta CNPJ', telefone: 'falta telefone', valor: 'falta valor', valor_kommo: 'valor só no faturado: digitar no Kommo',
-  motivo: 'falta motivo',
+  segmento: 'falta segmento', cnpj: 'falta CNPJ', telefone: 'falta telefone', valor: 'falta valor',
+  valor_kommo: 'valor só no faturado: digitar no Kommo', motivo: 'falta motivo',
 };
 
 const ESTADO: Record<string, string> = {
@@ -151,7 +161,7 @@ export function porSegmento(cruzado: LinhaCruzada[], vendas: VendaCruzada[], uf:
   }).sort((a, b) => b.conversas - a.conversas || b.valor - a.valor || a.nome.localeCompare(b.nome));
 }
 
-export type FiltroDosLeads = 'todos' | 'sem_resposta' | 'fora_do_prazo' | 'venda' | 'perdida';
+export type FiltroDosLeads = 'todos' | 'so_lyra' | 'no_prazo' | 'sem_resposta' | 'fora_do_prazo' | 'venda' | 'perdida';
 /** Os leads do estado e do segmento escolhidos (null = todos), com o filtro da lista. */
 export function leadsDoRecorte(leads: LeadDoPeriodo[], uf: string | null, segmento: string | null, filtro: FiltroDosLeads, origem: string | null = null): LeadDoPeriodo[] {
   return leads.filter((l) => doEstado(uf)(l) && (segmento === null || chaveDoSegmento(l) === segmento)

@@ -28,6 +28,8 @@ export interface MovimentoMkt {
   retirado_por: string | null;
   motivo: string | null;
   purchase_request_id: string | null;
+  /** Quem lançou (entrada ou saída); na saída, `retirado_por` é quem levou. */
+  created_by?: string | null;
 }
 
 export function useProdutosMkt() {
@@ -50,7 +52,7 @@ export function useMovimentosMkt() {
     enabled: !!tenantId,
     queryFn: async (): Promise<MovimentoMkt[]> =>
       ((unwrap(await supabase.from('mkt_estoque_movimentos' as never)
-        .select('id, produto_id, tipo, quantidade, quando, retirado_por, motivo, purchase_request_id')
+        .select('id, produto_id, tipo, quantidade, quando, retirado_por, motivo, purchase_request_id, created_by')
         .order('quando', { ascending: false })
         .limit(1000)) ?? []) as unknown as MovimentoMkt[])
         .map((m) => ({ ...m, quantidade: Number(m.quantidade) })),

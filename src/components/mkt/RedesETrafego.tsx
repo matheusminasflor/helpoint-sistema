@@ -189,13 +189,13 @@ export function DuasFontes({ painel, conta, kommo, kommoAntes }: {
 }
 
 const NOME_DO_SEGMENTO: Record<Venda['funil'], string> = {
-  salao: 'Salão de beleza', distribuidor: 'Distribuidor', consumidor: 'Consumidor final', sem_triagem: 'Sem triagem',
+  salao: 'Salão de beleza', distribuidor: 'Distribuidor', consumidor: 'Consumidor final', sem_triagem: 'Sem segmento',
 };
 const dia = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
 
 /**
  * As vendas do período com o nome do cliente e o link do Kommo, e o que corrigir lá (proposta v5): "quem é esse lead?".
- * Venda ganha ainda na Entrada aparece como "Sem triagem" até alguém mover o lead para o funil certo.
+ * Venda ganha ainda na Entrada aparece como "Sem segmento" até alguém mover o lead para o funil certo.
  */
 const SITUACAO_DO_FATURADO: Record<SituacaoDoFaturado, string> = {
   faturado: 'faturado',
@@ -262,7 +262,7 @@ export function VendasDoPeriodo({ vendas, pendencias }: { vendas: Venda[]; pende
                       {v.faturado?.cliente && <span className="block text-[12px] font-normal text-muted-foreground">Forteplus: {v.faturado.cliente}{v.faturado.notas ? ` · ${v.faturado.notas}` : ''}</span>}
                       {v.faturado?.sugerido && <span className="block text-[12px] font-normal text-muted-foreground">Pelo telefone, parece ser {v.faturado.sugerido}: confira e preencha o CPF/CNPJ no Kommo</span>}
                     </td>
-                    <td className="px-3 py-2.5">{v.funil === 'sem_triagem' ? <span className="rounded px-1.5 py-0.5 text-[12px] font-semibold badge-warning">Sem triagem</span> : NOME_DO_SEGMENTO[v.funil]}</td>
+                    <td className="px-3 py-2.5">{v.funil === 'sem_triagem' ? <span className="rounded px-1.5 py-0.5 text-[12px] font-semibold badge-warning">Sem segmento</span> : NOME_DO_SEGMENTO[v.funil]}</td>
                     <td className="px-3 py-2.5 text-right">
                       {v.situacao === 'ganha'
                         ? (Number(v.valor) ? <span className="font-mono tabular-nums">{formatBRL(Number(v.valor))}</span>
