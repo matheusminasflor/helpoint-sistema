@@ -174,7 +174,7 @@ select (select a from f), imp.id, 'MF', current_date, v.doc, v.serie, '5101', 'v
 
 -- Desde 20270212721100 a vendedora não digita a nota: o Financeiro sobe o XML (série 1) ou confere (séries 75 e 76).
 select tests.authenticate_as('vendedora@pedck.test');
-select throws_ok($ select public.ped_informar_nota((select pedido1 from ck), '9001', 100, (now() at time zone 'America/Sao_Paulo')::date) $,
+select throws_ok($$ select public.ped_informar_nota((select pedido1 from ck), '9001', 100, (now() at time zone 'America/Sao_Paulo')::date) $$,
   '42501', null, 'a vendedora nao informa mais a nota');
 select tests.clear_authentication();
 
@@ -224,7 +224,7 @@ select throws_ok($$ insert into public.ped_decisoes (checklist_id, status, motiv
 select tests.clear_authentication();
 
 select tests.authenticate_as('financeiro@pedck.test');
-select lives_ok($ select public.ped_informar_nota((select pedido1 from ck), '9003', 100, (now() at time zone 'America/Sao_Paulo')::date) $, 'devolvido, a nota volta a poder ser trocada');
+select lives_ok($$ select public.ped_informar_nota((select pedido1 from ck), '9003', 100, (now() at time zone 'America/Sao_Paulo')::date) $$, 'devolvido, a nota volta a poder ser trocada');
 select tests.clear_authentication();
 select tests.authenticate_as('vendedora@pedck.test');
 select public.ped_salvar_checklist((select interacao from ck), tests.ped_dados((select a from f)));

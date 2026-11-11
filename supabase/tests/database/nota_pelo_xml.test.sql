@@ -42,7 +42,7 @@ update public.access_profiles
 grant select on f, u to authenticated;
 
 insert into public.com_clientes (tenant_id, codigo, razao_social, carteira, origem, documento)
-values ((select a from f), '1615', 'AMIL COSMETICOS LTDA', 'GO', 'cadastro', '55.012.464/0001-00');
+values ((select a from f), '1615', 'AMIL COSMETICOS LTDA', 'GO', 'cadastro', '55012464000100');
 
 create temporary table ck on commit drop as
 with l as (
