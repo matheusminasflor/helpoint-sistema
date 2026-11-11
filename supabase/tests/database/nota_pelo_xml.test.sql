@@ -106,8 +106,10 @@ select is((public.ped_registrar_xml((select id from ck), tests.nfe('023485', '61
 select is((select nota_fiscal from public.ped_pedidos where numero = '11536'), '23485', 'o numero da nota sem zeros');
 select is((select nota_em from public.ped_pedidos where numero = '11536'), '2026-10-30'::date, 'a emissao vem do XML');
 select is((select nota_valor from public.ped_pedidos where numero = '11536'), 11668.34::numeric, 'faturado = produtos menos desconto, sem ST');
+select tests.clear_authentication();
 select is((select count(*)::int from public.notifications where user_id = (select vendedora from u) and reference_type = 'ped_nota' and title like 'Nota emitida%'), 1,
   'a vendedora e avisada da nota emitida');
+select tests.authenticate_as('financeiro@notaxml.test');
 
 -- O pedido 2 é Publicidade e a nota saiu com CFOP de venda (o caso da WA, nota 23502).
 select is((public.ped_registrar_xml((select id from ck), tests.nfe('23484', '6102', '55012464000100', 1040.50, 0, '11623'),
@@ -124,7 +126,7 @@ select is((select count(*)::int from public.notifications where user_id = (selec
 select tests.authenticate_as('financeiro@notaxml.test');
 select is((public.ped_registrar_xml((select id from ck), tests.nfe('23484', '6910', '11111111000111', 1040.50, 0, '11623', '100', 'chave-b2'),
   (select p from cam) || 'b.xml', (select p from cam) || 'b.pdf')) ->> 'situacao', 'divergente', 'nota de outro CNPJ fica divergente');
-select like((public.ped_registrar_xml((select id from ck), tests.nfe('23484', '6910', '55012464000100', 1000.00, 0, '11623', '100', 'chave-b3'),
+select alike((public.ped_registrar_xml((select id from ck), tests.nfe('23484', '6910', '55012464000100', 1000.00, 0, '11623', '100', 'chave-b3'),
   (select p from cam) || 'b.xml', (select p from cam) || 'b.pdf')) ->> 'aviso', 'O total dos produtos da nota (R$ 1000,00)%', 'valor diferente do pedido so avisa');
 select throws_ok($$ select public.ped_registrar_xml((select id from ck), tests.nfe('23485', '6910', '55012464000100', 1040.50, 0, '11623', '100', (select nota_chave from public.ped_pedidos where numero = '11536')),
   (select p from cam) || 'c.xml', (select p from cam) || 'c.pdf') $$, '23505', null, 'a mesma nota nao entra em dois pedidos');
