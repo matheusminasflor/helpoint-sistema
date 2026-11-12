@@ -125,6 +125,8 @@ const ORDENAR: Record<string, (l: LinhaAcompanhamento) => string | number | null
 };
 
 const POR_PAGINA = 25;
+/** O valor de "Todas as carteiras" no seletor (e na URL, `?carteira=todas`). */
+const TODAS = 'todas';
 
 const DIRECIONAIS = [
   { id: 'a_faturar', titulo: 'A faturar', filtro: (l: LinhaAcompanhamento) => l.pedidos_a_faturar > 0 },
@@ -152,12 +154,16 @@ export default function ComercialCarteiras() {
 
   // O gestor escolhe entre todas; a vendedora, entre as dela (pode ter mais de uma desde 2026-10-01).
   const opcoes = geraCarteiras ? todas : minhas;
-  const carteira = (escolhida && opcoes.includes(escolhida) ? escolhida : null) ?? minhas[0] ?? opcoes[0] ?? null;
+  // "Todas as carteiras" (revisão de 2026-11-12): com mais de uma, é por onde a tela abre — antes o gestor caía na
+  // primeira da lista (ARTISTAS, zerada).
+  const todasAsCarteiras = opcoes.length > 1 && (!escolhida || escolhida === TODAS || !opcoes.includes(escolhida));
+  const carteira = todasAsCarteiras ? null : (escolhida && opcoes.includes(escolhida) ? escolhida : null) ?? minhas[0] ?? opcoes[0] ?? null;
+  const consulta = todasAsCarteiras ? opcoes : carteira;
   const ano = Number(competencia.slice(0, 4));
   const mesIndice = Number(competencia.slice(5, 7));
 
-  const { data: linhas = [], isLoading, isError: erroNasLinhas, refetch: lerLinhas } = useAcompanhamentoDaCarteira(carteira, competencia, intervalo, filial);
-  const { data: meses = [], isError: erroNosMeses, refetch: lerMeses } = useCarteiraMesAMes(carteira, ano, filial);
+  const { data: linhas = [], isLoading, isError: erroNasLinhas, refetch: lerLinhas } = useAcompanhamentoDaCarteira(consulta, competencia, intervalo, filial);
+  const { data: meses = [], isError: erroNosMeses, refetch: lerMeses } = useCarteiraMesAMes(consulta, ano, filial);
   const doMes = intervalo ? null : meses.find((m) => m.mes === mesIndice);
   const meta = doMes?.meta ?? null;
   const hoje = todayISO();
@@ -210,7 +216,7 @@ export default function ComercialCarteiras() {
   return (
     <div className="flex flex-col min-h-full">
       <PageHeader
-        title={carteira ? `Carteira ${carteira}` : 'Carteiras'}
+        title={todasAsCarteiras ? 'Carteira de clientes · todas as carteiras' : carteira ? `Carteira ${carteira}` : 'Carteira de clientes'}
         description="Cada cliente da carteira: quanto comprou, se está comprando mais ou menos que o normal dele, e o último contato."
         icon={Briefcase}
         status={<FonteDoNumero fonte="os-dois" />}
@@ -228,9 +234,12 @@ export default function ComercialCarteiras() {
           <div className="flex flex-wrap items-end gap-3 print:hidden">
             {opcoes.length > 1 && (
               <Filtro rotulo="Carteira">
-                <Select value={carteira ?? ''} onValueChange={setEscolhida}>
-                  <SelectTrigger className="h-9 w-48" aria-label="Carteira"><SelectValue placeholder="Carteira" /></SelectTrigger>
-                  <SelectContent>{opcoes.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                <Select value={todasAsCarteiras ? TODAS : carteira ?? ''} onValueChange={setEscolhida}>
+                  <SelectTrigger className="h-9 w-56" aria-label="Carteira"><SelectValue placeholder="Carteira" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={TODAS}>Todas as carteiras ({opcoes.length})</SelectItem>
+                    {opcoes.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  </SelectContent>
                 </Select>
               </Filtro>
             )}
@@ -263,7 +272,7 @@ export default function ComercialCarteiras() {
           </div>
         </div>
 
-        {!carteira ? (
+        {!consulta ? (
           carregandoMinha ? <Skeleton className="h-40 w-full" /> : (
             <Card className="p-6">
               <EmptyState
@@ -312,7 +321,7 @@ export default function ComercialCarteiras() {
                 </Card>
               </ExplicacaoDoIndicador>
               <div className="col-span-full">
-                <ComposicaoDaVenda de={intervalo?.de ?? competencia} carteira={carteira} filial={filial}
+                <ComposicaoDaVenda de={intervalo?.de ?? competencia} carteira={todasAsCarteiras ? opcoes.join(',') : carteira} filial={filial}
                   ate={intervalo?.ate ?? ultimoDiaDoMes(competencia)} />
               </div>
             </div>
@@ -530,7 +539,7 @@ export default function ComercialCarteiras() {
         )}
       </div>
 
-      <ClienteMesAMes linha={clienteAberto} onClose={() => setClienteAberto(null)} carteira={carteira}
+      <ClienteMesAMes linha={clienteAberto} onClose={() => setClienteAberto(null)} carteira={clienteAberto?.carteira ?? carteira}
         competencia={competencia} intervalo={intervalo} filial={filial} />
     </div>
   );

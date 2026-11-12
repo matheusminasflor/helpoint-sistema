@@ -508,21 +508,37 @@ export interface LinhaAcompanhamento {
   status_ultimo_contato: StatusInteracao | null;
   proximo_prazo: string | null;
   observacao: string | null;
+  /** A carteira de onde a linha veio (preenchida aqui, para "Todas as carteiras" abrir o cliente na dele). */
+  carteira?: string;
 }
 
 export type FiltroFilial = '' | 'INBRAS' | 'MF';
+
+/** Uma carteira, ou várias ("Todas as carteiras", revisão de 2026-11-12): a lista que as consultas percorrem. */
+export type UmaOuVariasCarteiras = string | readonly string[] | null;
+const listaDeCarteiras = (c: UmaOuVariasCarteiras): string[] => (c == null ? [] : typeof c === 'string' ? [c] : [...c]);
+
+/** O mesmo farol de `com_cor_do_farol` (banco): sem meta, ≥ meta verde, ≥ 70% amarelo, abaixo vermelho. */
+export function corDoFarol(realizado: number, meta: number | null): CorFarol {
+  if (meta == null || meta <= 0) return 'sem_meta';
+  if (realizado >= meta) return 'verde';
+  return realizado >= meta * 0.7 ? 'amarelo' : 'vermelho';
+}
 
 /**
  * Uma linha por grupo da carteira (manual §8.2). A porta é a carteira: a vendedora, só a dela. Um mês, ou um período
  * (`intervalo`), e a filial (20270126030000).
  */
-export function useAcompanhamentoDaCarteira(carteira: string | null, competencia: string,
+export function useAcompanhamentoDaCarteira(carteira: UmaOuVariasCarteiras, competencia: string,
   intervalo?: IntervaloDeDias | null, filial: FiltroFilial = '') {
   const { tenantId } = useAuth();
+  const lista = listaDeCarteiras(carteira);
   return useQuery({
-    queryKey: ['comercial', 'acompanhamento-da-carteira', tenantId, carteira, competencia, intervalo?.de ?? null, intervalo?.ate ?? null, filial],
-    enabled: !!tenantId && !!carteira,
-    queryFn: () => lerAcompanhamento(carteira!, competencia, intervalo, filial),
+    queryKey: ['comercial', 'acompanhamento-da-carteira', tenantId, lista, competencia, intervalo?.de ?? null, intervalo?.ate ?? null, filial],
+    enabled: !!tenantId && lista.length > 0,
+    // Cada cliente está numa carteira só: com várias, as linhas somam sem repetir.
+    queryFn: async () => (await Promise.all(lista.map(async (c) =>
+      (await lerAcompanhamento(c, competencia, intervalo, filial)).map((l) => ({ ...l, carteira: c }))))).flat(),
   });
 }
 
@@ -561,16 +577,28 @@ export function useClienteMesAMes(carteira: string | null, codigos: string[] | n
 export interface MesDaCarteira { mes: number; meta: number | null; venda: number; cor: CorFarol }
 
 /** Meta da Diretoria × venda lançada, os 12 meses do ano (manual §8.1). */
-export function useCarteiraMesAMes(carteira: string | null, ano: number, filial: FiltroFilial = '') {
+export function useCarteiraMesAMes(carteira: UmaOuVariasCarteiras, ano: number, filial: FiltroFilial = '') {
   const { tenantId } = useAuth();
+  const lista = listaDeCarteiras(carteira);
   return useQuery({
-    queryKey: ['comercial', 'carteira-mes-a-mes', tenantId, carteira, ano, filial],
-    enabled: !!tenantId && !!carteira,
+    queryKey: ['comercial', 'carteira-mes-a-mes', tenantId, lista, ano, filial],
+    enabled: !!tenantId && lista.length > 0,
     queryFn: async (): Promise<MesDaCarteira[]> => {
-      const linhas = unwrap(await supabase.rpc('com_carteira_mes_a_mes', {
-        p_carteira: carteira!, p_ano: ano, p_filial: filial || null,
-      } as never)) as unknown as Array<{ mes: number; meta: unknown; venda: unknown; cor: CorFarol }>;
-      return linhas.map((l) => ({ mes: l.mes, meta: numOuNulo(l.meta), venda: num(l.venda), cor: l.cor }));
+      const porCarteira = await Promise.all(lista.map(async (c) => {
+        const linhas = unwrap(await supabase.rpc('com_carteira_mes_a_mes', {
+          p_carteira: c, p_ano: ano, p_filial: filial || null,
+        } as never)) as unknown as Array<{ mes: number; meta: unknown; venda: unknown; cor: CorFarol }>;
+        return linhas.map((l) => ({ mes: l.mes, meta: numOuNulo(l.meta), venda: num(l.venda), cor: l.cor }));
+      }));
+      if (porCarteira.length === 1) return porCarteira[0];
+      // Várias: soma mês a mês; a meta é a soma das que existem, e a cor sai da soma (a mesma regra do banco).
+      return Array.from({ length: 12 }, (_, i) => {
+        const doMes = porCarteira.map((m) => m.find((x) => x.mes === i + 1));
+        const metas = doMes.map((x) => x?.meta).filter((m): m is number => m != null);
+        const meta = metas.length ? metas.reduce((s, m) => s + m, 0) : null;
+        const venda = doMes.reduce((s, x) => s + (x?.venda ?? 0), 0);
+        return { mes: i + 1, meta, venda, cor: corDoFarol(venda, meta) };
+      });
     },
   });
 }

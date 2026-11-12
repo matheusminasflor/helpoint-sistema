@@ -84,6 +84,9 @@ export default function ComercialBonificacao() {
         {/* Sem seletor de série (2026-10-16): bonificação é a série 75 por definição — a série 1 é publicidade e a
             76 é cashback (migration 20270127060000); as duas aparecem em Comercial › Vendas. */}
       </div>
+      <p className="text-[13px] text-muted-foreground">
+        A equipe e as contas da própria Minasflor (Marketing, Lojas, E-commerce, Academy) ficam fora desta lista: recebem material, mas não são clientes.
+      </p>
 
       {visao === 'simplificado' ? (
         <Farol clientes={farolClientes} produtos={farolProdutos} />
