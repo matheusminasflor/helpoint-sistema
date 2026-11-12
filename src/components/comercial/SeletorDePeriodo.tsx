@@ -1,5 +1,5 @@
 // O seletor de período do Comercial e da Diretoria — UM só (rodada 2, R6; o dono, 2026-10-26: "se não impactar os
-// dados, pode ser somente um seletor"). É só a peça da tela: a lista de períodos, o "Um mês" e o "Personalizado".
+// dados, pode ser somente um seletor"). É só a peça da tela: a lista de períodos, o "Mês" e o "Personalizado".
 // Cada tela continua com o próprio estado e a própria conta (`usePeriodoDaCompetencia`, `usePeriodoComercial`) e
 // recebe EXATAMENTE as mesmas datas de antes — por isso a troca não muda número nenhum. As opções que uma tela não sabe
 // responder (o "Últimos 6 meses" nos Indicadores) ela simplesmente não passa.
@@ -10,13 +10,15 @@ import { PERSONALIZADO, rotuloDoIntervalo, type IntervaloDeDias } from '@/lib/pe
 
 export interface OpcaoDePeriodo { value: string; label: string }
 
-export function SeletorDePeriodo<P extends string>({ opcoes, periodo, onPeriodo, umMes, valorDeUmMes, intervalo, onIntervalo, mostrarIntervalo }: {
+export function SeletorDePeriodo<P extends string>({ opcoes, periodo, onPeriodo, umMes, valorDeUmMes, umAno, intervalo, onIntervalo, mostrarIntervalo }: {
   opcoes: OpcaoDePeriodo[];
   periodo: P;
   onPeriodo: (p: P) => void;
-  /** O que aparece ao lado quando o período é "Um mês" (o mês e o ano). */
+  /** O que aparece ao lado quando o período é "Mês" (o mês e o ano). */
   umMes?: ReactNode;
   valorDeUmMes: string;
+  /** O que aparece ao lado quando o período é "Ano" (o ano). Sem ele, o "Ano" mostra o período exibido. */
+  umAno?: ReactNode;
   intervalo?: IntervaloDeDias | null;
   onIntervalo?: (i: IntervaloDeDias) => void;
   /** Nos atalhos de calendário ("Este trimestre"), escreve o período exibido. */
@@ -31,6 +33,7 @@ export function SeletorDePeriodo<P extends string>({ opcoes, periodo, onPeriodo,
         </SelectContent>
       </Select>
       {periodo === valorDeUmMes ? umMes
+        : periodo === 'ano' && umAno ? umAno
         : periodo === PERSONALIZADO && intervalo && onIntervalo ? <PeriodoPersonalizado de={intervalo.de} ate={intervalo.ate} onChange={onIntervalo} />
         : mostrarIntervalo && intervalo ? (
           <span className="text-[13px] text-muted-foreground">

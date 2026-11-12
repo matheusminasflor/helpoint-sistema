@@ -19,10 +19,13 @@ export function CartaoDaComissao({ pessoaId, de, ate }: { pessoaId: string | nul
         <span className="text-status-success font-semibold">{formatBRL(garantida)} garantida</span> (com nota)
         {a_confirmar > 0 && <> · <span className="font-semibold">{formatBRL(a_confirmar)} a confirmar</span> (sem nota ainda)</>}
       </p>
+      {/* Zero não é defeito: o 0,5% da carteira é tudo ou nada, só com a meta do mês batida (docs/regra-comissao.md).
+          A tela diz isso e mostra o quanto da meta já veio, para o R$ 0,00 não parecer conta quebrada. */}
       {faltas.map((l) => (
         <p key={l.origem} className="text-[12px] text-muted-foreground">
-          {l.origem}: faltam <strong className="font-mono">{formatBRL(l.falta ?? 0)}</strong> para bater a meta e ganhar{' '}
-          <strong className="font-mono">{formatBRL((l.meta ?? 0) * l.percentual)}</strong> ou mais
+          {l.origem}: <strong>{Math.floor((1 - (l.falta ?? 0) / (l.meta ?? 1)) * 100)}% da meta</strong>. Faltam{' '}
+          <strong className="font-mono">{formatBRL(l.falta ?? 0)}</strong> para bater a meta e ganhar{' '}
+          <strong className="font-mono">{formatBRL((l.meta ?? 0) * l.percentual)}</strong> ou mais. O 0,5% só entra com a meta batida.
         </p>
       ))}
     </div>

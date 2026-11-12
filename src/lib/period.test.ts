@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  PERIODOS_DO_COMERCIAL, periodoDoPadrao,
   periodoAnterior,
   avisoDeMesesInteiros, calcularPeriodoComercial, erroDoIntervalo, intervaloDoPeriodoRapido, intervaloEmDatas,
   intervaloAnterior, mesesDoIntervalo, mesesInteirosDoIntervalo, rotuloDoIntervalo,
@@ -162,5 +163,17 @@ describe('periodoAnterior', () => {
   it('uma semana volta sete dias', () => {
     const p = periodoAnterior(new Date(2026, 9, 26), new Date(2026, 10, 1, 23, 59, 59, 999));
     expect([dia(p.startDate), dia(p.endDate)]).toEqual(['2026-10-19', '2026-10-25']);
+  });
+});
+
+describe('padrão de período do Comercial (dono, 2026-11-12)', () => {
+  it('não tem par repetido: sem "Um mês" × "Este mês" nem "Ano todo" × "Este ano"', () => {
+    const rotulos = PERIODOS_DO_COMERCIAL.map((o) => o.label);
+    expect(rotulos).toEqual(['Mês', 'Últimos 3 meses', 'Últimos 6 meses', 'Este trimestre', 'Ano', 'Personalizado']);
+  });
+  it('link antigo com "este_mes" ou "este_ano" cai no par que ficou', () => {
+    expect(periodoDoPadrao('este_mes')).toBe('mes');
+    expect(periodoDoPadrao('este_ano')).toBe('ano');
+    expect(periodoDoPadrao('ultimos3')).toBe('ultimos3');
   });
 });

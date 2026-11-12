@@ -186,20 +186,21 @@ const MEU_DIA = 'Meu dia';
 // Revisão de 2026-11-12 (aprovada pelo dono, https://claude.ai/artifact/DogLjeM9MuJUzFt2H7ALFV): 18 itens viram 11, com
 // nomes de mercado. Os 8 relatórios viram UM item, "Relatórios", com as abas no alto de cada um (AbasDosRelatorios).
 // Distribuidores sai do menu até o primeiro distribuidor entrar no portal (a TI continua em TI › Distribuidores; o
-// endereço segue valendo). Lei de Hick: menos portas; posição em série: o que se usa todo dia, em cima.
+// endereço segue valendo). Lei de Hick: menos portas; posição em série: o que se usa todo dia, em cima. Nomes de uma
+// palavra (dono, 2026-11-12: "precisam ser mais objetivos"): o menu se lê de relance, o título da tela detalha.
 const DESEMPENHO = 'Desempenho';
 const ANALISES = 'Análises';
 const comercialMenuItems: MenuItem[] = [
-  { to: '/comercial/inicio', icon: LayoutDashboard, label: 'Painel do Comercial', title: 'Minha venda do mês, minha comissão e o que fazer hoje', secao: MEU_DIA },
-  { to: '/comercial/lancamentos', icon: ClipboardList, label: 'Registro de atividades', title: 'Registrar contatos, vendas e ações do dia', secao: MEU_DIA },
-  { to: '/comercial/agenda-de-retornos', icon: PhoneCall, label: 'Agenda de retornos', title: 'Quem ligar hoje e que retorno atrasou', secao: MEU_DIA },
-  { to: '/comercial/carteiras', icon: Briefcase, label: 'Carteira de clientes', title: 'Cada cliente da carteira, e a carteira contra a meta da Diretoria', secao: MEU_DIA },
+  { to: '/comercial/inicio', icon: LayoutDashboard, label: 'Painel', title: 'Minha venda do mês, minha comissão e o que fazer hoje', secao: MEU_DIA },
+  { to: '/comercial/lancamentos', icon: ClipboardList, label: 'Atividades', title: 'Registrar contatos, vendas e ações do dia', secao: MEU_DIA },
+  { to: '/comercial/agenda-de-retornos', icon: PhoneCall, label: 'Retornos', title: 'Quem ligar hoje e que retorno atrasou', secao: MEU_DIA },
+  { to: '/comercial/carteiras', icon: Briefcase, label: 'Carteira', title: 'Cada cliente da carteira, e a carteira contra a meta da Diretoria', secao: MEU_DIA },
   { to: '/comercial/pedidos', icon: PackageCheck, label: 'Pedidos', title: 'Os pedidos enviados ao Financeiro e em que pé cada um está', secao: MEU_DIA },
-  { to: '/comercial/indicadores', icon: Gauge, label: 'Metas e desempenho', title: 'Meta, realizado e comissão de cada vendedora', secao: DESEMPENHO },
-  { to: '/comercial/crm', icon: Headset, label: 'Atendimento digital', title: 'WhatsApp e Instagram no Kommo: quem escreveu, quem respondeu e em quanto tempo', secao: DESEMPENHO },
-  { to: '/comercial/chamados', icon: Ticket, label: 'Chamados do Comercial', title: 'Fila de chamados do Comercial', secao: DESEMPENHO },
+  { to: '/comercial/indicadores', icon: Gauge, label: 'Indicadores', title: 'Meta, realizado e comissão de cada vendedora', secao: DESEMPENHO },
+  { to: '/comercial/crm', icon: Headset, label: 'CRM', title: 'WhatsApp e Instagram no Kommo: quem escreveu, quem respondeu e em quanto tempo', secao: DESEMPENHO },
+  { to: '/comercial/chamados', icon: Ticket, label: 'Chamados', title: 'Fila de chamados do Comercial', secao: DESEMPENHO },
   { to: '/comercial/relatorios', icon: BarChart3, label: 'Relatórios', title: 'Faturamento e Curva ABC, Clientes, Retenção, Bonificação, Cashback e mais', secao: ANALISES },
-  { to: '/comercial/diretrizes', icon: BookMarked, label: 'Políticas comerciais', secao: DO_SETOR },
+  { to: '/comercial/diretrizes', icon: BookMarked, label: 'Políticas', title: 'Políticas comerciais: descontos, bonificação e cashback', secao: DO_SETOR },
   { to: '/comercial/configuracoes', icon: Settings, label: 'Configurações', title: 'Configurações do Comercial', secao: DO_SETOR },
 ];
 

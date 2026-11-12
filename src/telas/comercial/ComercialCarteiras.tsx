@@ -301,7 +301,7 @@ export default function ComercialCarteiras() {
                 <Card className="p-3 h-full">
                   <p className="text-[12px] text-muted-foreground">Meta {intervalo ? '' : 'do mês'}</p>
                   <p className="text-[18px] font-semibold font-mono">{meta === null ? '—' : formatBRL(meta)}</p>
-                  {intervalo && <p className="text-[12px] text-muted-foreground">A meta é mensal: escolha "Um mês".</p>}
+                  {intervalo && <p className="text-[12px] text-muted-foreground">A meta é mensal: escolha "Mês".</p>}
                 </Card>
               </ExplicacaoDoIndicador>
               <ExplicacaoDoIndicador id="carteira.venda">

@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { unwrap } from '@/lib/supabase-result';
 import { buscarComTeto, type ConsultaComLimite } from '@/lib/listas';
-import { PERSONALIZADO, calcularPeriodoComercial, type IntervaloDeDias, type PeriodoComercial } from '@/lib/period';
+import { PERSONALIZADO, calcularPeriodoComercial, periodoDoPadrao, type IntervaloDeDias, type PeriodoComercial } from '@/lib/period';
 import { todayISO } from '@/lib/dates';
 import { useAuth } from '@/contexts/AuthContext';
 import type {
@@ -179,7 +179,8 @@ export function useAnoComVenda() {
  * `setIntervalo` para `<FiltrosComerciais>`, que só devolve intervalo válido.
  */
 export function usePeriodoComercial(ano: number) {
-  const [periodo, setPeriodoBruto] = useNaSessao<PeriodoComercial>('comercial-relatorios:periodo', 'ano');
+  const [salvo, setPeriodoBruto] = useNaSessao<PeriodoComercial>('comercial-relatorios:periodo', 'ano');
+  const periodo = periodoDoPadrao(salvo);
   const [mes, setMes] = useNaSessao('comercial-relatorios:mes', new Date().getMonth() + 1);
   const [intervalo, setIntervalo] = useNaSessao<IntervaloDeDias | null>('comercial-relatorios:intervalo', null);
   const { de, ate } = calcularPeriodoComercial(periodo, ano, mes, todayISO(), intervalo);

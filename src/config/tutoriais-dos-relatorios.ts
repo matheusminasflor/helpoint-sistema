@@ -76,7 +76,7 @@ export const TUTORIAIS = {
       'Carteira com duas vendedoras: a nota conta para as duas.',
       'Ativo = comprou nos últimos 120 dias.',
       'Positivados = clientes que compraram no período. Novos = positivados que não tinham comprado nos 120 dias antes (novos ou reconquistados). Conversão = dos clientes contatados (Relacionados), quantos compraram.',
-      'Projeção do fechamento (no "Um mês"): o realizado no ritmo dos dias úteis até o último dado, vezes os dias úteis do mês, contra a meta.',
+      'Projeção do fechamento (no período "Mês"): o realizado no ritmo dos dias úteis até o último dado, vezes os dias úteis do mês, contra a meta.',
       'Exportar para Excel leva as tabelas que a tela mostra, sem refazer conta. Aparece para quem tem "Exportar" no perfil.',
     ],
   },
@@ -92,7 +92,7 @@ export const TUTORIAIS = {
       'Ritmo: a média dos últimos 3 meses FECHADOS contra a média mensal (o mês que está correndo não entra). Comprando mais = 110% ou mais; Normal = de 80% a 110%; Comprando menos = abaixo de 80%; Parado = sem compra há mais de 120 dias. Toque ou passe o mouse no selo para ver as duas médias.',
       'A bolinha ao lado do nome: verde ativo, vermelho parado, cinza nunca comprou. Valor vermelho: comprou menos que no mês anterior; verde: comprou mais. Clique no nome para ver tudo do cliente: pedidos em aberto, cashback, dor em aberto, próximo retorno e a venda mês a mês.',
       'Os cartões dizem a quem procurar; clique num para filtrar a lista. Selo roxo: cliente condição. Selo A confirmar: nota digitada que a importação de sexta ainda vai conferir.',
-      'Cobertura = venda ÷ meta do mês. A meta é mensal: no período, escolha "Um mês" para comparar.',
+      'Cobertura = venda ÷ meta do mês. A meta é mensal: no período, escolha "Mês" para comparar.',
     ],
   },
   'comercial-vendas': {

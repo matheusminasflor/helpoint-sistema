@@ -18,18 +18,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { MESES } from '@/lib/comparativoAnos';
 import { SeletorDePeriodo } from '@/components/comercial/SeletorDePeriodo';
 import {
-  OPCOES_DE_CALENDARIO, ehPeriodoRapido, intervaloDoPeriodoRapido,
+  PERIODOS_DO_COMERCIAL, ehPeriodoRapido, intervaloDoPeriodoRapido,
   type IntervaloDeDias, type PeriodoComercial,
 } from '@/lib/period';
 import type { Filial } from '@/types/comercial';
-
-const OPCOES_PERIODO: { value: PeriodoComercial; label: string }[] = [
-  { value: 'mes', label: 'Um mês' },
-  { value: 'ultimos3', label: 'Últimos 3 meses' },
-  { value: 'ultimos6', label: 'Últimos 6 meses' },
-  { value: 'ano', label: 'Ano todo' },
-  ...OPCOES_DE_CALENDARIO,
-];
 
 interface FiltrosComerciaisProps {
   ano: number;
@@ -86,7 +78,7 @@ export function FiltrosComerciais({
       {/* A mesma peça dos Indicadores e das Carteiras (R6, `SeletorDePeriodo`); os tratadores são os de antes.
           "Personalizado" só existe quando quem chama sabe guardar o intervalo. */}
       {periodo && onPeriodoChange && (
-        <SeletorDePeriodo opcoes={OPCOES_PERIODO} periodo={periodo} valorDeUmMes="mes" onPeriodo={escolherPeriodo}
+        <SeletorDePeriodo opcoes={PERIODOS_DO_COMERCIAL} periodo={periodo} valorDeUmMes="mes" onPeriodo={escolherPeriodo}
           intervalo={intervalo} onIntervalo={onIntervaloChange ? escolherIntervalo : undefined}
           umMes={mes !== undefined && onMesChange ? (
             <Select value={String(mes)} onValueChange={(v) => onMesChange(Number(v))}>

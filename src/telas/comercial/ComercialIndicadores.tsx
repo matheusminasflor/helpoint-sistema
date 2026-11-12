@@ -74,7 +74,7 @@ export default function ComercialIndicadores() {
   const { data: farol = [] } = useFarolDeAcoes(competencia, intervalo);
   const { data: resumo = [] } = useResumoDaCarteira(competencia, intervalo);
   const { data: venda } = useVendaAtribuida(competencia, intervalo);
-  // A projeção (R6) só no "Um mês": num período de vários meses não há um mês para fechar.
+  // A projeção (R6) só no "Mês": num período de vários meses não há um mês para fechar.
   const { data: ritmo } = useRitmoDoMes(competencia, !intervalo);
   const { data: notasErradas = [] } = useNotasQueNaoBateram(competencia, intervalo);
   const [visao, setVisao] = useVisaoRelatorio('comercial-indicadores', 'simplificado');
@@ -165,7 +165,7 @@ export default function ComercialIndicadores() {
   return (
     <div className="flex flex-col min-h-full">
       <PageHeader
-        title={visaoDeEquipe ? 'Metas e desempenho' : 'Minhas metas e desempenho'}
+        title={visaoDeEquipe ? 'Indicadores' : 'Meus indicadores'}
         status={<FonteDoNumero fonte="os-dois" />}
         description={visaoDeEquipe
           ? 'Meta, realizado e farol de cada vendedora, as ações do mês e o resumo das carteiras. A venda vem das notas fiscais (Forteplus e lançamentos com nota); contatos e ações, dos lançamentos.'
@@ -377,7 +377,7 @@ export default function ComercialIndicadores() {
                   <p className="text-[12px] text-muted-foreground">
                     A meta de valor é a da carteira, definida pela Diretoria.
                     {intervalo
-                      ? ' No período, cada meta é a soma dos meses inteiros que ele toca (a semanal, das semanas inteiras). Para editar uma meta, escolha "Um mês".'
+                      ? ' No período, cada meta é a soma dos meses inteiros que ele toca (a semanal, das semanas inteiras). Para editar uma meta, escolha "Mês".'
                       : podeDefinirMeta && ` As demais valem a partir de ${competenciaCurta(competencia)} e continuam nos meses seguintes até serem mudadas.`}
                   </p>
                   {!analitico && <NotasQueNaoBateram linhas={notasErradas.filter((n) => n.vendedor_id === id)} />}

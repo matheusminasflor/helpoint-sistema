@@ -205,6 +205,26 @@ export function avisoDeMesesInteiros(assunto: string, intervalo: IntervaloDeDias
 
 export type PeriodoComercial = 'mes' | 'ultimos3' | 'ultimos6' | 'ano' | PeriodoRapido | typeof PERSONALIZADO;
 
+/**
+ * O padrão de período do Comercial e da Diretoria (dono, 2026-11-12: "tem Um mês e este mês, no mercado geral não
+ * existe isso"). Uma lista só, na ordem do mais curto para o mais longo, sem par repetido: "Mês" abre no mês atual e
+ * as setas andam para os outros (o "Este mês" era o mesmo recorte); "Ano" usa o ano escolhido (o "Este ano" era o
+ * mesmo). Lei de Hick: seis opções; lei de Jakob: os nomes do Google Analytics e do Power BI.
+ */
+export const PERIODOS_DO_COMERCIAL: { value: 'mes' | 'ultimos3' | 'ultimos6' | 'este_trimestre' | 'ano' | typeof PERSONALIZADO; label: string }[] = [
+  { value: 'mes', label: 'Mês' },
+  { value: 'ultimos3', label: 'Últimos 3 meses' },
+  { value: 'ultimos6', label: 'Últimos 6 meses' },
+  { value: 'este_trimestre', label: 'Este trimestre' },
+  { value: 'ano', label: 'Ano' },
+  { value: PERSONALIZADO, label: 'Personalizado' },
+];
+
+/** Os dois valores que saíram da lista ainda podem chegar por link antigo ou pela sessão: viram o par que ficou. */
+export function periodoDoPadrao<P extends string>(periodo: P): P | 'mes' | 'ano' {
+  return periodo === 'este_mes' ? 'mes' : periodo === 'este_ano' ? 'ano' : periodo;
+}
+
 /** Último dia do mês (1-indexado): o truque do dia 0 do mês seguinte, sem fixar 28/29/30/31 na mão. */
 function ultimoDiaDoMes(ano: number, mes: number): number {
   return new Date(ano, mes, 0).getDate();

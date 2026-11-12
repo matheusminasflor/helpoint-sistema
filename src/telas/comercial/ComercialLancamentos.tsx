@@ -110,7 +110,7 @@ export default function ComercialLancamentos() {
   return (
     <div className="flex flex-col min-h-full">
       <PageHeader
-        title="Lançamentos"
+        title="Atividades"
         description="Uma linha por interação com o cliente: o que aconteceu, a venda, o próximo prazo. Os contatos e as ações dos indicadores saem daqui; a venda vem da nota fiscal."
         icon={ClipboardList}
         status={<FonteDoNumero fonte="lancado" />}

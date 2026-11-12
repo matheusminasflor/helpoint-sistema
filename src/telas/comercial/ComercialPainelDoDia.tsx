@@ -130,7 +130,7 @@ export default function ComercialPainelDoDia() {
         {/* Quem atende o CRM não tem carteira: a comissão dela aparece aqui, sozinha. */}
         {!porVendedora.some(([id]) => id === user?.id) && <CartaoDaComissao pessoaId={user?.id} de={de} ate={ate} />}
         <p className="text-[13px] text-muted-foreground">
-          Os detalhes estão em <Link to={tenantPath('/comercial/indicadores')} className="underline">Metas e desempenho</Link>,{' '}
+          Os detalhes estão em <Link to={tenantPath('/comercial/indicadores')} className="underline">Indicadores</Link>,{' '}
           <Link to={tenantPath('/comercial/agenda-de-retornos')} className="underline">Agenda de retornos</Link> e{' '}
           <Link to={tenantPath('/comercial/pedidos')} className="underline">Pedidos</Link>.
         </p>
