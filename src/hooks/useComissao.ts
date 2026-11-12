@@ -1,7 +1,9 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { mensagemDeErro } from '@/hooks/useComercialImport';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { unwrap } from '@/lib/supabase-result';
+import { expectRows, unwrap } from '@/lib/supabase-result';
 
 /** Uma linha da comissão (`com_comissao`, 20270212721500; regra em docs/regra-comissao.md). */
 export interface LinhaDaComissao {
@@ -36,4 +38,60 @@ export function somaDaComissao(linhas: LinhaDaComissao[], pessoaId: string | nul
     garantida: dela.reduce((s, l) => s + l.garantida, 0),
     a_confirmar: dela.reduce((s, l) => s + l.a_confirmar, 0),
   };
+}
+
+/** Uma porcentagem de comissão (`com_comissao_percentuais`, 20270212722110), em % (0,5 = 0,5%), valendo de um mês em diante. */
+export interface PercentualDaComissao {
+  id: string; tipo: 'carteira' | 'crm'; origem: string; percentual: number; vale_de: string;
+}
+
+/** Todas as porcentagens, com o histórico (a tela mostra a que vale hoje e as que já valeram ou vão valer). */
+export function usePercentuaisDaComissao() {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['com_comissao_percentuais', tenantId],
+    enabled: !!tenantId,
+    queryFn: async (): Promise<PercentualDaComissao[]> =>
+      ((unwrap(await supabase.from('com_comissao_percentuais' as never)
+        .select('id, tipo, origem, percentual, vale_de').order('vale_de', { ascending: false })) ?? []) as unknown as PercentualDaComissao[])
+        .map((p) => ({ ...p, percentual: Number(p.percentual) })),
+  });
+}
+
+/**
+ * Grava um % novo valendo a partir de um mês (decisão do dono, 2026-11-12: o histórico não muda). No mesmo mês, troca.
+ * Quem pode: a aba "Comissão" do perfil de acesso — a policy confere (`pode_alterar_aba('comercial', 'comissao')`).
+ */
+export function useSalvarPercentualDaComissao() {
+  const { tenantId } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (p: Omit<PercentualDaComissao, 'id'>) => {
+      expectRows(await supabase.from('com_comissao_percentuais' as never)
+        .upsert({ ...p, tenant_id: tenantId } as never, { onConflict: 'tenant_id,tipo,origem,vale_de' }).select('id'), 'a porcentagem');
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['com_comissao_percentuais', tenantId] });
+      qc.invalidateQueries({ queryKey: ['com_comissao', tenantId] });
+      toast.success('Porcentagem salva.');
+    },
+    onError: (e) => toast.error(mensagemDeErro(e)),
+  });
+}
+
+/** Apaga uma porcentagem (a que foi lançada errada). */
+export function useApagarPercentualDaComissao() {
+  const { tenantId } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      expectRows(await supabase.from('com_comissao_percentuais' as never).delete().eq('id', id).select('id'), 'a porcentagem');
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['com_comissao_percentuais', tenantId] });
+      qc.invalidateQueries({ queryKey: ['com_comissao', tenantId] });
+      toast.success('Porcentagem apagada.');
+    },
+    onError: (e) => toast.error(mensagemDeErro(e)),
+  });
 }

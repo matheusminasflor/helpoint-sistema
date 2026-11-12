@@ -924,9 +924,9 @@ export const EXPLICACOES = {
   },
   'com.comissao': {
     titulo: "Comissão",
-    oQueE: "Quanto você tem a receber de comissão no período. A comissão é paga só sobre o que foi FATURADO, com nota fiscal emitida.",
-    deOndeVem: "Garantida: as vendas com nota (Forteplus ou a nota que o Financeiro sobe). A confirmar: o que foi lançado ou vendido e ainda está sem nota. O valor se atualiza sozinho quando a nota chega.",
-    comoCalcula: "Carteiras ESPECIAL e DEMAIS ESTADOS: 0,5% de toda a venda do mês, só se a carteira bater 100% da meta. Atendimento do CRM: consumidor final e salão 10%; novo distribuidor 5% do 1º pedido faturado. \"A confirmar\" é previsão: pedido alterado, devolvido ou cancelado muda o valor. O mês fecha no último dia.",
+    oQueE: "Em destaque, a comissão POSSÍVEL: a porcentagem sobre todas as vendas do período, lançadas e faturadas. Embaixo, a REAL: a que vai ser paga, só sobre o que foi faturado (com nota fiscal emitida).",
+    deOndeVem: "As vendas com nota vêm do Forteplus ou da nota que o Financeiro sobe; as sem nota, do que foi lançado ou ganho no Kommo. As porcentagens ficam em Configurações do Comercial › Comissão. O valor se atualiza sozinho quando a nota chega.",
+    comoCalcula: "Carteiras (ESPECIAL e DEMAIS ESTADOS): a porcentagem sobre toda a venda do mês, só se a carteira bater 100% da meta do mês; num período de vários meses, cada mês conta sozinho. Atendimento do CRM (sem meta): consumidor final e salão sobre cada venda ganha; novo distribuidor sobre o 1º pedido faturado. Pedido alterado, devolvido ou cancelado muda o valor. O mês fecha no último dia.",
   },
   'crm.sem_segmento': {
     titulo: "Sem segmento",

@@ -56,6 +56,8 @@ export const ABAS_DE_CONFIGURACAO: Record<Department, AbaDeConfiguracao[]> = {
     { aba: 'familias', rotulo: 'Famílias de produto' },
     // 2026-10-04 (decisão do dono): "comprou no mês 36 OX 6 vol → R$ 100 de cashback".
     { aba: 'diretrizes', rotulo: 'Diretrizes' },
+    // 2026-11-12 (dono): as porcentagens de comissão (CRM por segmento e carteiras), valendo de um mês em diante.
+    { aba: 'comissao', rotulo: 'Comissão' },
   ],
   educacional: [CHAMADOS],
   expedicao: [CHAMADOS],

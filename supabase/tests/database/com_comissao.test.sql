@@ -6,11 +6,13 @@
 --   5  CRM, distribuidor sem nota: 5% do valor do Kommo, "a confirmar"
 --   6  a lead da equipe (interno) não conta
 --   7  quem não tem os relatórios do Comercial não vê a comissão
---   8  vários meses: cada mês contra a própria meta
+--   8  vários meses: cada mês contra a própria meta; a possível (o % de toda a venda) só nos meses com meta
+--   9  mudar o % vale do mês escolhido em diante: outubro não muda
+--  10  quem não tem a aba Comissão no perfil não muda o %
 begin;
 \ir _helpers.psql
 
-select plan(8);
+select plan(11);
 
 select ok((select garantida = 1500 and a_confirmar = 0 from public.com_comissao_da_carteira(300000, 0, 276000)),
   'bateu a meta com nota: 0,5% de toda a venda, garantida');
@@ -29,6 +31,11 @@ select tests.create_user('dona@comissao.test', (select a from f)) as dona,
 grant select on f, u to authenticated;
 select tests.grant_role((select dona from u), 'admin');
 select tests.grant_role((select dono from u), 'owner');
+
+-- As porcentagens moram em com_comissao_percentuais (20270212722110); a empresa de teste nasce sem elas.
+insert into public.com_comissao_percentuais (tenant_id, tipo, origem, percentual, vale_de)
+select (select a from f), x.tipo, x.origem, x.pct, date '2026-01-01'
+  from (values ('carteira', 'ESPECIAL', 0.5), ('crm', 'consumidor', 10), ('crm', 'salao', 10), ('crm', 'distribuidor', 5)) x(tipo, origem, pct);
 
 insert into public.kommo_usuarios (tenant_id, kommo_id, nome, user_id) values ((select a from f), 10, 'Thayná', (select thay from u));
 insert into public.kommo_leads (tenant_id, lead_id, nome, link, interno) values ((select a from f), 4, 'Da equipe', 'k/4', true);
@@ -72,9 +79,25 @@ select public.com_importar_vendas('MF', 'fixture-comissao.xlsx', 3, '{}'::jsonb,
 select tests.clear_authentication();
 select tests.authenticate_as('dona@comissao.test');
 select results_eq(
-  $$ select garantida, base_garantida, falta from public.com_comissao('2031-01-01', '2031-11-30') where origem = 'ESPECIAL' $$,
-  $$ values (7.50::numeric, 6700.00::numeric, null::numeric) $$,
+  $$ select garantida, a_confirmar, base_garantida, falta from public.com_comissao('2031-01-01', '2031-11-30') where origem = 'ESPECIAL' $$,
+  $$ values (7.50::numeric, 1.00::numeric, 6700.00::numeric, null::numeric) $$,
   'vários meses: cada mês contra a própria meta (só outubro paga) e sem "quanto falta"');
+select tests.clear_authentication();
+
+select tests.authenticate_as('dono@comissao.test');
+select lives_ok(
+  $$ insert into public.com_comissao_percentuais (tipo, origem, percentual, vale_de) values ('carteira', 'ESPECIAL', 1, '2031-11-01') returning id $$,
+  'quem tem a aba Comissão (aqui, o dono) muda o %');
+select results_eq(
+  $$ select garantida, a_confirmar from public.com_comissao('2031-01-01', '2031-11-30') where origem = 'ESPECIAL' $$,
+  $$ values (7.50::numeric, 2.00::numeric) $$,
+  'o % novo vale de novembro em diante: outubro continua 7,50 (0,5%), novembro possível 2,00 (1%)');
+select tests.clear_authentication();
+
+select tests.authenticate_as('bia@comissao.test');
+select throws_ok(
+  $$ insert into public.com_comissao_percentuais (tipo, origem, percentual, vale_de) values ('crm', 'salao', 50, '2031-12-01') returning id $$,
+  '42501', null, 'sem a aba Comissão no perfil, não muda o %');
 select tests.clear_authentication();
 select * from finish();
 rollback;

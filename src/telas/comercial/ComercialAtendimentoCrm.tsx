@@ -15,6 +15,8 @@ import { ExplicacaoDoIndicador } from '@/components/ajuda/ExplicacaoDoIndicador'
 import type { IdDaExplicacao } from '@/config/explicacoes-dos-indicadores';
 import { useCrmAtendimento, useCrmAtualizadoEm } from '@/hooks/useCrmAtendimento';
 import { useComissao } from '@/hooks/useComissao';
+import { CartaoDaComissao } from '@/components/comercial/CartaoDaComissao';
+import { useAuth } from '@/contexts/AuthContext';
 import { usePeriodoNaUrl } from '@/hooks/usePeriodoNaUrl';
 import { PERIODOS_DA_REUNIAO, intervaloDoPeriodoRapido, rotuloDoIntervalo } from '@/lib/period';
 import { dataHora, diaCurto } from '@/lib/dates';
@@ -125,6 +127,7 @@ export default function ComercialAtendimentoCrm() {
   const recorte = intervalo ?? intervaloDoPeriodoRapido('esta_semana');
   const { data, isLoading, error } = useCrmAtendimento(recorte.de, recorte.ate);
   const { data: comissao = [] } = useComissao(recorte.de, recorte.ate);
+  const { user } = useAuth();
   const [uf, setUf] = useState<string | null>(null);
   const estados = useMemo(() => (data ? porEstado(data.cruzado) : []), [data]);
   const segmentos = useMemo(() => (data ? porSegmento(data.cruzado, data.vendas_cruzado, uf) : []), [data, uf]);
@@ -176,6 +179,9 @@ export default function ComercialAtendimentoCrm() {
         <Card className="p-4 text-sm text-status-danger" role="alert">Não deu para ler o Atendimento do CRM: {(error as Error).message}</Card>
       )}
       {isLoading && <Card className="p-6 text-sm text-muted-foreground">Lendo as conversas…</Card>}
+
+      {/* A comissão de quem atende (dono, 2026-11-12): possível em destaque, real embaixo. Some para quem não tem. */}
+      <div className="max-w-sm"><CartaoDaComissao pessoaId={user?.id} de={recorte.de} ate={recorte.ate} /></div>
 
       {data && (
         <>
@@ -507,9 +513,9 @@ export default function ComercialAtendimentoCrm() {
                               const g = dela.reduce((s, c) => s + c.garantida, 0);
                               const p = dela.reduce((s, c) => s + c.a_confirmar, 0);
                               return dela.length ? (
-                                <span title={dela.map((c) => `${c.origem}: ${formatBRL(c.garantida)} garantida, ${formatBRL(c.a_confirmar)} a confirmar`).join('\n')}>
+                                <span title={dela.map((c) => `${c.origem}: possível ${formatBRL(c.garantida + c.a_confirmar)}, real ${formatBRL(c.garantida)}`).join('\n')}>
                                   <b className="text-primary">{formatBRL(g + p)}</b>
-                                  <span className="block text-[11px] text-muted-foreground">{formatBRL(g)} garantida</span>
+                                  <span className="block text-[11px] text-muted-foreground">real {formatBRL(g)}</span>
                                 </span>
                               ) : '—';
                             })()}

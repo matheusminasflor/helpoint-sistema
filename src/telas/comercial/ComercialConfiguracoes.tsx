@@ -2,7 +2,8 @@
 // mais as abas próprias: Equipe e carteiras, Indicadores, Cashback (L6c), Famílias de produto
 // (2026-10-03) e Diretrizes (2026-10-04).
 import { useState } from 'react';
-import { Handshake, Layers, ListChecks, Target, Trash2, Users, Wallet } from 'lucide-react';
+import { Handshake, Layers, ListChecks, Percent, Target, Trash2, Users, Wallet } from 'lucide-react';
+import { ComissaoTab } from '@/components/comercial/ComissaoTab';
 import { FamiliasDeProdutoTab } from '@/components/comercial/FamiliasDeProdutoTab';
 import { DiretrizesTab } from '@/components/comercial/DiretrizesTab';
 import { ConfiguracaoDoSetor } from '@/components/configuracoes/ConfiguracaoDoSetor';
@@ -40,6 +41,8 @@ export default function ComercialConfiguracoes() {
         // 2026-10-04 (decisão do dono): "comprou no mês 36 OX 6 vol → R$ 100 de cashback na próxima compra".
         // 2026-10-20: virou "Regras de benefício"; "Diretrizes" agora é o documento de processo, como nos outros setores.
         { valor: 'beneficios', permissao: 'diretrizes', rotulo: 'Regras de benefício', icone: Target, conteudo: <DiretrizesTab /> },
+        // 2026-11-12 (dono): conferir e mudar as porcentagens de comissão do CRM e das carteiras.
+        { valor: 'comissao', permissao: 'comissao', rotulo: 'Comissão', icone: Percent, conteudo: <ComissaoTab /> },
       ]}
       apelidos={{ vendedores: 'carteiras-vendedoras', carteiras: 'carteiras-vendedoras' }}
     />

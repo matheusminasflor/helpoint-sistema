@@ -50,3 +50,15 @@ Este arquivo é a especificação: o código segue o que está aqui.
 - Metas e desempenho: a de cada vendedora e carteira (gestor). Com seletor de carteira: uma ou todas, quando a
   vendedora tem mais de uma.
 - Atendimento digital (Atendimento do CRM): a de cada atendente, na aba "Por atendente".
+
+## Revisão de 2026-11-12 (decisões do dono)
+
+- **Possível × real.** Em destaque, a comissão POSSÍVEL: o % sobre todas as vendas do período (lançadas e faturadas),
+  "para a vendedora ver quanto pode ganhar". Embaixo, a REAL: só o faturado; na carteira, só com a meta do mês batida.
+  Vale para o CRM e para as carteiras. Na carteira, a possível só existe nos meses que têm meta.
+- **Mês a mês.** Num período de vários meses, cada mês é apurado contra a própria meta e o período soma os meses.
+- **A condição** (metade sem nota) continua contando para a meta e para a comissão real, como antes.
+- **As porcentagens são configuráveis** em Configurações do Comercial › Comissão (`com_comissao_percentuais`):
+  CRM por segmento (consumidor final, salão, novo distribuidor) e cada carteira. Cada % vale **do mês escolhido em
+  diante**; os meses que já passaram não mudam. Carteira sem % configurado não tem comissão.
+- **Quem altera:** quem tem a aba "Comissão" liberada no perfil de acesso (dono e administrador sempre).
