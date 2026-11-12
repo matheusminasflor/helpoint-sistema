@@ -377,7 +377,7 @@ export default function ComercialIndicadores() {
                   <p className="text-[12px] text-muted-foreground">
                     A meta de valor é a da carteira, definida pela Diretoria.
                     {intervalo
-                      ? ' No período, cada meta é a soma dos meses inteiros que ele toca (a semanal, das semanas inteiras). Para editar uma meta, escolha "Mês".'
+                      ? ' No período, cada meta é a soma dos meses inteiros que ele toca (a semanal, das semanas inteiras). O atingimento e o farol comparam a meta só com a venda dos meses que têm meta. Para editar uma meta, escolha "Mês".'
                       : podeDefinirMeta && ` As demais valem a partir de ${competenciaCurta(competencia)} e continuam nos meses seguintes até serem mudadas.`}
                   </p>
                   {!analitico && <NotasQueNaoBateram linhas={notasErradas.filter((n) => n.vendedor_id === id)} />}

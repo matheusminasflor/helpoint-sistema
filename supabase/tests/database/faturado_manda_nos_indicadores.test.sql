@@ -9,7 +9,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(8);
+select plan(9);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-fat-manda', 'Faturado Manda', false) as a;
@@ -97,6 +97,19 @@ select is(
     where vendedor_id = (select ana from u) and metrica = 'valor_vendas'),
   1300::numeric,
   'a venda lançada para a funcionária não soma no painel da Ana (continua 1.300)'
+);
+select tests.clear_authentication();
+
+-- ═══ 9. Atingimento só nos meses com meta (20270212721990; dono, 2026-11-12). ═══
+-- NORTE só tem meta em abril (1.000). De março a abril a Ana vendeu 1.300 (1.000 em março, sem meta; 300 em abril).
+-- O % compara a meta com os 300 de abril (30%, vermelho), não com os 1.300 do período (130%, "na meta").
+insert into public.com_metas (tenant_id, ano, mes, carteira, valor) values ((select a from f), 2031, 4, 'NORTE', 1000);
+select tests.authenticate_as('dono@fatmanda.test');
+select is(
+  (select array[realizado::text, cor] from public.com_painel_do_gestor('2031-03-01', '2031-03-01', '2031-04-30')
+    where vendedor_id = (select ana from u) and metrica = 'pct_meta'),
+  array['30.0', 'vermelho'],
+  'período com um mês sem meta: o % olha só a venda de abril (30%), não a do período (130%)'
 );
 select tests.clear_authentication();
 
