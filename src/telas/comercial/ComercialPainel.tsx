@@ -31,6 +31,7 @@ import { FAIXA_BADGE, NOTA_CURVA_POR_QUANTIDADE, linkFichaCliente } from '@/conf
 import { limparNomeCliente } from '@/lib/nome-cliente';
 import { casaBusca } from '@/lib/tabela';
 import { faltaParaSubir } from '@/lib/falta-para-subir';
+import { CurvaNosUltimosSeisMeses, CurvaPorCliente } from '@/components/comercial/CurvaPorClienteESeisMeses';
 import { opcoesDeSerie } from '@/lib/series-do-filtro';
 import { formatBRL, competenceLabel, formatDateBR } from '@/types/financeiro';
 import type { CriterioCurva, FaixaCurva, Filial, RankingCliente, Serie } from '@/types/comercial';
@@ -240,7 +241,7 @@ export function ComercialPainel() {
           {visao === 'simplificado' && <CfopForaDaCurva de={de} ate={ate} />}
           {/* A Curva ABC numa página só (revisão de 2026-11-12): a tabela de todos os produtos também no resumo. */}
           {visao === 'simplificado' && linhasCurva.length > 0 && (
-            <TodosOsProdutos linhas={linhasCurva} cortou={!!curva?.cortou} criterio={criterio} de={de} ate={ate} filial={filial}
+            <CurvaEmAbas linhas={linhasCurva} cortou={!!curva?.cortou} criterio={criterio} de={de} ate={ate} filial={filial}
               formatarMetrica={formatarMetrica} />
           )}
 
@@ -381,7 +382,7 @@ export function ComercialPainel() {
               )}
 
               {/* 5. Todos os produtos por faixa (§11 seção 5), com busca, filtro por faixa, clientes e quanto falta. */}
-              <TodosOsProdutos linhas={linhasCurva} cortou={!!curva?.cortou} criterio={criterio} de={de} ate={ate} filial={filial}
+              <CurvaEmAbas linhas={linhasCurva} cortou={!!curva?.cortou} criterio={criterio} de={de} ate={ate} filial={filial}
                 formatarMetrica={formatarMetrica} />
             </>
           )}
@@ -588,5 +589,30 @@ function TodosOsProdutos({ linhas, cortou, criterio, de, ate, filial, formatarMe
         </p>
       )}
     </div>
+  );
+}
+
+type PropsDaCurva = Parameters<typeof TodosOsProdutos>[0];
+
+/** A Curva ABC numa página só, em três abas: os produtos, os clientes e os últimos 6 meses (revisão de 2026-11-11). */
+function CurvaEmAbas(props: PropsDaCurva) {
+  const [aba, setAba] = useState<'produtos' | 'clientes' | 'seis'>('produtos');
+  const abas = [
+    { id: 'produtos', rotulo: 'Produtos' }, { id: 'clientes', rotulo: 'Por cliente' }, { id: 'seis', rotulo: 'Últimos 6 meses' },
+  ] as const;
+  return (
+    <section className="space-y-2" aria-label="Curva ABC">
+      <div role="tablist" className="flex flex-wrap gap-1.5">
+        {abas.map((a) => (
+          <button key={a.id} type="button" role="tab" aria-selected={aba === a.id} onClick={() => setAba(a.id)}
+            className={`rounded-full border px-3 py-1 text-[13px] font-semibold ${aba === a.id ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-card hover:bg-muted'}`}>
+            Curva ABC · {a.rotulo}
+          </button>
+        ))}
+      </div>
+      {aba === 'produtos' && <TodosOsProdutos {...props} />}
+      {aba === 'clientes' && <CurvaPorCliente de={props.de} ate={props.ate} filial={props.filial} criterio={props.criterio} />}
+      {aba === 'seis' && <CurvaNosUltimosSeisMeses ate={props.ate} filial={props.filial} criterio={props.criterio} />}
+    </section>
   );
 }
