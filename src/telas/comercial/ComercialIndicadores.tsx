@@ -157,7 +157,7 @@ export default function ComercialIndicadores() {
   return (
     <div className="flex flex-col min-h-full">
       <PageHeader
-        title={visaoDeEquipe ? 'Indicadores do Comercial' : 'Meus indicadores'}
+        title={visaoDeEquipe ? 'Metas e desempenho' : 'Minhas metas e desempenho'}
         status={<FonteDoNumero fonte="os-dois" />}
         description={visaoDeEquipe
           ? 'Meta, realizado e farol de cada vendedora, as ações do mês e o resumo das carteiras. A venda vem das notas fiscais (Forteplus e lançamentos com nota); contatos e ações, dos lançamentos.'
