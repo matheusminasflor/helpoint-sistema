@@ -14,7 +14,8 @@ import { TresRespostas } from '@/components/comercial/TresRespostas';
 import { CartaoDaComissao } from '@/components/comercial/CartaoDaComissao';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePodeGerirCarteiras } from '@/hooks/useAccessProfiles';
-import { usePainelDoGestor, useRetornosDaEquipe } from '@/hooks/useComercialLancamentos';
+import { retornoSemDono, usePainelDoGestor, useRetornosDaEquipe } from '@/hooks/useComercialLancamentos';
+import { useCarteiraMembros } from '@/hooks/useComercialCarteirasMetas';
 import { useChecklists } from '@/hooks/usePedidosChecklist';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { competenciaAtual, competenciaCurta } from '@/lib/competencia-comercial';
@@ -37,6 +38,8 @@ export default function ComercialPainelDoDia() {
   const { data: painel = [], isLoading } = usePainelDoGestor(competencia, null);
   const { data: retornos = [] } = useRetornosDaEquipe();
   const { data: checklists = [] } = useChecklists();
+  const { data: membros = [] } = useCarteiraMembros();
+  const comCarteira = useMemo(() => new Set(membros.map((m) => m.user_id)), [membros]);
 
   const porVendedora = useMemo(() => {
     const mapa = new Map<string, { nome: string; carteira: string | null; linhas: typeof painel }>();
@@ -51,8 +54,10 @@ export default function ComercialPainelDoDia() {
 
   // O que fazer hoje: o devolvido pelo Financeiro primeiro (trava a venda), depois o retorno atrasado e o de hoje.
   const devolvidos = checklists.filter((c) => c.situacao === 'Recusado' && (gestor || c.vendedor_id === user?.id));
-  const paraLigar = retornos.filter((r) => r.prazo && situacaoDoRetorno(r.prazo, hoje) !== 'proximo'
-    && (gestor || r.vendedor_id === user?.id));
+  // Retorno de quem saiu do Comercial não é "ligar hoje" de ninguém: vira um aviso só, para o gestor (Agenda de retornos).
+  const vencidos = retornos.filter((r) => r.prazo && situacaoDoRetorno(r.prazo, hoje) !== 'proximo');
+  const paraLigar = vencidos.filter((r) => !retornoSemDono(r, comCarteira) && (gestor || r.vendedor_id === user?.id));
+  const semDono = gestor ? vencidos.filter((r) => retornoSemDono(r, comCarteira)) : [];
   const pendencias = devolvidos.length + paraLigar.length;
 
   return (
@@ -93,6 +98,12 @@ export default function ComercialPainelDoDia() {
                 );
               })}
             </ul>
+          )}
+          {semDono.length > 0 && (
+            <p className="text-[13px] text-muted-foreground">
+              {semDono.length} {semDono.length === 1 ? 'retorno' : 'retornos'} de quem saiu do Comercial esperam você na{' '}
+              <Link to={tenantPath('/comercial/agenda-de-retornos')} className="text-primary underline">Agenda de retornos</Link>.
+            </p>
           )}
         </Card>
 

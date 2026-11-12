@@ -68,7 +68,7 @@ export interface Interacao {
   observacoes: string | null;
   fora_da_carteira: boolean;
   marcas: string[];
-  cliente: { razao_social: string; cidade: string | null; estado: string | null; telefone: string | null } | null;
+  cliente: { razao_social: string; cidade: string | null; estado: string | null; telefone: string | null; carteira?: string | null } | null;
 }
 
 export interface InteracaoInput {
@@ -852,12 +852,35 @@ export function useRetornosDaEquipe() {
       ((unwrap(await supabase.from('com_interacoes')
         .select(`id, vendedor_id, cliente_codigo, data, status, valor_venda, nota_fiscal, nota_em, nota_filial, prazo, observacoes, fora_da_carteira,
                  marcas:com_interacao_marcas(indicador_id),
-                 cliente:com_clientes(razao_social, cidade, estado, telefone),
+                 cliente:com_clientes(razao_social, cidade, estado, telefone, carteira),
                  vendedor:profiles!com_interacoes_vendedor_id_fkey(full_name)`)
         .not('prazo', 'is', null)
         .neq('status', 'concluido')
         .order('prazo', { ascending: true })
         .limit(500)) ?? []) as unknown as (InteracaoCrua & { vendedor?: { full_name: string | null } | null })[])
         .map((l) => ({ ...lerInteracoes([l])[0], vendedor: l.vendedor })),
+  });
+}
+
+/**
+ * O retorno de quem saiu do Comercial (revisão de 2026-11-12): quem marcou não está mais em carteira nenhuma, e ninguém
+ * ia ligar — eram 20 atrasados desde 05/10, todos da Júlia. Ele sai do "O que fazer hoje" e espera o gestor na Agenda.
+ * `comCarteira` é o conjunto de quem está em alguma carteira (`com_carteira_membros`); vazio = ainda lendo, ninguém é órfão.
+ */
+export function retornoSemDono(r: { vendedor_id: string }, comCarteira: ReadonlySet<string>): boolean {
+  return comCarteira.size > 0 && !comCarteira.has(r.vendedor_id);
+}
+
+/** O gestor tira da agenda os retornos de quem saiu: o lançamento continua contando, só o prazo sai. */
+export function useTirarRetornosDaAgenda() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (ids: string[]) =>
+      expectRows(await supabase.from('com_interacoes').update({ prazo: null }).in('id', ids).select('id'), 'tirar os retornos da agenda'),
+    onSuccess: (linhas) => {
+      toast.success(`${linhas.length} ${linhas.length === 1 ? 'retorno saiu' : 'retornos saíram'} da agenda.`);
+      void qc.invalidateQueries({ queryKey: ['comercial', 'interacoes'] });
+    },
+    onError: (e) => toast.error(mensagemDeErro(e)),
   });
 }
