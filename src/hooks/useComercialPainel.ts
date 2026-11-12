@@ -364,6 +364,20 @@ export function useCurvaAbc(de: string, ate: string, filial: Filial | null, crit
   });
 }
 
+/** Quantos clientes compraram cada produto no período (Curva ABC, revisão de 2026-11-12). */
+export function useClientesPorProduto(de: string, ate: string, filial: Filial | null) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['comercial', 'clientes-por-produto', tenantId, de, ate, filial],
+    enabled: !!tenantId,
+    queryFn: async (): Promise<Map<string, number>> => {
+      const linhas = unwrap(await supabase.rpc('com_clientes_por_produto' as never, { p_de: de, p_ate: ate, p_filial: filial } as never)) as unknown as
+        { produto_codigo: string; clientes: number }[];
+      return new Map((linhas ?? []).map((l) => [l.produto_codigo, Number(l.clientes)]));
+    },
+  });
+}
+
 /**
  * Contagem e valor por faixa (achado A3 da auditoria, correção): reusa
  * `com_curva_abc_faixas`, que agrega no banco sobre a base INTEIRA do

@@ -9,25 +9,28 @@
 // nasceu daí. Esta página junta as duas: indicadores, o ano mês a mês,
 // maiores compradores, a curva completa (Pareto) e todos os produtos por
 // faixa, nesta ordem — como no painel original dele.
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Bar, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Upload } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
 import { FiltrosComerciais } from '@/components/comercial/FiltrosComerciais';
 import { CaixasDoPeriodo } from '@/components/comercial/CaixasDoPeriodo';
 import { SeletorVisao } from '@/components/comercial/SeletorVisao';
 import { TutorialDoRelatorio } from '@/components/ajuda/TutorialDoRelatorio';
 import { useVisaoRelatorio } from '@/hooks/useVisaoRelatorio';
 import {
-  useAnoComVenda, useCaixas, useCurvaAbc, useCurvaAbcFaixas, useFaturamentoMensal, usePeriodoComercial,
+  useAnoComVenda, useCaixas, useClientesPorProduto, useCurvaAbc, useCurvaAbcFaixas, useFaturamentoMensal, usePeriodoComercial,
   usePeriodoImportado, useRankingClientes, useUltimasImportacoes,
 } from '@/hooks/useComercialPainel';
 import { useTenantPath } from '@/hooks/useTenantPath';
 import { CfopForaDaCurva } from '@/components/comercial/CfopForaDaCurva';
 import { FAIXA_BADGE, NOTA_CURVA_POR_QUANTIDADE, linkFichaCliente } from '@/config/comercial-insights';
 import { limparNomeCliente } from '@/lib/nome-cliente';
+import { casaBusca } from '@/lib/tabela';
+import { faltaParaSubir } from '@/lib/falta-para-subir';
 import { opcoesDeSerie } from '@/lib/series-do-filtro';
 import { formatBRL, competenceLabel, formatDateBR } from '@/types/financeiro';
 import type { CriterioCurva, FaixaCurva, Filial, RankingCliente, Serie } from '@/types/comercial';
@@ -235,6 +238,11 @@ export function ComercialPainel() {
           )}
 
           {visao === 'simplificado' && <CfopForaDaCurva de={de} ate={ate} />}
+          {/* A Curva ABC numa página só (revisão de 2026-11-12): a tabela de todos os produtos também no resumo. */}
+          {visao === 'simplificado' && linhasCurva.length > 0 && (
+            <TodosOsProdutos linhas={linhasCurva} cortou={!!curva?.cortou} criterio={criterio} de={de} ate={ate} filial={filial}
+              formatarMetrica={formatarMetrica} />
+          )}
 
           {visao === 'analitico' && (
           <>
@@ -372,39 +380,9 @@ export function ComercialPainel() {
                 </div>
               )}
 
-              {/* 5. Todos os produtos por faixa (§11 seção 5). */}
-              <div className="rounded-lg border border-border overflow-x-auto">
-                <div className="px-4 py-2 border-b border-border text-[14px] font-semibold">Todos os produtos por faixa</div>
-                <table className="w-full text-[13px]">
-                  <thead>
-                    <tr className="bg-secondary/60 text-left text-muted-foreground">
-                      <th className="px-3 py-1.5 font-semibold">Produto</th>
-                      <th className="px-3 py-1.5 font-semibold text-right">{criterio === 'valor' ? 'Valor' : 'Quantidade'}</th>
-                      <th className="px-3 py-1.5 font-semibold text-right">Participação</th>
-                      <th className="px-3 py-1.5 font-semibold text-right">Acumulado</th>
-                      <th className="px-3 py-1.5 font-semibold text-center">Faixa</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {linhasCurva.map((l) => (
-                      <tr key={l.produto_codigo} className="border-t border-border">
-                        <td className="px-3 py-1.5">{l.nome}</td>
-                        <td className="px-3 py-1.5 text-right font-mono">{formatarMetrica(criterio === 'valor' ? l.valor : l.quantidade)}</td>
-                        <td className="px-3 py-1.5 text-right font-mono">{l.participacao !== null ? `${l.participacao.toFixed(1)}%` : '—'}</td>
-                        <td className="px-3 py-1.5 text-right font-mono">{l.acumulado !== null ? `${l.acumulado.toFixed(1)}%` : '—'}</td>
-                        <td className="px-3 py-1.5 text-center">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-[12px] font-semibold ${FAIXA_BADGE[l.faixa]}`}>{l.faixa}</span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {curva?.cortou && (
-                  <p className="px-4 py-2 text-[12px] text-muted-foreground border-t border-border">
-                    Lista maior que o mostrado aqui — estreite o período ou a filial para ver o restante.
-                  </p>
-                )}
-              </div>
+              {/* 5. Todos os produtos por faixa (§11 seção 5), com busca, filtro por faixa, clientes e quanto falta. */}
+              <TodosOsProdutos linhas={linhasCurva} cortou={!!curva?.cortou} criterio={criterio} de={de} ate={ate} filial={filial}
+                formatarMetrica={formatarMetrica} />
             </>
           )}
           </>
@@ -538,3 +516,77 @@ function ResumoDeVendas({
 }
 
 export default ComercialPainel;
+
+type ProdutoDaCurva = { produto_codigo: string; nome: string; valor: number; quantidade: number;
+  participacao: number | null; acumulado: number | null; faixa: FaixaCurva };
+
+/** Todos os produtos da curva, com busca, filtro por faixa, clientes que compraram e quanto falta para subir de faixa. */
+function TodosOsProdutos({ linhas, cortou, criterio, de, ate, filial, formatarMetrica }: {
+  linhas: ProdutoDaCurva[]; cortou: boolean; criterio: CriterioCurva; de: string; ate: string; filial: Filial | null;
+  formatarMetrica: (v: number) => string;
+}) {
+  const [busca, setBusca] = useState('');
+  const [faixa, setFaixa] = useState<FaixaCurva | 'todas'>('todas');
+  const { data: clientes } = useClientesPorProduto(de, ate, filial);
+  const metrica = (l: ProdutoDaCurva) => (criterio === 'valor' ? l.valor : l.quantidade);
+  const falta = useMemo(() => faltaParaSubir(linhas, (l) => (criterio === 'valor' ? l.valor : l.quantidade)), [linhas, criterio]);
+  const visiveis = linhas.filter((l) => (faixa === 'todas' || l.faixa === faixa) && casaBusca([l.nome, l.produto_codigo], busca));
+  return (
+    <div className="rounded-lg border border-border overflow-x-auto">
+      <div className="px-4 py-2 border-b border-border flex flex-wrap items-center justify-between gap-2">
+        <span className="text-[14px] font-semibold">Todos os produtos ({visiveis.length})</span>
+        <div className="flex flex-wrap items-center gap-2">
+          <Input className="h-8 w-56" placeholder="Buscar produto" value={busca} onChange={(e) => setBusca(e.target.value)} aria-label="Buscar produto" />
+          <Select value={faixa} onValueChange={(v) => setFaixa(v as FaixaCurva | 'todas')}>
+            <SelectTrigger className="h-8 w-40" aria-label="Faixa"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todas">Todas as faixas</SelectItem>
+              <SelectItem value="A">Faixa A</SelectItem>
+              <SelectItem value="B">Faixa B</SelectItem>
+              <SelectItem value="C">Faixa C</SelectItem>
+              <SelectItem value="-">Fora da curva</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      <table className="w-full text-[13px]">
+        <thead>
+          <tr className="bg-secondary/60 text-left text-muted-foreground">
+            <th className="px-3 py-1.5 font-semibold">Produto</th>
+            <th className="px-3 py-1.5 font-semibold text-right">{criterio === 'valor' ? 'Faturamento' : 'Quantidade'}</th>
+            <th className="px-3 py-1.5 font-semibold text-right">Clientes</th>
+            <th className="px-3 py-1.5 font-semibold text-right">Participação</th>
+            <th className="px-3 py-1.5 font-semibold text-right">Acumulado</th>
+            <th className="px-3 py-1.5 font-semibold text-center">Faixa</th>
+            <th className="px-3 py-1.5 font-semibold text-right" title="O que falta vender, no período, para alcançar o menor produto da faixa de cima">Falta para subir</th>
+          </tr>
+        </thead>
+        <tbody>
+          {visiveis.map((l) => (
+            <tr key={l.produto_codigo} className="border-t border-border">
+              <td className="px-3 py-1.5">{l.nome}</td>
+              <td className="px-3 py-1.5 text-right font-mono">{formatarMetrica(metrica(l))}</td>
+              <td className="px-3 py-1.5 text-right font-mono">{clientes?.get(l.produto_codigo) ?? '—'}</td>
+              <td className="px-3 py-1.5 text-right font-mono">{l.participacao !== null ? `${l.participacao.toFixed(1)}%` : '—'}</td>
+              <td className="px-3 py-1.5 text-right font-mono">{l.acumulado !== null ? `${l.acumulado.toFixed(1)}%` : '—'}</td>
+              <td className="px-3 py-1.5 text-center">
+                <span className={`inline-flex items-center px-2 py-0.5 rounded text-[12px] font-semibold ${FAIXA_BADGE[l.faixa]}`}>{l.faixa}</span>
+              </td>
+              <td className="px-3 py-1.5 text-right font-mono text-muted-foreground">
+                {falta.has(l) ? `${formatarMetrica(falta.get(l)!)} → ${l.faixa === 'B' ? 'A' : 'B'}` : '—'}
+              </td>
+            </tr>
+          ))}
+          {visiveis.length === 0 && (
+            <tr><td colSpan={7} className="px-3 py-4 text-center text-muted-foreground">Nenhum produto com este filtro.</td></tr>
+          )}
+        </tbody>
+      </table>
+      {cortou && (
+        <p className="px-4 py-2 text-[12px] text-muted-foreground border-t border-border">
+          Lista maior que o mostrado aqui — estreite o período ou a filial para ver o restante.
+        </p>
+      )}
+    </div>
+  );
+}
