@@ -18,7 +18,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { usePodeGerirCarteiras } from '@/hooks/useAccessProfiles';
 import { useCarteiras } from '@/hooks/useComercialCarteirasMetas';
-import { useAgruparClientes, useAtribuirCarteiraEmLote, useMinhasCarteiras } from '@/hooks/useComercialLancamentos';
+import { useAgruparClientes, useAtribuirCarteiraEmLote, useMarcarClientesInternos, useMinhasCarteiras } from '@/hooks/useComercialLancamentos';
+
+/** Destino "Equipe ou empresa": funcionário e conta da própria Minasflor não contam na meta (dono, 2026-11-11). */
+const EQUIPE = '__equipe__';
 
 /** Valor do item "devolver ao Histórico" no seletor — o Select não aceita valor vazio. */
 const HISTORICO = '__historico__';
@@ -59,6 +62,7 @@ export function ListaDeCadastro({ podeCriar = false }: {
   const [selecionados, setSelecionados] = useState<Set<string>>(new Set());
   const [carteiraDestino, setCarteiraDestino] = useState('');
   const atribuir = useAtribuirCarteiraEmLote();
+  const marcarInternos = useMarcarClientesInternos();
   const agrupar = useAgruparClientes();
   const [nomeDoGrupo, setNomeDoGrupo] = useState('');
   const podeGerirCarteiras = usePodeGerirCarteiras();
@@ -199,13 +203,15 @@ export function ListaDeCadastro({ podeCriar = false }: {
                 <SelectContent>
                   {destinos.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                   {podeGerirCarteiras && <SelectItem value={HISTORICO}>Histórico (sem carteira)</SelectItem>}
+                  {podeGerirCarteiras && <SelectItem value={EQUIPE}>Equipe ou empresa (fora da meta)</SelectItem>}
                 </SelectContent>
               </Select>
-              <Button size="sm" className="h-8" disabled={!carteiraDestino || atribuir.isPending}
-                onClick={() => atribuir.mutate(
-                  { codigos: [...selecionados], carteira: carteiraDestino === HISTORICO ? null : carteiraDestino },
-                  { onSuccess: () => { setSelecionados(new Set()); setCarteiraDestino(''); } },
-                )}>
+              <Button size="sm" className="h-8" disabled={!carteiraDestino || atribuir.isPending || marcarInternos.isPending}
+                onClick={() => {
+                  const limpar = { onSuccess: () => { setSelecionados(new Set()); setCarteiraDestino(''); } };
+                  if (carteiraDestino === EQUIPE) marcarInternos.mutate([...selecionados], limpar);
+                  else atribuir.mutate({ codigos: [...selecionados], carteira: carteiraDestino === HISTORICO ? null : carteiraDestino }, limpar);
+                }}>
                 Atribuir
               </Button>
               {/* Juntar os CNPJs do mesmo dono num grupo (cliente de acompanhamento) — viram uma

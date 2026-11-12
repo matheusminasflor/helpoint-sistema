@@ -426,6 +426,24 @@ export interface ResultadoLote { pedidos: number; atribuidos: number; ficaram_de
  * do Histórico para a própria carteira — o banco decide, e devolve quantos ficaram de fora
  * para a tela dizer, em vez de a linha proibida derrubar o lote inteiro.
  */
+/**
+ * Marca clientes como da equipe ou da própria empresa (dono, 2026-11-11: compra de funcionário não conta na meta).
+ * O banco tira o cliente da carteira (trigger `com_cliente_interno_sem_carteira`, 20270212721950) e da Bonificação.
+ */
+export function useMarcarClientesInternos() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (codigos: string[]) =>
+      expectRows(await supabase.from('com_clientes').update({ interno: true } as never).in('codigo', codigos).select('codigo'),
+        'marcar como equipe ou empresa'),
+    onSuccess: (linhas) => {
+      void qc.invalidateQueries({ queryKey: ['comercial'] });
+      toast.success(`${linhas.length} cliente(s) marcado(s) como equipe ou empresa: saem da carteira e da meta.`);
+    },
+    onError: (e: unknown) => toast.error(mensagemDeErro(e)),
+  });
+}
+
 export function useAtribuirCarteiraEmLote() {
   const { tenantId } = useAuth();
   const qc = useQueryClient();
