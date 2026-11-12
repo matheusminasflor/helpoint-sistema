@@ -28,7 +28,7 @@ import { SeletorPeriodoDaCompetencia } from '@/components/comercial/SeletorPerio
 import { useQueryState } from '@/hooks/useQueryState';
 import { useDepartmentPermissions, usePodeGerirCarteiras } from '@/hooks/useAccessProfiles';
 import { useLacunasDoCadastro } from '@/hooks/useComercialCliente';
-import { usePeriodoImportado } from '@/hooks/useComercialPainel';
+import { useMixDaCarteira, usePeriodoImportado } from '@/hooks/useComercialPainel';
 import {
   useCarteiraMesAMes, useFarolDeAcoes, useIndicadoresCatalogo, useNotasQueNaoBateram, usePainelDoGestor, useResumoDaCarteira, useRitmoDoMes, useSalvarMetaIndicador, useVendaAtribuida,
   type LinhaPainel, type ResumoCarteira,
@@ -87,7 +87,7 @@ export default function ComercialIndicadores() {
   const nomePorId = useMemo(() => new Map(catalogo.map((i) => [i.id, i.nome])), [catalogo]);
   const alternar = (chave: string) => setAbertas((s) => { const n = new Set(s); if (n.has(chave)) n.delete(chave); else n.add(chave); return n; });
   // Os 3 indicadores novos que saem do resumo da carteira (revisão de 2026-11-12): ticket médio, cobertura e conversão.
-  const extrasDoGrupo = (vendedorId: string, grupo: GrupoDoIndicador): { rotulo: string; valor: string; dica: string }[] => {
+  const extrasDoGrupo = (vendedorId: string, grupo: GrupoDoIndicador, carteiras: string[]): { rotulo: string; valor: string; dica: string }[] => {
     const r = resumo.filter((x) => x.vendedor_id === vendedorId);
     if (r.length === 0) return [];
     const soma = (k: 'valor_vendido' | 'compradores' | 'compradores_ativos' | 'ativos' | 'relacionados' | 'relacionados_sem_compra') =>
@@ -99,7 +99,13 @@ export default function ComercialIndicadores() {
     }
     if (grupo === 'carteira') {
       const a = soma('ativos');
-      return [{ rotulo: 'Cobertura da carteira', valor: pct(a ? (soma('compradores_ativos') / a) * 100 : null), dica: 'Clientes ativos que compraram ÷ clientes ativos da carteira.' }];
+      const m = carteiras.map((c) => mix?.get(c)).filter((x): x is { clientes: number; produtos: number } => !!x);
+      const clientes = m.reduce((t, x) => t + x.clientes, 0);
+      return [
+        { rotulo: 'Cobertura da carteira', valor: pct(a ? (soma('compradores_ativos') / a) * 100 : null), dica: 'Clientes ativos que compraram ÷ clientes ativos da carteira.' },
+        { rotulo: 'Mix médio', valor: clientes ? (m.reduce((t, x) => t + x.produtos, 0) / clientes).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) : '—',
+          dica: 'Produtos diferentes que cada cliente que comprou levou, em média.' },
+      ];
     }
     if (grupo === 'atividade') {
       return [{ rotulo: 'Taxa de conversão', valor: pct(conversaoDeContato({ relacionados: soma('relacionados'), relacionados_sem_compra: soma('relacionados_sem_compra') })),
@@ -126,6 +132,7 @@ export default function ComercialIndicadores() {
   const { data: metasDoAno = [] } = useMetasDoAno(Number(competencia.slice(0, 4)));
   const de = intervalo?.de ?? competencia;
   const ate = intervalo?.ate ?? ultimoDiaDoMes(competencia);
+  const { data: mix } = useMixDaCarteira(de, ate);
   const metaDaCarteira = (carteira: string) => {
     const valores = metasDoAno.filter((m) => m.carteira === carteira
       && `${m.ano}-${String(m.mes).padStart(2, '0')}-01` >= de.slice(0, 7) + '-01' && `${m.ano}-${String(m.mes).padStart(2, '0')}-01` <= ate);
@@ -341,7 +348,7 @@ export default function ComercialIndicadores() {
                         )}
                         </Fragment>
                         ))}
-                        {!fechado && extrasDoGrupo(id, g.id).map((x) => (
+                        {!fechado && extrasDoGrupo(id, g.id, v.carteira ? v.carteira.split(', ') : []).map((x) => (
                           <tr key={x.rotulo} className="border-t border-border">
                             <td className="py-1.5 pr-2" title={x.dica}>{x.rotulo} <span className="text-[11px] text-muted-foreground">({x.dica.toLowerCase().replace(/\.$/, '')})</span></td>
                             <td className="py-1.5 text-right text-muted-foreground">—</td>

@@ -364,6 +364,20 @@ export function useCurvaAbc(de: string, ate: string, filial: Filial | null, crit
   });
 }
 
+/** Mix médio por carteira: clientes que compraram e a soma dos produtos diferentes de cada um (20270212721960). */
+export function useMixDaCarteira(de: string, ate: string) {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['comercial', 'mix-da-carteira', tenantId, de, ate],
+    enabled: !!tenantId,
+    queryFn: async (): Promise<Map<string, { clientes: number; produtos: number }>> => {
+      const linhas = unwrap(await supabase.rpc('com_mix_da_carteira' as never, { p_de: de, p_ate: ate } as never)) as unknown as
+        { carteira: string; clientes: number; produtos: number }[];
+      return new Map((linhas ?? []).map((l) => [l.carteira, { clientes: Number(l.clientes), produtos: Number(l.produtos) }]));
+    },
+  });
+}
+
 /** Quantos clientes compraram cada produto no período (Curva ABC, revisão de 2026-11-12). */
 export function useClientesPorProduto(de: string, ate: string, filial: Filial | null) {
   const { tenantId } = useAuth();
