@@ -6,10 +6,11 @@
 --   5  CRM, distribuidor sem nota: 5% do valor do Kommo, "a confirmar"
 --   6  a lead da equipe (interno) não conta
 --   7  quem não tem os relatórios do Comercial não vê a comissão
+--   8  vários meses: cada mês contra a própria meta
 begin;
 \ir _helpers.psql
 
-select plan(7);
+select plan(8);
 
 select ok((select garantida = 1500 and a_confirmar = 0 from public.com_comissao_da_carteira(300000, 0, 276000)),
   'bateu a meta com nota: 0,5% de toda a venda, garantida');
@@ -23,9 +24,11 @@ select tests.create_tenant('pgtap-comissao', 'Comissão', false) as a;
 create temporary table u on commit drop as
 select tests.create_user('dona@comissao.test', (select a from f)) as dona,
        tests.create_user('thay@comissao.test', (select a from f)) as thay,
-       tests.create_user('bia@comissao.test', (select a from f)) as bia;
+       tests.create_user('bia@comissao.test', (select a from f)) as bia,
+       tests.create_user('dono@comissao.test', (select a from f)) as dono;
 grant select on f, u to authenticated;
 select tests.grant_role((select dona from u), 'admin');
+select tests.grant_role((select dono from u), 'owner');
 
 insert into public.kommo_usuarios (tenant_id, kommo_id, nome, user_id) values ((select a from f), 10, 'Thayná', (select thay from u));
 insert into public.kommo_leads (tenant_id, lead_id, nome, link, interno) values ((select a from f), 4, 'Da equipe', 'k/4', true);
@@ -50,5 +53,28 @@ select tests.authenticate_as('bia@comissao.test');
 select throws_ok($$ select * from public.com_comissao('2026-11-01', '2026-11-30') $$, '42501', null, 'sem os relatórios do Comercial não vê');
 select tests.clear_authentication();
 
+
+-- 8  a carteira fecha MÊS A MÊS (20270212721980): num período de vários meses, cada mês contra a própria meta. Janeiro
+--    vende 5.000 sem meta, outubro 1.500 com meta de 1.000 (bateu), novembro 200 com meta de 1.000 (não bateu). Somando
+--    o período (6.700 × 2.000) daria 33,50; mês a mês, só outubro paga: 7,50.
+insert into public.com_carteira_membros (tenant_id, user_id, carteira) values ((select a from f), (select bia from u), 'ESPECIAL');
+insert into public.com_clientes (tenant_id, codigo, razao_social, carteira, ativo, origem)
+values ((select a from f), 'CE', 'CLIENTE ESPECIAL', 'ESPECIAL', true, 'cadastro');
+insert into public.com_metas (tenant_id, ano, mes, carteira, valor)
+values ((select a from f), 2031, 10, 'ESPECIAL', 1000), ((select a from f), 2031, 11, 'ESPECIAL', 1000);
+select tests.authenticate_as('dono@comissao.test');
+select public.com_importar_vendas('MF', 'fixture-comissao.xlsx', 3, '{}'::jsonb,
+  $items$[
+    {"emissao":"2031-01-10","documento":"C01","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"CE","cliente_nome":"CLIENTE ESPECIAL","produto_codigo":"PA","produto_nome":"Produto A","quantidade":1,"valor_nota":5000.00,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
+    {"emissao":"2031-10-10","documento":"C02","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"CE","cliente_nome":"CLIENTE ESPECIAL","produto_codigo":"PA","produto_nome":"Produto A","quantidade":1,"valor_nota":1500.00,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"},
+    {"emissao":"2031-11-10","documento":"C03","serie":"1","tipo_documento":"NFe","cfop":"5101","classe":"venda","cliente_codigo":"CE","cliente_nome":"CLIENTE ESPECIAL","produto_codigo":"PA","produto_nome":"Produto A","quantidade":1,"valor_nota":200.00,"desconto":0,"vendedor_codigo":"V1","vendedor_nome":"Vend Um"}
+  ]$items$::jsonb, false);
+select tests.clear_authentication();
+select tests.authenticate_as('dona@comissao.test');
+select results_eq(
+  $$ select garantida, base_garantida, falta from public.com_comissao('2031-01-01', '2031-11-30') where origem = 'ESPECIAL' $$,
+  $$ values (7.50::numeric, 6700.00::numeric, null::numeric) $$,
+  'vários meses: cada mês contra a própria meta (só outubro paga) e sem "quanto falta"');
+select tests.clear_authentication();
 select * from finish();
 rollback;
