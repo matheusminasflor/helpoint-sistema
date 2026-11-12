@@ -28,7 +28,7 @@ import { SeletorPeriodoDaCompetencia } from '@/components/comercial/SeletorPerio
 import { useQueryState } from '@/hooks/useQueryState';
 import { useDepartmentPermissions, usePodeGerirCarteiras } from '@/hooks/useAccessProfiles';
 import { useLacunasDoCadastro } from '@/hooks/useComercialCliente';
-import { useMixDaCarteira, usePeriodoImportado } from '@/hooks/useComercialPainel';
+import { useMixDaCarteira, usePeriodoImportado, useUltimaNotaPorFilial } from '@/hooks/useComercialPainel';
 import {
   useCarteiraMesAMes, useFarolDeAcoes, useIndicadoresCatalogo, useNotasQueNaoBateram, usePainelDoGestor, useResumoDaCarteira, useRitmoDoMes, useSalvarMetaIndicador, useVendaAtribuida,
   type LinhaPainel, type ResumoCarteira,
@@ -133,6 +133,7 @@ export default function ComercialIndicadores() {
   const de = intervalo?.de ?? competencia;
   const ate = intervalo?.ate ?? ultimoDiaDoMes(competencia);
   const { data: mix } = useMixDaCarteira(de, ate);
+  const { data: ultimaPorFilial = [] } = useUltimaNotaPorFilial();
   const metaDaCarteira = (carteira: string) => {
     const valores = metasDoAno.filter((m) => m.carteira === carteira
       && `${m.ano}-${String(m.mes).padStart(2, '0')}-01` >= de.slice(0, 7) + '-01' && `${m.ano}-${String(m.mes).padStart(2, '0')}-01` <= ate);
@@ -203,7 +204,11 @@ export default function ComercialIndicadores() {
         {venda && (
           <p className="text-[13px] text-muted-foreground">
             {venda.corte
-              ? <>A venda vem das notas do Forteplus até <strong>{formatDateBR(venda.corte)}</strong> e, depois disso, dos lançamentos com nota fiscal.</>
+              ? <>A venda vem das notas do Forteplus
+                  {ultimaPorFilial.length > 1 && new Set(ultimaPorFilial.map((u) => u.ate)).size > 1
+                    ? <> ({ultimaPorFilial.map((u, i) => <span key={u.filial}>{i ? ', ' : ''}{u.filial} até <strong>{formatDateBR(u.ate)}</strong></span>)})</>
+                    : <> até <strong>{formatDateBR(venda.corte)}</strong></>}
+                  {' '}e, depois disso, das notas que o Financeiro sobe (entram como "a confirmar" até a próxima importação).</>
               : <>Ainda não há nota importada do Forteplus: a venda é a dos lançamentos com nota fiscal.</>}
             {venda.previa > 0 && (
               <> Lançamentos com nota depois da última importação: <strong>{formatBRL(escolhida ? (venda.previaPorVendedora.get(escolhida[0]) ?? 0) : venda.previa)}</strong>.</>

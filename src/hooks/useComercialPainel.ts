@@ -364,6 +364,28 @@ export function useCurvaAbc(de: string, ate: string, filial: Filial | null, crit
   });
 }
 
+/**
+ * A última nota importada do Forteplus em cada filial (revisão dos números, 2026-11-11): o corte geral é a mais nova
+ * das duas, mas cada filial tem o seu — em 11/11 a MF ia até 11/11 e a INBRAS só até 06/11, e as notas da INBRAS
+ * entre uma data e outra entram como "a confirmar" (`com_notas_a_confirmar` compara por filial).
+ */
+export function useUltimaNotaPorFilial() {
+  const { tenantId } = useAuth();
+  return useQuery({
+    queryKey: ['comercial', 'ultima-nota-por-filial', tenantId],
+    enabled: !!tenantId,
+    queryFn: async (): Promise<{ filial: string; ate: string }[]> => {
+      const filiais = ['MF', 'INBRAS'];
+      const linhas = await Promise.all(filiais.map(async (filial) => {
+        const r = unwrap(await supabase.from('com_vendas_itens').select('emissao').eq('filial', filial)
+          .order('emissao', { ascending: false }).limit(1)) as { emissao: string }[];
+        return r[0] ? { filial, ate: r[0].emissao } : null;
+      }));
+      return linhas.filter((l): l is { filial: string; ate: string } => !!l);
+    },
+  });
+}
+
 /** Mix médio por carteira: clientes que compraram e a soma dos produtos diferentes de cada um (20270212721960). */
 export function useMixDaCarteira(de: string, ate: string) {
   const { tenantId } = useAuth();

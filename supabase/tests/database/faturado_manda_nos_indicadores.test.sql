@@ -9,7 +9,7 @@
 begin;
 \ir _helpers.psql
 
-select plan(7);
+select plan(8);
 
 create temporary table f on commit drop as
 select tests.create_tenant('pgtap-fat-manda', 'Faturado Manda', false) as a;
@@ -82,6 +82,21 @@ select is(
   (select array_agg(venda order by mes) from public.com_carteira_mes_a_mes('NORTE', 2031) where mes in (3, 4)),
   array[1000, 300]::numeric[],
   'NORTE mes a mes: marco = nota (1.000, nao os 40 mil lancados); abril = previa (300)'
+);
+select tests.clear_authentication();
+
+-- ═══ 8. Compra de funcionário não conta, nem pela prévia (20270212721970; dono, 2026-11-11). ═══
+-- A Ana lança, depois do corte, uma venda para um cliente interno (funcionário): não entra na venda dela.
+insert into public.com_clientes (tenant_id, codigo, razao_social, carteira, ativo, origem, interno)
+values ((select a from f), 'CF', 'FUNCIONARIA DA EMPRESA', null, true, 'cadastro', true);
+insert into public.com_interacoes (tenant_id, vendedor_id, cliente_codigo, data, status, valor_venda, nota_fiscal, nota_em, fora_da_carteira)
+values ((select a from f), (select ana from u), 'CF', '2031-04-06', 'concluido', 77, 'NF3', '2031-04-06', true);
+select tests.authenticate_as('dono@fatmanda.test');
+select is(
+  (select realizado from public.com_painel_do_gestor('2031-03-01', '2031-03-01', '2031-04-30')
+    where vendedor_id = (select ana from u) and metrica = 'valor_vendas'),
+  1300::numeric,
+  'a venda lançada para a funcionária não soma no painel da Ana (continua 1.300)'
 );
 select tests.clear_authentication();
 

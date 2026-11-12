@@ -5,6 +5,8 @@ import { MapPinned } from 'lucide-react';
 import { ModeloDeRelatorio, type ColunaDoRelatorio } from '@/components/relatorios/ModeloDeRelatorio';
 import { usePeriodoDoRelatorio } from '@/hooks/usePeriodoDoRelatorio';
 import { useQueryState } from '@/hooks/useQueryState';
+import { usePainelTotais } from '@/hooks/useComercialPainel';
+import type { Filial } from '@/types/comercial';
 import { useRelatorioNosDoisPeriodos, type VendaPorFamilia as Linha } from '@/hooks/useRelatorios';
 import { agrupar } from '@/lib/relatorios-novos';
 import { soma } from '@/lib/relatorio-contas';
@@ -24,6 +26,11 @@ export default function VendaPorFamilia() {
   const [filial, setFilial] = useQueryState<string>('filial', '');
   const { linhas, antes, carregando, erro } = useRelatorioNosDoisPeriodos<Linha>('rel_venda_por_familia_e_regiao',
     periodo.atual, periodo.anterior, { p_filial: filial || null });
+  // Clientes que compraram: cada cliente UMA vez (revisão dos números, 2026-11-11). Somar as linhas contava o mesmo
+  // cliente em cada família e cidade; agora é a mesma contagem do Faturamento (`com_painel_totais`).
+  const filialDaConta = (filial || null) as Filial | null;
+  const { data: totaisAtual } = usePainelTotais(Number(periodo.atual.de.slice(0, 4)), filialDaConta, null, periodo.atual.de, periodo.atual.ate);
+  const { data: totaisAntes } = usePainelTotais(Number(periodo.anterior.de.slice(0, 4)), filialDaConta, null, periodo.anterior.de, periodo.anterior.ate);
   const liquidoDe = (ls: Linha[]) => soma(ls.map((l) => Number(l.venda) - Number(l.devolucao)));
   const antesPorGrupo = new Map(agrupar(antes, (l) => grupoDe(por, l), (l) => Number(l.venda) - Number(l.devolucao)).map((g) => [g.grupo, g.total]));
   const agrupadas: Agrupada[] = agrupar(linhas, (l) => grupoDe(por, l), (l) => Number(l.venda) - Number(l.devolucao)).map((g) => {
@@ -57,8 +64,9 @@ export default function VendaPorFamilia() {
       </>}
       resumo={[
         { rotulo: 'Venda líquida', valor: total, anterior: liquidoDe(antes), formatar: formatBRL, melhorQuando: 'mais' },
-        { rotulo: 'Clientes que compraram', valor: soma(linhas.map((l) => l.clientes)), anterior: soma(antes.map((l) => l.clientes)), formatar: String, melhorQuando: 'mais',
-          nota: 'somados por grupo: um cliente em duas famílias conta duas vezes' },
+        { rotulo: 'Clientes que compraram', valor: totaisAtual ? Number(totaisAtual.clientes_ativos) : null,
+          anterior: totaisAntes ? Number(totaisAntes.clientes_ativos) : null, formatar: String, melhorQuando: 'mais',
+          nota: 'cada cliente uma vez, como no Faturamento' },
         { rotulo: `${ROTULO[por]} que mais cresce`, valor: cresce ? cresce.liquido - (cresce.anterior ?? 0) : null, formatar: formatBRL, nota: cresce ? cresce.grupo : agrupadas.length ? 'nenhuma cresceu no período' : undefined },
       ]} />
   );

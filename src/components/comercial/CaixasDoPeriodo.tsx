@@ -131,14 +131,17 @@ export function CaixasDoPeriodo({ caixas, serieDestacada = null, janela = 'neste
           que some as caixas e não chegue ao total não tem como saber se falta
           uma caixa ou se ela somou errado. */}
       <p className="text-[12px] text-muted-foreground">
-        Do relatório do Forteplus entraram <span className="font-mono">{formatBRL(c?.total_importado ?? 0)}</span> {janela}
+        {/* O total como o Forteplus imprime (a devolução DESCONTA). As caixas são brutas (`abs`), então o total delas
+            soma a devolução; o relatório do Forteplus a subtrai. Conferido em 2026-11-11: 2026 inteiro dá
+            R$ 3.937.258,40 nos dois lados, e a frase antiga mostrava R$ 3.944.867,14 (a devolução contada duas vezes). */}
+        Do relatório do Forteplus entraram <span className="font-mono">{formatBRL((c?.total_importado ?? 0) - 2 * (c?.devolucao ?? 0))}</span> {janela}
         {(c?.industrializacao ?? 0) > 0 && (
           <>, dos quais <span className="font-mono">{formatBRL(c!.industrializacao)}</span> de industrialização (remessa para industrializar, que não é venda)</>
         )}
         {(c?.outros ?? 0) > 0 && (
           <>, e <span className="font-mono">{formatBRL(c!.outros)}</span> em CFOP que o sistema não reconhece</>
         )}
-        . As caixas acima somam exatamente esse total.
+        . As caixas acima, com a devolução descontada, somam exatamente esse total.
       </p>
 
       {/* A SOBRA. Zero em todo cenário conhecido — e é por isso que ela está
