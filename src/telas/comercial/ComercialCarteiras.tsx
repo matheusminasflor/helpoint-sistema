@@ -125,6 +125,11 @@ const ORDENAR: Record<string, (l: LinhaAcompanhamento) => string | number | null
 };
 
 const POR_PAGINA = 25;
+/** As abas da lista (revisão de 2026-11-11): as 4 que pedem ação, na ordem da proposta. */
+const ABAS_DA_CARTEIRA = [
+  { id: 'esfriando', titulo: 'Comprando menos' }, { id: 'sem_contato', titulo: 'Sem contato no período' },
+  { id: 'parados', titulo: 'Parados' }, { id: 'a_faturar', titulo: 'Com pedido a faturar' },
+];
 /** O valor de "Todas as carteiras" no seletor (e na URL, `?carteira=todas`). */
 const TODAS = 'todas';
 
@@ -136,6 +141,7 @@ const DIRECIONAIS = [
   { id: 'comprou_menos', titulo: 'Comprou menos que no mês anterior',
     filtro: (l: LinhaAcompanhamento) => l.venda_mes_passado > 0 && l.venda_mes < l.venda_mes_passado },
   { id: 'esfriando', titulo: 'Ritmo: comprando menos', filtro: (l: LinhaAcompanhamento) => tendenciaDoCliente(l) === 'esfriando' },
+  { id: 'parados', titulo: 'Parados', filtro: (l: LinhaAcompanhamento) => tendenciaDoCliente(l) === 'inativo' },
 ] as const;
 
 export default function ComercialCarteiras() {
@@ -182,6 +188,8 @@ export default function ComercialCarteiras() {
     [linhas, ativo, situacao]);
   const [clienteAberto, setClienteAberto] = useState<LinhaAcompanhamento | null>(null);
   const [aba, setAba] = useState<'clientes' | 'ano'>('clientes');
+  // 5 colunas (Cliente, Comprou, Média 3 meses, Ritmo, Último contato); as outras aparecem no botão e no cliente aberto.
+  const [todasAsColunas, setTodasAsColunas] = useState(false);
   const [limite, setLimite] = useState(POR_PAGINA);
 
   // A janela de 12 e de 3 meses é a mesma para todas as linhas: começa antes do mês da tela (ou do início do
@@ -350,36 +358,19 @@ export default function ComercialCarteiras() {
               <GradeDoAno titulo={`${ano}, mês a mês${filial ? ` · ${filial}` : ''}`} meses={meses} mesEmDestaque={intervalo ? null : mesIndice} />
             ) : (<>
             {/* ── A quem procurar: os direcionais ─────────────────────────────────────── */}
-            <h2 className="text-sm font-semibold print:hidden">
-              A quem procurar <span className="font-normal text-muted-foreground">· clique num cartão para ver só esses clientes na lista</span>
-            </h2>
-            <div className="grid gap-3 grid-cols-2 lg:grid-cols-6 print:hidden">
-              {DIRECIONAIS.map((d) => {
-                const quais = linhas.filter(d.filtro);
-                const marcado = ativo?.id === d.id;
-                const titulo = d.id === 'esfriando' || d.id === 'comprou_menos' || d.id === 'a_faturar' ? d.titulo : `${d.titulo} ${recorteRotulo.curto}`;
-                return (
-                  <HoverCard key={d.id} openDelay={150}>
-                    <HoverCardTrigger asChild>
-                      <button type="button" aria-pressed={marcado}
-                        onClick={() => setDirecional(marcado ? '' : d.id)}
-                        className={`rounded-lg border p-3 text-left transition-colors ${marcado ? 'border-primary bg-primary/10' : 'border-border bg-card hover:bg-muted/50'}`}>
-                        <p className="text-[22px] font-semibold font-mono leading-none">{quais.length}</p>
-                        <p className="text-[12px] text-muted-foreground mt-1">{titulo}</p>
-                        <p className="text-[12px] text-primary mt-0.5">{marcado ? 'filtrando · clique para tirar' : 'clique para filtrar'}</p>
-                      </button>
-                    </HoverCardTrigger>
-                    <HoverCardContent side="bottom" className="w-72 p-0">
-                      <p className="px-3 py-2 text-xs font-semibold border-b border-border">{titulo} · clique para filtrar</p>
-                      <ul className="max-h-60 overflow-y-auto text-xs">
-                        {quais.length === 0 ? <li className="px-3 py-2 text-muted-foreground">Nenhum.</li>
-                          : quais.slice(0, 30).map((l) => <li key={l.grupo_chave} className="px-3 py-1.5 border-b border-border/40 last:border-0">{l.grupo_nome}</li>)}
-                        {quais.length > 30 && <li className="px-3 py-1.5 text-muted-foreground">+ {quais.length - 30} outros</li>}
-                      </ul>
-                    </HoverCardContent>
-                  </HoverCard>
-                );
-              })}
+            {/* Os cartões viraram abas com contagem (revisão de 2026-11-11, Lei de Jakob): Todos e as 4 que pedem ação. */}
+            <div role="tablist" aria-label="Filtrar os clientes" className="flex flex-wrap gap-1.5 print:hidden">
+              {[{ id: '', titulo: 'Todos', quantos: linhas.length },
+                ...ABAS_DA_CARTEIRA.map((a) => ({ id: a.id, titulo: a.titulo, quantos: linhas.filter(DIRECIONAIS.find((d) => d.id === a.id)!.filtro).length }))]
+                .map((a) => (
+                  <button key={a.id || 'todos'} type="button" role="tab" aria-selected={direcional === a.id} onClick={() => setDirecional(a.id)}
+                    className={`rounded-full border px-3 py-1 text-[13px] font-semibold ${direcional === a.id ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-card hover:bg-muted'}`}>
+                    {a.titulo} {a.quantos}
+                  </button>
+                ))}
+              <button type="button" className="ml-auto text-[13px] text-primary underline" onClick={() => setTodasAsColunas((v) => !v)}>
+                {todasAsColunas ? 'Mostrar só as 5 colunas' : 'Mostrar todas as colunas'}
+              </button>
             </div>
             {(ativo || situacao) && (
               <p className="text-[13px]">
@@ -438,18 +429,18 @@ export default function ComercialCarteiras() {
                       <th className="px-3 py-2 font-semibold">Cliente <Seta {...ordena('cliente')} rotulo="Cliente" /></th>
                       <Coluna id="carteira.venda_cliente_mes" direita ordem={ordena('venda')}
                         titulo={`Comprou ${recorteRotulo.curto}`} sub={intervalo ? rotuloDoIntervalo(intervalo) : undefined} />
-                      <th className="px-3 py-2 font-semibold text-right">
+                      {todasAsColunas && <th className="px-3 py-2 font-semibold text-right">
                         {intervalo ? 'Período anterior' : 'Mês anterior'} <Seta {...ordena('anterior')} rotulo={intervalo ? 'Período anterior' : 'Mês anterior'} />
-                      </th>
-                      <Coluna id="carteira.media_12m" direita ordem={ordena('media')} titulo="Média mensal"
-                        sub={`${janelaAntes(base, meses12)}${meses12 < 12 ? ` (${meses12} ${meses12 === 1 ? 'mês' : 'meses'})` : ''}`} />
-                      {analitico && <Coluna id="carteira.media_3m" direita ordem={ordena('media3')} titulo="Média 3 meses" sub={janelaAntes(base, meses3)} />}
+                      </th>}
+                      {todasAsColunas && <Coluna id="carteira.media_12m" direita ordem={ordena('media')} titulo="Média mensal"
+                        sub={`${janelaAntes(base, meses12)}${meses12 < 12 ? ` (${meses12} ${meses12 === 1 ? 'mês' : 'meses'})` : ''}`} />}
+                      <Coluna id="carteira.media_3m" direita ordem={ordena('media3')} titulo="Média 3 meses" sub={janelaAntes(base, meses3)} />
                       <Coluna id="carteira.tendencia" ordem={ordena('ritmo')} titulo="Ritmo" sub={`últimos 3 meses (${janelaAntes(base, meses3)})`} />
-                      <Coluna id="carteira.a_faturar" direita ordem={ordena('aFaturar')} titulo="A faturar" sub="pedido aprovado sem nota" />
-                      {analitico && <Coluna id="carteira.venda_12m" direita ordem={ordena('venda12')} titulo="Venda 12 meses" sub="e meses com compra" />}
-                      {analitico && <Coluna id="carteira.contatos" direita ordem={ordena('contatos')} titulo="Contatos" sub={noRecorte} />}
+                      {todasAsColunas && <Coluna id="carteira.a_faturar" direita ordem={ordena('aFaturar')} titulo="A faturar" sub="pedido aprovado sem nota" />}
+                      {todasAsColunas && <Coluna id="carteira.venda_12m" direita ordem={ordena('venda12')} titulo="Venda 12 meses" sub="e meses com compra" />}
+                      {todasAsColunas && <Coluna id="carteira.contatos" direita ordem={ordena('contatos')} titulo="Contatos" sub={noRecorte} />}
                       <Coluna id="carteira.ultimo_contato" ordem={ordena('ultimo')} titulo="Último contato" sub={recorteRotulo.curto} />
-                      {analitico && <Coluna id="carteira.proximo_prazo" ordem={ordena('prazo')} titulo="Próximo prazo" />}
+                      {todasAsColunas && <Coluna id="carteira.proximo_prazo" ordem={ordena('prazo')} titulo="Próximo prazo" />}
                     </tr>
                   </thead>
                   <tbody>
@@ -472,7 +463,7 @@ export default function ComercialCarteiras() {
                             <p className="text-muted-foreground pl-[18px]">
                               {ROTULO_SITUACAO[l.situacao]}{l.ultima_compra ? ` · última compra ${formatDateBR(l.ultima_compra)}` : ''}
                             </p>
-                            {analitico && (
+                            {todasAsColunas && (
                               <p className="text-muted-foreground pl-[18px]">
                                 {l.codigos.join(', ')}{l.uf_cidade ? ` · ${l.uf_cidade}` : ''}{l.tabelas ? ` · ${l.tabelas}` : ''}
                               </p>
@@ -481,9 +472,9 @@ export default function ComercialCarteiras() {
                           <td className={`px-3 py-2 text-right font-mono whitespace-nowrap ${caiu ? 'text-status-danger' : subiu ? 'text-status-success' : ''}`}>
                             {l.venda_mes ? formatBRL(l.venda_mes) : '—'}
                           </td>
-                          <td className="px-3 py-2 text-right font-mono whitespace-nowrap">{l.venda_mes_passado ? formatBRL(l.venda_mes_passado) : '—'}</td>
-                          <td className="px-3 py-2 text-right font-mono whitespace-nowrap">{l.media_12m ? formatBRL(l.media_12m) : '—'}</td>
-                          {analitico && <td className="px-3 py-2 text-right font-mono whitespace-nowrap">{l.media_3m ? formatBRL(l.media_3m) : '—'}</td>}
+                          {todasAsColunas && <td className="px-3 py-2 text-right font-mono whitespace-nowrap">{l.venda_mes_passado ? formatBRL(l.venda_mes_passado) : '—'}</td>}
+                          {todasAsColunas && <td className="px-3 py-2 text-right font-mono whitespace-nowrap">{l.media_12m ? formatBRL(l.media_12m) : '—'}</td>}
+                          <td className="px-3 py-2 text-right font-mono whitespace-nowrap">{l.media_3m ? formatBRL(l.media_3m) : '—'}</td>
                           <td className="px-3 py-2 whitespace-nowrap">
                             {tendencia.classe ? (
                               // As duas médias no toque também (rodada 3, correção 8): o `title` só aparecia com o mouse.
@@ -498,24 +489,24 @@ export default function ComercialCarteiras() {
                             )
                               : <span className="text-muted-foreground">—</span>}
                           </td>
-                          <td className="px-3 py-2 text-right font-mono whitespace-nowrap">{l.a_faturar ? formatBRL(l.a_faturar) : '—'}</td>
-                          {analitico && (
+                          {todasAsColunas && <td className="px-3 py-2 text-right font-mono whitespace-nowrap">{l.a_faturar ? formatBRL(l.a_faturar) : '—'}</td>}
+                          {todasAsColunas && (
                             <td className="px-3 py-2 text-right font-mono whitespace-nowrap">
                               {formatBRL(l.venda_12m)}
                               <p className="text-muted-foreground font-sans">{l.meses_com_compra} de {meses12} meses{l.recompra ? ' · recompra' : ''}</p>
                             </td>
                           )}
-                          {analitico && <td className="px-3 py-2 text-right font-mono">{l.contatos_mes}</td>}
+                          {todasAsColunas && <td className="px-3 py-2 text-right font-mono">{l.contatos_mes}</td>}
                           <td className="px-3 py-2">
                             {l.ultimo_contato ? (
                               <>
                                 <span className="whitespace-nowrap">{formatDateBR(l.ultimo_contato)}</span>
                                 <span className="text-muted-foreground"> · {STATUS_INTERACAO.find((s) => s.valor === l.status_ultimo_contato)?.rotulo}</span>
-                                {analitico && l.observacao && <p className="text-muted-foreground line-clamp-2 max-w-[260px]">{l.observacao}</p>}
+                                {todasAsColunas && l.observacao && <p className="text-muted-foreground line-clamp-2 max-w-[260px]">{l.observacao}</p>}
                               </>
                             ) : <span className="text-status-warning">Sem contato</span>}
                           </td>
-                          {analitico && (
+                          {todasAsColunas && (
                             <td className={`px-3 py-2 whitespace-nowrap ${vencido ? 'text-destructive font-semibold' : ''}`}>
                               {l.proximo_prazo ? formatDateBR(l.proximo_prazo) : '—'}
                             </td>
