@@ -147,6 +147,12 @@ export function ComercialPainel() {
               ? 'O faturamento do período, de quem ele depende, e o que está fora do padrão.'
               : 'Faturamento, curva ABC e clientes — a partir do relatório do Forteplus.'}
           </p>
+          {/* Revisão de 2026-11-11 (seção 3 da proposta): os dois totais respondem perguntas diferentes, e a tela diz qual. */}
+          <p className="text-[13px] text-muted-foreground mt-1 max-w-3xl">
+            Por que este total é diferente do de Metas e desempenho? Aqui entra toda nota emitida pela empresa, até a dos
+            clientes sem carteira e das compras da equipe. Em Metas e desempenho entram só os clientes de cada carteira, e
+            também as notas que o Financeiro subiu depois da última importação do Forteplus.
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <TutorialDoRelatorio id="comercial-vendas" />

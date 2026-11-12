@@ -113,7 +113,8 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
   // DOIS PASSOS (proposta "Helpoint no dia a dia", etapa 4 · Comercial, 2026-10-24): eram ~35 controles numa janela,
   // 26 deles caixinhas. Passo 1: o cliente e o que aconteceu (data, status, pedido); passo 2: indicadores, ações e
   // venda, com os cinco indicadores que ela mais usa em cima. Editar um lançamento continua mostrando tudo de uma vez.
-  const [passo, setPasso] = useState<1 | 2>(1);
+  // Uma tela só (revisão do Comercial aprovada pelo dono, 7.5; feito em 2026-11-11): os dois passos saíram, e o Salvar
+  // diz o que falta. O checklist do pedido continua aparecendo só com "Fechou pedido".
   const [verTodos, setVerTodos] = useState(false);
   const { data: maisUsados = [] } = useMeusIndicadoresMaisUsados();
   const { data: gravado } = useChecklistDoLancamento(open ? editando?.id ?? null : null);
@@ -162,7 +163,6 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
     setBuscaFora('');
     setProcurandoFora(false);
     setFiltroCarteira('');
-    setPasso(1);
     setVerTodos(false);
     if (!editando) {
       setForm({ ...formVazio(), cliente: clienteInicial, foraDaCarteira: !!clienteInicial && foraDaMinha(clienteInicial, minhasCarteiras) });
@@ -208,7 +208,6 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
     : indicadores.filter((i) => emCima.has(i.id) || form.marcas.has(i.id))
         .sort((a, b) => Number(emCima.has(b.id)) - Number(emCima.has(a.id)))), [editando, verTodos, indicadores, emCima, form.marcas]);
   const escondidos = indicadores.length - indicadoresVisiveis.length;
-  const mostra = (p: 1 | 2) => !!editando || passo === p;
 
   const semCliente = form.cliente === null;
   // Lançamento novo diz com quem foi: cliente ou pessoa da empresa (dono, 2026-11-05). O banco recusa o mesmo.
@@ -315,11 +314,6 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
       <DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{editando ? 'Editar lançamento' : 'Novo lançamento'}</DialogTitle>
-          {!editando && (
-            <p className="text-[13px] text-muted-foreground">
-              Passo {passo} de 2 · {passo === 1 ? 'o cliente e o que aconteceu' : 'indicadores, ações e venda'}
-            </p>
-          )}
         </DialogHeader>
 
         <div className="space-y-5">
@@ -336,7 +330,7 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
               {' '}Entrou em contato de novo? Faça um <strong>lançamento novo</strong> — cada contato conta. Erro? Peça ao gestor para corrigir.
             </p>
           )}
-          {mostra(1) && (<>
+          {(<>
           {/* ── Cliente ─────────────────────────────────────────────────────── */}
           <section className="space-y-2">
             {editando?.pessoa_interna_id ? (
@@ -565,7 +559,7 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
 
           </>)}
 
-          {mostra(2) && (<>
+          {(<>
           {/* ── Indicadores ─────────────────────────────────────────────────── */}
           <section className="space-y-2">
             <div>
@@ -687,14 +681,11 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
         </div>
 
         <DialogFooter className="items-center">
-          {oQueFalta && (!!editando || passo === 2) && !(concluidoTravado && !enviaChecklist && !completandoNota) && (
+          {oQueFalta && !(concluidoTravado && !enviaChecklist && !completandoNota) && (
             <p role="status" className="text-[13px] text-status-warning sm:mr-auto">Para salvar, falta {oQueFalta}.</p>
           )}
-          {!editando && passo === 2
-            ? <Button variant="outline" onClick={() => setPasso(1)}>Voltar</Button>
-            : <Button variant="outline" onClick={() => onOpenChange(false)}>{concluidoTravado && !enviaChecklist && !completandoNota ? 'Fechar' : 'Cancelar'}</Button>}
-          {!editando && passo === 1 && <Button onClick={() => setPasso(2)} disabled={!form.data || faltaCliente}>Continuar</Button>}
-          {(!!editando || passo === 2) && !(concluidoTravado && !enviaChecklist && !completandoNota) && <Button onClick={confirmar}
+          <Button variant="outline" onClick={() => onOpenChange(false)}>{concluidoTravado && !enviaChecklist && !completandoNota ? 'Fechar' : 'Cancelar'}</Button>
+          {!(concluidoTravado && !enviaChecklist && !completandoNota) && <Button onClick={confirmar}
             disabled={!form.data || faltaCliente || faltaAcaoInterna || valorInvalido || notaIncompleta || dataDaNotaInvalida || indicadorSemCliente || faltaRaioX || salvar.isPending || salvarChecklist.isPending || registrarContato.isPending}>
             {salvar.isPending || salvarChecklist.isPending || registrarContato.isPending
               ? 'Salvando…'
