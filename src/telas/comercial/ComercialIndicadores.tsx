@@ -30,11 +30,12 @@ import { useDepartmentPermissions, usePodeGerirCarteiras } from '@/hooks/useAcce
 import { useLacunasDoCadastro } from '@/hooks/useComercialCliente';
 import { usePeriodoImportado } from '@/hooks/useComercialPainel';
 import {
-  useCarteiraMesAMes, useFarolDeAcoes, useNotasQueNaoBateram, usePainelDoGestor, useResumoDaCarteira, useRitmoDoMes, useSalvarMetaIndicador, useVendaAtribuida,
+  useCarteiraMesAMes, useFarolDeAcoes, useIndicadoresCatalogo, useNotasQueNaoBateram, usePainelDoGestor, useResumoDaCarteira, useRitmoDoMes, useSalvarMetaIndicador, useVendaAtribuida,
   type LinhaPainel, type ResumoCarteira,
 } from '@/hooks/useComercialLancamentos';
 import { projecaoDoMes, type RitmoDoMes } from '@/lib/projecao-do-mes';
 import { conversaoDeContato } from '@/lib/resumo-equipe';
+import { agruparIndicadores, grupoFechado, ROTULO_DO_CALCULADO, type GrupoDoIndicador } from '@/lib/grupos-dos-indicadores';
 import { ExportarATela } from '@/components/comercial/ExportarATela';
 import { competenciaCurta } from '@/lib/competencia-comercial';
 import { avisoDeMesesInteiros } from '@/lib/period';
@@ -82,6 +83,30 @@ export default function ComercialIndicadores() {
   // indicadores fora do alvo (vermelho primeiro, até 5); "Ver os N" abre todos. A cor vem pronta do banco
   // (`com_cor_do_farol`): nada se recalcula aqui. O Analítico mostra todos, como antes.
   const [abertas, setAbertas] = useState<Set<string>>(() => new Set());
+  const { data: catalogo = [] } = useIndicadoresCatalogo();
+  const nomePorId = useMemo(() => new Map(catalogo.map((i) => [i.id, i.nome])), [catalogo]);
+  const alternar = (chave: string) => setAbertas((s) => { const n = new Set(s); if (n.has(chave)) n.delete(chave); else n.add(chave); return n; });
+  // Os 3 indicadores novos que saem do resumo da carteira (revisão de 2026-11-12): ticket médio, cobertura e conversão.
+  const extrasDoGrupo = (vendedorId: string, grupo: GrupoDoIndicador): { rotulo: string; valor: string; dica: string }[] => {
+    const r = resumo.filter((x) => x.vendedor_id === vendedorId);
+    if (r.length === 0) return [];
+    const soma = (k: 'valor_vendido' | 'compradores' | 'compradores_ativos' | 'ativos' | 'relacionados' | 'relacionados_sem_compra') =>
+      r.reduce((t, x) => t + Number(x[k] ?? 0), 0);
+    const pct = (n: number | null) => (n === null ? '—' : `${n.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}%`);
+    if (grupo === 'resultado') {
+      const c = soma('compradores');
+      return [{ rotulo: 'Ticket médio por cliente', valor: c ? formatBRL(soma('valor_vendido') / c) : '—', dica: 'Venda do período ÷ clientes que compraram.' }];
+    }
+    if (grupo === 'carteira') {
+      const a = soma('ativos');
+      return [{ rotulo: 'Cobertura da carteira', valor: pct(a ? (soma('compradores_ativos') / a) * 100 : null), dica: 'Clientes ativos que compraram ÷ clientes ativos da carteira.' }];
+    }
+    if (grupo === 'atividade') {
+      return [{ rotulo: 'Taxa de conversão', valor: pct(conversaoDeContato({ relacionados: soma('relacionados'), relacionados_sem_compra: soma('relacionados_sem_compra') })),
+        dica: 'Clientes atendidos que compraram ÷ clientes atendidos.' }];
+    }
+    return [];
+  };
   const linhasDoCartao = <L extends { metrica: string; cor: string }>(id: string, linhas: L[]): L[] => {
     if (analitico || abertas.has(id)) return linhas;
     const fixas = linhas.filter((l) => eValor(l.metrica) || l.metrica === 'pct_meta');
@@ -250,7 +275,7 @@ export default function ComercialIndicadores() {
                     {linhasDoCartao(id, v.linhas).map((l) => (
                       <li key={l.metrica} className="flex items-center justify-between gap-2 py-2">
                         <span className="min-w-0">
-                          <span className="block">{eValor(l.metrica) ? 'Venda total' : l.rotulo}</span>
+                          <span className="block">{ROTULO_DO_CALCULADO[l.metrica] ?? l.rotulo}</span>
                           <span className="block font-mono">{formatar(l, l.realizado)}{l.meta !== null && l.metrica !== 'pct_meta' && <span className="text-muted-foreground"> de {formatar(l, l.meta)}</span>}</span>
                         </span>
                         <FarolDaMeta cor={l.cor} />
@@ -268,13 +293,30 @@ export default function ComercialIndicadores() {
                       </tr>
                     </thead>
                     <tbody>
-                      {linhasDoCartao(id, v.linhas).map((l) => (
+                      {agruparIndicadores(v.linhas, nomePorId).map((g) => {
+                        const chave = `${id}:${g.id}`;
+                        const podeFechar = grupoFechado(g.linhas);
+                        const fechado = podeFechar && !abertas.has(chave);
+                        const comRegistro = g.linhas.filter((l) => l.realizado).length;
+                        return (
+                        <Fragment key={g.id}>
+                        <tr className="border-t-2 border-border">
+                          <td colSpan={4} className="pt-3 pb-1">
+                            {podeFechar ? (
+                              <button type="button" aria-expanded={!fechado} onClick={() => alternar(chave)}
+                                className="text-[12px] font-bold uppercase tracking-wide text-muted-foreground hover:text-foreground">
+                                {g.titulo} · {comRegistro} de {g.linhas.length} · {fechado ? 'abrir' : 'fechar'}
+                              </button>
+                            ) : <span className="text-[12px] font-bold uppercase tracking-wide text-muted-foreground">{g.titulo}</span>}
+                          </td>
+                        </tr>
+                        {!fechado && g.linhas.map((l) => (
                         <Fragment key={l.metrica}>
                         {analitico && eValor(l.metrica) && v.carteira && (
                           <PartesDaVenda carteiras={v.carteira.split(', ')} de={intervalo?.de ?? competencia} ate={intervalo?.ate ?? ultimoDiaDoMes(competencia)} />
                         )}
                         <tr className="border-t border-border">
-                          <td className={`py-1.5 pr-2 ${eValor(l.metrica) ? 'font-semibold' : ''}`}>{eValor(l.metrica) ? 'Venda total' : l.rotulo}</td>
+                          <td className={`py-1.5 pr-2 ${eValor(l.metrica) ? 'font-semibold' : ''}`}>{ROTULO_DO_CALCULADO[l.metrica] ?? l.rotulo}</td>
                           <td className="py-1.5 text-right">
                             {l.metrica === 'pct_meta' ? (
                               <span className="text-muted-foreground">{l.meta === null ? '—' : '100%'}</span>
@@ -298,12 +340,23 @@ export default function ComercialIndicadores() {
                           <LinhaDoAFaturar carteiras={v.carteira.split(', ')} competencia={competencia} intervalo={intervalo} />
                         )}
                         </Fragment>
-                      ))}
+                        ))}
+                        {!fechado && extrasDoGrupo(id, g.id).map((x) => (
+                          <tr key={x.rotulo} className="border-t border-border">
+                            <td className="py-1.5 pr-2" title={x.dica}>{x.rotulo} <span className="text-[11px] text-muted-foreground">({x.dica.toLowerCase().replace(/\.$/, '')})</span></td>
+                            <td className="py-1.5 text-right text-muted-foreground">—</td>
+                            <td className="py-1.5 text-right font-mono">{x.valor}</td>
+                            <td />
+                          </tr>
+                        ))}
+                        </Fragment>
+                        );
+                      })}
                     </tbody>
                   </table>
                   </div>
                   {!analitico && !abertas.has(id) && v.linhas.length > linhasDoCartao(id, v.linhas).length && (
-                    <button type="button" className="text-[13px] text-primary hover:underline"
+                    <button type="button" className="min-[861px]:hidden text-[13px] text-primary hover:underline"
                       onClick={() => setAbertas((s) => new Set(s).add(id))}>
                       Ver os {v.linhas.length} indicadores
                     </button>

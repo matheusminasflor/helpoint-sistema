@@ -253,6 +253,16 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
   const comRaioX = pedeRaioX({ editando: !!editando, temPedido, valor: valorNumero,
     indicadoresMarcados: indicadores.filter((i) => form.marcas.has(i.id)).map((i) => i.nome) });
   const faltaRaioX = comRaioX && (lendoAlerta || faltaNaResposta(resposta));
+  // O botão diz o que falta (revisão do Comercial, 2026-11-12: o "Salvar" ficava apagado sem dizer por quê).
+  const oQueFalta = !form.data ? 'a data do contato'
+    : faltaCliente ? (clienteBloqueado ? 'um cliente da sua carteira' : 'o cliente')
+    : faltaAcaoInterna ? 'marcar uma ação (contato com pessoa da equipe)'
+    : indicadorSemCliente ? 'o cliente, porque indicador só conta com cliente'
+    : valorInvalido ? 'um valor de venda maior que zero'
+    : notaIncompleta ? 'a nota completa: número, valor, data e filial'
+    : dataDaNotaInvalida ? 'uma data da nota entre o contato e hoje'
+    : faltaRaioX ? (lendoAlerta ? null : 'a resposta do Raio-X do cliente')
+    : null;
 
   const ligarPedido = (ligado: boolean) => {
     setTemPedido(ligado);
@@ -676,7 +686,10 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
           </>)}
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="items-center">
+          {oQueFalta && (!!editando || passo === 2) && !(concluidoTravado && !enviaChecklist && !completandoNota) && (
+            <p role="status" className="text-[13px] text-status-warning sm:mr-auto">Para salvar, falta {oQueFalta}.</p>
+          )}
           {!editando && passo === 2
             ? <Button variant="outline" onClick={() => setPasso(1)}>Voltar</Button>
             : <Button variant="outline" onClick={() => onOpenChange(false)}>{concluidoTravado && !enviaChecklist && !completandoNota ? 'Fechar' : 'Cancelar'}</Button>}

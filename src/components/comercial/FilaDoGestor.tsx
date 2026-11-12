@@ -17,7 +17,8 @@ export function FilaDoGestor() {
   const { data: checklists = [], isError } = useChecklists();
   const devolvidos = checklists.filter((c) => c.situacao === 'Recusado');
   const { data: notas = [] } = useNotasDoComercial();
-  const semNota = notas.filter((n) => n.situacao === 'falta_nota');
+  // A mesma conta do "Aguardando a nota" de Pedidos: a que falta e a que não foi encontrada (só a corrigida pelo Forteplus sai).
+  const semNota = notas.filter((n) => n.situacao !== 'valor_diferente');
   const { data: emCondicao } = useClientesEmCondicao();
   const tenantPath = useTenantPath();
 
@@ -37,7 +38,7 @@ export function FilaDoGestor() {
           <ul className="space-y-1 text-[13px]">
             {devolvidos.slice(0, 6).map((c, i) => (
               <li key={c.id} className={`min-w-0 ${i >= 3 ? 'max-sm:hidden' : ''}`}>
-                <Link to={tenantPath('/comercial/pedidos?aba=devolvidos')} className="hover:underline">
+                <Link to={tenantPath('/comercial/pedidos?aba=pendencias')} className="hover:underline">
                   <span className="font-medium">{c.protocolo}</span> · {c.cliente_nome} · {c.vendedor_nome ?? '—'}
                   {c.retorno_motivos?.length ? <span className="text-muted-foreground"> — {c.retorno_motivos.join(', ')}</span> : null}
                 </Link>

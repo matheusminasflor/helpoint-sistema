@@ -38,27 +38,30 @@ import { formatBRL, formatDateBR } from '@/types/financeiro';
 import { cn } from '@/lib/utils';
 import { casaBusca } from '@/lib/tabela';
 
-type Grupo = 'devolvidos' | 'analise' | 'reajustes' | 'negociacao' | 'pagos' | 'finalizados' | 'cancelados';
+// 8 abas viraram 5 (revisão do Comercial aprovada pelo dono, https://claude.ai/artifact/DogLjeM9MuJUzFt2H7ALFV, 7.9).
+// "Pendências" junta o que espera a vendedora: o devolvido pelo Financeiro e o reajuste pedido. "Em negociação" é o
+// aprovado ainda sem nota, pago ou não (a coluna Situação diz qual); "Faturados" é o finalizado, com a nota.
+type Grupo = 'pendencias' | 'analise' | 'negociacao' | 'faturados' | 'cancelados';
 
 const GRUPOS: { valor: Grupo; rotulo: string; cor: string; cabe: (c: ChecklistResumo) => boolean }[] = [
-  { valor: 'devolvidos', rotulo: 'Devolvidos — corrigir', cor: 'badge-warning', cabe: (c) => c.situacao === 'Recusado' },
-  { valor: 'analise', rotulo: 'Em análise', cor: 'badge-info', cabe: (c) => c.situacao === 'Em análise' },
-  { valor: 'reajustes', rotulo: 'Reajuste pedido', cor: 'badge-info', cabe: (c) => !!c.reajuste_pendente },
-  { valor: 'negociacao', rotulo: 'Em negociação', cor: 'badge-info', cabe: (c) => c.situacao === 'Aprovado' && c.pagamento_status !== 'Pago' },
-  { valor: 'pagos', rotulo: 'Pagos', cor: 'badge-success', cabe: (c) => c.situacao === 'Aprovado' && c.pagamento_status === 'Pago' },
-  { valor: 'finalizados', rotulo: 'Finalizados', cor: 'badge-success', cabe: (c) => c.situacao === 'Finalizado' },
+  { valor: 'pendencias', rotulo: 'Pendências', cor: 'badge-warning', cabe: (c) => c.situacao === 'Recusado' || (!!c.reajuste_pendente && c.situacao !== 'Cancelado') },
+  { valor: 'analise', rotulo: 'Em análise', cor: 'badge-info', cabe: (c) => c.situacao === 'Em análise' && !c.reajuste_pendente },
+  { valor: 'negociacao', rotulo: 'Em negociação', cor: 'badge-info', cabe: (c) => c.situacao === 'Aprovado' && !c.reajuste_pendente },
+  { valor: 'faturados', rotulo: 'Faturados', cor: 'badge-success', cabe: (c) => c.situacao === 'Finalizado' && !c.reajuste_pendente },
   { valor: 'cancelados', rotulo: 'Cancelados', cor: 'badge-danger', cabe: (c) => c.situacao === 'Cancelado' },
 ];
-// "Reajuste pedido" cruza as outras (o checklist continua na situação dele): no agrupado, cada um aparece uma vez só.
-const GRUPOS_DO_TODOS = GRUPOS.filter((g) => g.valor !== 'reajustes');
+// Cada pedido cabe em um grupo só (o reajuste pendente leva para Pendências): as contagens somam o total.
+const GRUPOS_DO_TODOS = GRUPOS;
 const TODAS = '__todas';
 
 export default function ComercialPedidosEnviados() {
   const { user } = useAuth();
   const podeGerirCarteiras = usePodeGerirCarteiras();
   const { data: checklists = [], isLoading } = useChecklists();
-  const [aba, setAba] = useQueryState<'todos' | Grupo>('aba', 'todos');
+  const [abaNaUrl, setAba] = useQueryState<Grupo>('aba', 'pendencias');
   const [busca, setBusca] = useQueryState<string>('q', '');
+  // Link antigo (?aba=devolvidos, ?aba=todos…) cai em Pendências; com busca, a busca vale para todas as abas.
+  const aba: Grupo | 'todos' = busca.trim() ? 'todos' : GRUPOS.some((g) => g.valor === abaNaUrl) ? abaNaUrl : 'pendencias';
   const [vendedora, setVendedora] = useQueryState<string>('vendedora', TODAS);
   const [aberto, setAberto] = useState<ChecklistResumo | null>(null);
 
@@ -74,13 +77,12 @@ export default function ComercialPedidosEnviados() {
 
   return (
     <div className="flex flex-col min-h-full">
-      <PageHeader title="Pedidos enviados" icon={PackageCheck}
+      <PageHeader title="Pedidos" icon={PackageCheck}
         description="Os checklists que você enviou ao Financeiro e em que pé cada um está. Clique para ver o detalhe e, se precisar, pedir reajuste." />
       <div className="px-4 lg:px-8 pb-6 space-y-4">
         <div className="flex flex-wrap items-center gap-3">
-          <AbasSegmentadas<'todos' | Grupo> rotulo="Filtrar por situação" valor={aba} onValor={setAba}
-            opcoes={[{ valor: 'todos', rotulo: `Todos (${daVendedora.length})` },
-              ...GRUPOS.map((g) => ({ valor: g.valor, rotulo: `${g.rotulo} (${contagem(g)})` }))]} />
+          <AbasSegmentadas<Grupo> rotulo="Filtrar por situação" valor={aba === 'todos' ? abaNaUrl : aba} onValor={(g) => { setBusca(''); setAba(g); }}
+            opcoes={GRUPOS.map((g) => ({ valor: g.valor, rotulo: `${g.rotulo} (${contagem(g)})` }))} />
           <Input className="max-w-xs" placeholder="Protocolo ou cliente" value={busca}
             onChange={(e) => setBusca(e.target.value)} aria-label="Buscar pedido" />
           {vendedoras.length > 1 && (
@@ -131,11 +133,21 @@ function Vazio() {
   );
 }
 
+// A situação do pedido em si (o grupo da aba é outra coisa: Pendências junta devolvido e reajuste).
+const SITUACAO: Record<string, { rotulo: string; cor: string }> = {
+  Recusado: { rotulo: 'Devolvido — corrigir', cor: 'badge-warning' },
+  'Em análise': { rotulo: 'Em análise', cor: 'badge-info' },
+  Aprovado: { rotulo: 'Em negociação', cor: 'badge-info' },
+  Finalizado: { rotulo: 'Faturado', cor: 'badge-success' },
+  Cancelado: { rotulo: 'Cancelado', cor: 'badge-danger' },
+};
+
 function Situacao({ c }: { c: ChecklistResumo }) {
-  const g = GRUPOS_DO_TODOS.find((x) => x.cabe(c));
+  const g = SITUACAO[c.situacao];
+  const pago = c.situacao === 'Aprovado' && c.pagamento_status === 'Pago';
   return (
     <span className="inline-flex flex-wrap gap-1">
-      <Badge className={cn('text-[12px]', g?.cor)}>{g?.rotulo ?? c.situacao}</Badge>
+      <Badge className={cn('text-[12px]', pago ? 'badge-success' : g?.cor)}>{pago ? 'Pago, sem nota' : g?.rotulo ?? c.situacao}</Badge>
       {c.reajuste_pendente && <Badge className="text-[12px] badge-info">reajuste pedido</Badge>}
     </span>
   );
