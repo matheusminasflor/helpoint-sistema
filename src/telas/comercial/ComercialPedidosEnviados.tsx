@@ -58,10 +58,8 @@ export default function ComercialPedidosEnviados() {
   const { user } = useAuth();
   const podeGerirCarteiras = usePodeGerirCarteiras();
   const { data: checklists = [], isLoading } = useChecklists();
-  const [abaNaUrl, setAba] = useQueryState<Grupo>('aba', 'pendencias');
+  const [abaNaUrl, setAba] = useQueryState<Grupo | ''>('aba', '');
   const [busca, setBusca] = useQueryState<string>('q', '');
-  // Link antigo (?aba=devolvidos, ?aba=todos…) cai em Pendências; com busca, a busca vale para todas as abas.
-  const aba: Grupo | 'todos' = busca.trim() ? 'todos' : GRUPOS.some((g) => g.valor === abaNaUrl) ? abaNaUrl : 'pendencias';
   const [vendedora, setVendedora] = useQueryState<string>('vendedora', TODAS);
   const [aberto, setAberto] = useState<ChecklistResumo | null>(null);
 
@@ -73,6 +71,11 @@ export default function ComercialPedidosEnviados() {
     () => daVendedora.filter((c) => casaBusca([c.protocolo, c.cliente_nome, c.cliente_codigo], busca)),
     [daVendedora, busca]);
   const contagem = (g: (typeof GRUPOS)[number]) => daVendedora.filter(g.cabe).length;
+  // Sem aba escolhida (ou link antigo, ?aba=devolvidos), abre na primeira que tem pedido: abrir numa aba vazia escondia
+  // os 8 em análise. Com busca, a busca vale para todas as abas.
+  const abaValida = GRUPOS.find((g) => g.valor === abaNaUrl)?.valor
+    ?? GRUPOS.find((g) => contagem(g) > 0)?.valor ?? 'pendencias';
+  const aba: Grupo | 'todos' = busca.trim() ? 'todos' : abaValida;
   const grupoAtual = GRUPOS.find((g) => g.valor === aba);
 
   return (
@@ -81,7 +84,7 @@ export default function ComercialPedidosEnviados() {
         description="Os checklists que você enviou ao Financeiro e em que pé cada um está. Clique para ver o detalhe e, se precisar, pedir reajuste." />
       <div className="px-4 lg:px-8 pb-6 space-y-4">
         <div className="flex flex-wrap items-center gap-3">
-          <AbasSegmentadas<Grupo> rotulo="Filtrar por situação" valor={aba === 'todos' ? abaNaUrl : aba} onValor={(g) => { setBusca(''); setAba(g); }}
+          <AbasSegmentadas<Grupo> rotulo="Filtrar por situação" valor={abaValida} onValor={(g) => { setBusca(''); setAba(g); }}
             opcoes={GRUPOS.map((g) => ({ valor: g.valor, rotulo: `${g.rotulo} (${contagem(g)})` }))} />
           <Input className="max-w-xs" placeholder="Protocolo ou cliente" value={busca}
             onChange={(e) => setBusca(e.target.value)} aria-label="Buscar pedido" />
