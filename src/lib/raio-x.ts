@@ -9,15 +9,20 @@ export const RESULTADOS_DO_CONTATO = [
 ] as const;
 export type ResultadoDoContato = (typeof RESULTADOS_DO_CONTATO)[number]['valor'];
 
+// "Motivos de não compra" (revisão de 2026-11-12, migration 20270212721800): os três últimos antes de "Outros" vieram do
+// que a equipe escrevia à mão em "Outros".
 export const MOTIVOS = [
   { valor: 'preco', rotulo: 'Preço' },
-  { valor: 'frete', rotulo: 'Frete e logística' },
-  { valor: 'estoque', rotulo: 'Estoque parado' },
-  { valor: 'credito', rotulo: 'Crédito e pagamento' },
   { valor: 'concorrente', rotulo: 'Concorrente' },
-  { valor: 'produto', rotulo: 'Produto ou qualidade' },
+  { valor: 'estoque', rotulo: 'Estoque alto' },
+  { valor: 'credito', rotulo: 'Crédito, pagamento ou inadimplência' },
   { valor: 'atendimento', rotulo: 'Atendimento' },
+  { valor: 'produto', rotulo: 'Produto ou qualidade' },
+  { valor: 'frete', rotulo: 'Frete e logística' },
   { valor: 'pouca_venda', rotulo: 'Pouca venda na região' },
+  { valor: 'fechou', rotulo: 'Mudou de ramo ou fechou' },
+  { valor: 'outra_razao_social', rotulo: 'Compra por outra razão social' },
+  { valor: 'sazonalidade', rotulo: 'Sazonalidade' },
   { valor: 'outros', rotulo: 'Outros' },
 ] as const;
 export type Motivo = (typeof MOTIVOS)[number]['valor'];
