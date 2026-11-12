@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { corDoFarol, retornoSemDono } from '@/hooks/useComercialLancamentos';
+import { corDoFarol, retornoSemDono } from '@/lib/regras-da-carteira';
 
 describe('retornoSemDono', () => {
   it('quem está numa carteira é dono do retorno; quem saiu, não', () => {

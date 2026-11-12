@@ -24,12 +24,15 @@ import { fromLocalISODate, toLocalISODate } from '@/lib/dates';
 import { buscarComTeto, type ConsultaComLimite } from '@/lib/listas';
 import type { IntervaloDeDias } from '@/lib/period';
 import type { RitmoDoMes } from '@/lib/projecao-do-mes';
+import { corDoFarol } from '@/lib/regras-da-carteira';
+export { corDoFarol, retornoSemDono } from '@/lib/regras-da-carteira';
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
 
 export type TipoIndicador = 'indicador' | 'acao';
 export type StatusInteracao = 'em_andamento' | 'agendado' | 'concluido';
-export type CorFarol = 'verde' | 'amarelo' | 'vermelho' | 'sem_meta';
+import type { CorFarol } from '@/lib/regras-da-carteira';
+export type { CorFarol };
 
 export const STATUS_INTERACAO: { valor: StatusInteracao; rotulo: string }[] = [
   { valor: 'em_andamento', rotulo: 'Em andamento' },
@@ -518,12 +521,6 @@ export type FiltroFilial = '' | 'INBRAS' | 'MF';
 export type UmaOuVariasCarteiras = string | readonly string[] | null;
 const listaDeCarteiras = (c: UmaOuVariasCarteiras): string[] => (c == null ? [] : typeof c === 'string' ? [c] : [...c]);
 
-/** O mesmo farol de `com_cor_do_farol` (banco): sem meta, ≥ meta verde, ≥ 70% amarelo, abaixo vermelho. */
-export function corDoFarol(realizado: number, meta: number | null): CorFarol {
-  if (meta == null || meta <= 0) return 'sem_meta';
-  if (realizado >= meta) return 'verde';
-  return realizado >= meta * 0.7 ? 'amarelo' : 'vermelho';
-}
 
 /**
  * Uma linha por grupo da carteira (manual §8.2). A porta é a carteira: a vendedora, só a dela. Um mês, ou um período
@@ -862,14 +859,6 @@ export function useRetornosDaEquipe() {
   });
 }
 
-/**
- * O retorno de quem saiu do Comercial (revisão de 2026-11-12): quem marcou não está mais em carteira nenhuma, e ninguém
- * ia ligar — eram 20 atrasados desde 05/10, todos da Júlia. Ele sai do "O que fazer hoje" e espera o gestor na Agenda.
- * `comCarteira` é o conjunto de quem está em alguma carteira (`com_carteira_membros`); vazio = ainda lendo, ninguém é órfão.
- */
-export function retornoSemDono(r: { vendedor_id: string }, comCarteira: ReadonlySet<string>): boolean {
-  return comCarteira.size > 0 && !comCarteira.has(r.vendedor_id);
-}
 
 /** O gestor tira da agenda os retornos de quem saiu: o lançamento continua contando, só o prazo sai. */
 export function useTirarRetornosDaAgenda() {
