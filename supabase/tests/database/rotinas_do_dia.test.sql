@@ -127,6 +127,9 @@ insert into public.feriados_da_empresa (tenant_id, data, nome) values ((select a
 select is(public.rotina_dia_do_mes((select a from f), '2026-11-01', 15::smallint), '2026-11-12'::date,
   'com feriado da empresa na sexta, antecipa para a quinta');
 select is(public.rotina_dia_util((select a from f), '2026-11-14'), false, 'sábado não tem rotina');
+-- A folga de 13/11 só servia ao teste acima: se o CI rodar nesse dia, ela apagaria o "hoje" das férias abaixo
+-- (foi o que reprovou o CI de 2026-11-13).
+delete from public.feriados_da_empresa where tenant_id = (select a from f) and data = '2026-11-13';
 
 -- ═══ 25-27. Férias: pausa, e passa ao substituto quando a rotina pede ═══
 select tests.authenticate_as('rh@rotinas.test');
