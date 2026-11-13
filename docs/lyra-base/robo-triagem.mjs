@@ -13,8 +13,13 @@ import fs from 'node:fs';
 import { createHash, randomUUID } from 'node:crypto';
 
 const CANAL_DO_ROBO = process.argv[2];
-if (!['whatsapp', 'instagram'].includes(CANAL_DO_ROBO)) throw new Error('uso: node robo-triagem.mjs whatsapp|instagram [--min]');
+if (!['whatsapp', 'instagram'].includes(CANAL_DO_ROBO)) throw new Error('uso: node robo-triagem.mjs whatsapp|instagram [minasflor|mfpro|bymf] [--min]');
 const noWhatsapp = CANAL_DO_ROBO === 'whatsapp';
+// Um robô por Instagram (dono, 2026-11-12): "no Instagram da Minasflor tem que falar somente sobre Minasflor", e o mesmo
+// na MF.PRO e na BY.MF. O WhatsApp comercial continua com um robô só.
+const MARCA_IG = process.argv.find((a) => ['minasflor', 'mfpro', 'bymf'].includes(a));
+if (!noWhatsapp && !MARCA_IG) throw new Error('o Instagram pede a marca: minasflor | mfpro | bymf');
+const NOME_DO_ARQUIVO = noWhatsapp ? 'whatsapp' : `instagram-${MARCA_IG}`;
 
 // Números da conta ticminasflor (leitura de 2026-11-08).
 const FUNIL = { consumidor: 12904179, salao: 12927111, distribuidor: 12927087, atendimento: 14739451, entrada: 13975223 };
@@ -101,14 +106,14 @@ const NOME_NO_WHATSAPP = { 'Tenho salão': 'Para o salão', 'Revendo/distribuo':
 const OPCOES = Object.fromEntries(['Uso em casa', 'Tenho salão', 'Revendo/distribuo', 'Já sou cliente']
   .map((t) => [t, linha(noWhatsapp ? NOME_NO_WHATSAPP[t] ?? t : t)]));
 // Só o toque conta. Quem escreve cai no bloco 53, que procura "atendente" no texto; o resto recebe as opções de novo.
-const respostaDosBotoes = () => [{
+const respostaDosBotoes = (senao = 53) => [{
   handler: 'buttons',
   params: [
     ...opcao(OPCOES['Uso em casa'], [goto(10)]),
     ...opcao(OPCOES['Tenho salão'], [goto(20)]),
     ...opcao(OPCOES['Revendo/distribuo'], [goto(30)]),
     ...opcao(OPCOES['Já sou cliente'], [goto(40)]),
-    { type: 'else', params: [goto(53)] },
+    { type: 'else', params: [goto(senao)] },
   ],
 }];
 const DIGITOS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
@@ -122,7 +127,16 @@ const blocos = {
   // Regra do dono (2026-11-08): o segmento é obrigatório. Quem escreve em vez de escolher recebe as opções de novo,
   // quantas vezes for preciso; só "atendente" passa direto para uma pessoa, na Entrada (sem triagem).
   50: { question: escolha('Para seguir com o atendimento, {toque} 👇', Object.values(OPCOES), {
-    texto: 'Para seguir com o atendimento, toque em uma das opções 👇 Se você já é cliente, escreva "cliente".', linhas: [OPCOES['Uso em casa'], OPCOES['Tenho salão'], OPCOES['Revendo/distribuo']] }), answer: respostaDosBotoes() },
+    texto: 'Para seguir com o atendimento, toque em uma das opções 👇 Se você já é cliente, escreva "cliente".', linhas: [OPCOES['Uso em casa'], OPCOES['Tenho salão'], OPCOES['Revendo/distribuo']] }), answer: respostaDosBotoes(57) },
+  // Escreveu de novo em vez de tocar (dono, 2026-11-12, caso Divino Cacho: o lead ficou parado sem tarefa): na 2ª vez
+  // a Lyra passa para a equipe, com tarefa, em vez de repetir a pergunta para sempre.
+  57: { question: [contem(['atendente', 'Atendente', 'ATENDENTE', 'falar com alguém', 'Falar com alguém', 'humano', 'pessoa'], 51),
+    contem(['cliente', 'Cliente', 'CLIENTE', 'pedido', 'Pedido', 'troca', 'Troca', 'entrega', 'Entrega', 'rastreio', 'Rastreio'], 40), goto(58)] },
+  58: { question: [etapa(FUNIL.entrada, ETAPA.entradaAtendente), msg(TRANSFERE), tarefa('Contato escreveu em vez de escolher uma opção da Lyra: responder pela conversa e preencher o Segmento (até 45 minutos).'), esperaResposta(55)] },
+  // Mensagem automática de quem a equipe chamou (dono, 2026-11-12): a Lyra não se apresenta; o lead vai para a equipe
+  // em silêncio, com tarefa. O Kommo não diz ao robô quem mandou a 1ª mensagem, então a Lyra reconhece pelo texto.
+  56: { question: [etapa(FUNIL.entrada, ETAPA.entradaAtendente), etiqueta('resposta-automatica'),
+    tarefa('O contato respondeu com mensagem automática: a equipe continua a conversa (até 45 minutos).'), fim] },
   53: { question: [contem(['atendente', 'Atendente', 'ATENDENTE', 'falar com alguém', 'Falar com alguém', 'humano', 'pessoa'], 51),
     contem(['cliente', 'Cliente', 'CLIENTE', 'pedido', 'Pedido', 'troca', 'Troca', 'entrega', 'Entrega', 'rastreio', 'Rastreio'], 40), goto(50)] },
   51: { question: [etapa(FUNIL.entrada, ETAPA.entradaAtendente), etiqueta('pediu-atendente'), msg(TRANSFERE), tarefa('Cliente pediu atendente antes da triagem: responder e preencher o Segmento.'), esperaResposta(55)] },
@@ -276,8 +290,9 @@ blocos[91] = { question: [contem(ILEGIVEL, 90), contem(['Não tenho', 'não', 'N
 // A Lyra curta no WhatsApp (dono, 2026-11-10, proposta https://claude.ai/artifact/Q3Le2UgfJANCSo5TpZxR2z): "o cliente não
 // quer responder pergunta demais". Sai o nome (o WhatsApp já traz), a marca (a BY.MF fica no Instagram dela) e a cidade
 // do distribuidor; a Lyra pergunta a linha ou manda o catálogo; o CNPJ do salão vem depois do pedido; o distribuidor
-// informa o investimento inicial. O Instagram segue como estava.
-if (noWhatsapp) {
+// informa o investimento inicial. Em 2026-11-12 o dono mandou encurtar o Instagram igual; ali a Lyra ainda pede o
+// WhatsApp (o Direct não traz o telefone) e o consumidor escolhe a marca (a BY.MF tem Instagram e loja próprios).
+{
   // Parou de responder por 45 minutos (2700 s) numa pergunta escrita: passa para uma pessoa, com tarefa. Nas listas o
   // Kommo não deixa esperar com relógio, então ali vale o aviso de 45 minutos do Helpoint.
   const esperaOuParou = (step, parou) => ({ handler: 'waits', params: { logic: 'or', conditions: [
@@ -343,18 +358,31 @@ if (noWhatsapp) {
   blocos[346] = { question: [msg('Para seguir, informe o CNPJ da empresa, só os números 🔒'), goto(35)] };
   blocos[347] = { question: [campoLead(CAMPO.cpfCnpj, '{{message_text}}'), goto(350)] };
   const FAIXAS = ['Até R$ 5 mil', 'R$ 5 a 15 mil', 'R$ 15 a 50 mil', 'Acima de R$ 50 mil'].map((t) => linha(t));
-  blocos[350] = { question: escolha('Qual investimento inicial você tem em mente? 💼 Para responder, {toque}.', FAIXAS),
-    answer: [{ handler: 'buttons', params: [...FAIXAS.flatMap((f, i) => opcao(f, [goto(351 + i)])), { type: 'else', params: [goto(350)] }] }] };
+  // No Instagram cabem 3 botões; as 4 faixas vão numeradas e a pessoa responde com o número.
+  blocos[350] = { question: escolha('Qual investimento inicial você tem em mente? 💼 Para responder, {toque}.', FAIXAS, {
+    texto: `Qual investimento inicial você tem em mente? 💼 Responda com o número:\n${FAIXAS.map((f, i) => `${i + 1} · ${f.title}`).join('\n')}`, linhas: [] }),
+    answer: [{ handler: 'buttons', params: [...FAIXAS.flatMap((f, i) => [...opcao(f, [goto(351 + i)]), { value: String(i + 1), params: [goto(351 + i)] }]),
+      { type: 'else', params: [goto(350)] }] }] };
   FAIXAS.forEach((f, i) => { blocos[351 + i] = { question: [campoLead(CAMPO.investimento, f.title), goto(39)] }; });
   blocos[39].question = blocos[39].question.map((p) => (p.handler === 'trigger'
     ? tarefa('Distribuidor triado pela Lyra (CNPJ, estado e investimento inicial no lead): encaminhar ao representante (até 45 minutos).') : p));
 }
 
 if (!noWhatsapp) {
-  Object.assign(blocos, pedeWhatsapp(80, 14, false), pedeWhatsapp(83, 24, true), pedeWhatsapp(86, 34, true));
-  blocos[13] = { question: [nomeDoLead, goto(80)] };
-  blocos[23] = { question: [nomeDoLead, goto(83)] };
+  // Instagram curto (dono, 2026-11-12): casa = WhatsApp (pode pular) → marca → produtos; salão = WhatsApp → produtos →
+  // CNPJ; distribuidor = empresa → WhatsApp → estado (sigla) → CNPJ → investimento.
+  Object.assign(blocos, pedeWhatsapp(80, 14, false), pedeWhatsapp(83, 320, true), pedeWhatsapp(86, 37, true));
+  blocos[10] = { question: [etapa(FUNIL.consumidor, ETAPA.consumidorLyra), campoLead(CAMPO.segmento, 'Consumidor final'), etiqueta('consumidor-final'), goto(80)] };
+  blocos[16] = { question: [campoLead(CAMPO.marca, 'Minasflor'), goto(300)] };
+  blocos[20] = { question: [etapa(FUNIL.salao, ETAPA.salaoLyra), campoLead(CAMPO.segmento, 'Salão'), etiqueta('salão'), goto(83)] };
   blocos[33] = { question: [nomeDoLead, goto(86)] };
+  // A mensagem "could not be displayed" do Instagram não vale como pedido nem como CNPJ: volta a esperar.
+  blocos[28] = { question: [{ handler: 'waits', params: { logic: 'or', conditions: [
+    { event: { action: 'received', source: 'message' }, action: { type: 'question', step: 348 } },
+    { event: { action: 'ended', source: 'timer', delay: 2700 }, action: { type: 'question', step: 361 } }] } }] };
+  blocos[348] = { question: [contem(ILEGIVEL, 28), goto(29)] };
+  blocos[341].question.unshift(contem(ILEGIVEL, 340));
+  blocos[36].question.unshift(contem(ILEGIVEL, 35));
 }
 if (noWhatsapp) {
   blocos[200] = { question: blocos[0].question, answer: blocos[0].answer };
@@ -364,18 +392,59 @@ if (noWhatsapp) {
   // Helpoint reconhece sozinho (`origemDoLead`).
   const FRASE = { Instagram: 'pelo Instagram', Site: 'pelo site', Google: 'pelo Google' };
   const variacoes = (t) => [t, t.toLowerCase(), t.toUpperCase()];
-  blocos[0] = { question: [paraEntrada, ...Object.values(FRASE).map((t, i) => contem(variacoes(t), 400 + i)), goto(410)] };
+  // Resposta automática (de quem a equipe chamou, ou do WhatsApp Business do cliente): vai para a equipe, sem saudação.
+  const AUTOMATICA = ['mensagem automática', 'Mensagem automática', 'resposta automática', 'Resposta automática',
+    'não podemos te responder', 'não podemos responder', 'No momento não podemos', 'no momento não podemos',
+    'horário comercial', 'fora do horário', 'Fora do horário', 'horário de atendimento', 'por ordem de chegada',
+    'retornaremos', 'Retornaremos', 'responderemos em breve', 'Responderemos em breve',
+    'Obrigado por entrar em contato', 'Obrigada por entrar em contato', 'obrigado por entrar em contato', 'obrigada por entrar em contato',
+    'Agradecemos o seu contato', 'Agradecemos seu contato', 'agradecemos o seu contato', 'agradecemos seu contato'];
+  blocos[0] = { question: [paraEntrada, contem(AUTOMATICA, 56), ...Object.values(FRASE).map((t, i) => contem(variacoes(t), 400 + i)), goto(410)] };
   Object.keys(FRASE).forEach((o, i) => { blocos[400 + i] = { question: [campoLead(CAMPO.origem, o), goto(200)] }; });
   const ORIGENS = ['Instagram', 'Google', 'Site', 'Indicação', 'Outro'].map((t) => linha(t));
   blocos[410] = { question: escolha('Olá! ✨ Sou a Lyra, da Minasflor. Para começar, como você conheceu a Minasflor? Para responder, {toque} 👇', ORIGENS),
     answer: [{ handler: 'buttons', params: [...ORIGENS.flatMap((o, i) => opcao(o, [goto(411 + i)])), { type: 'else', params: [goto(416)] }] }] };
   ORIGENS.forEach((o, i) => { blocos[411 + i] = { question: [campoLead(CAMPO.origem, o.title), goto(201)] }; });
   // Escreveu em vez de tocar: "atendente" e assunto de cliente seguem como na saudação; o resto recebe a pergunta de novo.
-  blocos[416] = { question: [blocos[53].question[0], blocos[53].question[1], goto(410)] };
+  blocos[416] = { question: [blocos[53].question[0], blocos[53].question[1], goto(417)] };
+  // 2ª vez sem tocar na pergunta da origem: repete uma vez; se escrever de novo, passa para a equipe (bloco 57).
+  blocos[417] = { question: escolha('Para seguir, {toque} e conte como conheceu a Minasflor 👇', ORIGENS), answer: [{ handler: 'buttons', params: [
+    ...blocos[410].answer[0].params.filter((p) => p.type !== 'else'), { type: 'else', params: [goto(57)] }] }] };
   blocos[201] = { question: escolha('Obrigada! Como posso te ajudar? Para responder, {toque}. Se preferir falar com a nossa equipe, é só escrever "atendente".', Object.values(OPCOES)),
     answer: respostaDosBotoes() };
 } else {
-  blocos[0].question = [paraEntrada, { ...blocos[0].question[0], params: { ...blocos[0].question[0].params, is_in_starting_block: true } }];
+  // Instagram de uma marca só (dono, 2026-11-12). MF.PRO: linha profissional, sem "Uso em casa"; quem escreve que é
+  // para casa vai para a equipe. BY.MF: casa recebe a loja online e não há "Para o salão". Minasflor: as três opções
+  // de perfil e só o catálogo da Minasflor.
+  const NOME = { minasflor: 'Minasflor', mfpro: 'MF.PRO', bymf: 'BY.MF' }[MARCA_IG];
+  const OPCOES_IG = {
+    minasflor: [OPCOES['Uso em casa'], OPCOES['Tenho salão'], OPCOES['Revendo/distribuo']],
+    mfpro: [OPCOES['Tenho salão'], OPCOES['Revendo/distribuo'], OPCOES['Já sou cliente']],
+    bymf: [OPCOES['Uso em casa'], OPCOES['Revendo/distribuo'], OPCOES['Já sou cliente']],
+  }[MARCA_IG];
+  const clienteEscrito = !OPCOES_IG.includes(OPCOES['Já sou cliente']);
+  // Só respondem as opções desta marca; a resposta de outra cai no "senão", e o caminho da outra marca nem entra no robô.
+  const soDestaMarca = (answer) => [{ ...answer[0], params: answer[0].params.filter((p) => p.type === 'else'
+    || OPCOES_IG.some((o) => p.value === o.id || p.value === o.curto)) }];
+  blocos[0].answer = soDestaMarca(blocos[0].answer);
+  blocos[50].answer = soDestaMarca(blocos[50].answer);
+  const botoesIg = { buttons: OPCOES_IG.map(({ curto }) => ({ type: 'inline', text: curto })) };
+  const saudacao = msg(`Olá! ✨ Sou a Lyra, da ${NOME}. Para direcionar o seu atendimento, toque em uma das opções. `
+    + (clienteEscrito ? 'Se você já é cliente, é só escrever "cliente"; para falar' : 'Para falar') + ' com a nossa equipe, escreva "atendente".', botoesIg);
+  blocos[0].question = [paraEntrada, { ...saudacao, params: { ...saudacao.params, is_in_starting_block: true } }];
+  blocos[50].question = [msg('Para seguir com o atendimento, toque em uma das opções 👇' + (clienteEscrito ? ' Se você já é cliente, escreva "cliente".' : ''), botoesIg)];
+  const catalogoDoSalao = { minasflor: `Minasflor: ${PDF.minasflor}`, mfpro: `MF.PRO: ${PDF.mfpro}` }[MARCA_IG];
+  if (catalogoDoSalao) blocos[321].question[0] = msg(`Aqui está o nosso catálogo 📖\n\n${catalogoDoSalao}\n\nQuando escolher, escreva os produtos e as quantidades 📝`);
+  if (MARCA_IG === 'minasflor') Object.assign(blocos, pedeWhatsapp(80, 16, false)); // casa: WhatsApp → catálogo, sem marca
+  if (MARCA_IG === 'bymf') blocos[10] = { question: [etapa(FUNIL.consumidor, ETAPA.consumidorLyra), campoLead(CAMPO.segmento, 'Consumidor final'), etiqueta('consumidor-final'), goto(15)] };
+  if (MARCA_IG === 'mfpro') {
+    const CASA = ['uso em casa', 'Uso em casa', 'em casa', 'Em casa', 'para mim', 'Para mim', 'pra mim', 'Pra mim', 'uso próprio', 'Uso próprio', 'consumidor', 'Consumidor'];
+    blocos[59] = { question: [etapa(FUNIL.consumidor, ETAPA.consumidorAtendente), campoLead(CAMPO.segmento, 'Consumidor final'), etiqueta('consumidor-final'),
+      msg('A MF.PRO é uma linha profissional, para salões. Vou transferir o seu atendimento para a nossa equipe, que dará continuidade por aqui. 💙'),
+      tarefa('Consumidor final chegou pelo Instagram da MF.PRO: atender pela conversa (até 45 minutos).'), esperaResposta(55)] };
+    blocos[53].question.unshift(contem(CASA, 59));
+    blocos[57].question.unshift(contem(CASA, 59));
+  }
 }
 
 // Só vai para o robô o bloco que se alcança a partir do 0 (no WhatsApp curto, o nome, a marca e a cidade ficam de fora).
@@ -388,7 +457,7 @@ const anda = (o) => {
 anda(blocos[0]);
 const saida = { conversation: false };
 for (const [k, b] of Object.entries(blocos)) if (alcancados.has(k)) saida[k] = { block_uuid: randomUUID(), ...b };
-const destino = new URL(`./robo-triagem-${CANAL_DO_ROBO}.json`, import.meta.url);
+const destino = new URL(`./robo-triagem-${NOME_DO_ARQUIVO}.json`, import.meta.url);
 fs.writeFileSync(destino, JSON.stringify(saida, null, 2));
-if (process.argv[3] === '--min') fs.writeFileSync(new URL(`./robo-triagem-${CANAL_DO_ROBO}.min.json`, import.meta.url), JSON.stringify(saida));
+if (process.argv.includes('--min')) fs.writeFileSync(new URL(`./robo-triagem-${NOME_DO_ARQUIVO}.min.json`, import.meta.url), JSON.stringify(saida));
 console.log('blocos', Object.keys(blocos).length, '→', destino.pathname);

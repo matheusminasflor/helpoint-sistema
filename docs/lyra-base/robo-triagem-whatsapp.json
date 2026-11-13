@@ -1,6 +1,6 @@
 {
   "0": {
-    "block_uuid": "8fbd847b-3250-4b86-b7ee-cba09667cf69",
+    "block_uuid": "7324b755-b38d-4f2b-9928-05292d44cc45",
     "question": [
       {
         "handler": "action",
@@ -10,6 +10,148 @@
             "value": 107856359,
             "pipeline_id": 13975223
           }
+        }
+      },
+      {
+        "handler": "conditions",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "term1": "{{message_text}}",
+              "term2": "mensagem automática",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "Mensagem automática",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "resposta automática",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "Resposta automática",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "não podemos te responder",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "não podemos responder",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "No momento não podemos",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "no momento não podemos",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "horário comercial",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "fora do horário",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "Fora do horário",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "horário de atendimento",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "por ordem de chegada",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "retornaremos",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "Retornaremos",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "responderemos em breve",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "Responderemos em breve",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "Obrigado por entrar em contato",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "Obrigada por entrar em contato",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "obrigado por entrar em contato",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "obrigada por entrar em contato",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "Agradecemos o seu contato",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "Agradecemos seu contato",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "agradecemos o seu contato",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "agradecemos seu contato",
+              "operation": "contains"
+            }
+          ],
+          "result": [
+            {
+              "handler": "goto",
+              "params": {
+                "type": "question",
+                "step": 56
+              }
+            }
+          ]
         }
       },
       {
@@ -118,7 +260,7 @@
     ]
   },
   "9": {
-    "block_uuid": "f75d5675-28ba-4bbc-8084-93ed5a49580b",
+    "block_uuid": "dae2869a-1bd7-4810-a8ba-361bf2672aa0",
     "question": [
       {
         "handler": "conditions",
@@ -227,7 +369,7 @@
     ]
   },
   "10": {
-    "block_uuid": "96e1b6c2-341f-4245-af16-2fb76721dedf",
+    "block_uuid": "02e4b3ce-efb9-4e76-8194-e671d2200c72",
     "question": [
       {
         "handler": "action",
@@ -281,7 +423,7 @@
     ]
   },
   "18": {
-    "block_uuid": "49f38502-a927-4bba-baae-4d8482acf225",
+    "block_uuid": "ed00e8b6-30d9-4027-a00c-c51168a9b12c",
     "question": [
       {
         "handler": "send_message",
@@ -308,7 +450,7 @@
     ]
   },
   "19": {
-    "block_uuid": "8f975a78-e35a-4437-922a-74b990bb13fa",
+    "block_uuid": "0c0cea1d-5860-43b6-8c2a-6e86ad1a44c9",
     "question": [
       {
         "handler": "waits",
@@ -342,7 +484,7 @@
     ]
   },
   "20": {
-    "block_uuid": "285b5b43-7f28-43c9-a83b-7ca16a7eab02",
+    "block_uuid": "28241b57-71a5-4869-b9d4-486dcb1b1294",
     "question": [
       {
         "handler": "action",
@@ -386,7 +528,7 @@
     ]
   },
   "27": {
-    "block_uuid": "13798dc2-aa5d-49f3-90d0-4350deae5a99",
+    "block_uuid": "00558a47-27d3-46fa-a2ba-be30a95e88aa",
     "question": [
       {
         "handler": "send_message",
@@ -413,7 +555,7 @@
     ]
   },
   "28": {
-    "block_uuid": "8bd83f00-5939-417b-8ce5-e5d5c47fee3e",
+    "block_uuid": "ec476b7b-7115-40b1-b177-30c6e16aa2d1",
     "question": [
       {
         "handler": "waits",
@@ -447,7 +589,7 @@
     ]
   },
   "29": {
-    "block_uuid": "c9a406e5-3a5b-4fcb-81aa-7fc518e7c0d2",
+    "block_uuid": "5821ba66-06ef-46ac-874f-140f84647786",
     "question": [
       {
         "handler": "send_message",
@@ -480,7 +622,7 @@
     ]
   },
   "30": {
-    "block_uuid": "b9b70672-95ec-4355-94b8-2da8c70864dc",
+    "block_uuid": "b4383115-bfe2-49bd-ae39-54df1e614a80",
     "question": [
       {
         "handler": "action",
@@ -524,7 +666,7 @@
     ]
   },
   "31": {
-    "block_uuid": "c3f9c8d0-70ff-492a-ab6d-ae31985ec5c0",
+    "block_uuid": "2102d504-34a4-4b85-a5b8-e877a40a51f1",
     "question": [
       {
         "handler": "send_message",
@@ -551,7 +693,7 @@
     ]
   },
   "32": {
-    "block_uuid": "cff5efd9-7025-4c59-a312-fcb72bbaaf3f",
+    "block_uuid": "fe9d2414-7d05-49fb-aab7-5f4b11a00e4c",
     "question": [
       {
         "handler": "waits",
@@ -585,7 +727,7 @@
     ]
   },
   "33": {
-    "block_uuid": "c8dc7eb3-82da-40fd-bd7f-c3b6e8d8b8a0",
+    "block_uuid": "40fbe1c3-0b97-4e56-aa2d-6b6064a9bc32",
     "question": [
       {
         "handler": "action",
@@ -607,7 +749,7 @@
     ]
   },
   "34": {
-    "block_uuid": "8b557668-6c1c-4613-9404-8e1449edd6d3",
+    "block_uuid": "b8876897-9f9d-4aaf-88b6-378b2f3c8a53",
     "question": [
       {
         "handler": "send_message",
@@ -634,7 +776,7 @@
     ]
   },
   "35": {
-    "block_uuid": "1a296505-5fc5-4b2a-baba-2586533e0a7e",
+    "block_uuid": "6f9dc6ed-3d1a-47c7-a1c9-83626d1668b1",
     "question": [
       {
         "handler": "waits",
@@ -668,7 +810,7 @@
     ]
   },
   "36": {
-    "block_uuid": "1643e602-2c79-4a1f-8c5f-cff2415936f5",
+    "block_uuid": "8ba02e90-571f-4ee2-906a-143199f00276",
     "question": [
       {
         "handler": "conditions",
@@ -747,7 +889,7 @@
     ]
   },
   "37": {
-    "block_uuid": "fd136503-cf32-47db-bfef-85e5a8164e07",
+    "block_uuid": "4c16500f-e4a0-4c9c-8abd-d0a00776ad20",
     "question": [
       {
         "handler": "list_message",
@@ -2235,7 +2377,7 @@
     ]
   },
   "39": {
-    "block_uuid": "63eab929-34ef-49b1-a27b-bb52a4546ca9",
+    "block_uuid": "a0b4e5f1-9479-42ee-8334-9008962b1351",
     "question": [
       {
         "handler": "action",
@@ -2312,7 +2454,7 @@
     ]
   },
   "40": {
-    "block_uuid": "ad9c64d7-72f0-4de0-b7b2-d1421f1f36cb",
+    "block_uuid": "95c30909-f707-4501-90ef-2921c5342688",
     "question": [
       {
         "handler": "action",
@@ -2401,7 +2543,7 @@
     ]
   },
   "50": {
-    "block_uuid": "294341d1-d1f2-42e1-a1c1-e39daf277418",
+    "block_uuid": "967867b8-59aa-446c-ac40-859f7e4a8059",
     "question": [
       {
         "handler": "list_message",
@@ -2554,7 +2696,7 @@
                 "handler": "goto",
                 "params": {
                   "type": "question",
-                  "step": 53
+                  "step": 57
                 }
               }
             ]
@@ -2564,7 +2706,7 @@
     ]
   },
   "51": {
-    "block_uuid": "4572e566-91f3-4cb4-9aad-bf5a9d7747d1",
+    "block_uuid": "26e2a009-c123-4350-a30a-f56890978f79",
     "question": [
       {
         "handler": "action",
@@ -2653,7 +2795,7 @@
     ]
   },
   "53": {
-    "block_uuid": "ed4f5eab-014a-4c6c-9b7f-c1f8a7deeb23",
+    "block_uuid": "96ef488e-786c-4e98-809c-8dbd9bddb5d7",
     "question": [
       {
         "handler": "conditions",
@@ -2789,7 +2931,7 @@
     ]
   },
   "55": {
-    "block_uuid": "a96e1eaa-3624-448e-a5fa-a9713a680844",
+    "block_uuid": "66c48dd3-387a-4fbb-972c-e49b87fbc5a6",
     "question": [
       {
         "handler": "send_message",
@@ -2815,8 +2957,284 @@
       }
     ]
   },
+  "56": {
+    "block_uuid": "3d3efe06-f7c0-4c07-893c-dbf8ba4c785e",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "change_status",
+          "params": {
+            "value": 113893475,
+            "pipeline_id": 13975223
+          }
+        }
+      },
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_tag",
+          "params": {
+            "type": 2,
+            "value": [
+              "resposta-automatica"
+            ]
+          }
+        }
+      },
+      {
+        "handler": "trigger",
+        "params": {
+          "trigger": {
+            "delay": 0,
+            "action": "create_task",
+            "segments": [
+              ""
+            ],
+            "settings": {
+              "task_text": "O contato respondeu com mensagem automática: a equipe continua a conversa (até 45 minutos).",
+              "task_type": "1",
+              "deadline-days": "",
+              "deadline-hours": "",
+              "task_type_name": "Acompanhar",
+              "within-deadline": "custom",
+              "deadline-minutes": "45",
+              "responsible_user": "current"
+            },
+            "date_exec": 0,
+            "handler_code": "amocrm",
+            "execution_condition": {
+              "id": 45,
+              "name": "execute_trigger"
+            }
+          },
+          "element_type": "lead"
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "finish",
+          "step": 999
+        }
+      }
+    ]
+  },
+  "57": {
+    "block_uuid": "9388ceb0-f921-4bb2-888e-0226ca3d504f",
+    "question": [
+      {
+        "handler": "conditions",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "term1": "{{message_text}}",
+              "term2": "atendente",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "Atendente",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "ATENDENTE",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "falar com alguém",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "Falar com alguém",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "humano",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "pessoa",
+              "operation": "contains"
+            }
+          ],
+          "result": [
+            {
+              "handler": "goto",
+              "params": {
+                "type": "question",
+                "step": 51
+              }
+            }
+          ]
+        }
+      },
+      {
+        "handler": "conditions",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "term1": "{{message_text}}",
+              "term2": "cliente",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "Cliente",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "CLIENTE",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "pedido",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "Pedido",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "troca",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "Troca",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "entrega",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "Entrega",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "rastreio",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "Rastreio",
+              "operation": "contains"
+            }
+          ],
+          "result": [
+            {
+              "handler": "goto",
+              "params": {
+                "type": "question",
+                "step": 40
+              }
+            }
+          ]
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 58
+        }
+      }
+    ]
+  },
+  "58": {
+    "block_uuid": "0ea5f359-b288-478f-bea0-028e30fa0144",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "change_status",
+          "params": {
+            "value": 113893475,
+            "pipeline_id": 13975223
+          }
+        }
+      },
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "Vou transferir o seu atendimento para a nossa equipe, que dará continuidade por aqui. 💙",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null
+        }
+      },
+      {
+        "handler": "trigger",
+        "params": {
+          "trigger": {
+            "delay": 0,
+            "action": "create_task",
+            "segments": [
+              ""
+            ],
+            "settings": {
+              "task_text": "Contato escreveu em vez de escolher uma opção da Lyra: responder pela conversa e preencher o Segmento (até 45 minutos).",
+              "task_type": "1",
+              "deadline-days": "",
+              "deadline-hours": "",
+              "task_type_name": "Acompanhar",
+              "within-deadline": "custom",
+              "deadline-minutes": "45",
+              "responsible_user": "current"
+            },
+            "date_exec": 0,
+            "handler_code": "amocrm",
+            "execution_condition": {
+              "id": 45,
+              "name": "execute_trigger"
+            }
+          },
+          "element_type": "lead"
+        }
+      },
+      {
+        "handler": "waits",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "event": {
+                "action": "received",
+                "source": "message"
+              },
+              "action": {
+                "type": "question",
+                "step": 55
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
   "70": {
-    "block_uuid": "cde2bbdc-8c8e-4060-ab1b-ba1c4c47ae63",
+    "block_uuid": "accbd2eb-c676-49f1-88f8-8abf42f0902f",
     "question": [
       {
         "handler": "list_message",
@@ -2979,7 +3397,7 @@
     ]
   },
   "71": {
-    "block_uuid": "b92699b3-a38c-4ef7-8e9c-3e8702f2a391",
+    "block_uuid": "1915a504-353a-466f-bec8-74f24025b179",
     "question": [
       {
         "handler": "list_message",
@@ -3113,7 +3531,7 @@
     ]
   },
   "72": {
-    "block_uuid": "93d214e7-2faf-4fde-8a3e-b4d41dca4e45",
+    "block_uuid": "fe960adc-4133-459d-97c8-cc0ff198d08d",
     "question": [
       {
         "handler": "list_message",
@@ -3276,7 +3694,7 @@
     ]
   },
   "73": {
-    "block_uuid": "faaf5a41-ae53-4b7a-9f8c-8701354f3913",
+    "block_uuid": "8ed7354b-d19f-4349-9324-ab21da8a374d",
     "question": [
       {
         "handler": "list_message",
@@ -3584,7 +4002,7 @@
     ]
   },
   "74": {
-    "block_uuid": "3635efef-e43e-447e-8fd5-a394463fa07d",
+    "block_uuid": "0fa9092f-119e-4171-a1db-bd9a84b5100c",
     "question": [
       {
         "handler": "list_message",
@@ -3834,7 +4252,7 @@
     ]
   },
   "100": {
-    "block_uuid": "2fadc358-230f-4b4e-aad1-5cb26cad021f",
+    "block_uuid": "bef27910-1803-4306-a889-d43883a4a9df",
     "question": [
       {
         "handler": "action",
@@ -3856,7 +4274,7 @@
     ]
   },
   "101": {
-    "block_uuid": "12e3f905-3175-455b-8264-379daa54a477",
+    "block_uuid": "58cb3a67-afa6-4f86-8530-be8bdf882290",
     "question": [
       {
         "handler": "action",
@@ -3878,7 +4296,7 @@
     ]
   },
   "102": {
-    "block_uuid": "369da228-bf0c-4ef1-9bfb-aeb52f7e9211",
+    "block_uuid": "daad4a55-ced2-4d49-8e86-06fa15b989b2",
     "question": [
       {
         "handler": "action",
@@ -3900,7 +4318,7 @@
     ]
   },
   "103": {
-    "block_uuid": "d64cf0ec-a4a8-41c7-9a81-a0160d8edc37",
+    "block_uuid": "63dbc5a7-8177-499b-aea7-4a3bdd67939a",
     "question": [
       {
         "handler": "action",
@@ -3922,7 +4340,7 @@
     ]
   },
   "104": {
-    "block_uuid": "e7d77acf-5bb7-4e9f-bfa0-cdc03a275312",
+    "block_uuid": "ac77f687-a345-4619-a433-397ac8b6c8e2",
     "question": [
       {
         "handler": "action",
@@ -3944,7 +4362,7 @@
     ]
   },
   "105": {
-    "block_uuid": "6e1f9cdf-bcc7-45cd-bacd-956deac336ef",
+    "block_uuid": "e18fd383-0399-488d-9fef-292372887862",
     "question": [
       {
         "handler": "action",
@@ -3966,7 +4384,7 @@
     ]
   },
   "106": {
-    "block_uuid": "27d7c753-ab6d-4269-8528-e9c4f256e7df",
+    "block_uuid": "c0e5f114-a135-4747-b9a4-d98cbd7e40d3",
     "question": [
       {
         "handler": "action",
@@ -3988,7 +4406,7 @@
     ]
   },
   "107": {
-    "block_uuid": "e7f7839c-4a68-4d34-98d1-c88c711b0f12",
+    "block_uuid": "9d29a500-f4ce-4b70-82e8-95699f1f0f81",
     "question": [
       {
         "handler": "action",
@@ -4010,7 +4428,7 @@
     ]
   },
   "108": {
-    "block_uuid": "65813236-dd4f-4187-8688-016cb6e06aea",
+    "block_uuid": "bf7cd443-5df5-494a-9502-3ddad524ecec",
     "question": [
       {
         "handler": "action",
@@ -4032,7 +4450,7 @@
     ]
   },
   "109": {
-    "block_uuid": "fdec060a-2df4-4212-a262-a75bbec675a5",
+    "block_uuid": "2827a375-d9bc-49f7-b354-9cd0e4a04c75",
     "question": [
       {
         "handler": "action",
@@ -4054,7 +4472,7 @@
     ]
   },
   "110": {
-    "block_uuid": "7f62058b-f99f-4f83-b749-4ef287614c89",
+    "block_uuid": "390879ce-e726-4670-87f3-1020d8aa3870",
     "question": [
       {
         "handler": "action",
@@ -4076,7 +4494,7 @@
     ]
   },
   "111": {
-    "block_uuid": "7777b3d0-5618-4f92-86a9-23c40f319edc",
+    "block_uuid": "62ebd38e-d73e-438a-b7ba-8576743459c7",
     "question": [
       {
         "handler": "action",
@@ -4098,7 +4516,7 @@
     ]
   },
   "112": {
-    "block_uuid": "b7d345ab-c159-4c27-aff3-e31f3872a5b2",
+    "block_uuid": "8197bc16-dd48-4dcd-9d2b-7865f8aade4c",
     "question": [
       {
         "handler": "action",
@@ -4120,7 +4538,7 @@
     ]
   },
   "113": {
-    "block_uuid": "7d32df50-4183-4c26-a5a0-56c6bf5ff8c6",
+    "block_uuid": "95f1789b-91fe-48f2-a0c2-5281d95c763d",
     "question": [
       {
         "handler": "action",
@@ -4142,7 +4560,7 @@
     ]
   },
   "114": {
-    "block_uuid": "319c2980-6fad-4ad2-b52c-207d2374d6ca",
+    "block_uuid": "39cf088e-c1bf-4e4a-9d20-bfe2eb9c3c31",
     "question": [
       {
         "handler": "action",
@@ -4164,7 +4582,7 @@
     ]
   },
   "115": {
-    "block_uuid": "5189d468-64ae-419c-94d0-347f8d104bf1",
+    "block_uuid": "e5f2dc35-9520-4640-8d59-9fe85f6261ee",
     "question": [
       {
         "handler": "action",
@@ -4186,7 +4604,7 @@
     ]
   },
   "116": {
-    "block_uuid": "d099b97e-74ca-4802-8e03-021352d65652",
+    "block_uuid": "4dad7dae-d842-4302-b00c-4bbb3db289ad",
     "question": [
       {
         "handler": "action",
@@ -4208,7 +4626,7 @@
     ]
   },
   "117": {
-    "block_uuid": "a1f31d9e-389a-42b6-b897-2fc02c4a649e",
+    "block_uuid": "f7faa56c-07cc-4a1d-aec3-ad7689706071",
     "question": [
       {
         "handler": "action",
@@ -4230,7 +4648,7 @@
     ]
   },
   "118": {
-    "block_uuid": "69ee6cbb-6f70-4f47-9827-90ca5dc45863",
+    "block_uuid": "97cd6d43-16b2-4798-b956-4dec399ced4b",
     "question": [
       {
         "handler": "action",
@@ -4252,7 +4670,7 @@
     ]
   },
   "119": {
-    "block_uuid": "3e413a5c-306d-4408-bf65-681f33a2d279",
+    "block_uuid": "cf2ca0e1-d1e3-4ec2-aeb8-41dc8929fbac",
     "question": [
       {
         "handler": "action",
@@ -4274,7 +4692,7 @@
     ]
   },
   "120": {
-    "block_uuid": "90467ed5-246e-4a02-a9c3-434310d3a630",
+    "block_uuid": "d342c814-aa10-4027-b5b1-8ec7476a0427",
     "question": [
       {
         "handler": "action",
@@ -4296,7 +4714,7 @@
     ]
   },
   "121": {
-    "block_uuid": "3df427d6-0e95-4f34-b434-269b25f020cb",
+    "block_uuid": "79ee2b2d-36f9-46c0-8c8b-b7b0b4ee8986",
     "question": [
       {
         "handler": "action",
@@ -4318,7 +4736,7 @@
     ]
   },
   "122": {
-    "block_uuid": "ffb683f6-c184-44f2-87d2-5f89190da021",
+    "block_uuid": "f9cc0257-ac7c-41bf-a6c0-2ef845d5a235",
     "question": [
       {
         "handler": "action",
@@ -4340,7 +4758,7 @@
     ]
   },
   "123": {
-    "block_uuid": "63e3b9ed-b772-429a-9c63-88be853a0803",
+    "block_uuid": "7ef1f679-aa92-435e-9723-f647ef6eec65",
     "question": [
       {
         "handler": "action",
@@ -4362,7 +4780,7 @@
     ]
   },
   "124": {
-    "block_uuid": "eef8dec5-d723-48a7-bc32-b705054cd130",
+    "block_uuid": "13e22294-9d7c-4434-9329-80e4dc1e2519",
     "question": [
       {
         "handler": "action",
@@ -4384,7 +4802,7 @@
     ]
   },
   "125": {
-    "block_uuid": "29bfc60d-bb7a-4b93-89d2-301324244c08",
+    "block_uuid": "bd6fc249-6b5c-491d-b910-dd0db86d35f2",
     "question": [
       {
         "handler": "action",
@@ -4406,7 +4824,7 @@
     ]
   },
   "126": {
-    "block_uuid": "b948965b-47e6-47c7-8122-d48b03652964",
+    "block_uuid": "aeb88446-e4c8-4eaf-a204-2bbc10ae3e75",
     "question": [
       {
         "handler": "action",
@@ -4428,7 +4846,7 @@
     ]
   },
   "200": {
-    "block_uuid": "9dae12b7-e688-47f5-aea2-304ddd37d2dd",
+    "block_uuid": "b0aaa8f0-4a97-4f3e-9774-0673f071e33d",
     "question": [
       {
         "handler": "list_message",
@@ -4591,7 +5009,7 @@
     ]
   },
   "201": {
-    "block_uuid": "a26464db-17eb-4d6d-97b6-8fe8007db0e4",
+    "block_uuid": "89621440-04ef-46c0-9006-8532b29f913e",
     "question": [
       {
         "handler": "list_message",
@@ -4754,7 +5172,7 @@
     ]
   },
   "300": {
-    "block_uuid": "89a2a81d-01a7-43a8-9a1b-e88946ee8e79",
+    "block_uuid": "c3285500-9138-451b-8ca7-6783cb9da8f9",
     "question": [
       {
         "handler": "send_message",
@@ -4827,7 +5245,7 @@
     ]
   },
   "301": {
-    "block_uuid": "252e46fe-9d1b-4910-bbd2-90d7265bda11",
+    "block_uuid": "1d18be5c-9bbf-4b60-a89b-88096900f0b6",
     "question": [
       {
         "handler": "send_message",
@@ -4854,7 +5272,7 @@
     ]
   },
   "302": {
-    "block_uuid": "334b2e89-6345-4877-bded-8cba50c8a530",
+    "block_uuid": "24e1a3d7-12ee-4330-9e98-b893cbf060fc",
     "question": [
       {
         "handler": "waits",
@@ -4888,7 +5306,7 @@
     ]
   },
   "320": {
-    "block_uuid": "62b48242-ccf6-4feb-81d4-eeaeb1124a50",
+    "block_uuid": "c7d629db-df28-4f2a-89d8-c8c1c53676f2",
     "question": [
       {
         "handler": "send_message",
@@ -4961,7 +5379,7 @@
     ]
   },
   "321": {
-    "block_uuid": "62c52e78-e844-4e82-868d-619b065c18e0",
+    "block_uuid": "41fe47a8-aebc-4c78-8743-b6ebe557d174",
     "question": [
       {
         "handler": "send_message",
@@ -4988,7 +5406,7 @@
     ]
   },
   "322": {
-    "block_uuid": "70aa84be-721e-4bc3-9f2e-2f95192ef113",
+    "block_uuid": "2669066f-1354-4747-a8d0-0fd73824699d",
     "question": [
       {
         "handler": "waits",
@@ -5022,7 +5440,7 @@
     ]
   },
   "340": {
-    "block_uuid": "a3ae8da4-7357-4e7a-a772-fe55ca3605e1",
+    "block_uuid": "f232f94c-1d42-4634-b261-368fafc4522e",
     "question": [
       {
         "handler": "waits",
@@ -5056,7 +5474,7 @@
     ]
   },
   "341": {
-    "block_uuid": "5c33afc7-2774-41b9-aeac-2c00d467265a",
+    "block_uuid": "39fdbd4e-2754-4179-9c80-232900c5d0a5",
     "question": [
       {
         "handler": "conditions",
@@ -5217,7 +5635,7 @@
     ]
   },
   "342": {
-    "block_uuid": "598d182f-364c-4244-a9cd-71d61a431184",
+    "block_uuid": "5a2ebf38-6b71-43a7-9d97-eee972edc195",
     "question": [
       {
         "handler": "action",
@@ -5294,7 +5712,7 @@
     ]
   },
   "343": {
-    "block_uuid": "67bdb4bd-de95-4884-84d8-04580851168a",
+    "block_uuid": "6c2bbcca-c770-40e2-a74b-3ad1450e3945",
     "question": [
       {
         "handler": "action",
@@ -5405,7 +5823,7 @@
     ]
   },
   "344": {
-    "block_uuid": "1ee7c05e-21b1-4a02-b531-1b5157cef97e",
+    "block_uuid": "0f4bd7aa-a0ea-4393-b657-89a265061d84",
     "question": [
       {
         "handler": "send_message",
@@ -5438,7 +5856,7 @@
     ]
   },
   "345": {
-    "block_uuid": "2843a2d8-1d38-47e9-8ffa-8a9cf08f6e11",
+    "block_uuid": "497f601b-8d8d-41ca-9f16-5be713cf5a44",
     "question": [
       {
         "handler": "action",
@@ -5460,7 +5878,7 @@
     ]
   },
   "346": {
-    "block_uuid": "da026dc9-33ed-4c4c-bdc6-6db8f13cde45",
+    "block_uuid": "0fdfbf95-3e6d-4cca-a5d3-7f468d2ac68e",
     "question": [
       {
         "handler": "send_message",
@@ -5487,7 +5905,7 @@
     ]
   },
   "347": {
-    "block_uuid": "aacb463e-3391-4d86-bdfa-1007b6ba37dc",
+    "block_uuid": "f751e27d-2460-4fee-a3c4-5d97715ddbc9",
     "question": [
       {
         "handler": "action",
@@ -5509,7 +5927,7 @@
     ]
   },
   "350": {
-    "block_uuid": "98add38e-4762-4d27-84fe-a4100a3809da",
+    "block_uuid": "ca4d6f1e-130a-439f-bfed-ffef013142f0",
     "question": [
       {
         "handler": "list_message",
@@ -5584,6 +6002,18 @@
             ]
           },
           {
+            "value": "1",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 351
+                }
+              }
+            ]
+          },
+          {
             "value": "5e27c1151b9f9e62f03eaae5463d7819",
             "params": [
               {
@@ -5597,6 +6027,18 @@
           },
           {
             "value": "R$ 5 a 15 mil",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 352
+                }
+              }
+            ]
+          },
+          {
+            "value": "2",
             "params": [
               {
                 "handler": "goto",
@@ -5632,6 +6074,18 @@
             ]
           },
           {
+            "value": "3",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 353
+                }
+              }
+            ]
+          },
+          {
             "value": "96fe2849f35354a85228b3367f18b113",
             "params": [
               {
@@ -5645,6 +6099,18 @@
           },
           {
             "value": "Acima de R$ 50 mil",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 354
+                }
+              }
+            ]
+          },
+          {
+            "value": "4",
             "params": [
               {
                 "handler": "goto",
@@ -5672,7 +6138,7 @@
     ]
   },
   "351": {
-    "block_uuid": "6434c47d-f118-4e36-8731-07910899c6af",
+    "block_uuid": "178159e9-cbf8-4082-8e5c-e1b8e568f3e0",
     "question": [
       {
         "handler": "action",
@@ -5694,7 +6160,7 @@
     ]
   },
   "352": {
-    "block_uuid": "7b504142-a9c7-4740-b424-80cb2fe61120",
+    "block_uuid": "87c54a0b-6510-46a4-a011-31a01c76364b",
     "question": [
       {
         "handler": "action",
@@ -5716,7 +6182,7 @@
     ]
   },
   "353": {
-    "block_uuid": "ea3eaa9f-95d3-4047-be80-6d674c05a347",
+    "block_uuid": "cd2e7b00-0d93-477f-ac82-221a607971b4",
     "question": [
       {
         "handler": "action",
@@ -5738,7 +6204,7 @@
     ]
   },
   "354": {
-    "block_uuid": "bb247da1-5707-4d3a-ac09-b5d30fc76032",
+    "block_uuid": "f768c67c-49f8-4d38-8757-d9601f81095e",
     "question": [
       {
         "handler": "action",
@@ -5760,7 +6226,7 @@
     ]
   },
   "360": {
-    "block_uuid": "24788156-82c1-46ea-82a5-2d28884defb6",
+    "block_uuid": "1e335474-0d79-4e8c-9867-82057746382d",
     "question": [
       {
         "handler": "action",
@@ -5811,7 +6277,7 @@
     ]
   },
   "361": {
-    "block_uuid": "884ba162-62df-49b7-8121-9e2ce147b5a6",
+    "block_uuid": "b19d2f7e-00f7-4614-ad3c-e8938365df5e",
     "question": [
       {
         "handler": "action",
@@ -5862,7 +6328,7 @@
     ]
   },
   "362": {
-    "block_uuid": "df967e47-e3da-4008-bcd3-7adfae327d0a",
+    "block_uuid": "6e464dfe-8947-450c-b238-3b36f5ca6533",
     "question": [
       {
         "handler": "action",
@@ -5913,7 +6379,7 @@
     ]
   },
   "400": {
-    "block_uuid": "2839344d-3326-4f69-aa9f-285ed5e34b42",
+    "block_uuid": "1305b861-a7d0-4aad-92d6-6df6fff82f0f",
     "question": [
       {
         "handler": "action",
@@ -5935,7 +6401,7 @@
     ]
   },
   "401": {
-    "block_uuid": "c23dac6c-fdac-4f99-a736-c4121e89b79d",
+    "block_uuid": "5702e140-78a7-4c7f-93bb-cef540df4665",
     "question": [
       {
         "handler": "action",
@@ -5957,7 +6423,7 @@
     ]
   },
   "402": {
-    "block_uuid": "2cc6ee6e-a070-4a0c-b941-6cbe8c655567",
+    "block_uuid": "e9860d2f-7003-46ca-8240-68bc5be11a79",
     "question": [
       {
         "handler": "action",
@@ -5979,7 +6445,7 @@
     ]
   },
   "410": {
-    "block_uuid": "f910daa5-abb3-455a-9804-ad65987f14fc",
+    "block_uuid": "6ebca2d7-3aae-4fc4-bcc8-15f536f31e61",
     "question": [
       {
         "handler": "list_message",
@@ -6171,7 +6637,7 @@
     ]
   },
   "411": {
-    "block_uuid": "47460074-b237-4b26-b8d7-3d6581c15bf2",
+    "block_uuid": "77983e7b-f6e3-4f52-9198-2d3eed0190d4",
     "question": [
       {
         "handler": "action",
@@ -6193,7 +6659,7 @@
     ]
   },
   "412": {
-    "block_uuid": "04f401f7-323b-4352-b8f0-9a4ed6322f6b",
+    "block_uuid": "dfc235e1-3b0c-4fc9-b0e7-4dd655c7944a",
     "question": [
       {
         "handler": "action",
@@ -6215,7 +6681,7 @@
     ]
   },
   "413": {
-    "block_uuid": "2e725a73-1c4c-4948-9859-46f9fd0f1047",
+    "block_uuid": "9ef1cde6-f556-492e-8ebb-f6e6986a4c50",
     "question": [
       {
         "handler": "action",
@@ -6237,7 +6703,7 @@
     ]
   },
   "414": {
-    "block_uuid": "9dda79a5-a2b4-4774-9487-64b5af7f8426",
+    "block_uuid": "bd1e7aff-0cd1-4779-8e4e-6e569cbe9a91",
     "question": [
       {
         "handler": "action",
@@ -6259,7 +6725,7 @@
     ]
   },
   "415": {
-    "block_uuid": "1062e743-068a-4441-af23-5725c7ec7dd1",
+    "block_uuid": "62d61d13-9150-4470-89d4-a94f7412f124",
     "question": [
       {
         "handler": "action",
@@ -6281,7 +6747,7 @@
     ]
   },
   "416": {
-    "block_uuid": "a66667fa-4e7e-472c-9c64-a38c9446449c",
+    "block_uuid": "8a2a67e2-2307-41d0-a43d-ae6ed072e8cb",
     "question": [
       {
         "handler": "conditions",
@@ -6411,8 +6877,200 @@
         "handler": "goto",
         "params": {
           "type": "question",
-          "step": 410
+          "step": 417
         }
+      }
+    ]
+  },
+  "417": {
+    "block_uuid": "b8340dcc-6688-4e31-940e-6661753b898b",
+    "question": [
+      {
+        "handler": "list_message",
+        "params": {
+          "list_message": {
+            "header": "",
+            "body": "Para seguir, toque em \"Ver opções\" e conte como conheceu a Minasflor 👇",
+            "footer": "",
+            "button": "Ver opções",
+            "sections": [
+              {
+                "title": "Opções",
+                "rows": [
+                  {
+                    "callback_data": "5721bbef40b22bbdb2e6a062b096d9b4",
+                    "title": "Instagram",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "2b681c0a24baff8899d7163cc7f805c7",
+                    "title": "Google",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "5b6825d3c67a35898b7b65fd986a7fe6",
+                    "title": "Site",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "c10f34b44030f7587787f92735a8fcb1",
+                    "title": "Indicação",
+                    "description": ""
+                  },
+                  {
+                    "callback_data": "7c10b1802deae488ae3ab265a7540ec6",
+                    "title": "Outro",
+                    "description": ""
+                  }
+                ]
+              }
+            ]
+          },
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "disabled": false
+        }
+      }
+    ],
+    "answer": [
+      {
+        "handler": "buttons",
+        "params": [
+          {
+            "value": "5721bbef40b22bbdb2e6a062b096d9b4",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 411
+                }
+              }
+            ]
+          },
+          {
+            "value": "Instagram",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 411
+                }
+              }
+            ]
+          },
+          {
+            "value": "2b681c0a24baff8899d7163cc7f805c7",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 412
+                }
+              }
+            ]
+          },
+          {
+            "value": "Google",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 412
+                }
+              }
+            ]
+          },
+          {
+            "value": "5b6825d3c67a35898b7b65fd986a7fe6",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 413
+                }
+              }
+            ]
+          },
+          {
+            "value": "Site",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 413
+                }
+              }
+            ]
+          },
+          {
+            "value": "c10f34b44030f7587787f92735a8fcb1",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 414
+                }
+              }
+            ]
+          },
+          {
+            "value": "Indicação",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 414
+                }
+              }
+            ]
+          },
+          {
+            "value": "7c10b1802deae488ae3ab265a7540ec6",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 415
+                }
+              }
+            ]
+          },
+          {
+            "value": "Outro",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 415
+                }
+              }
+            ]
+          },
+          {
+            "type": "else",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 57
+                }
+              }
+            ]
+          }
+        ]
       }
     ]
   },

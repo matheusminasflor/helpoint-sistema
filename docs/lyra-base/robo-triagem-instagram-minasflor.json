@@ -1,0 +1,6124 @@
+{
+  "0": {
+    "block_uuid": "a2bf0252-693b-450d-bcb5-1d808bbb54a4",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "change_status",
+          "params": {
+            "value": 107856359,
+            "pipeline_id": 13975223
+          }
+        }
+      },
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "Olá! ✨ Sou a Lyra, da Minasflor. Para direcionar o seu atendimento, toque em uma das opções. Se você já é cliente, é só escrever \"cliente\"; para falar com a nossa equipe, escreva \"atendente\".",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": true,
+          "send_to_all_chat_sources": true,
+          "on_error": null,
+          "buttons": [
+            {
+              "type": "inline",
+              "text": "Uso em casa"
+            },
+            {
+              "type": "inline",
+              "text": "Tenho salão"
+            },
+            {
+              "type": "inline",
+              "text": "Revendo/distribuo"
+            }
+          ]
+        }
+      }
+    ],
+    "answer": [
+      {
+        "handler": "buttons",
+        "params": [
+          {
+            "value": "9ba77c004ec8c1fb7f6ed147a5470af8",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 10
+                }
+              }
+            ]
+          },
+          {
+            "value": "Uso em casa",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 10
+                }
+              }
+            ]
+          },
+          {
+            "value": "f79c877969278a407e77429ee7a9160b",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 20
+                }
+              }
+            ]
+          },
+          {
+            "value": "Tenho salão",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 20
+                }
+              }
+            ]
+          },
+          {
+            "value": "d07a2d2a3bd87606a83ee91bee0b8a1f",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 30
+                }
+              }
+            ]
+          },
+          {
+            "value": "Revendo/distribuo",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 30
+                }
+              }
+            ]
+          },
+          {
+            "type": "else",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 53
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "9": {
+    "block_uuid": "b8d864dc-d7e4-436d-83ca-a6e61da5175d",
+    "question": [
+      {
+        "handler": "conditions",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "term1": "{{message_text}}",
+              "term2": "could not be displayed",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "API restrictions",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "restrições do Instagram",
+              "operation": "contains"
+            }
+          ],
+          "result": [
+            {
+              "handler": "goto",
+              "params": {
+                "type": "question",
+                "step": 19
+              }
+            }
+          ]
+        }
+      },
+      {
+        "handler": "action",
+        "params": {
+          "name": "change_status",
+          "params": {
+            "value": 99501151,
+            "pipeline_id": 12904179
+          }
+        }
+      },
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "Pedido anotado ✅ A nossa equipe vai entrar em contato por aqui para finalizar a sua compra. 💙",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null
+        }
+      },
+      {
+        "handler": "trigger",
+        "params": {
+          "trigger": {
+            "delay": 0,
+            "action": "create_task",
+            "segments": [
+              ""
+            ],
+            "settings": {
+              "task_text": "Consumidor pediu Minasflor pela Lyra: montar o link de pagamento da Yampi com os produtos da conversa (até 45 minutos).",
+              "task_type": "1",
+              "deadline-days": "",
+              "deadline-hours": "",
+              "task_type_name": "Acompanhar",
+              "within-deadline": "custom",
+              "deadline-minutes": "45",
+              "responsible_user": "current"
+            },
+            "date_exec": 0,
+            "handler_code": "amocrm",
+            "execution_condition": {
+              "id": 45,
+              "name": "execute_trigger"
+            }
+          },
+          "element_type": "lead"
+        }
+      },
+      {
+        "handler": "waits",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "event": {
+                "action": "received",
+                "source": "message"
+              },
+              "action": {
+                "type": "question",
+                "step": 55
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "10": {
+    "block_uuid": "0c39180e-e60d-4143-bb7a-55b1bba31010",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "change_status",
+          "params": {
+            "value": 113891167,
+            "pipeline_id": 12904179
+          }
+        }
+      },
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "Consumidor final",
+            "custom_field": "{{lead.cf.4381514}}"
+          }
+        }
+      },
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_tag",
+          "params": {
+            "type": 2,
+            "value": [
+              "consumidor-final"
+            ]
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 80
+        }
+      }
+    ]
+  },
+  "16": {
+    "block_uuid": "69907d43-62c0-42d2-85ad-851269d809e4",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "Minasflor",
+            "custom_field": "{{lead.cf.4381516}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 300
+        }
+      }
+    ]
+  },
+  "18": {
+    "block_uuid": "59eb4e1e-2226-44c2-b2ae-6c38bb0765e5",
+    "question": [
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "Escreva os produtos e as quantidades, que a nossa equipe monta o seu pedido 📝",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 19
+        }
+      }
+    ]
+  },
+  "19": {
+    "block_uuid": "5c65e9be-88b7-4e03-a22a-cdd4b2875f86",
+    "question": [
+      {
+        "handler": "waits",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "event": {
+                "action": "received",
+                "source": "message"
+              },
+              "action": {
+                "type": "question",
+                "step": 9
+              }
+            },
+            {
+              "event": {
+                "action": "ended",
+                "source": "timer",
+                "delay": 2700
+              },
+              "action": {
+                "type": "question",
+                "step": 360
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "20": {
+    "block_uuid": "f2c47304-5382-4b01-8992-edb9e4538f6a",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "change_status",
+          "params": {
+            "value": 113891215,
+            "pipeline_id": 12927111
+          }
+        }
+      },
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "Salão",
+            "custom_field": "{{lead.cf.4381514}}"
+          }
+        }
+      },
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_tag",
+          "params": {
+            "type": 2,
+            "value": [
+              "salão"
+            ]
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 83
+        }
+      }
+    ]
+  },
+  "27": {
+    "block_uuid": "84f4f91b-3fe6-4680-9f0d-4913bfd607a7",
+    "question": [
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "Escreva os produtos e as quantidades 📝",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 28
+        }
+      }
+    ]
+  },
+  "28": {
+    "block_uuid": "432e0d20-98fb-440a-bae8-ef9ffd4a5ca9",
+    "question": [
+      {
+        "handler": "waits",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "event": {
+                "action": "received",
+                "source": "message"
+              },
+              "action": {
+                "type": "question",
+                "step": 348
+              }
+            },
+            {
+              "event": {
+                "action": "ended",
+                "source": "timer",
+                "delay": 2700
+              },
+              "action": {
+                "type": "question",
+                "step": 361
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "29": {
+    "block_uuid": "eee38dda-a07d-4237-8053-9a91c2b026de",
+    "question": [
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "Anotado ✅ Para liberar o preço de salão, qual é o CNPJ? 🔒 Ele é usado apenas para isso. Se o salão não tiver CNPJ, toque no botão abaixo.",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null,
+          "buttons": [
+            {
+              "type": "inline",
+              "text": "Não tenho CNPJ"
+            }
+          ]
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 340
+        }
+      }
+    ]
+  },
+  "30": {
+    "block_uuid": "f27b1a2c-586c-47d3-8ddb-d48335074f10",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "change_status",
+          "params": {
+            "value": 113891223,
+            "pipeline_id": 12927087
+          }
+        }
+      },
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "Distribuidor",
+            "custom_field": "{{lead.cf.4381514}}"
+          }
+        }
+      },
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_tag",
+          "params": {
+            "type": 2,
+            "value": [
+              "distribuidor"
+            ]
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 31
+        }
+      }
+    ]
+  },
+  "31": {
+    "block_uuid": "dd7a1854-16cd-4493-8392-062c0aefb725",
+    "question": [
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "Será um prazer conversar sobre a distribuição dos nossos produtos 🤝 Qual é o nome do distribuidor (empresa)?",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 32
+        }
+      }
+    ]
+  },
+  "32": {
+    "block_uuid": "38e3b7d0-027a-464e-bc3d-7d4f0cab1d55",
+    "question": [
+      {
+        "handler": "waits",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "event": {
+                "action": "received",
+                "source": "message"
+              },
+              "action": {
+                "type": "question",
+                "step": 33
+              }
+            },
+            {
+              "event": {
+                "action": "ended",
+                "source": "timer",
+                "delay": 2700
+              },
+              "action": {
+                "type": "question",
+                "step": 362
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "33": {
+    "block_uuid": "9dc96b95-5ee8-42fc-b914-83d74c35ebf5",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "{{message_text}}",
+            "custom_field": "{{lead.name}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 86
+        }
+      }
+    ]
+  },
+  "34": {
+    "block_uuid": "befc46ef-27dc-4aa8-9f4d-bb8e07dec46c",
+    "question": [
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "Obrigada! Qual é o CNPJ da empresa? 🔒 Ele é usado apenas para o cadastro de distribuidor.",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 35
+        }
+      }
+    ]
+  },
+  "35": {
+    "block_uuid": "4b6cdbc1-8b42-41be-8b71-3cede0a3175d",
+    "question": [
+      {
+        "handler": "waits",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "event": {
+                "action": "received",
+                "source": "message"
+              },
+              "action": {
+                "type": "question",
+                "step": 36
+              }
+            },
+            {
+              "event": {
+                "action": "ended",
+                "source": "timer",
+                "delay": 2700
+              },
+              "action": {
+                "type": "question",
+                "step": 362
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "36": {
+    "block_uuid": "2d2a61bd-9d45-49a7-96b7-bf331a86401e",
+    "question": [
+      {
+        "handler": "conditions",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "term1": "{{message_text}}",
+              "term2": "could not be displayed",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "API restrictions",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "restrições do Instagram",
+              "operation": "contains"
+            }
+          ],
+          "result": [
+            {
+              "handler": "goto",
+              "params": {
+                "type": "question",
+                "step": 35
+              }
+            }
+          ]
+        }
+      },
+      {
+        "handler": "conditions",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "term1": "{{message_text}}",
+              "term2": "0",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "1",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "2",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "3",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "4",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "5",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "6",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "7",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "8",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "9",
+              "operation": "contains"
+            }
+          ],
+          "result": [
+            {
+              "handler": "goto",
+              "params": {
+                "type": "question",
+                "step": 347
+              }
+            }
+          ]
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 346
+        }
+      }
+    ]
+  },
+  "37": {
+    "block_uuid": "9392122d-3679-4bf1-82fc-56986dcccf92",
+    "question": [
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "Em qual estado você pretende atuar? 📍 Escreva a sigla, por exemplo: MG",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null
+        }
+      }
+    ],
+    "answer": [
+      {
+        "handler": "buttons",
+        "params": [
+          {
+            "value": "443fb7beb8bf4ef8d524bae4b99c94fc",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 70
+                }
+              }
+            ]
+          },
+          {
+            "value": "Sudeste",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 70
+                }
+              }
+            ]
+          },
+          {
+            "value": "f36bb3f100d67dc7e71e98d11b4ccc14",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 71
+                }
+              }
+            ]
+          },
+          {
+            "value": "Sul",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 71
+                }
+              }
+            ]
+          },
+          {
+            "value": "269ef0fb78caa722f95dd3f6887c0f23",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 72
+                }
+              }
+            ]
+          },
+          {
+            "value": "Centro-Oeste",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 72
+                }
+              }
+            ]
+          },
+          {
+            "value": "c9d9b9704b1b46cd3d20dfe0f86f1a8e",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 73
+                }
+              }
+            ]
+          },
+          {
+            "value": "Nordeste",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 73
+                }
+              }
+            ]
+          },
+          {
+            "value": "5eeed3ddb461a57e9ff9076d0ecdbcfa",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 74
+                }
+              }
+            ]
+          },
+          {
+            "value": "Norte",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 74
+                }
+              }
+            ]
+          },
+          {
+            "value": "MG",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 100
+                }
+              }
+            ]
+          },
+          {
+            "value": "mg",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 100
+                }
+              }
+            ]
+          },
+          {
+            "value": "Minas Gerais",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 100
+                }
+              }
+            ]
+          },
+          {
+            "value": "minas gerais",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 100
+                }
+              }
+            ]
+          },
+          {
+            "value": "SP",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 101
+                }
+              }
+            ]
+          },
+          {
+            "value": "sp",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 101
+                }
+              }
+            ]
+          },
+          {
+            "value": "São Paulo",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 101
+                }
+              }
+            ]
+          },
+          {
+            "value": "são paulo",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 101
+                }
+              }
+            ]
+          },
+          {
+            "value": "RJ",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 102
+                }
+              }
+            ]
+          },
+          {
+            "value": "rj",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 102
+                }
+              }
+            ]
+          },
+          {
+            "value": "Rio de Janeiro",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 102
+                }
+              }
+            ]
+          },
+          {
+            "value": "rio de janeiro",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 102
+                }
+              }
+            ]
+          },
+          {
+            "value": "ES",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 103
+                }
+              }
+            ]
+          },
+          {
+            "value": "es",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 103
+                }
+              }
+            ]
+          },
+          {
+            "value": "Espírito Santo",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 103
+                }
+              }
+            ]
+          },
+          {
+            "value": "espírito santo",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 103
+                }
+              }
+            ]
+          },
+          {
+            "value": "PR",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 104
+                }
+              }
+            ]
+          },
+          {
+            "value": "pr",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 104
+                }
+              }
+            ]
+          },
+          {
+            "value": "Paraná",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 104
+                }
+              }
+            ]
+          },
+          {
+            "value": "paraná",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 104
+                }
+              }
+            ]
+          },
+          {
+            "value": "SC",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 105
+                }
+              }
+            ]
+          },
+          {
+            "value": "sc",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 105
+                }
+              }
+            ]
+          },
+          {
+            "value": "Santa Catarina",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 105
+                }
+              }
+            ]
+          },
+          {
+            "value": "santa catarina",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 105
+                }
+              }
+            ]
+          },
+          {
+            "value": "RS",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 106
+                }
+              }
+            ]
+          },
+          {
+            "value": "rs",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 106
+                }
+              }
+            ]
+          },
+          {
+            "value": "Rio Grande do Sul",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 106
+                }
+              }
+            ]
+          },
+          {
+            "value": "rio grande do sul",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 106
+                }
+              }
+            ]
+          },
+          {
+            "value": "GO",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 107
+                }
+              }
+            ]
+          },
+          {
+            "value": "go",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 107
+                }
+              }
+            ]
+          },
+          {
+            "value": "Goiás",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 107
+                }
+              }
+            ]
+          },
+          {
+            "value": "goiás",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 107
+                }
+              }
+            ]
+          },
+          {
+            "value": "MT",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 108
+                }
+              }
+            ]
+          },
+          {
+            "value": "mt",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 108
+                }
+              }
+            ]
+          },
+          {
+            "value": "Mato Grosso",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 108
+                }
+              }
+            ]
+          },
+          {
+            "value": "mato grosso",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 108
+                }
+              }
+            ]
+          },
+          {
+            "value": "MS",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 109
+                }
+              }
+            ]
+          },
+          {
+            "value": "ms",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 109
+                }
+              }
+            ]
+          },
+          {
+            "value": "Mato Grosso do Sul",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 109
+                }
+              }
+            ]
+          },
+          {
+            "value": "mato grosso do sul",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 109
+                }
+              }
+            ]
+          },
+          {
+            "value": "DF",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 110
+                }
+              }
+            ]
+          },
+          {
+            "value": "df",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 110
+                }
+              }
+            ]
+          },
+          {
+            "value": "Distrito Federal",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 110
+                }
+              }
+            ]
+          },
+          {
+            "value": "distrito federal",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 110
+                }
+              }
+            ]
+          },
+          {
+            "value": "BA",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 111
+                }
+              }
+            ]
+          },
+          {
+            "value": "ba",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 111
+                }
+              }
+            ]
+          },
+          {
+            "value": "Bahia",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 111
+                }
+              }
+            ]
+          },
+          {
+            "value": "bahia",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 111
+                }
+              }
+            ]
+          },
+          {
+            "value": "PE",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 112
+                }
+              }
+            ]
+          },
+          {
+            "value": "pe",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 112
+                }
+              }
+            ]
+          },
+          {
+            "value": "Pernambuco",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 112
+                }
+              }
+            ]
+          },
+          {
+            "value": "pernambuco",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 112
+                }
+              }
+            ]
+          },
+          {
+            "value": "CE",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 113
+                }
+              }
+            ]
+          },
+          {
+            "value": "ce",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 113
+                }
+              }
+            ]
+          },
+          {
+            "value": "Ceará",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 113
+                }
+              }
+            ]
+          },
+          {
+            "value": "ceará",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 113
+                }
+              }
+            ]
+          },
+          {
+            "value": "MA",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 114
+                }
+              }
+            ]
+          },
+          {
+            "value": "ma",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 114
+                }
+              }
+            ]
+          },
+          {
+            "value": "Maranhão",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 114
+                }
+              }
+            ]
+          },
+          {
+            "value": "maranhão",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 114
+                }
+              }
+            ]
+          },
+          {
+            "value": "PB",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 115
+                }
+              }
+            ]
+          },
+          {
+            "value": "pb",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 115
+                }
+              }
+            ]
+          },
+          {
+            "value": "Paraíba",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 115
+                }
+              }
+            ]
+          },
+          {
+            "value": "paraíba",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 115
+                }
+              }
+            ]
+          },
+          {
+            "value": "RN",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 116
+                }
+              }
+            ]
+          },
+          {
+            "value": "rn",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 116
+                }
+              }
+            ]
+          },
+          {
+            "value": "Rio Grande do Norte",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 116
+                }
+              }
+            ]
+          },
+          {
+            "value": "rio grande do norte",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 116
+                }
+              }
+            ]
+          },
+          {
+            "value": "AL",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 117
+                }
+              }
+            ]
+          },
+          {
+            "value": "al",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 117
+                }
+              }
+            ]
+          },
+          {
+            "value": "Alagoas",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 117
+                }
+              }
+            ]
+          },
+          {
+            "value": "alagoas",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 117
+                }
+              }
+            ]
+          },
+          {
+            "value": "PI",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 118
+                }
+              }
+            ]
+          },
+          {
+            "value": "pi",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 118
+                }
+              }
+            ]
+          },
+          {
+            "value": "Piauí",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 118
+                }
+              }
+            ]
+          },
+          {
+            "value": "piauí",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 118
+                }
+              }
+            ]
+          },
+          {
+            "value": "SE",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 119
+                }
+              }
+            ]
+          },
+          {
+            "value": "se",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 119
+                }
+              }
+            ]
+          },
+          {
+            "value": "Sergipe",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 119
+                }
+              }
+            ]
+          },
+          {
+            "value": "sergipe",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 119
+                }
+              }
+            ]
+          },
+          {
+            "value": "PA",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 120
+                }
+              }
+            ]
+          },
+          {
+            "value": "pa",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 120
+                }
+              }
+            ]
+          },
+          {
+            "value": "Pará",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 120
+                }
+              }
+            ]
+          },
+          {
+            "value": "pará",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 120
+                }
+              }
+            ]
+          },
+          {
+            "value": "AM",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 121
+                }
+              }
+            ]
+          },
+          {
+            "value": "am",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 121
+                }
+              }
+            ]
+          },
+          {
+            "value": "Amazonas",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 121
+                }
+              }
+            ]
+          },
+          {
+            "value": "amazonas",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 121
+                }
+              }
+            ]
+          },
+          {
+            "value": "RO",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 122
+                }
+              }
+            ]
+          },
+          {
+            "value": "ro",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 122
+                }
+              }
+            ]
+          },
+          {
+            "value": "Rondônia",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 122
+                }
+              }
+            ]
+          },
+          {
+            "value": "rondônia",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 122
+                }
+              }
+            ]
+          },
+          {
+            "value": "TO",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 123
+                }
+              }
+            ]
+          },
+          {
+            "value": "to",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 123
+                }
+              }
+            ]
+          },
+          {
+            "value": "Tocantins",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 123
+                }
+              }
+            ]
+          },
+          {
+            "value": "tocantins",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 123
+                }
+              }
+            ]
+          },
+          {
+            "value": "AC",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 124
+                }
+              }
+            ]
+          },
+          {
+            "value": "ac",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 124
+                }
+              }
+            ]
+          },
+          {
+            "value": "Acre",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 124
+                }
+              }
+            ]
+          },
+          {
+            "value": "acre",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 124
+                }
+              }
+            ]
+          },
+          {
+            "value": "AP",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 125
+                }
+              }
+            ]
+          },
+          {
+            "value": "ap",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 125
+                }
+              }
+            ]
+          },
+          {
+            "value": "Amapá",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 125
+                }
+              }
+            ]
+          },
+          {
+            "value": "amapá",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 125
+                }
+              }
+            ]
+          },
+          {
+            "value": "RR",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 126
+                }
+              }
+            ]
+          },
+          {
+            "value": "rr",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 126
+                }
+              }
+            ]
+          },
+          {
+            "value": "Roraima",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 126
+                }
+              }
+            ]
+          },
+          {
+            "value": "roraima",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 126
+                }
+              }
+            ]
+          },
+          {
+            "type": "else",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 37
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "39": {
+    "block_uuid": "de6039c0-8485-4c3c-a9bb-4f56eea4a38a",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "change_status",
+          "params": {
+            "value": 99680647,
+            "pipeline_id": 12927087
+          }
+        }
+      },
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "Obrigada pelas informações. Um representante da nossa equipe vai entrar em contato com você. 💙\n\nEnquanto isso, deixamos à sua disposição o nosso material para distribuidores: catálogos, fotos e vídeos dos produtos, mockups e campanhas prontas para divulgar nas redes sociais 📲\ndrive.google.com/drive/folders/1nAI-QmLyxgK_T5eBHvRumMsnFIufmSaR",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null
+        }
+      },
+      {
+        "handler": "trigger",
+        "params": {
+          "trigger": {
+            "delay": 0,
+            "action": "create_task",
+            "segments": [
+              ""
+            ],
+            "settings": {
+              "task_text": "Distribuidor triado pela Lyra (CNPJ, estado e investimento inicial no lead): encaminhar ao representante (até 45 minutos).",
+              "task_type": "1",
+              "deadline-days": "",
+              "deadline-hours": "",
+              "task_type_name": "Acompanhar",
+              "within-deadline": "custom",
+              "deadline-minutes": "45",
+              "responsible_user": "current"
+            },
+            "date_exec": 0,
+            "handler_code": "amocrm",
+            "execution_condition": {
+              "id": 45,
+              "name": "execute_trigger"
+            }
+          },
+          "element_type": "lead"
+        }
+      },
+      {
+        "handler": "waits",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "event": {
+                "action": "received",
+                "source": "message"
+              },
+              "action": {
+                "type": "question",
+                "step": 55
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "40": {
+    "block_uuid": "eda89fd5-8f1d-48fb-9de0-4b42565bb9de",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "change_status",
+          "params": {
+            "value": 113891275,
+            "pipeline_id": 14739451
+          }
+        }
+      },
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_tag",
+          "params": {
+            "type": 2,
+            "value": [
+              "pos-venda"
+            ]
+          }
+        }
+      },
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "Por favor, informe o número do pedido ou descreva o que aconteceu 📦 A nossa equipe vai dar continuidade ao seu atendimento por aqui. 💙",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null
+        }
+      },
+      {
+        "handler": "trigger",
+        "params": {
+          "trigger": {
+            "delay": 0,
+            "action": "create_task",
+            "segments": [
+              ""
+            ],
+            "settings": {
+              "task_text": "Pós-venda: cliente pediu ajuda com pedido, troca ou entrega.",
+              "task_type": "1",
+              "deadline-days": "",
+              "deadline-hours": "",
+              "task_type_name": "Acompanhar",
+              "within-deadline": "custom",
+              "deadline-minutes": "45",
+              "responsible_user": "current"
+            },
+            "date_exec": 0,
+            "handler_code": "amocrm",
+            "execution_condition": {
+              "id": 45,
+              "name": "execute_trigger"
+            }
+          },
+          "element_type": "lead"
+        }
+      },
+      {
+        "handler": "waits",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "event": {
+                "action": "received",
+                "source": "message"
+              },
+              "action": {
+                "type": "question",
+                "step": 55
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "50": {
+    "block_uuid": "1c648d04-e16a-44b4-9a47-749d5018bc79",
+    "question": [
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "Para seguir com o atendimento, toque em uma das opções 👇 Se você já é cliente, escreva \"cliente\".",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null,
+          "buttons": [
+            {
+              "type": "inline",
+              "text": "Uso em casa"
+            },
+            {
+              "type": "inline",
+              "text": "Tenho salão"
+            },
+            {
+              "type": "inline",
+              "text": "Revendo/distribuo"
+            }
+          ]
+        }
+      }
+    ],
+    "answer": [
+      {
+        "handler": "buttons",
+        "params": [
+          {
+            "value": "9ba77c004ec8c1fb7f6ed147a5470af8",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 10
+                }
+              }
+            ]
+          },
+          {
+            "value": "Uso em casa",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 10
+                }
+              }
+            ]
+          },
+          {
+            "value": "f79c877969278a407e77429ee7a9160b",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 20
+                }
+              }
+            ]
+          },
+          {
+            "value": "Tenho salão",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 20
+                }
+              }
+            ]
+          },
+          {
+            "value": "d07a2d2a3bd87606a83ee91bee0b8a1f",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 30
+                }
+              }
+            ]
+          },
+          {
+            "value": "Revendo/distribuo",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 30
+                }
+              }
+            ]
+          },
+          {
+            "type": "else",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 57
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "51": {
+    "block_uuid": "1e5c9421-4fd3-43c1-8114-3098a44ef431",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "change_status",
+          "params": {
+            "value": 113893475,
+            "pipeline_id": 13975223
+          }
+        }
+      },
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_tag",
+          "params": {
+            "type": 2,
+            "value": [
+              "pediu-atendente"
+            ]
+          }
+        }
+      },
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "Vou transferir o seu atendimento para a nossa equipe, que dará continuidade por aqui. 💙",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null
+        }
+      },
+      {
+        "handler": "trigger",
+        "params": {
+          "trigger": {
+            "delay": 0,
+            "action": "create_task",
+            "segments": [
+              ""
+            ],
+            "settings": {
+              "task_text": "Cliente pediu atendente antes da triagem: responder e preencher o Segmento.",
+              "task_type": "1",
+              "deadline-days": "",
+              "deadline-hours": "",
+              "task_type_name": "Acompanhar",
+              "within-deadline": "custom",
+              "deadline-minutes": "45",
+              "responsible_user": "current"
+            },
+            "date_exec": 0,
+            "handler_code": "amocrm",
+            "execution_condition": {
+              "id": 45,
+              "name": "execute_trigger"
+            }
+          },
+          "element_type": "lead"
+        }
+      },
+      {
+        "handler": "waits",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "event": {
+                "action": "received",
+                "source": "message"
+              },
+              "action": {
+                "type": "question",
+                "step": 55
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "53": {
+    "block_uuid": "81fd4969-1c55-45d7-9141-8dac2f508c77",
+    "question": [
+      {
+        "handler": "conditions",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "term1": "{{message_text}}",
+              "term2": "atendente",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "Atendente",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "ATENDENTE",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "falar com alguém",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "Falar com alguém",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "humano",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "pessoa",
+              "operation": "contains"
+            }
+          ],
+          "result": [
+            {
+              "handler": "goto",
+              "params": {
+                "type": "question",
+                "step": 51
+              }
+            }
+          ]
+        }
+      },
+      {
+        "handler": "conditions",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "term1": "{{message_text}}",
+              "term2": "cliente",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "Cliente",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "CLIENTE",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "pedido",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "Pedido",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "troca",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "Troca",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "entrega",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "Entrega",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "rastreio",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "Rastreio",
+              "operation": "contains"
+            }
+          ],
+          "result": [
+            {
+              "handler": "goto",
+              "params": {
+                "type": "question",
+                "step": 40
+              }
+            }
+          ]
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 50
+        }
+      }
+    ]
+  },
+  "55": {
+    "block_uuid": "d8e83530-5b5e-488e-9e15-59b2b125d906",
+    "question": [
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "Mensagem recebida. A nossa equipe já está com o seu atendimento e responde por aqui. 💙",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "finish",
+          "step": 999
+        }
+      }
+    ]
+  },
+  "57": {
+    "block_uuid": "afc840f8-90f0-4a70-93f5-74684f24ce7b",
+    "question": [
+      {
+        "handler": "conditions",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "term1": "{{message_text}}",
+              "term2": "atendente",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "Atendente",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "ATENDENTE",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "falar com alguém",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "Falar com alguém",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "humano",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "pessoa",
+              "operation": "contains"
+            }
+          ],
+          "result": [
+            {
+              "handler": "goto",
+              "params": {
+                "type": "question",
+                "step": 51
+              }
+            }
+          ]
+        }
+      },
+      {
+        "handler": "conditions",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "term1": "{{message_text}}",
+              "term2": "cliente",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "Cliente",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "CLIENTE",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "pedido",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "Pedido",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "troca",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "Troca",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "entrega",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "Entrega",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "rastreio",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "Rastreio",
+              "operation": "contains"
+            }
+          ],
+          "result": [
+            {
+              "handler": "goto",
+              "params": {
+                "type": "question",
+                "step": 40
+              }
+            }
+          ]
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 58
+        }
+      }
+    ]
+  },
+  "58": {
+    "block_uuid": "1db7f164-1028-4056-b050-3c325fda50a0",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "change_status",
+          "params": {
+            "value": 113893475,
+            "pipeline_id": 13975223
+          }
+        }
+      },
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "Vou transferir o seu atendimento para a nossa equipe, que dará continuidade por aqui. 💙",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null
+        }
+      },
+      {
+        "handler": "trigger",
+        "params": {
+          "trigger": {
+            "delay": 0,
+            "action": "create_task",
+            "segments": [
+              ""
+            ],
+            "settings": {
+              "task_text": "Contato escreveu em vez de escolher uma opção da Lyra: responder pela conversa e preencher o Segmento (até 45 minutos).",
+              "task_type": "1",
+              "deadline-days": "",
+              "deadline-hours": "",
+              "task_type_name": "Acompanhar",
+              "within-deadline": "custom",
+              "deadline-minutes": "45",
+              "responsible_user": "current"
+            },
+            "date_exec": 0,
+            "handler_code": "amocrm",
+            "execution_condition": {
+              "id": 45,
+              "name": "execute_trigger"
+            }
+          },
+          "element_type": "lead"
+        }
+      },
+      {
+        "handler": "waits",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "event": {
+                "action": "received",
+                "source": "message"
+              },
+              "action": {
+                "type": "question",
+                "step": 55
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "70": {
+    "block_uuid": "9cbb68ff-56e7-4a66-aa6b-70897019bd1f",
+    "question": [
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "Em qual estado você pretende atuar? 📍 Escreva a sigla, por exemplo: MG",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null
+        }
+      }
+    ],
+    "answer": [
+      {
+        "handler": "buttons",
+        "params": [
+          {
+            "value": "3b045ab127c88c98e5c63af46ac15cb9",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 100
+                }
+              }
+            ]
+          },
+          {
+            "value": "MG",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 100
+                }
+              }
+            ]
+          },
+          {
+            "value": "6bbf12c71704bf96a58b07699e915e7e",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 101
+                }
+              }
+            ]
+          },
+          {
+            "value": "SP",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 101
+                }
+              }
+            ]
+          },
+          {
+            "value": "b05cf4ca65dc9fbc59dffd91ff3c5a58",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 102
+                }
+              }
+            ]
+          },
+          {
+            "value": "RJ",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 102
+                }
+              }
+            ]
+          },
+          {
+            "value": "4eb46ea85a35a49fed4bde9d7bf97eb8",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 103
+                }
+              }
+            ]
+          },
+          {
+            "value": "ES",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 103
+                }
+              }
+            ]
+          },
+          {
+            "type": "else",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 70
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "71": {
+    "block_uuid": "b6b1b684-2010-403d-8ac6-c46eb4373eef",
+    "question": [
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "Em qual estado você pretende atuar? 📍 Escreva a sigla, por exemplo: MG",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null
+        }
+      }
+    ],
+    "answer": [
+      {
+        "handler": "buttons",
+        "params": [
+          {
+            "value": "bf0064425259a2f2bb19c23f63755304",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 104
+                }
+              }
+            ]
+          },
+          {
+            "value": "PR",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 104
+                }
+              }
+            ]
+          },
+          {
+            "value": "eefa5c31166b1d677214294f8f8d0683",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 105
+                }
+              }
+            ]
+          },
+          {
+            "value": "SC",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 105
+                }
+              }
+            ]
+          },
+          {
+            "value": "11c81074773413b54b8c1cc90a58f5d5",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 106
+                }
+              }
+            ]
+          },
+          {
+            "value": "RS",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 106
+                }
+              }
+            ]
+          },
+          {
+            "type": "else",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 71
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "72": {
+    "block_uuid": "6638160e-cd0c-4e1c-90b5-855690affaa4",
+    "question": [
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "Em qual estado você pretende atuar? 📍 Escreva a sigla, por exemplo: MG",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null
+        }
+      }
+    ],
+    "answer": [
+      {
+        "handler": "buttons",
+        "params": [
+          {
+            "value": "4eb038aedccfe17df2b2e66363ef86f3",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 107
+                }
+              }
+            ]
+          },
+          {
+            "value": "GO",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 107
+                }
+              }
+            ]
+          },
+          {
+            "value": "9e13d33bbcf1d9cbc88bc06c92b35cfe",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 108
+                }
+              }
+            ]
+          },
+          {
+            "value": "MT",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 108
+                }
+              }
+            ]
+          },
+          {
+            "value": "08c0e6cbb3bddabf0506445a6d4afa22",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 109
+                }
+              }
+            ]
+          },
+          {
+            "value": "MS",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 109
+                }
+              }
+            ]
+          },
+          {
+            "value": "dc543e570bafba05fea3c70cd99c91f8",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 110
+                }
+              }
+            ]
+          },
+          {
+            "value": "DF",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 110
+                }
+              }
+            ]
+          },
+          {
+            "type": "else",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 72
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "73": {
+    "block_uuid": "ac1342b9-52c5-441f-b81b-90160a721d10",
+    "question": [
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "Em qual estado você pretende atuar? 📍 Escreva a sigla, por exemplo: MG",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null
+        }
+      }
+    ],
+    "answer": [
+      {
+        "handler": "buttons",
+        "params": [
+          {
+            "value": "16ff06194ff2b9b76fe90f06e8d428c8",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 111
+                }
+              }
+            ]
+          },
+          {
+            "value": "BA",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 111
+                }
+              }
+            ]
+          },
+          {
+            "value": "2ef80756cb46468bdc728a24d975173a",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 112
+                }
+              }
+            ]
+          },
+          {
+            "value": "PE",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 112
+                }
+              }
+            ]
+          },
+          {
+            "value": "2cd34feb1e6ce744bac702dca1f9ffa4",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 113
+                }
+              }
+            ]
+          },
+          {
+            "value": "CE",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 113
+                }
+              }
+            ]
+          },
+          {
+            "value": "9897ab3b28bfa15f0ebab70e29d0a772",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 114
+                }
+              }
+            ]
+          },
+          {
+            "value": "MA",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 114
+                }
+              }
+            ]
+          },
+          {
+            "value": "298101beabb945fe06258c3e197cc16e",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 115
+                }
+              }
+            ]
+          },
+          {
+            "value": "PB",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 115
+                }
+              }
+            ]
+          },
+          {
+            "value": "a6fe406df8c187f9439ccc62b4fb4aea",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 116
+                }
+              }
+            ]
+          },
+          {
+            "value": "RN",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 116
+                }
+              }
+            ]
+          },
+          {
+            "value": "9b164e62c6af417c1739af0fa6341379",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 117
+                }
+              }
+            ]
+          },
+          {
+            "value": "AL",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 117
+                }
+              }
+            ]
+          },
+          {
+            "value": "b2c8acf4e1b58506870c6bdbe12c0847",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 118
+                }
+              }
+            ]
+          },
+          {
+            "value": "PI",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 118
+                }
+              }
+            ]
+          },
+          {
+            "value": "fb27a696484936312f5d899e423d83e7",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 119
+                }
+              }
+            ]
+          },
+          {
+            "value": "SE",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 119
+                }
+              }
+            ]
+          },
+          {
+            "type": "else",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 73
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "74": {
+    "block_uuid": "a022fc20-8fe4-4332-9822-004abf0bb659",
+    "question": [
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "Em qual estado você pretende atuar? 📍 Escreva a sigla, por exemplo: MG",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null
+        }
+      }
+    ],
+    "answer": [
+      {
+        "handler": "buttons",
+        "params": [
+          {
+            "value": "303b4821115deab5b08ad46bd30ba456",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 120
+                }
+              }
+            ]
+          },
+          {
+            "value": "PA",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 120
+                }
+              }
+            ]
+          },
+          {
+            "value": "4c9c71cafbd40d9e63480361870a295e",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 121
+                }
+              }
+            ]
+          },
+          {
+            "value": "AM",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 121
+                }
+              }
+            ]
+          },
+          {
+            "value": "fa3b720f5136bead9884cb567d47620e",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 122
+                }
+              }
+            ]
+          },
+          {
+            "value": "RO",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 122
+                }
+              }
+            ]
+          },
+          {
+            "value": "2d1c017c922ffcb5f9ad9ea6e71420b4",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 123
+                }
+              }
+            ]
+          },
+          {
+            "value": "TO",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 123
+                }
+              }
+            ]
+          },
+          {
+            "value": "835cfbc2fb596cba24b1d1cf040d3554",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 124
+                }
+              }
+            ]
+          },
+          {
+            "value": "AC",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 124
+                }
+              }
+            ]
+          },
+          {
+            "value": "ad640750ea64ab1b6d2b712293a80e10",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 125
+                }
+              }
+            ]
+          },
+          {
+            "value": "AP",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 125
+                }
+              }
+            ]
+          },
+          {
+            "value": "da1a4f4f22d1e9d08bfcc38a12c9a019",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 126
+                }
+              }
+            ]
+          },
+          {
+            "value": "RR",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 126
+                }
+              }
+            ]
+          },
+          {
+            "type": "else",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 74
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "80": {
+    "block_uuid": "bc213033-8685-45a6-8371-d9717470bacc",
+    "question": [
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "Se quiser, informe o seu WhatsApp com DDD para a nossa equipe falar com você por lá também 📱 Para continuar só por aqui, escreva \"pular\".",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null
+        }
+      },
+      {
+        "handler": "waits",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "event": {
+                "action": "received",
+                "source": "message"
+              },
+              "action": {
+                "type": "question",
+                "step": 81
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "81": {
+    "block_uuid": "1838c8f2-22db-4502-af04-78f1899732ab",
+    "question": [
+      {
+        "handler": "conditions",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "term1": "{{message_text}}",
+              "term2": "pular",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "Pular",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "PULAR",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "não",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "Não",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "nao",
+              "operation": "contains"
+            }
+          ],
+          "result": [
+            {
+              "handler": "goto",
+              "params": {
+                "type": "question",
+                "step": 16
+              }
+            }
+          ]
+        }
+      },
+      {
+        "handler": "validations",
+        "params": {
+          "logic": "and",
+          "result": [
+            {
+              "handler": "goto",
+              "params": {
+                "type": "question",
+                "step": 82
+              }
+            }
+          ],
+          "conditions": [
+            {
+              "type": "phone",
+              "operation": "contains",
+              "client_value": "{{message_text}}",
+              "condition_value": ""
+            }
+          ]
+        }
+      },
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "Por favor, informe o número com DDD, por exemplo: 31 99999-9999, ou escreva \"pular\".",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null
+        }
+      },
+      {
+        "handler": "waits",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "event": {
+                "action": "received",
+                "source": "message"
+              },
+              "action": {
+                "type": "question",
+                "step": 81
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "82": {
+    "block_uuid": "701cbb8f-e1f9-423a-9f02-b12f31f07831",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "{{message_text}}",
+            "custom_field": "{{lead.cf.4381554}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 16
+        }
+      }
+    ]
+  },
+  "83": {
+    "block_uuid": "8ee20079-4721-4fdd-aec5-ff3c90dd1254",
+    "question": [
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "Qual é o seu WhatsApp com DDD? A nossa equipe usa para continuar o seu atendimento 📱",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null
+        }
+      },
+      {
+        "handler": "waits",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "event": {
+                "action": "received",
+                "source": "message"
+              },
+              "action": {
+                "type": "question",
+                "step": 84
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "84": {
+    "block_uuid": "196acf0a-b8e6-47fc-9f48-1fb5b7c58ae7",
+    "question": [
+      {
+        "handler": "validations",
+        "params": {
+          "logic": "and",
+          "result": [
+            {
+              "handler": "goto",
+              "params": {
+                "type": "question",
+                "step": 85
+              }
+            }
+          ],
+          "conditions": [
+            {
+              "type": "phone",
+              "operation": "contains",
+              "client_value": "{{message_text}}",
+              "condition_value": ""
+            }
+          ]
+        }
+      },
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "Por favor, informe o número com DDD, por exemplo: 31 99999-9999.",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null
+        }
+      },
+      {
+        "handler": "waits",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "event": {
+                "action": "received",
+                "source": "message"
+              },
+              "action": {
+                "type": "question",
+                "step": 84
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "85": {
+    "block_uuid": "3faa01b8-e991-4cb8-af6d-686192546719",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "{{message_text}}",
+            "custom_field": "{{lead.cf.4381554}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 320
+        }
+      }
+    ]
+  },
+  "86": {
+    "block_uuid": "3d41ba14-81ea-44f5-9555-54d5a8b26637",
+    "question": [
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "Qual é o seu WhatsApp com DDD? A nossa equipe usa para continuar o seu atendimento 📱",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null
+        }
+      },
+      {
+        "handler": "waits",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "event": {
+                "action": "received",
+                "source": "message"
+              },
+              "action": {
+                "type": "question",
+                "step": 87
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "87": {
+    "block_uuid": "50085933-e1a3-433b-b4bf-f93d603da5fe",
+    "question": [
+      {
+        "handler": "validations",
+        "params": {
+          "logic": "and",
+          "result": [
+            {
+              "handler": "goto",
+              "params": {
+                "type": "question",
+                "step": 88
+              }
+            }
+          ],
+          "conditions": [
+            {
+              "type": "phone",
+              "operation": "contains",
+              "client_value": "{{message_text}}",
+              "condition_value": ""
+            }
+          ]
+        }
+      },
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "Por favor, informe o número com DDD, por exemplo: 31 99999-9999.",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null
+        }
+      },
+      {
+        "handler": "waits",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "event": {
+                "action": "received",
+                "source": "message"
+              },
+              "action": {
+                "type": "question",
+                "step": 87
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "88": {
+    "block_uuid": "54b6e20f-e3a7-468e-ac58-afd5f4ce81a8",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "{{message_text}}",
+            "custom_field": "{{lead.cf.4381554}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 37
+        }
+      }
+    ]
+  },
+  "100": {
+    "block_uuid": "836ee3d0-62e0-4e3b-a1ca-becf829b93b9",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "MG",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 34
+        }
+      }
+    ]
+  },
+  "101": {
+    "block_uuid": "b532d23b-d53f-4f68-ab0b-800d23b3b516",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "SP",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 34
+        }
+      }
+    ]
+  },
+  "102": {
+    "block_uuid": "fb527e51-8136-4e38-8320-8c4bd8a0ff09",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "RJ",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 34
+        }
+      }
+    ]
+  },
+  "103": {
+    "block_uuid": "f239cc6e-6d2b-4d79-baa6-193732f871c1",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "ES",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 34
+        }
+      }
+    ]
+  },
+  "104": {
+    "block_uuid": "1f513f09-1372-4589-ba79-2f3e04acacb0",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "PR",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 34
+        }
+      }
+    ]
+  },
+  "105": {
+    "block_uuid": "4bc671c1-e4a3-4d41-86d5-3a8ea07d3140",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "SC",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 34
+        }
+      }
+    ]
+  },
+  "106": {
+    "block_uuid": "91e1e248-7ce1-46e9-93cc-adea2ca54dba",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "RS",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 34
+        }
+      }
+    ]
+  },
+  "107": {
+    "block_uuid": "e66aef5b-4a0f-42a7-945a-56aa0590126c",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "GO",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 34
+        }
+      }
+    ]
+  },
+  "108": {
+    "block_uuid": "a25b6a50-04c0-4fbc-a0ff-cdc58f69c042",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "MT",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 34
+        }
+      }
+    ]
+  },
+  "109": {
+    "block_uuid": "1025fcfb-1c8e-46e5-b12c-d3fab8a5f02f",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "MS",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 34
+        }
+      }
+    ]
+  },
+  "110": {
+    "block_uuid": "edba9289-cee4-4e5b-a534-981a67b662c5",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "DF",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 34
+        }
+      }
+    ]
+  },
+  "111": {
+    "block_uuid": "78a2b1ca-6efe-41a6-9e9a-9590a6337655",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "BA",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 34
+        }
+      }
+    ]
+  },
+  "112": {
+    "block_uuid": "c28f0ccb-9c57-4e08-ada3-cdc1e9207b69",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "PE",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 34
+        }
+      }
+    ]
+  },
+  "113": {
+    "block_uuid": "06516001-d6fe-4fe7-ab4e-fee888dda9a3",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "CE",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 34
+        }
+      }
+    ]
+  },
+  "114": {
+    "block_uuid": "ab6f6490-1c95-45c3-8cfd-f55cde746fe8",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "MA",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 34
+        }
+      }
+    ]
+  },
+  "115": {
+    "block_uuid": "29357f6a-6b53-400d-8ecf-08f705f4c17c",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "PB",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 34
+        }
+      }
+    ]
+  },
+  "116": {
+    "block_uuid": "19253982-1fd9-4e0a-986e-b5db09cca396",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "RN",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 34
+        }
+      }
+    ]
+  },
+  "117": {
+    "block_uuid": "79e85fc6-a519-45a0-bb53-48101215ecf3",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "AL",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 34
+        }
+      }
+    ]
+  },
+  "118": {
+    "block_uuid": "f82ec449-8abc-451a-b4c4-c7b4833d98ae",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "PI",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 34
+        }
+      }
+    ]
+  },
+  "119": {
+    "block_uuid": "3849c37a-0039-4594-81cd-1cf975817ca3",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "SE",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 34
+        }
+      }
+    ]
+  },
+  "120": {
+    "block_uuid": "346c3bce-fcfc-4f56-ac24-238c9e0c0bf0",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "PA",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 34
+        }
+      }
+    ]
+  },
+  "121": {
+    "block_uuid": "2ff51be6-795e-424f-a3ca-8dcf25160e14",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "AM",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 34
+        }
+      }
+    ]
+  },
+  "122": {
+    "block_uuid": "3adf7cea-a69a-4542-9d33-f601e27963ba",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "RO",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 34
+        }
+      }
+    ]
+  },
+  "123": {
+    "block_uuid": "f3824477-faf7-4569-8beb-ac112769b205",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "TO",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 34
+        }
+      }
+    ]
+  },
+  "124": {
+    "block_uuid": "58b79e99-fd16-4e59-ae06-f533edc5838a",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "AC",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 34
+        }
+      }
+    ]
+  },
+  "125": {
+    "block_uuid": "9fc8ca6f-6f9a-46c1-8745-6bc298b47269",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "AP",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 34
+        }
+      }
+    ]
+  },
+  "126": {
+    "block_uuid": "3c59ea82-7d59-4783-a318-33e2b9be1e38",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "RR",
+            "custom_field": "{{lead.cf.4381528}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 34
+        }
+      }
+    ]
+  },
+  "300": {
+    "block_uuid": "e2700836-8ae4-4315-bfa2-82669fb70ec5",
+    "question": [
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "Você já sabe quais produtos quer? 👇",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null,
+          "buttons": [
+            {
+              "type": "inline",
+              "text": "Ver o catálogo"
+            },
+            {
+              "type": "inline",
+              "text": "Já sei o que quero"
+            }
+          ]
+        }
+      }
+    ],
+    "answer": [
+      {
+        "handler": "buttons",
+        "params": [
+          {
+            "value": "Ver o catálogo",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 301
+                }
+              }
+            ]
+          },
+          {
+            "value": "Já sei o que quero",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 18
+                }
+              }
+            ]
+          },
+          {
+            "type": "else",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 300
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "301": {
+    "block_uuid": "51ca4d69-764d-41db-8edb-e36536796d43",
+    "question": [
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "Aqui está o nosso catálogo 📖\n\nMinasflor: drive.google.com/file/d/1GF3BzmvStM1_DzX_VCKQjgnXTLtr9VXb/view\n\nQuando escolher, escreva os produtos e as quantidades, que a nossa equipe monta o seu pedido 📝",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 302
+        }
+      }
+    ]
+  },
+  "302": {
+    "block_uuid": "f4bfe6ba-a32e-4daa-82ab-bb5c3ffd2013",
+    "question": [
+      {
+        "handler": "waits",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "event": {
+                "action": "received",
+                "source": "message"
+              },
+              "action": {
+                "type": "question",
+                "step": 9
+              }
+            },
+            {
+              "event": {
+                "action": "ended",
+                "source": "timer",
+                "delay": 2700
+              },
+              "action": {
+                "type": "question",
+                "step": 360
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "320": {
+    "block_uuid": "f9aa3d2d-f08c-4d20-b39b-2f86739f1082",
+    "question": [
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "Você já sabe quais produtos quer? 👇",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null,
+          "buttons": [
+            {
+              "type": "inline",
+              "text": "Ver o catálogo"
+            },
+            {
+              "type": "inline",
+              "text": "Já sei o que quero"
+            }
+          ]
+        }
+      }
+    ],
+    "answer": [
+      {
+        "handler": "buttons",
+        "params": [
+          {
+            "value": "Ver o catálogo",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 321
+                }
+              }
+            ]
+          },
+          {
+            "value": "Já sei o que quero",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 27
+                }
+              }
+            ]
+          },
+          {
+            "type": "else",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 320
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "321": {
+    "block_uuid": "732ff071-19bc-4e9f-a099-f2fdd53084c5",
+    "question": [
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "Aqui está o nosso catálogo 📖\n\nMinasflor: drive.google.com/file/d/1GF3BzmvStM1_DzX_VCKQjgnXTLtr9VXb/view\n\nQuando escolher, escreva os produtos e as quantidades 📝",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 322
+        }
+      }
+    ]
+  },
+  "322": {
+    "block_uuid": "7d8e8b68-3e24-460f-b93a-038aed7285ed",
+    "question": [
+      {
+        "handler": "waits",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "event": {
+                "action": "received",
+                "source": "message"
+              },
+              "action": {
+                "type": "question",
+                "step": 29
+              }
+            },
+            {
+              "event": {
+                "action": "ended",
+                "source": "timer",
+                "delay": 2700
+              },
+              "action": {
+                "type": "question",
+                "step": 361
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "340": {
+    "block_uuid": "7a85f160-5ee2-4900-ac37-b205dad86fb3",
+    "question": [
+      {
+        "handler": "waits",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "event": {
+                "action": "received",
+                "source": "message"
+              },
+              "action": {
+                "type": "question",
+                "step": 341
+              }
+            },
+            {
+              "event": {
+                "action": "ended",
+                "source": "timer",
+                "delay": 2700
+              },
+              "action": {
+                "type": "question",
+                "step": 361
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "341": {
+    "block_uuid": "07e35202-e8a1-4171-bd12-4928df27ae2d",
+    "question": [
+      {
+        "handler": "conditions",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "term1": "{{message_text}}",
+              "term2": "could not be displayed",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "API restrictions",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "restrições do Instagram",
+              "operation": "contains"
+            }
+          ],
+          "result": [
+            {
+              "handler": "goto",
+              "params": {
+                "type": "question",
+                "step": 340
+              }
+            }
+          ]
+        }
+      },
+      {
+        "handler": "conditions",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "term1": "{{message_text}}",
+              "term2": "Não",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "não",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "NÃO",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "Nao",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "nao",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "NAO",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "Sem",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "sem",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "SEM",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "autônoma",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "Autônoma",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "autonoma",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "Autonoma",
+              "operation": "contains"
+            }
+          ],
+          "result": [
+            {
+              "handler": "goto",
+              "params": {
+                "type": "question",
+                "step": 343
+              }
+            }
+          ]
+        }
+      },
+      {
+        "handler": "conditions",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "term1": "{{message_text}}",
+              "term2": "0",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "1",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "2",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "3",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "4",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "5",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "6",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "7",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "8",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "9",
+              "operation": "contains"
+            }
+          ],
+          "result": [
+            {
+              "handler": "goto",
+              "params": {
+                "type": "question",
+                "step": 345
+              }
+            }
+          ]
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 344
+        }
+      }
+    ]
+  },
+  "342": {
+    "block_uuid": "91ea2df2-9faf-476d-ab11-f2dddef5bc26",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "change_status",
+          "params": {
+            "value": 99680859,
+            "pipeline_id": 12927111
+          }
+        }
+      },
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "Pedido anotado ✅ A nossa equipe vai entrar em contato por aqui para finalizar o seu pedido. 💙",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null
+        }
+      },
+      {
+        "handler": "trigger",
+        "params": {
+          "trigger": {
+            "delay": 0,
+            "action": "create_task",
+            "segments": [
+              ""
+            ],
+            "settings": {
+              "task_text": "Salão (CNPJ no lead) fez o pedido pela Lyra: montar o pedido com os produtos da conversa (até 45 minutos).",
+              "task_type": "1",
+              "deadline-days": "",
+              "deadline-hours": "",
+              "task_type_name": "Acompanhar",
+              "within-deadline": "custom",
+              "deadline-minutes": "45",
+              "responsible_user": "current"
+            },
+            "date_exec": 0,
+            "handler_code": "amocrm",
+            "execution_condition": {
+              "id": 45,
+              "name": "execute_trigger"
+            }
+          },
+          "element_type": "lead"
+        }
+      },
+      {
+        "handler": "waits",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "event": {
+                "action": "received",
+                "source": "message"
+              },
+              "action": {
+                "type": "question",
+                "step": 55
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "343": {
+    "block_uuid": "7b1ab051-af98-46a4-b082-d24d2a7adcee",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "change_status",
+          "params": {
+            "value": 99501151,
+            "pipeline_id": 12904179
+          }
+        }
+      },
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "Consumidor final",
+            "custom_field": "{{lead.cf.4381514}}"
+          }
+        }
+      },
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_tag",
+          "params": {
+            "type": 2,
+            "value": [
+              "consumidor-final"
+            ]
+          }
+        }
+      },
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_tag",
+          "params": {
+            "type": 2,
+            "value": [
+              "profissional-sem-cnpj"
+            ]
+          }
+        }
+      },
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "Sem problemas. As condições profissionais são exclusivas para salões com CNPJ, e a nossa equipe vai te atender com as opções para uso em casa. 💙",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null
+        }
+      },
+      {
+        "handler": "trigger",
+        "params": {
+          "trigger": {
+            "delay": 0,
+            "action": "create_task",
+            "segments": [
+              ""
+            ],
+            "settings": {
+              "task_text": "Profissional sem CNPJ fez o pedido pela Lyra: atender como uso em casa (até 45 minutos).",
+              "task_type": "1",
+              "deadline-days": "",
+              "deadline-hours": "",
+              "task_type_name": "Acompanhar",
+              "within-deadline": "custom",
+              "deadline-minutes": "45",
+              "responsible_user": "current"
+            },
+            "date_exec": 0,
+            "handler_code": "amocrm",
+            "execution_condition": {
+              "id": 45,
+              "name": "execute_trigger"
+            }
+          },
+          "element_type": "lead"
+        }
+      },
+      {
+        "handler": "waits",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "event": {
+                "action": "received",
+                "source": "message"
+              },
+              "action": {
+                "type": "question",
+                "step": 55
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "344": {
+    "block_uuid": "3ccee4b6-3a6a-41c0-94de-c4d1a275747e",
+    "question": [
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "Para liberar o preço de salão, informe o CNPJ do salão, só os números 🔒 Se o salão não tiver CNPJ, toque no botão abaixo.",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null,
+          "buttons": [
+            {
+              "type": "inline",
+              "text": "Não tenho CNPJ"
+            }
+          ]
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 340
+        }
+      }
+    ]
+  },
+  "345": {
+    "block_uuid": "2f7a9fa7-5dd6-4c4c-aee9-2d4259525da4",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "{{message_text}}",
+            "custom_field": "{{lead.cf.4381512}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 342
+        }
+      }
+    ]
+  },
+  "346": {
+    "block_uuid": "547d1610-f5e4-4836-ae08-1e2d2afbb4e2",
+    "question": [
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "Para seguir, informe o CNPJ da empresa, só os números 🔒",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 35
+        }
+      }
+    ]
+  },
+  "347": {
+    "block_uuid": "64ecc279-f1ec-43b7-bc0d-1e9d19af5bbb",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "{{message_text}}",
+            "custom_field": "{{lead.cf.4381512}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 350
+        }
+      }
+    ]
+  },
+  "348": {
+    "block_uuid": "6e5fb3ae-200b-4969-b31b-0ef51740e596",
+    "question": [
+      {
+        "handler": "conditions",
+        "params": {
+          "logic": "or",
+          "conditions": [
+            {
+              "term1": "{{message_text}}",
+              "term2": "could not be displayed",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "API restrictions",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "restrições do Instagram",
+              "operation": "contains"
+            }
+          ],
+          "result": [
+            {
+              "handler": "goto",
+              "params": {
+                "type": "question",
+                "step": 28
+              }
+            }
+          ]
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 29
+        }
+      }
+    ]
+  },
+  "350": {
+    "block_uuid": "78b9c3b2-8c86-46e3-a836-7fbeed31beda",
+    "question": [
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "Qual investimento inicial você tem em mente? 💼 Responda com o número:\n1 · Até R$ 5 mil\n2 · R$ 5 a 15 mil\n3 · R$ 15 a 50 mil\n4 · Acima de R$ 50 mil",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null
+        }
+      }
+    ],
+    "answer": [
+      {
+        "handler": "buttons",
+        "params": [
+          {
+            "value": "36c690851aab416e2992e175d6cc690f",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 351
+                }
+              }
+            ]
+          },
+          {
+            "value": "Até R$ 5 mil",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 351
+                }
+              }
+            ]
+          },
+          {
+            "value": "1",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 351
+                }
+              }
+            ]
+          },
+          {
+            "value": "5e27c1151b9f9e62f03eaae5463d7819",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 352
+                }
+              }
+            ]
+          },
+          {
+            "value": "R$ 5 a 15 mil",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 352
+                }
+              }
+            ]
+          },
+          {
+            "value": "2",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 352
+                }
+              }
+            ]
+          },
+          {
+            "value": "1da50a9fd15d9f827c972c991bafed7b",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 353
+                }
+              }
+            ]
+          },
+          {
+            "value": "R$ 15 a 50 mil",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 353
+                }
+              }
+            ]
+          },
+          {
+            "value": "3",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 353
+                }
+              }
+            ]
+          },
+          {
+            "value": "96fe2849f35354a85228b3367f18b113",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 354
+                }
+              }
+            ]
+          },
+          {
+            "value": "Acima de R$ 50 mil",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 354
+                }
+              }
+            ]
+          },
+          {
+            "value": "4",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 354
+                }
+              }
+            ]
+          },
+          {
+            "type": "else",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 350
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "351": {
+    "block_uuid": "833a7b10-b217-4aa2-bc1c-72dbde369612",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "Até R$ 5 mil",
+            "custom_field": "{{lead.cf.4381738}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 39
+        }
+      }
+    ]
+  },
+  "352": {
+    "block_uuid": "b55869af-70e2-4fe1-b76b-497c9f6c2e0c",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "R$ 5 a 15 mil",
+            "custom_field": "{{lead.cf.4381738}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 39
+        }
+      }
+    ]
+  },
+  "353": {
+    "block_uuid": "9c5a3154-5229-4179-9bf5-9fbb524cb626",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "R$ 15 a 50 mil",
+            "custom_field": "{{lead.cf.4381738}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 39
+        }
+      }
+    ]
+  },
+  "354": {
+    "block_uuid": "386922e1-50ad-4fd8-8aa3-20f7d970eccd",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "Acima de R$ 50 mil",
+            "custom_field": "{{lead.cf.4381738}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 39
+        }
+      }
+    ]
+  },
+  "360": {
+    "block_uuid": "002425a2-2e6b-44ab-bd8c-5ba4138f909c",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "change_status",
+          "params": {
+            "value": 99501151,
+            "pipeline_id": 12904179
+          }
+        }
+      },
+      {
+        "handler": "trigger",
+        "params": {
+          "trigger": {
+            "delay": 0,
+            "action": "create_task",
+            "segments": [
+              ""
+            ],
+            "settings": {
+              "task_text": "Cliente parou no meio da conversa com a Lyra: retomar pela conversa.",
+              "task_type": "1",
+              "deadline-days": "",
+              "deadline-hours": "",
+              "task_type_name": "Acompanhar",
+              "within-deadline": "custom",
+              "deadline-minutes": "45",
+              "responsible_user": "current"
+            },
+            "date_exec": 0,
+            "handler_code": "amocrm",
+            "execution_condition": {
+              "id": 45,
+              "name": "execute_trigger"
+            }
+          },
+          "element_type": "lead"
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "finish",
+          "step": 999
+        }
+      }
+    ]
+  },
+  "361": {
+    "block_uuid": "d9e4ddc8-10d5-4c16-8978-e9f56bbe30f2",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "change_status",
+          "params": {
+            "value": 99680859,
+            "pipeline_id": 12927111
+          }
+        }
+      },
+      {
+        "handler": "trigger",
+        "params": {
+          "trigger": {
+            "delay": 0,
+            "action": "create_task",
+            "segments": [
+              ""
+            ],
+            "settings": {
+              "task_text": "Cliente parou no meio da conversa com a Lyra: retomar pela conversa.",
+              "task_type": "1",
+              "deadline-days": "",
+              "deadline-hours": "",
+              "task_type_name": "Acompanhar",
+              "within-deadline": "custom",
+              "deadline-minutes": "45",
+              "responsible_user": "current"
+            },
+            "date_exec": 0,
+            "handler_code": "amocrm",
+            "execution_condition": {
+              "id": 45,
+              "name": "execute_trigger"
+            }
+          },
+          "element_type": "lead"
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "finish",
+          "step": 999
+        }
+      }
+    ]
+  },
+  "362": {
+    "block_uuid": "e89873b9-517d-43f0-bf9a-b7c97de52b63",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "change_status",
+          "params": {
+            "value": 99680647,
+            "pipeline_id": 12927087
+          }
+        }
+      },
+      {
+        "handler": "trigger",
+        "params": {
+          "trigger": {
+            "delay": 0,
+            "action": "create_task",
+            "segments": [
+              ""
+            ],
+            "settings": {
+              "task_text": "Cliente parou no meio da conversa com a Lyra: retomar pela conversa.",
+              "task_type": "1",
+              "deadline-days": "",
+              "deadline-hours": "",
+              "task_type_name": "Acompanhar",
+              "within-deadline": "custom",
+              "deadline-minutes": "45",
+              "responsible_user": "current"
+            },
+            "date_exec": 0,
+            "handler_code": "amocrm",
+            "execution_condition": {
+              "id": 45,
+              "name": "execute_trigger"
+            }
+          },
+          "element_type": "lead"
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "finish",
+          "step": 999
+        }
+      }
+    ]
+  },
+  "conversation": false
+}

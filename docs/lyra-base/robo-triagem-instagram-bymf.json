@@ -1,6 +1,6 @@
 {
   "0": {
-    "block_uuid": "cff485c0-c810-4db7-892d-bc7be19c7b14",
+    "block_uuid": "2dad51da-d165-4492-a3ca-616a462264c5",
     "question": [
       {
         "handler": "action",
@@ -16,7 +16,7 @@
         "handler": "send_message",
         "params": {
           "tag": "",
-          "text": "Olá! ✨ Sou a Lyra, assistente virtual. Para direcionar o seu atendimento, toque em uma das opções. Se você já é cliente, é só escrever \"cliente\"; para falar com a nossa equipe, escreva \"atendente\".",
+          "text": "Olá! ✨ Sou a Lyra, da BY.MF. Para direcionar o seu atendimento, toque em uma das opções. Para falar com a nossa equipe, escreva \"atendente\".",
           "type": "external",
           "recipient": {
             "type": "all_contacts",
@@ -32,11 +32,11 @@
             },
             {
               "type": "inline",
-              "text": "Tenho salão"
+              "text": "Revendo/distribuo"
             },
             {
               "type": "inline",
-              "text": "Revendo/distribuo"
+              "text": "Já sou cliente"
             }
           ]
         }
@@ -66,30 +66,6 @@
                 "params": {
                   "type": "question",
                   "step": 10
-                }
-              }
-            ]
-          },
-          {
-            "value": "f79c877969278a407e77429ee7a9160b",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 20
-                }
-              }
-            ]
-          },
-          {
-            "value": "Tenho salão",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 20
                 }
               }
             ]
@@ -158,117 +134,8 @@
       }
     ]
   },
-  "9": {
-    "block_uuid": "30db7c93-30ba-4acb-a198-13d5b85ecd9c",
-    "question": [
-      {
-        "handler": "conditions",
-        "params": {
-          "logic": "or",
-          "conditions": [
-            {
-              "term1": "{{message_text}}",
-              "term2": "could not be displayed",
-              "operation": "contains"
-            },
-            {
-              "term1": "{{message_text}}",
-              "term2": "API restrictions",
-              "operation": "contains"
-            },
-            {
-              "term1": "{{message_text}}",
-              "term2": "restrições do Instagram",
-              "operation": "contains"
-            }
-          ],
-          "result": [
-            {
-              "handler": "goto",
-              "params": {
-                "type": "question",
-                "step": 19
-              }
-            }
-          ]
-        }
-      },
-      {
-        "handler": "action",
-        "params": {
-          "name": "change_status",
-          "params": {
-            "value": 99501151,
-            "pipeline_id": 12904179
-          }
-        }
-      },
-      {
-        "handler": "send_message",
-        "params": {
-          "tag": "",
-          "text": "Pedido anotado ✅ A nossa equipe vai entrar em contato por aqui para finalizar a sua compra. 💙",
-          "type": "external",
-          "recipient": {
-            "type": "all_contacts",
-            "way_of_communication": "over_all"
-          },
-          "is_in_starting_block": false,
-          "send_to_all_chat_sources": true,
-          "on_error": null
-        }
-      },
-      {
-        "handler": "trigger",
-        "params": {
-          "trigger": {
-            "delay": 0,
-            "action": "create_task",
-            "segments": [
-              ""
-            ],
-            "settings": {
-              "task_text": "Consumidor pediu Minasflor pela Lyra: montar o link de pagamento da Yampi com os produtos da conversa (até 45 minutos).",
-              "task_type": "1",
-              "deadline-days": "",
-              "deadline-hours": "",
-              "task_type_name": "Acompanhar",
-              "within-deadline": "custom",
-              "deadline-minutes": "45",
-              "responsible_user": "current"
-            },
-            "date_exec": 0,
-            "handler_code": "amocrm",
-            "execution_condition": {
-              "id": 45,
-              "name": "execute_trigger"
-            }
-          },
-          "element_type": "lead"
-        }
-      },
-      {
-        "handler": "waits",
-        "params": {
-          "logic": "or",
-          "conditions": [
-            {
-              "event": {
-                "action": "received",
-                "source": "message"
-              },
-              "action": {
-                "type": "question",
-                "step": 55
-              }
-            }
-          ]
-        }
-      }
-    ]
-  },
   "10": {
-    "block_uuid": "a4c41809-0f94-4c34-af5b-f471bd2685d8",
+    "block_uuid": "a42af5be-5349-435d-bd4c-b6cbbf19627e",
     "question": [
       {
         "handler": "action",
@@ -306,169 +173,13 @@
         "handler": "goto",
         "params": {
           "type": "question",
-          "step": 11
+          "step": 15
         }
-      }
-    ]
-  },
-  "11": {
-    "block_uuid": "b53223bd-0f19-49e4-aeb5-aee4109b9a6b",
-    "question": [
-      {
-        "handler": "send_message",
-        "params": {
-          "tag": "",
-          "text": "Será um prazer te atender 😊 Qual é o seu nome?",
-          "type": "external",
-          "recipient": {
-            "type": "all_contacts",
-            "way_of_communication": "over_all"
-          },
-          "is_in_starting_block": false,
-          "send_to_all_chat_sources": true,
-          "on_error": null
-        }
-      },
-      {
-        "handler": "goto",
-        "params": {
-          "type": "question",
-          "step": 12
-        }
-      }
-    ]
-  },
-  "12": {
-    "block_uuid": "5771d58f-5a4c-4188-afad-b5c4b756de7e",
-    "question": [
-      {
-        "handler": "waits",
-        "params": {
-          "logic": "or",
-          "conditions": [
-            {
-              "event": {
-                "action": "received",
-                "source": "message"
-              },
-              "action": {
-                "type": "question",
-                "step": 13
-              }
-            }
-          ]
-        }
-      }
-    ]
-  },
-  "13": {
-    "block_uuid": "d6a4d352-b703-4e1c-80a0-10f49757d92f",
-    "question": [
-      {
-        "handler": "action",
-        "params": {
-          "name": "set_custom_fields",
-          "params": {
-            "value": "{{message_text}}",
-            "custom_field": "{{lead.name}}"
-          }
-        }
-      },
-      {
-        "handler": "goto",
-        "params": {
-          "type": "question",
-          "step": 80
-        }
-      }
-    ]
-  },
-  "14": {
-    "block_uuid": "46edbc73-5bc6-4926-8970-1b4045d7627c",
-    "question": [
-      {
-        "handler": "send_message",
-        "params": {
-          "tag": "",
-          "text": "Obrigada! Qual marca você procura? 🛍️",
-          "type": "external",
-          "recipient": {
-            "type": "all_contacts",
-            "way_of_communication": "over_all"
-          },
-          "is_in_starting_block": false,
-          "send_to_all_chat_sources": true,
-          "on_error": null,
-          "buttons": [
-            {
-              "type": "inline",
-              "text": "BY.MF"
-            },
-            {
-              "type": "inline",
-              "text": "Minasflor"
-            }
-          ]
-        }
-      }
-    ],
-    "answer": [
-      {
-        "handler": "buttons",
-        "params": [
-          {
-            "value": "BY.MF",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 15
-                }
-              }
-            ],
-            "synonyms": [
-              "by.mf",
-              "bymf",
-              "BYMF",
-              "by mf"
-            ]
-          },
-          {
-            "value": "Minasflor",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 16
-                }
-              }
-            ],
-            "synonyms": [
-              "minasflor",
-              "Minas Flor",
-              "minas flor"
-            ]
-          },
-          {
-            "type": "else",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 52
-                }
-              }
-            ]
-          }
-        ]
       }
     ]
   },
   "15": {
-    "block_uuid": "e83741ed-ef9d-40f6-b487-8a56765c9e8d",
+    "block_uuid": "772b937f-41df-4bee-9256-5ea5dc603879",
     "question": [
       {
         "handler": "action",
@@ -577,536 +288,8 @@
       }
     ]
   },
-  "16": {
-    "block_uuid": "3eba9da5-0b14-4df4-80f2-b5ea4f11c78f",
-    "question": [
-      {
-        "handler": "action",
-        "params": {
-          "name": "set_custom_fields",
-          "params": {
-            "value": "Minasflor",
-            "custom_field": "{{lead.cf.4381516}}"
-          }
-        }
-      },
-      {
-        "handler": "send_message",
-        "params": {
-          "tag": "",
-          "text": "Você pode conhecer toda a linha Minasflor no nosso site: minasflor.com.br",
-          "type": "external",
-          "recipient": {
-            "type": "all_contacts",
-            "way_of_communication": "over_all"
-          },
-          "is_in_starting_block": false,
-          "send_to_all_chat_sources": true,
-          "on_error": null
-        }
-      },
-      {
-        "handler": "goto",
-        "params": {
-          "type": "question",
-          "step": 18
-        }
-      }
-    ]
-  },
-  "18": {
-    "block_uuid": "5e982ca3-77c8-48c1-86a5-bafd68521d9b",
-    "question": [
-      {
-        "handler": "send_message",
-        "params": {
-          "tag": "",
-          "text": "Por favor, informe os produtos e as quantidades que deseja. A nossa equipe vai preparar um link de pagamento exclusivo para você, com Pix ou cartão 📝",
-          "type": "external",
-          "recipient": {
-            "type": "all_contacts",
-            "way_of_communication": "over_all"
-          },
-          "is_in_starting_block": false,
-          "send_to_all_chat_sources": true,
-          "on_error": null
-        }
-      },
-      {
-        "handler": "goto",
-        "params": {
-          "type": "question",
-          "step": 19
-        }
-      }
-    ]
-  },
-  "19": {
-    "block_uuid": "9ceda531-4a81-4d09-ada1-648d9a7921a0",
-    "question": [
-      {
-        "handler": "waits",
-        "params": {
-          "logic": "or",
-          "conditions": [
-            {
-              "event": {
-                "action": "received",
-                "source": "message"
-              },
-              "action": {
-                "type": "question",
-                "step": 9
-              }
-            }
-          ]
-        }
-      }
-    ]
-  },
-  "20": {
-    "block_uuid": "8f6fdbff-736d-4015-94af-e2070f93f376",
-    "question": [
-      {
-        "handler": "action",
-        "params": {
-          "name": "change_status",
-          "params": {
-            "value": 113891215,
-            "pipeline_id": 12927111
-          }
-        }
-      },
-      {
-        "handler": "action",
-        "params": {
-          "name": "set_custom_fields",
-          "params": {
-            "value": "Salão",
-            "custom_field": "{{lead.cf.4381514}}"
-          }
-        }
-      },
-      {
-        "handler": "action",
-        "params": {
-          "name": "set_tag",
-          "params": {
-            "type": 2,
-            "value": [
-              "salão"
-            ]
-          }
-        }
-      },
-      {
-        "handler": "goto",
-        "params": {
-          "type": "question",
-          "step": 21
-        }
-      }
-    ]
-  },
-  "21": {
-    "block_uuid": "d69408cc-1aa9-4a02-9d2b-4e19e791a805",
-    "question": [
-      {
-        "handler": "send_message",
-        "params": {
-          "tag": "",
-          "text": "Será um prazer atender o seu salão 💇‍♀️ Por favor, informe o seu nome e o nome do salão.",
-          "type": "external",
-          "recipient": {
-            "type": "all_contacts",
-            "way_of_communication": "over_all"
-          },
-          "is_in_starting_block": false,
-          "send_to_all_chat_sources": true,
-          "on_error": null
-        }
-      },
-      {
-        "handler": "goto",
-        "params": {
-          "type": "question",
-          "step": 22
-        }
-      }
-    ]
-  },
-  "22": {
-    "block_uuid": "c46ce9e7-8fcb-489c-96ec-20ac2d166bd5",
-    "question": [
-      {
-        "handler": "waits",
-        "params": {
-          "logic": "or",
-          "conditions": [
-            {
-              "event": {
-                "action": "received",
-                "source": "message"
-              },
-              "action": {
-                "type": "question",
-                "step": 23
-              }
-            }
-          ]
-        }
-      }
-    ]
-  },
-  "23": {
-    "block_uuid": "3075eb02-7ac4-413b-ab91-8c3769ebe159",
-    "question": [
-      {
-        "handler": "action",
-        "params": {
-          "name": "set_custom_fields",
-          "params": {
-            "value": "{{message_text}}",
-            "custom_field": "{{lead.name}}"
-          }
-        }
-      },
-      {
-        "handler": "goto",
-        "params": {
-          "type": "question",
-          "step": 83
-        }
-      }
-    ]
-  },
-  "24": {
-    "block_uuid": "4f83b3fa-6869-4d16-bb6e-aeccd866fa3f",
-    "question": [
-      {
-        "handler": "send_message",
-        "params": {
-          "tag": "",
-          "text": "Obrigada. As condições profissionais são exclusivas para salões com CNPJ. O seu salão tem CNPJ? 💼",
-          "type": "external",
-          "recipient": {
-            "type": "all_contacts",
-            "way_of_communication": "over_all"
-          },
-          "is_in_starting_block": false,
-          "send_to_all_chat_sources": true,
-          "on_error": null,
-          "buttons": [
-            {
-              "type": "inline",
-              "text": "Tenho CNPJ"
-            },
-            {
-              "type": "inline",
-              "text": "Não tenho"
-            }
-          ]
-        }
-      }
-    ],
-    "answer": [
-      {
-        "handler": "buttons",
-        "params": [
-          {
-            "value": "Tenho CNPJ",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 60
-                }
-              }
-            ],
-            "synonyms": [
-              "tenho",
-              "sim",
-              "Sim",
-              "tenho cnpj"
-            ]
-          },
-          {
-            "value": "Não tenho",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 65
-                }
-              }
-            ],
-            "synonyms": [
-              "não",
-              "nao",
-              "Não",
-              "não tenho",
-              "nao tenho",
-              "sou autônoma",
-              "autônoma",
-              "autonoma"
-            ]
-          },
-          {
-            "type": "else",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 61
-                }
-              }
-            ]
-          }
-        ]
-      }
-    ]
-  },
-  "25": {
-    "block_uuid": "94f258d4-b64b-4c12-a8ff-2938e10deb21",
-    "question": [
-      {
-        "handler": "waits",
-        "params": {
-          "logic": "or",
-          "conditions": [
-            {
-              "event": {
-                "action": "received",
-                "source": "message"
-              },
-              "action": {
-                "type": "question",
-                "step": 26
-              }
-            }
-          ]
-        }
-      }
-    ]
-  },
-  "26": {
-    "block_uuid": "511b59ca-288e-4440-abab-602d2469d68c",
-    "question": [
-      {
-        "handler": "conditions",
-        "params": {
-          "logic": "or",
-          "conditions": [
-            {
-              "term1": "{{message_text}}",
-              "term2": "could not be displayed",
-              "operation": "contains"
-            },
-            {
-              "term1": "{{message_text}}",
-              "term2": "API restrictions",
-              "operation": "contains"
-            },
-            {
-              "term1": "{{message_text}}",
-              "term2": "restrições do Instagram",
-              "operation": "contains"
-            }
-          ],
-          "result": [
-            {
-              "handler": "goto",
-              "params": {
-                "type": "question",
-                "step": 25
-              }
-            }
-          ]
-        }
-      },
-      {
-        "handler": "action",
-        "params": {
-          "name": "set_custom_fields",
-          "params": {
-            "value": "{{message_text}}",
-            "custom_field": "{{lead.cf.4381512}}"
-          }
-        }
-      },
-      {
-        "handler": "goto",
-        "params": {
-          "type": "question",
-          "step": 27
-        }
-      }
-    ]
-  },
-  "27": {
-    "block_uuid": "c691aca5-9dce-4a5d-bfd6-b6ed11d6f1fe",
-    "question": [
-      {
-        "handler": "send_message",
-        "params": {
-          "tag": "",
-          "text": "Obrigada! Você pode conhecer todos os nossos produtos em minasflor.com.br\n\nDepois é só me dizer quais produtos e quantidades deseja, que eu deixo o seu pedido anotado 📝",
-          "type": "external",
-          "recipient": {
-            "type": "all_contacts",
-            "way_of_communication": "over_all"
-          },
-          "is_in_starting_block": false,
-          "send_to_all_chat_sources": true,
-          "on_error": null
-        }
-      },
-      {
-        "handler": "goto",
-        "params": {
-          "type": "question",
-          "step": 28
-        }
-      }
-    ]
-  },
-  "28": {
-    "block_uuid": "17654238-372a-472f-b647-d36846758b65",
-    "question": [
-      {
-        "handler": "waits",
-        "params": {
-          "logic": "or",
-          "conditions": [
-            {
-              "event": {
-                "action": "received",
-                "source": "message"
-              },
-              "action": {
-                "type": "question",
-                "step": 29
-              }
-            }
-          ]
-        }
-      }
-    ]
-  },
-  "29": {
-    "block_uuid": "9aa4765f-4912-4397-8677-871500cdbe62",
-    "question": [
-      {
-        "handler": "conditions",
-        "params": {
-          "logic": "or",
-          "conditions": [
-            {
-              "term1": "{{message_text}}",
-              "term2": "could not be displayed",
-              "operation": "contains"
-            },
-            {
-              "term1": "{{message_text}}",
-              "term2": "API restrictions",
-              "operation": "contains"
-            },
-            {
-              "term1": "{{message_text}}",
-              "term2": "restrições do Instagram",
-              "operation": "contains"
-            }
-          ],
-          "result": [
-            {
-              "handler": "goto",
-              "params": {
-                "type": "question",
-                "step": 28
-              }
-            }
-          ]
-        }
-      },
-      {
-        "handler": "action",
-        "params": {
-          "name": "change_status",
-          "params": {
-            "value": 99680859,
-            "pipeline_id": 12927111
-          }
-        }
-      },
-      {
-        "handler": "send_message",
-        "params": {
-          "tag": "",
-          "text": "Pedido anotado ✅ A nossa equipe vai entrar em contato por aqui para finalizar o seu pedido. 💙",
-          "type": "external",
-          "recipient": {
-            "type": "all_contacts",
-            "way_of_communication": "over_all"
-          },
-          "is_in_starting_block": false,
-          "send_to_all_chat_sources": true,
-          "on_error": null
-        }
-      },
-      {
-        "handler": "trigger",
-        "params": {
-          "trigger": {
-            "delay": 0,
-            "action": "create_task",
-            "segments": [
-              ""
-            ],
-            "settings": {
-              "task_text": "Salão (CNPJ no lead) fez o pedido pela Lyra: montar o pedido com os produtos da conversa (até 45 minutos).",
-              "task_type": "1",
-              "deadline-days": "",
-              "deadline-hours": "",
-              "task_type_name": "Acompanhar",
-              "within-deadline": "custom",
-              "deadline-minutes": "45",
-              "responsible_user": "current"
-            },
-            "date_exec": 0,
-            "handler_code": "amocrm",
-            "execution_condition": {
-              "id": 45,
-              "name": "execute_trigger"
-            }
-          },
-          "element_type": "lead"
-        }
-      },
-      {
-        "handler": "waits",
-        "params": {
-          "logic": "or",
-          "conditions": [
-            {
-              "event": {
-                "action": "received",
-                "source": "message"
-              },
-              "action": {
-                "type": "question",
-                "step": 55
-              }
-            }
-          ]
-        }
-      }
-    ]
-  },
   "30": {
-    "block_uuid": "23a1416a-afbe-4430-b576-45ee8e920a95",
+    "block_uuid": "c3b4abdd-2040-44d1-bfa2-5ab836bd8c17",
     "question": [
       {
         "handler": "action",
@@ -1150,13 +333,13 @@
     ]
   },
   "31": {
-    "block_uuid": "0879aada-856f-49f9-84da-97ff6cefa1b9",
+    "block_uuid": "03e8799c-a193-44ac-a18b-447b14eff78b",
     "question": [
       {
         "handler": "send_message",
         "params": {
           "tag": "",
-          "text": "Será um prazer conversar sobre a distribuição dos nossos produtos 🤝 Por favor, informe o seu nome e o nome da empresa.",
+          "text": "Será um prazer conversar sobre a distribuição dos nossos produtos 🤝 Qual é o nome do distribuidor (empresa)?",
           "type": "external",
           "recipient": {
             "type": "all_contacts",
@@ -1177,7 +360,7 @@
     ]
   },
   "32": {
-    "block_uuid": "3d9df2e1-6244-43c3-ae69-d8f847857b5b",
+    "block_uuid": "caae4460-d348-47c7-88c1-f60e555591cf",
     "question": [
       {
         "handler": "waits",
@@ -1193,6 +376,17 @@
                 "type": "question",
                 "step": 33
               }
+            },
+            {
+              "event": {
+                "action": "ended",
+                "source": "timer",
+                "delay": 2700
+              },
+              "action": {
+                "type": "question",
+                "step": 362
+              }
             }
           ]
         }
@@ -1200,7 +394,7 @@
     ]
   },
   "33": {
-    "block_uuid": "d970a41a-3b75-4546-a764-5d59a75a25c9",
+    "block_uuid": "3a70da3a-ce35-4c55-9eff-96275f3f78db",
     "question": [
       {
         "handler": "action",
@@ -1222,13 +416,13 @@
     ]
   },
   "34": {
-    "block_uuid": "ed2aff37-8058-4099-a5c1-7a269c3717fd",
+    "block_uuid": "3da02163-f8ce-4e4d-adb6-5e8bc48628fd",
     "question": [
       {
         "handler": "send_message",
         "params": {
           "tag": "",
-          "text": "Obrigada! Qual é o CNPJ da empresa? 🔒",
+          "text": "Obrigada! Qual é o CNPJ da empresa? 🔒 Ele é usado apenas para o cadastro de distribuidor.",
           "type": "external",
           "recipient": {
             "type": "all_contacts",
@@ -1249,7 +443,7 @@
     ]
   },
   "35": {
-    "block_uuid": "f4b295d2-ad0c-4f8a-8266-ecfa4d1f42ee",
+    "block_uuid": "bab0505c-42b3-4bbf-9da2-e474f8cfbbcf",
     "question": [
       {
         "handler": "waits",
@@ -1265,6 +459,17 @@
                 "type": "question",
                 "step": 36
               }
+            },
+            {
+              "event": {
+                "action": "ended",
+                "source": "timer",
+                "delay": 2700
+              },
+              "action": {
+                "type": "question",
+                "step": 362
+              }
             }
           ]
         }
@@ -1272,7 +477,7 @@
     ]
   },
   "36": {
-    "block_uuid": "9ba9ec18-db49-409b-b80e-cf6c44148cb1",
+    "block_uuid": "100ed9f6-0d51-4d37-a00c-10c02372e119",
     "question": [
       {
         "handler": "conditions",
@@ -1307,26 +512,83 @@
         }
       },
       {
-        "handler": "action",
+        "handler": "conditions",
         "params": {
-          "name": "set_custom_fields",
-          "params": {
-            "value": "{{message_text}}",
-            "custom_field": "{{lead.cf.4381512}}"
-          }
+          "logic": "or",
+          "conditions": [
+            {
+              "term1": "{{message_text}}",
+              "term2": "0",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "1",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "2",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "3",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "4",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "5",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "6",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "7",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "8",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "9",
+              "operation": "contains"
+            }
+          ],
+          "result": [
+            {
+              "handler": "goto",
+              "params": {
+                "type": "question",
+                "step": 347
+              }
+            }
+          ]
         }
       },
       {
         "handler": "goto",
         "params": {
           "type": "question",
-          "step": 37
+          "step": 346
         }
       }
     ]
   },
   "37": {
-    "block_uuid": "0efb8f51-6764-454b-8810-7a259b0cd74b",
+    "block_uuid": "ec7b22fa-9770-451f-85e0-52c33e715dc5",
     "question": [
       {
         "handler": "send_message",
@@ -2781,7 +2043,7 @@
     ]
   },
   "39": {
-    "block_uuid": "2345e47e-348f-48fb-a8d6-aa44281d4bcf",
+    "block_uuid": "3834be24-55dd-4170-89f6-e241aa00e903",
     "question": [
       {
         "handler": "action",
@@ -2818,7 +2080,7 @@
               ""
             ],
             "settings": {
-              "task_text": "Distribuidor triado pela Lyra (CNPJ, estado e cidade de atuação no lead): encaminhar ao representante (até 45 minutos).",
+              "task_text": "Distribuidor triado pela Lyra (CNPJ, estado e investimento inicial no lead): encaminhar ao representante (até 45 minutos).",
               "task_type": "1",
               "deadline-days": "",
               "deadline-hours": "",
@@ -2858,7 +2120,7 @@
     ]
   },
   "40": {
-    "block_uuid": "83133546-c8e2-49eb-814e-aa16e14ccc1f",
+    "block_uuid": "a85d3d28-5f91-4e7f-8309-05e44f22f9a4",
     "question": [
       {
         "handler": "action",
@@ -2947,13 +2209,13 @@
     ]
   },
   "50": {
-    "block_uuid": "6c9e42e2-03ae-48b7-879e-987b8fb970b2",
+    "block_uuid": "c7a4ffb3-d54b-49f2-9b97-57720c03c3b4",
     "question": [
       {
         "handler": "send_message",
         "params": {
           "tag": "",
-          "text": "Para seguir com o atendimento, toque em uma das opções 👇 Se você já é cliente, escreva \"cliente\".",
+          "text": "Para seguir com o atendimento, toque em uma das opções 👇",
           "type": "external",
           "recipient": {
             "type": "all_contacts",
@@ -2969,11 +2231,11 @@
             },
             {
               "type": "inline",
-              "text": "Tenho salão"
+              "text": "Revendo/distribuo"
             },
             {
               "type": "inline",
-              "text": "Revendo/distribuo"
+              "text": "Já sou cliente"
             }
           ]
         }
@@ -3003,30 +2265,6 @@
                 "params": {
                   "type": "question",
                   "step": 10
-                }
-              }
-            ]
-          },
-          {
-            "value": "f79c877969278a407e77429ee7a9160b",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 20
-                }
-              }
-            ]
-          },
-          {
-            "value": "Tenho salão",
-            "params": [
-              {
-                "handler": "goto",
-                "params": {
-                  "type": "question",
-                  "step": 20
                 }
               }
             ]
@@ -3086,7 +2324,7 @@
                 "handler": "goto",
                 "params": {
                   "type": "question",
-                  "step": 53
+                  "step": 57
                 }
               }
             ]
@@ -3096,7 +2334,7 @@
     ]
   },
   "51": {
-    "block_uuid": "ff0343bf-94c6-4414-bc4c-91c8d33d96a8",
+    "block_uuid": "0faac317-5acf-43a5-abdf-2107c7d8f66f",
     "question": [
       {
         "handler": "action",
@@ -3184,85 +2422,8 @@
       }
     ]
   },
-  "52": {
-    "block_uuid": "cb0bc3f0-8f1c-4777-92fe-09f4bb2393f4",
-    "question": [
-      {
-        "handler": "action",
-        "params": {
-          "name": "change_status",
-          "params": {
-            "value": 99501151,
-            "pipeline_id": 12904179
-          }
-        }
-      },
-      {
-        "handler": "send_message",
-        "params": {
-          "tag": "",
-          "text": "Obrigada pela informação. Vou transferir o seu atendimento para a nossa equipe, que vai te ajudar a escolher os produtos. 💙",
-          "type": "external",
-          "recipient": {
-            "type": "all_contacts",
-            "way_of_communication": "over_all"
-          },
-          "is_in_starting_block": false,
-          "send_to_all_chat_sources": true,
-          "on_error": null
-        }
-      },
-      {
-        "handler": "trigger",
-        "params": {
-          "trigger": {
-            "delay": 0,
-            "action": "create_task",
-            "segments": [
-              ""
-            ],
-            "settings": {
-              "task_text": "Consumidor escreveu o que quer em vez de escolher a marca: responder pela conversa (até 45 minutos).",
-              "task_type": "1",
-              "deadline-days": "",
-              "deadline-hours": "",
-              "task_type_name": "Acompanhar",
-              "within-deadline": "custom",
-              "deadline-minutes": "45",
-              "responsible_user": "current"
-            },
-            "date_exec": 0,
-            "handler_code": "amocrm",
-            "execution_condition": {
-              "id": 45,
-              "name": "execute_trigger"
-            }
-          },
-          "element_type": "lead"
-        }
-      },
-      {
-        "handler": "waits",
-        "params": {
-          "logic": "or",
-          "conditions": [
-            {
-              "event": {
-                "action": "received",
-                "source": "message"
-              },
-              "action": {
-                "type": "question",
-                "step": 55
-              }
-            }
-          ]
-        }
-      }
-    ]
-  },
   "53": {
-    "block_uuid": "c0022fdf-ef4e-4835-8559-c20cef3465f5",
+    "block_uuid": "7913764f-6734-4512-bc0e-6a9cf98bc9e0",
     "question": [
       {
         "handler": "conditions",
@@ -3398,7 +2559,7 @@
     ]
   },
   "54": {
-    "block_uuid": "2df70652-ab66-4bf1-a21e-a89a3ff12f74",
+    "block_uuid": "ba69355a-e1fa-4d6b-abd1-be308064ccde",
     "question": [
       {
         "handler": "action",
@@ -3464,7 +2625,7 @@
     ]
   },
   "55": {
-    "block_uuid": "506ae584-69c0-46ab-be7f-2ea7a68da8be",
+    "block_uuid": "ecb4fbd8-c6a2-4f0a-aa1d-d891a0e1647e",
     "question": [
       {
         "handler": "send_message",
@@ -3490,35 +2651,8 @@
       }
     ]
   },
-  "60": {
-    "block_uuid": "18a71e50-1bc9-46ad-a3b1-163e43192eb3",
-    "question": [
-      {
-        "handler": "send_message",
-        "params": {
-          "tag": "",
-          "text": "Por favor, informe o CNPJ do salão. Ele é usado apenas para liberar as condições profissionais 🔒",
-          "type": "external",
-          "recipient": {
-            "type": "all_contacts",
-            "way_of_communication": "over_all"
-          },
-          "is_in_starting_block": false,
-          "send_to_all_chat_sources": true,
-          "on_error": null
-        }
-      },
-      {
-        "handler": "goto",
-        "params": {
-          "type": "question",
-          "step": 25
-        }
-      }
-    ]
-  },
-  "61": {
-    "block_uuid": "fb1ac5f8-0e5e-4505-a847-dd8982e21ce8",
+  "57": {
+    "block_uuid": "90d59238-66d4-4f87-a461-9d8d0e376576",
     "question": [
       {
         "handler": "conditions",
@@ -3527,17 +2661,37 @@
           "conditions": [
             {
               "term1": "{{message_text}}",
-              "term2": "could not be displayed",
+              "term2": "atendente",
               "operation": "contains"
             },
             {
               "term1": "{{message_text}}",
-              "term2": "API restrictions",
+              "term2": "Atendente",
               "operation": "contains"
             },
             {
               "term1": "{{message_text}}",
-              "term2": "restrições do Instagram",
+              "term2": "ATENDENTE",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "falar com alguém",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "Falar com alguém",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "humano",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "pessoa",
               "operation": "contains"
             }
           ],
@@ -3546,39 +2700,111 @@
               "handler": "goto",
               "params": {
                 "type": "question",
-                "step": 90
+                "step": 51
               }
             }
           ]
         }
       },
       {
-        "handler": "action",
+        "handler": "conditions",
         "params": {
-          "name": "set_custom_fields",
-          "params": {
-            "value": "{{message_text}}",
-            "custom_field": "{{lead.cf.4381512}}"
-          }
+          "logic": "or",
+          "conditions": [
+            {
+              "term1": "{{message_text}}",
+              "term2": "cliente",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "Cliente",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "CLIENTE",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "pedido",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "Pedido",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "troca",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "Troca",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "entrega",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "Entrega",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "rastreio",
+              "operation": "contains"
+            },
+            {
+              "term1": "{{message_text}}",
+              "term2": "Rastreio",
+              "operation": "contains"
+            }
+          ],
+          "result": [
+            {
+              "handler": "goto",
+              "params": {
+                "type": "question",
+                "step": 40
+              }
+            }
+          ]
         }
       },
       {
         "handler": "goto",
         "params": {
           "type": "question",
-          "step": 27
+          "step": 58
         }
       }
     ]
   },
-  "63": {
-    "block_uuid": "b621266d-66eb-4ec7-b5cc-e3e3d9104da1",
+  "58": {
+    "block_uuid": "ba4632eb-9cdd-4b2d-b829-2b83e8431fce",
     "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "change_status",
+          "params": {
+            "value": 113893475,
+            "pipeline_id": 13975223
+          }
+        }
+      },
       {
         "handler": "send_message",
         "params": {
           "tag": "",
-          "text": "Em qual cidade? 🏙️",
+          "text": "Vou transferir o seu atendimento para a nossa equipe, que dará continuidade por aqui. 💙",
           "type": "external",
           "recipient": {
             "type": "all_contacts",
@@ -3590,17 +2816,34 @@
         }
       },
       {
-        "handler": "goto",
+        "handler": "trigger",
         "params": {
-          "type": "question",
-          "step": 64
+          "trigger": {
+            "delay": 0,
+            "action": "create_task",
+            "segments": [
+              ""
+            ],
+            "settings": {
+              "task_text": "Contato escreveu em vez de escolher uma opção da Lyra: responder pela conversa e preencher o Segmento (até 45 minutos).",
+              "task_type": "1",
+              "deadline-days": "",
+              "deadline-hours": "",
+              "task_type_name": "Acompanhar",
+              "within-deadline": "custom",
+              "deadline-minutes": "45",
+              "responsible_user": "current"
+            },
+            "date_exec": 0,
+            "handler_code": "amocrm",
+            "execution_condition": {
+              "id": 45,
+              "name": "execute_trigger"
+            }
+          },
+          "element_type": "lead"
         }
-      }
-    ]
-  },
-  "64": {
-    "block_uuid": "b7a6964f-db38-44c8-9120-46a26cad25b7",
-    "question": [
+      },
       {
         "handler": "waits",
         "params": {
@@ -3613,7 +2856,7 @@
               },
               "action": {
                 "type": "question",
-                "step": 66
+                "step": 55
               }
             }
           ]
@@ -3621,101 +2864,8 @@
       }
     ]
   },
-  "65": {
-    "block_uuid": "9f4050b7-341c-4b4f-8a5b-583774939317",
-    "question": [
-      {
-        "handler": "action",
-        "params": {
-          "name": "change_status",
-          "params": {
-            "value": 113891167,
-            "pipeline_id": 12904179
-          }
-        }
-      },
-      {
-        "handler": "action",
-        "params": {
-          "name": "set_custom_fields",
-          "params": {
-            "value": "Consumidor final",
-            "custom_field": "{{lead.cf.4381514}}"
-          }
-        }
-      },
-      {
-        "handler": "action",
-        "params": {
-          "name": "set_tag",
-          "params": {
-            "type": 2,
-            "value": [
-              "consumidor-final"
-            ]
-          }
-        }
-      },
-      {
-        "handler": "action",
-        "params": {
-          "name": "set_tag",
-          "params": {
-            "type": 2,
-            "value": [
-              "profissional-sem-cnpj"
-            ]
-          }
-        }
-      },
-      {
-        "handler": "send_message",
-        "params": {
-          "tag": "",
-          "text": "Sem problemas. As condições profissionais são exclusivas para salões com CNPJ, mas temos ótimas opções para uso em casa 😊",
-          "type": "external",
-          "recipient": {
-            "type": "all_contacts",
-            "way_of_communication": "over_all"
-          },
-          "is_in_starting_block": false,
-          "send_to_all_chat_sources": true,
-          "on_error": null
-        }
-      },
-      {
-        "handler": "goto",
-        "params": {
-          "type": "question",
-          "step": 14
-        }
-      }
-    ]
-  },
-  "66": {
-    "block_uuid": "9fd1b0aa-a9af-44f2-bf4f-56fcdce7b2ed",
-    "question": [
-      {
-        "handler": "action",
-        "params": {
-          "name": "set_custom_fields",
-          "params": {
-            "value": "{{message_text}}",
-            "custom_field": "{{lead.cf.4381530}}"
-          }
-        }
-      },
-      {
-        "handler": "goto",
-        "params": {
-          "type": "question",
-          "step": 39
-        }
-      }
-    ]
-  },
   "70": {
-    "block_uuid": "da6255e3-61bb-47ae-a04d-e04e5b3f66e6",
+    "block_uuid": "72ee7561-aeda-4220-a60f-d439c5fd12e7",
     "question": [
       {
         "handler": "send_message",
@@ -3850,7 +3000,7 @@
     ]
   },
   "71": {
-    "block_uuid": "bb9bf1e5-e208-4f34-bcf6-c1a8b3d641f4",
+    "block_uuid": "c69fc8f0-3b85-40fe-ad0b-54c5f418cb93",
     "question": [
       {
         "handler": "send_message",
@@ -3961,7 +3111,7 @@
     ]
   },
   "72": {
-    "block_uuid": "59e86c77-7dd0-4f8c-9bff-e6043b09b7c5",
+    "block_uuid": "169c28c7-9d7d-4e3a-9009-e27d4fdabd2e",
     "question": [
       {
         "handler": "send_message",
@@ -4096,7 +3246,7 @@
     ]
   },
   "73": {
-    "block_uuid": "16b4673d-0b8f-4991-81f4-1c30c74b5240",
+    "block_uuid": "6228796f-f7f5-4bb8-bab4-1fd798e10d01",
     "question": [
       {
         "handler": "send_message",
@@ -4351,7 +3501,7 @@
     ]
   },
   "74": {
-    "block_uuid": "b6cf0884-92d5-43aa-a0ed-97c4577007d5",
+    "block_uuid": "37f18f1c-ee67-4557-b7c1-01764a3c8773",
     "question": [
       {
         "handler": "send_message",
@@ -4557,297 +3707,8 @@
       }
     ]
   },
-  "80": {
-    "block_uuid": "e07232f6-eb10-4d69-8a00-c23c13ba1cab",
-    "question": [
-      {
-        "handler": "send_message",
-        "params": {
-          "tag": "",
-          "text": "Se quiser, informe o seu WhatsApp com DDD para a nossa equipe falar com você por lá também 📱 Para continuar só por aqui, escreva \"pular\".",
-          "type": "external",
-          "recipient": {
-            "type": "all_contacts",
-            "way_of_communication": "over_all"
-          },
-          "is_in_starting_block": false,
-          "send_to_all_chat_sources": true,
-          "on_error": null
-        }
-      },
-      {
-        "handler": "waits",
-        "params": {
-          "logic": "or",
-          "conditions": [
-            {
-              "event": {
-                "action": "received",
-                "source": "message"
-              },
-              "action": {
-                "type": "question",
-                "step": 81
-              }
-            }
-          ]
-        }
-      }
-    ]
-  },
-  "81": {
-    "block_uuid": "ceadc058-0410-4258-a414-84e66d7036ee",
-    "question": [
-      {
-        "handler": "conditions",
-        "params": {
-          "logic": "or",
-          "conditions": [
-            {
-              "term1": "{{message_text}}",
-              "term2": "pular",
-              "operation": "contains"
-            },
-            {
-              "term1": "{{message_text}}",
-              "term2": "Pular",
-              "operation": "contains"
-            },
-            {
-              "term1": "{{message_text}}",
-              "term2": "PULAR",
-              "operation": "contains"
-            },
-            {
-              "term1": "{{message_text}}",
-              "term2": "não",
-              "operation": "contains"
-            },
-            {
-              "term1": "{{message_text}}",
-              "term2": "Não",
-              "operation": "contains"
-            },
-            {
-              "term1": "{{message_text}}",
-              "term2": "nao",
-              "operation": "contains"
-            }
-          ],
-          "result": [
-            {
-              "handler": "goto",
-              "params": {
-                "type": "question",
-                "step": 14
-              }
-            }
-          ]
-        }
-      },
-      {
-        "handler": "validations",
-        "params": {
-          "logic": "and",
-          "result": [
-            {
-              "handler": "goto",
-              "params": {
-                "type": "question",
-                "step": 82
-              }
-            }
-          ],
-          "conditions": [
-            {
-              "type": "phone",
-              "operation": "contains",
-              "client_value": "{{message_text}}",
-              "condition_value": ""
-            }
-          ]
-        }
-      },
-      {
-        "handler": "send_message",
-        "params": {
-          "tag": "",
-          "text": "Por favor, informe o número com DDD, por exemplo: 31 99999-9999, ou escreva \"pular\".",
-          "type": "external",
-          "recipient": {
-            "type": "all_contacts",
-            "way_of_communication": "over_all"
-          },
-          "is_in_starting_block": false,
-          "send_to_all_chat_sources": true,
-          "on_error": null
-        }
-      },
-      {
-        "handler": "waits",
-        "params": {
-          "logic": "or",
-          "conditions": [
-            {
-              "event": {
-                "action": "received",
-                "source": "message"
-              },
-              "action": {
-                "type": "question",
-                "step": 81
-              }
-            }
-          ]
-        }
-      }
-    ]
-  },
-  "82": {
-    "block_uuid": "7b0c348d-b082-4a9a-a068-402191daae4d",
-    "question": [
-      {
-        "handler": "action",
-        "params": {
-          "name": "set_custom_fields",
-          "params": {
-            "value": "{{message_text}}",
-            "custom_field": "{{lead.cf.4381554}}"
-          }
-        }
-      },
-      {
-        "handler": "goto",
-        "params": {
-          "type": "question",
-          "step": 14
-        }
-      }
-    ]
-  },
-  "83": {
-    "block_uuid": "7e9960e4-47e9-4e26-8e88-237820223bf7",
-    "question": [
-      {
-        "handler": "send_message",
-        "params": {
-          "tag": "",
-          "text": "Qual é o seu WhatsApp com DDD? A nossa equipe usa para continuar o seu atendimento 📱",
-          "type": "external",
-          "recipient": {
-            "type": "all_contacts",
-            "way_of_communication": "over_all"
-          },
-          "is_in_starting_block": false,
-          "send_to_all_chat_sources": true,
-          "on_error": null
-        }
-      },
-      {
-        "handler": "waits",
-        "params": {
-          "logic": "or",
-          "conditions": [
-            {
-              "event": {
-                "action": "received",
-                "source": "message"
-              },
-              "action": {
-                "type": "question",
-                "step": 84
-              }
-            }
-          ]
-        }
-      }
-    ]
-  },
-  "84": {
-    "block_uuid": "ba3be091-7e2c-4793-9c8d-dc7730b145bb",
-    "question": [
-      {
-        "handler": "validations",
-        "params": {
-          "logic": "and",
-          "result": [
-            {
-              "handler": "goto",
-              "params": {
-                "type": "question",
-                "step": 85
-              }
-            }
-          ],
-          "conditions": [
-            {
-              "type": "phone",
-              "operation": "contains",
-              "client_value": "{{message_text}}",
-              "condition_value": ""
-            }
-          ]
-        }
-      },
-      {
-        "handler": "send_message",
-        "params": {
-          "tag": "",
-          "text": "Por favor, informe o número com DDD, por exemplo: 31 99999-9999.",
-          "type": "external",
-          "recipient": {
-            "type": "all_contacts",
-            "way_of_communication": "over_all"
-          },
-          "is_in_starting_block": false,
-          "send_to_all_chat_sources": true,
-          "on_error": null
-        }
-      },
-      {
-        "handler": "waits",
-        "params": {
-          "logic": "or",
-          "conditions": [
-            {
-              "event": {
-                "action": "received",
-                "source": "message"
-              },
-              "action": {
-                "type": "question",
-                "step": 84
-              }
-            }
-          ]
-        }
-      }
-    ]
-  },
-  "85": {
-    "block_uuid": "0c1f77ba-f551-416f-bce3-6e9a888efae0",
-    "question": [
-      {
-        "handler": "action",
-        "params": {
-          "name": "set_custom_fields",
-          "params": {
-            "value": "{{message_text}}",
-            "custom_field": "{{lead.cf.4381554}}"
-          }
-        }
-      },
-      {
-        "handler": "goto",
-        "params": {
-          "type": "question",
-          "step": 24
-        }
-      }
-    ]
-  },
   "86": {
-    "block_uuid": "182daafd-01f7-48aa-88de-c353733c5e93",
+    "block_uuid": "2a011eec-270e-4c7c-bc2e-699f0551d609",
     "question": [
       {
         "handler": "send_message",
@@ -4885,7 +3746,7 @@
     ]
   },
   "87": {
-    "block_uuid": "ae715a5e-eefe-4d70-bebc-27af89048be8",
+    "block_uuid": "1758c350-c15d-437b-9384-61657cc52b46",
     "question": [
       {
         "handler": "validations",
@@ -4946,7 +3807,7 @@
     ]
   },
   "88": {
-    "block_uuid": "a456ab0c-db81-45e7-b463-dcbcf3573937",
+    "block_uuid": "95b681cd-8baf-4f52-9dfe-d579e6db79e4",
     "question": [
       {
         "handler": "action",
@@ -4962,164 +3823,13 @@
         "handler": "goto",
         "params": {
           "type": "question",
-          "step": 34
-        }
-      }
-    ]
-  },
-  "90": {
-    "block_uuid": "09d38e49-014b-4008-8d1c-a34da667c934",
-    "question": [
-      {
-        "handler": "waits",
-        "params": {
-          "logic": "or",
-          "conditions": [
-            {
-              "event": {
-                "action": "received",
-                "source": "message"
-              },
-              "action": {
-                "type": "question",
-                "step": 91
-              }
-            }
-          ]
-        }
-      }
-    ]
-  },
-  "91": {
-    "block_uuid": "75dcf335-1b1c-426f-a762-c9cdd73b5ac9",
-    "question": [
-      {
-        "handler": "conditions",
-        "params": {
-          "logic": "or",
-          "conditions": [
-            {
-              "term1": "{{message_text}}",
-              "term2": "could not be displayed",
-              "operation": "contains"
-            },
-            {
-              "term1": "{{message_text}}",
-              "term2": "API restrictions",
-              "operation": "contains"
-            },
-            {
-              "term1": "{{message_text}}",
-              "term2": "restrições do Instagram",
-              "operation": "contains"
-            }
-          ],
-          "result": [
-            {
-              "handler": "goto",
-              "params": {
-                "type": "question",
-                "step": 90
-              }
-            }
-          ]
-        }
-      },
-      {
-        "handler": "conditions",
-        "params": {
-          "logic": "or",
-          "conditions": [
-            {
-              "term1": "{{message_text}}",
-              "term2": "Não tenho",
-              "operation": "contains"
-            },
-            {
-              "term1": "{{message_text}}",
-              "term2": "não",
-              "operation": "contains"
-            },
-            {
-              "term1": "{{message_text}}",
-              "term2": "Não",
-              "operation": "contains"
-            },
-            {
-              "term1": "{{message_text}}",
-              "term2": "nao",
-              "operation": "contains"
-            },
-            {
-              "term1": "{{message_text}}",
-              "term2": "autônoma",
-              "operation": "contains"
-            },
-            {
-              "term1": "{{message_text}}",
-              "term2": "autonoma",
-              "operation": "contains"
-            }
-          ],
-          "result": [
-            {
-              "handler": "goto",
-              "params": {
-                "type": "question",
-                "step": 65
-              }
-            }
-          ]
-        }
-      },
-      {
-        "handler": "conditions",
-        "params": {
-          "logic": "or",
-          "conditions": [
-            {
-              "term1": "{{message_text}}",
-              "term2": "Tenho",
-              "operation": "contains"
-            },
-            {
-              "term1": "{{message_text}}",
-              "term2": "tenho",
-              "operation": "contains"
-            },
-            {
-              "term1": "{{message_text}}",
-              "term2": "sim",
-              "operation": "contains"
-            },
-            {
-              "term1": "{{message_text}}",
-              "term2": "Sim",
-              "operation": "contains"
-            }
-          ],
-          "result": [
-            {
-              "handler": "goto",
-              "params": {
-                "type": "question",
-                "step": 60
-              }
-            }
-          ]
-        }
-      },
-      {
-        "handler": "goto",
-        "params": {
-          "type": "question",
-          "step": 61
+          "step": 37
         }
       }
     ]
   },
   "100": {
-    "block_uuid": "a02936c8-23f0-4786-8ef1-73555c1ff25a",
+    "block_uuid": "4431aea8-8071-41d6-9ed8-31b104136ae8",
     "question": [
       {
         "handler": "action",
@@ -5135,13 +3845,13 @@
         "handler": "goto",
         "params": {
           "type": "question",
-          "step": 63
+          "step": 34
         }
       }
     ]
   },
   "101": {
-    "block_uuid": "9860c408-4620-45a7-b3cc-a79ae84a1d7c",
+    "block_uuid": "f142946a-3194-455b-8bc9-7359dbe0b6d1",
     "question": [
       {
         "handler": "action",
@@ -5157,13 +3867,13 @@
         "handler": "goto",
         "params": {
           "type": "question",
-          "step": 63
+          "step": 34
         }
       }
     ]
   },
   "102": {
-    "block_uuid": "ade26dfd-85cf-47b7-aa99-90097b5727d3",
+    "block_uuid": "93fe4c27-3134-4f0b-841c-285812a915d1",
     "question": [
       {
         "handler": "action",
@@ -5179,13 +3889,13 @@
         "handler": "goto",
         "params": {
           "type": "question",
-          "step": 63
+          "step": 34
         }
       }
     ]
   },
   "103": {
-    "block_uuid": "f963f4e4-8454-4fc5-b6a0-bc8e78497254",
+    "block_uuid": "da735ba9-9242-47cd-ab16-d8049f7d8182",
     "question": [
       {
         "handler": "action",
@@ -5201,13 +3911,13 @@
         "handler": "goto",
         "params": {
           "type": "question",
-          "step": 63
+          "step": 34
         }
       }
     ]
   },
   "104": {
-    "block_uuid": "8adf2d91-c8a6-4eca-ae95-9ae6edbc6575",
+    "block_uuid": "c13105f6-240d-43d3-99f8-46dbf5851748",
     "question": [
       {
         "handler": "action",
@@ -5223,13 +3933,13 @@
         "handler": "goto",
         "params": {
           "type": "question",
-          "step": 63
+          "step": 34
         }
       }
     ]
   },
   "105": {
-    "block_uuid": "3eb50466-6bdd-497b-a419-191f979c5a88",
+    "block_uuid": "b7f6241c-ee3a-461d-ab4c-e34098a0a05e",
     "question": [
       {
         "handler": "action",
@@ -5245,13 +3955,13 @@
         "handler": "goto",
         "params": {
           "type": "question",
-          "step": 63
+          "step": 34
         }
       }
     ]
   },
   "106": {
-    "block_uuid": "96e5588f-4733-408a-972d-65f8c0f627b3",
+    "block_uuid": "6f9f97a7-00cf-4343-b411-0000a0595c03",
     "question": [
       {
         "handler": "action",
@@ -5267,13 +3977,13 @@
         "handler": "goto",
         "params": {
           "type": "question",
-          "step": 63
+          "step": 34
         }
       }
     ]
   },
   "107": {
-    "block_uuid": "09f6e437-9f14-4640-8386-fc99f1cdc84f",
+    "block_uuid": "a42a7506-8c29-454f-b0e5-b3b97217e195",
     "question": [
       {
         "handler": "action",
@@ -5289,13 +3999,13 @@
         "handler": "goto",
         "params": {
           "type": "question",
-          "step": 63
+          "step": 34
         }
       }
     ]
   },
   "108": {
-    "block_uuid": "de471f46-5aa8-44e1-9bd2-191610ba66ec",
+    "block_uuid": "a323778a-8302-4ec9-accd-172f1d91ecef",
     "question": [
       {
         "handler": "action",
@@ -5311,13 +4021,13 @@
         "handler": "goto",
         "params": {
           "type": "question",
-          "step": 63
+          "step": 34
         }
       }
     ]
   },
   "109": {
-    "block_uuid": "9e40d853-dd91-43c2-b7e5-1240d2e4cfd2",
+    "block_uuid": "7fada375-9f37-49b4-9ab9-16035a54a936",
     "question": [
       {
         "handler": "action",
@@ -5333,13 +4043,13 @@
         "handler": "goto",
         "params": {
           "type": "question",
-          "step": 63
+          "step": 34
         }
       }
     ]
   },
   "110": {
-    "block_uuid": "d1ca0b67-cc53-49fd-9667-aa11384ac625",
+    "block_uuid": "52e99bb5-4f0f-40f6-b099-252bbd8a6125",
     "question": [
       {
         "handler": "action",
@@ -5355,13 +4065,13 @@
         "handler": "goto",
         "params": {
           "type": "question",
-          "step": 63
+          "step": 34
         }
       }
     ]
   },
   "111": {
-    "block_uuid": "5943f146-edae-4298-8eaa-e9bdc1654333",
+    "block_uuid": "7f5a6452-a325-42c7-9d63-27fd30e11a55",
     "question": [
       {
         "handler": "action",
@@ -5377,13 +4087,13 @@
         "handler": "goto",
         "params": {
           "type": "question",
-          "step": 63
+          "step": 34
         }
       }
     ]
   },
   "112": {
-    "block_uuid": "ebeff509-ba81-4611-8410-41a78ba1d0e3",
+    "block_uuid": "541ae9de-24fd-483f-8cd4-26afaef8459e",
     "question": [
       {
         "handler": "action",
@@ -5399,13 +4109,13 @@
         "handler": "goto",
         "params": {
           "type": "question",
-          "step": 63
+          "step": 34
         }
       }
     ]
   },
   "113": {
-    "block_uuid": "063860e5-eb81-4554-9ada-7b3dc68d9048",
+    "block_uuid": "c509736d-a189-4eb6-8dee-a4c6c95b9095",
     "question": [
       {
         "handler": "action",
@@ -5421,13 +4131,13 @@
         "handler": "goto",
         "params": {
           "type": "question",
-          "step": 63
+          "step": 34
         }
       }
     ]
   },
   "114": {
-    "block_uuid": "195362de-2d86-47d8-8d88-839de6cf72ac",
+    "block_uuid": "5c5d5cea-d21e-47c8-accc-825392d64898",
     "question": [
       {
         "handler": "action",
@@ -5443,13 +4153,13 @@
         "handler": "goto",
         "params": {
           "type": "question",
-          "step": 63
+          "step": 34
         }
       }
     ]
   },
   "115": {
-    "block_uuid": "ee7ec6d5-1fbc-4fab-954f-8a1723f9e893",
+    "block_uuid": "aee86cf3-2408-4a9c-afe7-7e2b6cb2ad49",
     "question": [
       {
         "handler": "action",
@@ -5465,13 +4175,13 @@
         "handler": "goto",
         "params": {
           "type": "question",
-          "step": 63
+          "step": 34
         }
       }
     ]
   },
   "116": {
-    "block_uuid": "eb4080ff-a405-473a-8786-0387ab143587",
+    "block_uuid": "5601fa90-4388-4dbd-9cd1-c8d8f5df0c0e",
     "question": [
       {
         "handler": "action",
@@ -5487,13 +4197,13 @@
         "handler": "goto",
         "params": {
           "type": "question",
-          "step": 63
+          "step": 34
         }
       }
     ]
   },
   "117": {
-    "block_uuid": "dd04f3e6-74a7-4ab5-828a-832c2583b1d2",
+    "block_uuid": "85f07f23-2ed9-432e-9181-870e62b02678",
     "question": [
       {
         "handler": "action",
@@ -5509,13 +4219,13 @@
         "handler": "goto",
         "params": {
           "type": "question",
-          "step": 63
+          "step": 34
         }
       }
     ]
   },
   "118": {
-    "block_uuid": "b78d3954-dcac-487b-94c5-d1ad28414e69",
+    "block_uuid": "b35ca43d-7c5a-43dd-90fb-2b54245d534d",
     "question": [
       {
         "handler": "action",
@@ -5531,13 +4241,13 @@
         "handler": "goto",
         "params": {
           "type": "question",
-          "step": 63
+          "step": 34
         }
       }
     ]
   },
   "119": {
-    "block_uuid": "9cf05ea2-d617-456c-bd46-ca917d9007d2",
+    "block_uuid": "f3836381-0d62-4f52-ac82-ce35ed816d3f",
     "question": [
       {
         "handler": "action",
@@ -5553,13 +4263,13 @@
         "handler": "goto",
         "params": {
           "type": "question",
-          "step": 63
+          "step": 34
         }
       }
     ]
   },
   "120": {
-    "block_uuid": "af2dc6c0-9c83-4689-b142-7f51d6978861",
+    "block_uuid": "928bad90-ae49-4014-a1c1-0deb9ed36c70",
     "question": [
       {
         "handler": "action",
@@ -5575,13 +4285,13 @@
         "handler": "goto",
         "params": {
           "type": "question",
-          "step": 63
+          "step": 34
         }
       }
     ]
   },
   "121": {
-    "block_uuid": "5734dbab-9b71-4f6a-bb00-14477841325e",
+    "block_uuid": "880d850a-ddb9-491d-b1ee-71d2dc0675e4",
     "question": [
       {
         "handler": "action",
@@ -5597,13 +4307,13 @@
         "handler": "goto",
         "params": {
           "type": "question",
-          "step": 63
+          "step": 34
         }
       }
     ]
   },
   "122": {
-    "block_uuid": "289cc775-da79-43c0-a51f-0f15cbf12859",
+    "block_uuid": "f55a3807-60f4-49c2-8938-0c4e43248d85",
     "question": [
       {
         "handler": "action",
@@ -5619,13 +4329,13 @@
         "handler": "goto",
         "params": {
           "type": "question",
-          "step": 63
+          "step": 34
         }
       }
     ]
   },
   "123": {
-    "block_uuid": "633a928e-0d8f-4f45-a24b-0c6ce19a8a06",
+    "block_uuid": "978cff75-95ef-4717-9bd0-3663a619d27e",
     "question": [
       {
         "handler": "action",
@@ -5641,13 +4351,13 @@
         "handler": "goto",
         "params": {
           "type": "question",
-          "step": 63
+          "step": 34
         }
       }
     ]
   },
   "124": {
-    "block_uuid": "b4a55186-53ed-45df-a05d-1cf46a9eff37",
+    "block_uuid": "a157a3e4-5f2f-4419-86bd-661163dbcbf7",
     "question": [
       {
         "handler": "action",
@@ -5663,13 +4373,13 @@
         "handler": "goto",
         "params": {
           "type": "question",
-          "step": 63
+          "step": 34
         }
       }
     ]
   },
   "125": {
-    "block_uuid": "1f70a52e-26fb-45a1-a212-5502af9dadbe",
+    "block_uuid": "b1888bec-8f83-4d20-9590-6a006b2de541",
     "question": [
       {
         "handler": "action",
@@ -5685,13 +4395,13 @@
         "handler": "goto",
         "params": {
           "type": "question",
-          "step": 63
+          "step": 34
         }
       }
     ]
   },
   "126": {
-    "block_uuid": "127ad940-797a-4d24-b06c-9ccbf9c25cba",
+    "block_uuid": "b7a189b0-0904-4c67-a79b-71c2809f0021",
     "question": [
       {
         "handler": "action",
@@ -5707,7 +4417,378 @@
         "handler": "goto",
         "params": {
           "type": "question",
-          "step": 63
+          "step": 34
+        }
+      }
+    ]
+  },
+  "346": {
+    "block_uuid": "4e521bc2-5774-4229-9610-f6967e8c409d",
+    "question": [
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "Para seguir, informe o CNPJ da empresa, só os números 🔒",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 35
+        }
+      }
+    ]
+  },
+  "347": {
+    "block_uuid": "0c904830-96d2-4a5f-9813-496eaa56b7f4",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "{{message_text}}",
+            "custom_field": "{{lead.cf.4381512}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 350
+        }
+      }
+    ]
+  },
+  "350": {
+    "block_uuid": "2cc92224-9545-485b-a7a7-fab49c775c4f",
+    "question": [
+      {
+        "handler": "send_message",
+        "params": {
+          "tag": "",
+          "text": "Qual investimento inicial você tem em mente? 💼 Responda com o número:\n1 · Até R$ 5 mil\n2 · R$ 5 a 15 mil\n3 · R$ 15 a 50 mil\n4 · Acima de R$ 50 mil",
+          "type": "external",
+          "recipient": {
+            "type": "all_contacts",
+            "way_of_communication": "over_all"
+          },
+          "is_in_starting_block": false,
+          "send_to_all_chat_sources": true,
+          "on_error": null
+        }
+      }
+    ],
+    "answer": [
+      {
+        "handler": "buttons",
+        "params": [
+          {
+            "value": "36c690851aab416e2992e175d6cc690f",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 351
+                }
+              }
+            ]
+          },
+          {
+            "value": "Até R$ 5 mil",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 351
+                }
+              }
+            ]
+          },
+          {
+            "value": "1",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 351
+                }
+              }
+            ]
+          },
+          {
+            "value": "5e27c1151b9f9e62f03eaae5463d7819",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 352
+                }
+              }
+            ]
+          },
+          {
+            "value": "R$ 5 a 15 mil",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 352
+                }
+              }
+            ]
+          },
+          {
+            "value": "2",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 352
+                }
+              }
+            ]
+          },
+          {
+            "value": "1da50a9fd15d9f827c972c991bafed7b",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 353
+                }
+              }
+            ]
+          },
+          {
+            "value": "R$ 15 a 50 mil",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 353
+                }
+              }
+            ]
+          },
+          {
+            "value": "3",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 353
+                }
+              }
+            ]
+          },
+          {
+            "value": "96fe2849f35354a85228b3367f18b113",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 354
+                }
+              }
+            ]
+          },
+          {
+            "value": "Acima de R$ 50 mil",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 354
+                }
+              }
+            ]
+          },
+          {
+            "value": "4",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 354
+                }
+              }
+            ]
+          },
+          {
+            "type": "else",
+            "params": [
+              {
+                "handler": "goto",
+                "params": {
+                  "type": "question",
+                  "step": 350
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "351": {
+    "block_uuid": "cb59b511-fbd5-4698-a204-cce2f6585015",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "Até R$ 5 mil",
+            "custom_field": "{{lead.cf.4381738}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 39
+        }
+      }
+    ]
+  },
+  "352": {
+    "block_uuid": "2da4d0ef-0aaa-415f-831e-d505d24ff614",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "R$ 5 a 15 mil",
+            "custom_field": "{{lead.cf.4381738}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 39
+        }
+      }
+    ]
+  },
+  "353": {
+    "block_uuid": "a4218a16-f28a-45a3-a7d8-11faaa2dcb8a",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "R$ 15 a 50 mil",
+            "custom_field": "{{lead.cf.4381738}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 39
+        }
+      }
+    ]
+  },
+  "354": {
+    "block_uuid": "f73e62ff-aefd-4580-ba6e-a856fc3dba8d",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "set_custom_fields",
+          "params": {
+            "value": "Acima de R$ 50 mil",
+            "custom_field": "{{lead.cf.4381738}}"
+          }
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "question",
+          "step": 39
+        }
+      }
+    ]
+  },
+  "362": {
+    "block_uuid": "01f8ffc3-2af3-4adf-a405-d8602ec48ed0",
+    "question": [
+      {
+        "handler": "action",
+        "params": {
+          "name": "change_status",
+          "params": {
+            "value": 99680647,
+            "pipeline_id": 12927087
+          }
+        }
+      },
+      {
+        "handler": "trigger",
+        "params": {
+          "trigger": {
+            "delay": 0,
+            "action": "create_task",
+            "segments": [
+              ""
+            ],
+            "settings": {
+              "task_text": "Cliente parou no meio da conversa com a Lyra: retomar pela conversa.",
+              "task_type": "1",
+              "deadline-days": "",
+              "deadline-hours": "",
+              "task_type_name": "Acompanhar",
+              "within-deadline": "custom",
+              "deadline-minutes": "45",
+              "responsible_user": "current"
+            },
+            "date_exec": 0,
+            "handler_code": "amocrm",
+            "execution_condition": {
+              "id": 45,
+              "name": "execute_trigger"
+            }
+          },
+          "element_type": "lead"
+        }
+      },
+      {
+        "handler": "goto",
+        "params": {
+          "type": "finish",
+          "step": 999
         }
       }
     ]
