@@ -15,7 +15,6 @@
 // digitação só. Salvar são duas chamadas (lançamento, depois checklist): se a segunda falhar, o
 // lançamento já está gravado, a tela continua aberta nele e o próximo "Salvar" reenvia o checklist.
 import { useEffect, useMemo, useState } from 'react';
-import { useColaboradores } from '@/hooks/useColaboradores';
 import { AlertTriangle, ArrowDownToLine, ClipboardCheck, Search, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -34,8 +33,7 @@ import {
   pedidoDoFormulario, useChecklistDoLancamento, useItensDoChecklist, useSalvarChecklist,
 } from '@/hooks/usePedidosChecklist';
 import {
-  lerValor,
-  checklistVazio, dadosParaOBanco, problemasDoChecklist, valorDaVenda, type ChecklistEmEdicao,
+  checklistVazio, dadosParaOBanco, problemasDoChecklist, type ChecklistEmEdicao,
 } from '@/lib/checklist-de-pedidos';
 import { ChecklistDoLancamento } from '@/components/comercial/ChecklistDoLancamento';
 import { NotasDosPedidos } from '@/components/financeiro/NotasDosPedidos';
@@ -60,16 +58,8 @@ interface Props {
 
 interface Form {
   cliente: ClienteParaLancar | null;
-  /** Lançamento com alguém da empresa, no lugar do cliente (dono, 2026-11-05). */
-  comPessoa: boolean;
-  pessoaId: string;
   data: string;
   status: StatusInteracao;
-  valor: string;
-  /** Nº e data da nota (dono, 2026-10-15): o valor só existe com eles. */
-  nota: string;
-  notaEm: string;
-  notaFilial: string;
   prazo: string;
   observacoes: string;
   foraDaCarteira: boolean;
@@ -78,7 +68,7 @@ interface Form {
 
 function formVazio(): Form {
   return {
-    cliente: null, comPessoa: false, pessoaId: '', data: todayISO(), status: 'em_andamento', valor: '', nota: '', notaEm: todayISO(), notaFilial: '', prazo: '', observacoes: '',
+    cliente: null, data: todayISO(), status: 'em_andamento', prazo: '', observacoes: '',
     foraDaCarteira: false, marcas: new Set(),
   };
 }
@@ -92,7 +82,6 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
   const [buscaFora, setBuscaFora] = useState('');
   const [procurandoFora, setProcurandoFora] = useState(false);
   const salvar = useSalvarInteracao();
-  const { data: colaboradores = [] } = useColaboradores();
   const trazer = useAtribuirCarteiraEmLote();
   const { data: daCarteira = [] } = useClientesDaCarteira(minhasCarteiras);
   const { data: achados = [] } = useBuscarClienteParaLancar(procurandoFora ? buscaFora : '');
@@ -130,9 +119,6 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
   const podeCorrigir = usePodeNoLancamento().corrigir;
   const travadoParaMim = !podeCorrigir && (!!editando || !!idGravado);
   const concluidoTravado = travadoParaMim && editando?.status === 'concluido';
-  // A nota e o valor se completam depois, uma vez, mesmo concluído (dono, 2026-10-15; 20270123010000).
-  const notaPosta = !!editando?.nota_fiscal && !podeCorrigir;
-  const completandoNota = concluidoTravado && !editando?.nota_fiscal;
   // O checklist é de quem lançou (o banco só aceita ela ou o administrador).
   const deOutraPessoa = !!editando && editando.vendedor_id !== user?.id;
   const podeGerirCarteiras = usePodeGerirCarteiras();
@@ -180,14 +166,8 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
             carteira: editando.fora_da_carteira ? null : (minhasCarteiras[0] ?? null),
           }
         : null,
-      comPessoa: false,
-      pessoaId: editando.pessoa_interna_id ?? '',
       data: editando.data,
       status: editando.status,
-      valor: editando.valor_venda === null ? '' : String(editando.valor_venda).replace('.', ','),
-      nota: editando.nota_fiscal ?? '',
-      notaEm: editando.nota_em ?? todayISO(),
-      notaFilial: editando.nota_filial ?? '',
       prazo: editando.prazo ?? '',
       observacoes: editando.observacoes ?? '',
       foraDaCarteira: editando.fora_da_carteira,
@@ -210,18 +190,13 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
   const escondidos = indicadores.length - indicadoresVisiveis.length;
 
   const semCliente = form.cliente === null;
-  // Lançamento novo diz com quem foi: cliente ou pessoa da empresa (dono, 2026-11-05). O banco recusa o mesmo.
+  // Lançamento novo é sempre com cliente: a opção "Pessoa da empresa" saiu (dono, 2026-11-13). O lançamento antigo com
+  // pessoa continua abrindo, só para leitura.
   const clienteBloqueado = !editando && !podeGerirCarteiras && !!form.cliente && foraDaMinha(form.cliente, minhasCarteiras);
-  const faltaCliente = !editando && ((semCliente && !form.pessoaId) || clienteBloqueado);
-  const faltaAcaoInterna = !editando && form.comPessoa && !acoes.some((a) => form.marcas.has(a.id));
-  // O valor da venda só com a nota fiscal (dono, 2026-10-15): o pedido fechado é "A faturar" — o valor dele fica
-  // no checklist e aparece na Carteira, mas não é venda até a nota.
-  const valorNumero = form.valor.trim() === '' ? null : lerValor(form.valor) ?? NaN;
-  const valorInvalido = valorNumero !== null && (!Number.isFinite(valorNumero) || valorNumero <= 0);
-  const notaIncompleta = (valorNumero !== null) !== (form.nota.trim() !== '') || (form.nota.trim() !== '' && (!form.notaEm || !form.notaFilial));
-  // A data da nota nem no futuro nem antes do contato (dono, 2026-10-15): o banco recusa o mesmo (`com_nota_em_confere`).
-  const dataDaNotaInvalida = !notaPosta && form.nota.trim() !== '' && !!form.notaEm && (form.notaEm > todayISO() || (!!form.data && form.notaEm < form.data));
-  const valorDoPedido = temPedido ? valorDaVenda(checklist.pedidos) : null;
+  const faltaCliente = !editando && (semCliente || clienteBloqueado);
+  // A nota e o valor saíram do lançamento (dono, 2026-11-13): a venda vem da nota do Forteplus, e a nota do pedido, do
+  // XML que o Financeiro sobe no checklist. O lançamento antigo guarda o que já tinha.
+  const valorNumero = editando?.valor_venda ?? null;
   const indicadorSemCliente = semCliente && indicadores.some((i) => form.marcas.has(i.id));
 
   const filtrados = useMemo(() => {
@@ -255,11 +230,7 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
   // O botão diz o que falta (revisão do Comercial, 2026-11-12: o "Salvar" ficava apagado sem dizer por quê).
   const oQueFalta = !form.data ? 'a data do contato'
     : faltaCliente ? (clienteBloqueado ? 'um cliente da sua carteira' : 'o cliente')
-    : faltaAcaoInterna ? 'marcar uma ação (contato com pessoa da equipe)'
     : indicadorSemCliente ? 'o cliente, porque indicador só conta com cliente'
-    : valorInvalido ? 'um valor de venda maior que zero'
-    : notaIncompleta ? 'a nota completa: número, valor, data e filial'
-    : dataDaNotaInvalida ? 'uma data da nota entre o contato e hoje'
     : faltaRaioX ? (lendoAlerta ? null : 'a resposta do Raio-X do cliente')
     : null;
 
@@ -271,24 +242,23 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
   };
 
   const confirmar = async () => {
-    if (!form.data || faltaCliente || faltaAcaoInterna || valorInvalido || notaIncompleta || dataDaNotaInvalida || indicadorSemCliente || faltaRaioX) return;
+    if (!form.data || faltaCliente || indicadorSemCliente || faltaRaioX) return;
     if (enviaChecklist) {
       const achados = problemasDoChecklist(checklist.contato, checklist.pedidos, itens);
       setProblemas(achados);
       if (achados.length > 0) return;
     }
-    // Concluído e travado, só o checklist devolvido e a nota que falta ainda se completam.
-    const vaiAoBanco = !concluidoTravado || (completandoNota && form.nota.trim() !== '');
-    const id = !vaiAoBanco && editando ? editando.id : await salvar.mutateAsync({
+    // Concluído e travado, só o checklist devolvido ainda se completa.
+    const id = concluidoTravado && editando ? editando.id : await salvar.mutateAsync({
       id: editando?.id ?? idGravado ?? undefined,
       cliente_codigo: form.cliente?.codigo ?? null,
-      pessoa_interna_id: form.pessoaId || null,
+      pessoa_interna_id: editando?.pessoa_interna_id ?? null,
       data: form.data,
       status: form.status,
       valor_venda: valorNumero,
-      nota_fiscal: form.nota.trim() || null,
-      nota_em: form.nota.trim() ? form.notaEm : null,
-      nota_filial: form.nota.trim() ? form.notaFilial : null,
+      nota_fiscal: editando?.nota_fiscal ?? null,
+      nota_em: editando?.nota_em ?? null,
+      nota_filial: editando?.nota_filial ?? null,
       prazo: form.prazo || null,
       observacoes: form.observacoes.trim() || null,
       fora_da_carteira: form.foraDaCarteira,
@@ -337,27 +307,8 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
               <p className="text-[14px]">Ação interna com <strong>{editando.pessoa?.full_name ?? 'pessoa da empresa'}</strong></p>
             ) : (
               <>
-            {editando ? <Label>Cliente</Label> : (
-              <div className="flex h-9 w-full max-w-xs rounded-md border border-input bg-card overflow-hidden" role="group" aria-label="Com quem foi">
-                {([[false, 'Cliente'], [true, 'Pessoa da empresa']] as const).map(([comPessoa, rotulo]) => (
-                  <button key={rotulo} type="button" aria-pressed={form.comPessoa === comPessoa}
-                    onClick={() => setForm((f) => (f.comPessoa === comPessoa ? f : { ...f, comPessoa, pessoaId: '', cliente: null, foraDaCarteira: false, marcas: new Set() }))}
-                    className={`flex-1 text-[13px] font-semibold ${form.comPessoa === comPessoa ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-muted'}`}>
-                    {rotulo}
-                  </button>
-                ))}
-              </div>
-            )}
-            {form.comPessoa ? (
-              <div className="space-y-1.5">
-                <select id="lanc-pessoa" aria-label="Pessoa da empresa" value={form.pessoaId} onChange={(e) => setForm((f) => ({ ...f, pessoaId: e.target.value }))}
-                  className="flex h-9 w-full rounded-md border border-input bg-card px-3 text-[14px]">
-                  <option value="">Escolha a pessoa…</option>
-                  {colaboradores.map((c) => <option key={c.id} value={c.id}>{c.full_name || c.email}</option>)}
-                </select>
-                <p className="text-[12px] text-muted-foreground">Para campanha, evento, treinamento ou reunião interna. Venda e demais indicadores precisam de cliente.</p>
-              </div>
-            ) : form.cliente ? (
+            <Label>Cliente</Label>
+            {form.cliente ? (
               <div className="rounded-lg border border-border p-3 space-y-1.5">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
@@ -594,12 +545,12 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
           <section className="space-y-2">
             <div>
               <Label>Ações realizadas (FAROL)</Label>
-              <p className="text-[12px] text-muted-foreground">{form.comPessoa ? 'Com pessoa da empresa: marque pelo menos uma das ações liberadas.' : 'Campanha, treinamento e demais ações do atendimento ao cliente.'}</p>
+              <p className="text-[12px] text-muted-foreground">Campanha, treinamento e demais ações do atendimento ao cliente.</p>
             </div>
             <div className="grid gap-1.5 sm:grid-cols-2">
               {acoes.map((a) => (
                 <label key={a.id} className="flex items-center gap-2 text-[13px] cursor-pointer">
-                  <Checkbox checked={form.marcas.has(a.id)} disabled={travadoParaMim || (form.comPessoa && !a.aceita_pessoa_interna)} onCheckedChange={() => alternarMarca(a.id)} />
+                  <Checkbox checked={form.marcas.has(a.id)} disabled={travadoParaMim} onCheckedChange={() => alternarMarca(a.id)} />
                   {a.nome}
                 </label>
               ))}
@@ -608,51 +559,15 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
 
           {/* ── Venda, prazo e observações ──────────────────────────────────── */}
           <section className="grid gap-3 sm:grid-cols-2">
-            {/* Nota e valor andam juntos (dono, 2026-10-15): preenche quando o pedido for FATURADO. Até lá o pedido
-                fechado aparece na Carteira como "A faturar". Sem nota, o lançamento não conta nas vendas. */}
-            <div className="space-y-1.5 sm:col-span-2 rounded-lg border border-border p-3">
-              <p className="text-[14px] font-medium">Faturado? Nota fiscal e valor</p>
-              <p className="text-[12px] text-muted-foreground">
-                Preencha quando o pedido for faturado — pode voltar depois e completar, mesmo com o lançamento concluído.
-                Sem a nota, o lançamento não conta nas vendas.
-                {valorDoPedido !== null && valorDoPedido > 0 && <> Pedido fechado: <strong>{valorDoPedido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong> a faturar.</>}
+            {/* A nota saiu do lançamento (dono, 2026-11-13): a do pedido vem do XML que o Financeiro sobe no checklist, e a
+                venda, da importação do Forteplus. O lançamento antigo mostra o que já tinha, sem editar. */}
+            {editando?.nota_fiscal && (
+              <p className="sm:col-span-2 text-[13px] text-muted-foreground">
+                Nota {editando.nota_filial ?? ''} {editando.nota_fiscal}
+                {editando.valor_venda !== null && <> · {editando.valor_venda.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</>}
+                {' '}(informada antes da mudança de 13/11).
               </p>
-              <div className="grid gap-3 sm:grid-cols-4">
-                <div className="space-y-1">
-                  {/* A filial da nota (2026-10-15): o mesmo número existe nas duas, e o filtro da Carteira é por filial. */}
-                  <Label htmlFor="lanc-nota-filial">Filial da nota</Label>
-                  <Select value={form.notaFilial || undefined} disabled={notaPosta || (concluidoTravado && !completandoNota)}
-                    onValueChange={(v) => setForm((f) => ({ ...f, notaFilial: v }))}>
-                    <SelectTrigger id="lanc-nota-filial"><SelectValue placeholder="Escolha" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="INBRAS">INBRAS</SelectItem>
-                      <SelectItem value="MF">MF</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="lanc-nota">Nº da nota fiscal</Label>
-                  <Input id="lanc-nota" value={form.nota} readOnly={notaPosta || (concluidoTravado && !completandoNota)}
-                    onChange={(e) => setForm((f) => ({ ...f, nota: e.target.value }))} />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="lanc-nota-em">Data da nota</Label>
-                  <Input id="lanc-nota-em" type="date" value={form.notaEm} min={form.data || undefined} max={todayISO()} readOnly={notaPosta || (concluidoTravado && !completandoNota)}
-                    onChange={(e) => setForm((f) => ({ ...f, notaEm: e.target.value }))} />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="lanc-valor">Valor da venda (R$)</Label>
-                  <Input id="lanc-valor" inputMode="decimal" placeholder="0,00" readOnly={notaPosta || (concluidoTravado && !completandoNota)}
-                    value={form.valor} onChange={(e) => setForm((f) => ({ ...f, valor: e.target.value }))} />
-                </div>
-              </div>
-              {notaIncompleta && (
-                <p className="text-[12px] text-status-danger">Nota e valor andam juntos: preencha a filial, o Nº da nota, a data e o valor.</p>
-              )}
-              {dataDaNotaInvalida && (
-                <p className="text-[12px] text-status-danger">A data da nota não pode ser depois de hoje nem antes da data do contato.</p>
-              )}
-            </div>
+            )}
             <div className="space-y-1.5">
               <Label htmlFor="lanc-prazo">Próximo prazo <span className="font-normal text-muted-foreground">(opcional)</span></Label>
               <Input id="lanc-prazo" type="date" value={form.prazo} disabled={concluidoTravado} aria-describedby="lanc-prazo-ajuda"
@@ -667,9 +582,6 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
                 ninguém esquecer o cliente.
               </p>
             </div>
-            {valorInvalido && (
-              <p className="sm:col-span-2 text-[13px] badge-danger rounded-md px-2 py-1">Valor inválido.</p>
-            )}
             {comRaioX && !lendoAlerta && <div className="sm:col-span-2"><PerguntaDoRaioX alerta={alerta} resposta={resposta} onChange={setResposta} /></div>}
             <div className="space-y-1.5 sm:col-span-2">
               <Label htmlFor="lanc-obs">Observações</Label>
@@ -681,12 +593,12 @@ export function LancamentoDialog({ open, onOpenChange, minhasCarteiras, catalogo
         </div>
 
         <DialogFooter className="items-center">
-          {oQueFalta && !(concluidoTravado && !enviaChecklist && !completandoNota) && (
+          {oQueFalta && !(concluidoTravado && !enviaChecklist) && (
             <p role="status" className="text-[13px] text-status-warning sm:mr-auto">Para salvar, falta {oQueFalta}.</p>
           )}
-          <Button variant="outline" onClick={() => onOpenChange(false)}>{concluidoTravado && !enviaChecklist && !completandoNota ? 'Fechar' : 'Cancelar'}</Button>
-          {!(concluidoTravado && !enviaChecklist && !completandoNota) && <Button onClick={confirmar}
-            disabled={!form.data || faltaCliente || faltaAcaoInterna || valorInvalido || notaIncompleta || dataDaNotaInvalida || indicadorSemCliente || faltaRaioX || salvar.isPending || salvarChecklist.isPending || registrarContato.isPending}>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>{concluidoTravado && !enviaChecklist ? 'Fechar' : 'Cancelar'}</Button>
+          {!(concluidoTravado && !enviaChecklist) && <Button onClick={confirmar}
+            disabled={!form.data || faltaCliente || indicadorSemCliente || faltaRaioX || salvar.isPending || salvarChecklist.isPending || registrarContato.isPending}>
             {salvar.isPending || salvarChecklist.isPending || registrarContato.isPending
               ? 'Salvando…'
               : enviaChecklist ? 'Salvar e enviar ao Financeiro' : 'Salvar lançamento'}

@@ -53,6 +53,8 @@ export interface ClienteCadastrado {
    * grupo. Medido: só 5 grupos na base têm mais de um código.
    */
   grupo: string | null;
+  /** Colaborador ou conta da própria empresa: fora da meta e da comissão. O colaborador fica na carteira COLABORADORES. */
+  interno: boolean;
 }
 
 export interface ClienteParaSalvar {
@@ -70,10 +72,12 @@ export interface ClienteParaSalvar {
   estado?: string | null;
   carteira?: string | null;
   grupo?: string | null;
+  /** Só dono e admin mudam (o banco recusa os outros); ausente = não mexe. */
+  interno?: boolean;
 }
 
 const CAMPOS = `id, codigo, razao_social, fantasia, tabela_preco, tabela_base, ativo,
-                em_condicao, origem, documento, telefone, email, endereco, cidade, estado, carteira, grupo`;
+                em_condicao, origem, documento, telefone, email, endereco, cidade, estado, carteira, grupo, interno`;
 
 /** As tabelas pelas quais o cliente passou, da mais recente para a mais antiga. A Venda total lê a tabela do dia da venda. */
 export function useHistoricoDaTabela(codigo: string | null) {
@@ -304,10 +308,11 @@ export function useSalvarCliente() {
         estado: cliente.estado?.trim().toUpperCase() || null,
         carteira: cliente.carteira?.trim() || null,
         grupo: cliente.grupo?.trim() || null,
+        ...(cliente.interno === undefined ? {} : { interno: cliente.interno }),
       };
 
-      if (criando) {
-        expectRows(
+      const [gravado] = criando
+        ? expectRows(
           await supabase
             .from('com_clientes')
             .insert({
@@ -316,26 +321,33 @@ export function useSalvarCliente() {
               origem: 'cadastro',
               ...comum,
             } as never)
-            .select('id'),
+            .select('id, carteira'),
           'o cadastro do cliente',
-        );
-      } else {
-        expectRows(
+        )
+        : expectRows(
           await supabase
             .from('com_clientes')
             .update(comum as never)
             .eq('codigo', cliente.codigo.trim())
-            .select('id'),
+            .select('id, carteira'),
           'a alteração do cliente',
         );
-      }
-      return cliente.codigo.trim();
+      // O banco decide a carteira de quem é colaborador (20270212722310): a tela diz quando ela não ficou como pedida,
+      // em vez de fechar como se tivesse gravado.
+      const pedida = (comum.carteira ?? '').toUpperCase();
+      const ficou = ((gravado as { carteira: string | null }).carteira ?? '').toUpperCase();
+      return { codigo: cliente.codigo.trim(), carteiraMudou: pedida !== ficou, ficou };
     },
-    onSuccess: (codigo, { criando }) => {
+    onSuccess: ({ codigo, carteiraMudou, ficou }, { criando }) => {
       qc.invalidateQueries({ queryKey: ['comercial', 'cliente'] });
       qc.invalidateQueries({ queryKey: ['comercial', 'clientes'] });
       qc.invalidateQueries({ queryKey: ['comercial', 'busca-clientes'] });
       toast.success(criando ? `Cliente ${codigo} cadastrado` : 'Cadastro atualizado');
+      if (carteiraMudou) {
+        toast.warning(ficou
+          ? `Cliente colaborador fica na carteira ${ficou}.`
+          : 'Este cliente é uma conta da empresa: fica sem carteira. Para pôr em carteira, desmarque "Colaborador".');
+      }
     },
     onError: (e: Error) => {
       // As duas recusas do banco que a pessoa pode causar digitando, traduzidas.

@@ -12,6 +12,10 @@ import { useSalvarCliente, type ClienteCadastrado } from '@/hooks/useComercialCl
 import { useTabelasPreco } from '@/hooks/useComercialPainel';
 import { useCarteiras } from '@/hooks/useComercialCarteirasMetas';
 import { soDigitos, documentoTemForma, formatarDocumento } from '@/lib/documento';
+import { useAuth } from '@/contexts/AuthContext';
+
+/** A carteira de quem é colaborador (20270212722310): fora da meta e da comissão. */
+const COLABORADORES = 'COLABORADORES';
 
 /**
  * Cadastrar cliente novo, ou corrigir o de sempre (leva G, 2026-09-26).
@@ -55,6 +59,16 @@ export function FormularioCliente({ cliente, onFechar, onCadastrado }: Props) {
   const ufRuim = estado.trim() !== '' && !/^[A-Za-z]{2}$/.test(estado.trim());
   const [carteira, setCarteira] = useState(cliente?.carteira ?? '');
   const [grupo, setGrupo] = useState(cliente?.grupo ?? '');
+  // "Colaborador" (dono, 2026-11-13): só dono e admin marcam, e o banco recusa os outros.
+  const { role } = useAuth();
+  const marcaColaborador = role === 'owner' || role === 'admin';
+  const [interno, setInterno] = useState(cliente?.interno ?? false);
+  const marcarColaborador = (sim: boolean) => {
+    setInterno(sim);
+    setCarteira(sim ? COLABORADORES : '');
+  };
+  // O colaborador só fica na COLABORADORES ou sem carteira (conta da empresa); os outros não entram nela.
+  const opcoesDeCarteira = interno ? [COLABORADORES] : carteiras.filter((c) => c !== COLABORADORES);
 
   const documentoDigitado = soDigitos(documento);
   const documentoRuim = documentoDigitado.length > 0 && !documentoTemForma(documentoDigitado);
@@ -69,6 +83,7 @@ export function FormularioCliente({ cliente, onFechar, onCadastrado }: Props) {
         ativo, documento: documentoDigitado || null, telefone, email, endereco, cidade, estado,
         carteira: carteira || null,
         grupo: grupo || null,
+        ...(marcaColaborador ? { interno } : {}),
       },
     });
     if (criando) onCadastrado?.(codigo.trim());
@@ -180,10 +195,10 @@ export function FormularioCliente({ cliente, onFechar, onCadastrado }: Props) {
                 <SelectTrigger id="cli-carteira"><SelectValue placeholder="Não atrelado" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="nenhuma">— Não atrelado —</SelectItem>
-                  {carteiras.map((c) => (
+                  {opcoesDeCarteira.map((c) => (
                     <SelectItem key={c} value={c}>{c}</SelectItem>
                   ))}
-                  {carteira && !carteiras.includes(carteira) && (
+                  {carteira && !opcoesDeCarteira.includes(carteira) && (
                     <SelectItem value={carteira}>{carteira} (antiga)</SelectItem>
                   )}
                 </SelectContent>
@@ -231,6 +246,19 @@ export function FormularioCliente({ cliente, onFechar, onCadastrado }: Props) {
             </div>
             <Switch id="cli-ativo" checked={ativo} onCheckedChange={setAtivo} />
           </div>
+
+          {(marcaColaborador || interno) && (
+            <div className="flex items-center justify-between rounded-lg border border-border p-3">
+              <div>
+                <Label htmlFor="cli-colaborador" className="text-[14px]">Colaborador</Label>
+                <p className="text-[12px] text-muted-foreground">
+                  Pessoa da equipe que compra da empresa. Vai para a carteira COLABORADORES e a compra não conta na meta
+                  nem na comissão.{!marcaColaborador && ' Só o dono e os administradores mudam isto.'}
+                </p>
+              </div>
+              <Switch id="cli-colaborador" checked={interno} disabled={!marcaColaborador} onCheckedChange={marcarColaborador} />
+            </div>
+          )}
         </div>
 
         <DialogFooter>
