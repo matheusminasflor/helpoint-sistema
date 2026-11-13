@@ -39,6 +39,19 @@ banco real divergirem, **o banco real ganha**.
 *publishable* entra em arquivo — `service_role` vive nos secrets das edge
 functions e no Vault. Nenhum segredo passa por conversa, commit ou documento.
 
+## Kommo: no máximo 6 solicitações por segundo
+
+O limite do Kommo é 7 solicitações por segundo
+(https://developers.kommo.com/docs/limitations). Acima disso ele bloqueia o IP
+da conta, e só o suporte libera. Em 2026-11-12, ~300 consultas seguidas feitas
+pelo navegador bloquearam o IP fixo da rede principal da empresa inteira; o
+desbloqueio veio em 2026-11-13. Regra do dono: **no máximo 6 por segundo**,
+somando tudo o que se dispara (navegador, API, script, edge function). O
+coletor (`mkt-kommo-coletar`) faz no máximo 3/s por leitura e nunca roda mais de
+2 leituras juntas (conversas no :x0, completa no :25). Em laço,
+uma requisição por vez e pelo menos 200 ms entre elas; nunca `Promise.all` de
+requisições ao Kommo.
+
 ## Protocolo padrão
 
 Três skills valem em toda tarefa deste repositório, **sem o usuário precisar

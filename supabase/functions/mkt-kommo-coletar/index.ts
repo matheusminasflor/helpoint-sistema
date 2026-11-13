@@ -25,6 +25,13 @@ const GANHA = 142;
 const PERDIDA = 143;
 
 
+// Limite do Kommo: 7 solicitações por segundo por conta; acima disso ele bloqueia o IP (12/11/2026). Regra do dono:
+// no máximo 6/s no total. Cada leitura faz no máximo 3/s (uma a cada 340 ms) e nunca rodam mais de 2 leituras ao
+// mesmo tempo (cron das conversas nos minutos :x0, leitura completa no :25, e o "Ler agora" da tela) → no máximo 6/s.
+// A vaga é reservada antes do await, então vale mesmo se alguém chamar kommo() em paralelo.
+const INTERVALO_KOMMO_MS = 340;
+let proximaVez = 0;
+
 async function kommo<T>(caminho: string): Promise<T | null> {
   const sub = Deno.env.get('KOMMO_SUBDOMINIO')?.trim();
   const token = Deno.env.get('KOMMO_TOKEN')?.trim();
@@ -33,6 +40,9 @@ async function kommo<T>(caminho: string): Promise<T | null> {
   // 3 vezes antes de dar a leitura por perdida. Resposta do Kommo (401, 500…) não é falha de rede e não repete.
   let r: Response | null = null;
   for (let tentativa = 1; ; tentativa++) {
+    const vez = Math.max(Date.now(), proximaVez);
+    proximaVez = vez + INTERVALO_KOMMO_MS;
+    if (vez > Date.now()) await new Promise((ok) => setTimeout(ok, vez - Date.now()));
     try {
       r = await fetch(`https://${sub}.kommo.com/api/v4/${caminho}`, { headers: { Authorization: `Bearer ${token}` } });
       break;
